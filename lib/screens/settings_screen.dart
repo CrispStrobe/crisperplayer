@@ -7,8 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/providers.dart';
 import '../services/db/app_database.dart';
+import '../services/sync_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -35,6 +37,9 @@ class SettingsScreen extends ConsumerWidget {
         ListTile(leading: const Icon(Icons.download, size: 20), title: const Text('Import library (JSON)'), subtitle: const Text('Restore from previously exported file'), trailing: const Icon(Icons.chevron_right, size: 16), onTap: () => _importDb(context, db)),
         ListTile(leading: const Icon(Icons.restart_alt, size: 20), title: const Text('Reset onboarding'), subtitle: const Text('Show onboarding again on next launch'), onTap: () => _resetOnboarding(context, settings)),
         const Divider(),
+        const Padding(padding: EdgeInsets.all(16), child: Text('Cloud', style: TextStyle(fontWeight: FontWeight.bold))),
+        _SyncTile(),
+        const Divider(),
         const Padding(padding: EdgeInsets.all(16), child: Text('Appearance', style: TextStyle(fontWeight: FontWeight.bold))),
         ListTile(title: const Text('Theme'), subtitle: Text(settings.themeMode), trailing: DropdownButton<String>(value: settings.themeMode, items: const [DropdownMenuItem(value: 'system', child: Text('System')), DropdownMenuItem(value: 'light', child: Text('Light')), DropdownMenuItem(value: 'dark', child: Text('Dark'))], onChanged: (v) { if (v != null) { settings.themeMode = v; (context as Element).markNeedsBuild(); } })),
         const SizedBox(height: 24),
@@ -48,4 +53,72 @@ class SettingsScreen extends ConsumerWidget {
   Future<void> _exportDb(BuildContext context, AppDatabase db) async { try { final data = await db.exportAllJson(); final jsonStr = const JsonEncoder.withIndent('  ').convert(data); final countBooks = (data['books'] as List).length; final countBms = (data['bookmarks'] as List).length; final countHist = (data['history'] as List).length; if (kIsWeb) { if (!context.mounted) return; await showDialog<void>(context: context, builder: (ctx) => AlertDialog(title: const Text('Export preview'), content: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [Text('Books: \$countBooks • Bookmarks: \$countBms • History: \$countHist'), const SizedBox(height: 8), SelectableText(jsonStr.substring(0, jsonStr.length > 4000 ? 4000 : jsonStr.length), style: const TextStyle(fontSize: 10, fontFamily: 'monospace'))])), actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))])); return; } final dir = await getApplicationDocumentsDirectory(); final file = File('${dir.path}/crisperplayer_export_${DateTime.now().millisecondsSinceEpoch}.json'); await file.writeAsString(jsonStr); try { await Share.shareXFiles([XFile(file.path)], text: 'CrisperPlayer export — \$countBooks books'); } catch (_) {} if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Exported \$countBooks books to \${file.path}'))); } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Export failed: \$e'))); } }
   Future<void> _importDb(BuildContext context, AppDatabase db) async { try { final dynamic result = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json'], withData: true); if (result == null) return; List<PlatformFile> files; if (result is List<PlatformFile>) { files = result; } else { try { files = (result as dynamic).files as List<PlatformFile>; } catch (_) { return; } } if (files.isEmpty) return; final file = files.first; String content; dynamic fDyn2 = file; Uint8List? fileBytes2; try { fileBytes2 = fDyn2.bytes as Uint8List?; } catch (_) {} if (fileBytes2 != null) { content = utf8.decode(fileBytes2); } else if (file.path != null) { content = await File(file.path!).readAsString(); } else { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not read file'))); return; } final data = jsonDecode(content) as Map<String, dynamic>; if (!data.containsKey('books') && !data.containsKey('bookmarks')) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid export file — missing books/bookmarks'))); return; } final countBooks = (data['books'] as List?)?.length ?? 0; final countBms = (data['bookmarks'] as List?)?.length ?? 0; final countHist = (data['history'] as List?)?.length ?? 0; if (!context.mounted) return; final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(title: const Text('Import library?'), content: Text('This will merge into your current library (existing books with same ID will be replaced).\n\nFound: \$countBooks books • \$countBms bookmarks • \$countHist history entries.\n\nContinue?'), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Import'))])); if (confirm != true) return; await db.importAllJson(data); if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Imported \$countBooks books, \$countBms bookmarks, \$countHist history entries'))); } catch (e) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import failed: \$e'))); } }
   Future<void> _resetOnboarding(BuildContext context, dynamic settings) async { final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(title: const Text('Reset onboarding?'), content: const Text('Onboarding will show again when you restart the app.'), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Reset'))])); if (ok == true) { settings.onboardingDone = false; if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Onboarding will show on next launch'))); } }
+}
+
+class _SyncTile extends ConsumerWidget {
+  const _SyncTile();
+
+  String _subtitle(SyncService s) {
+    if (!s.isLoggedIn) return 'Not signed in — tap to set up';
+    final email = s.accountEmail!;
+    final last = s.lastSyncTime;
+    final lastStr = last == null ? 'Never synced' : _ago(last);
+    if (!s.syncEnabled) return '$email • Sync paused • Last: $lastStr';
+    if (s.isSyncing) return '$email • Syncing…';
+    if (s.status == SyncStatus.error) return '$email • Sync failed • Last: $lastStr';
+    if (s.status == SyncStatus.success) return '$email • Up to date • $lastStr';
+    return '$email • Last: $lastStr';
+  }
+
+  static String _ago(DateTime dt) {
+    final d = DateTime.now().difference(dt);
+    if (d.inMinutes < 1) return 'just now';
+    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
+    if (d.inHours < 24) return '${d.inHours}h ago';
+    return '${d.inDays}d ago';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sync = ref.watch(syncServiceProvider);
+    final hasConflict = sync.pendingConflicts.isNotEmpty;
+    return ListTile(
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            sync.syncEnabled ? Icons.cloud_sync : Icons.cloud_off,
+            size: 20,
+            color: sync.syncEnabled ? Theme.of(context).colorScheme.primary : null,
+          ),
+          if (hasConflict)
+            Positioned(
+              right: -4,
+              top: -4,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
+              ),
+            ),
+        ],
+      ),
+      title: const Text('Cloud sync'),
+      subtitle: Text(_subtitle(sync), style: const TextStyle(fontSize: 12)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (sync.isSyncing)
+            const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+          else if (sync.status == SyncStatus.success)
+            const Icon(Icons.check_circle, size: 16, color: Colors.green)
+          else if (hasConflict)
+            const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
+          const SizedBox(width: 6),
+          const Icon(Icons.chevron_right, size: 16),
+        ],
+      ),
+      onTap: () => context.push('/settings/sync'),
+    );
+  }
 }

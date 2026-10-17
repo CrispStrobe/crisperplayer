@@ -15,8 +15,10 @@ import 'screens/player_screen.dart';
 import 'screens/bookmarks_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/sync_settings_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/settings_service.dart';
+import 'services/sync_service.dart';
 import 'services/db/app_database.dart';
 import 'services/audio/audio_handler.dart';
 import 'services/audio/playback_service.dart';
@@ -72,6 +74,7 @@ Future<void> main() async {
     }
   }
 
+  final syncService = SyncService(prefs);
   final library = LibraryService(db);
   final playback = PlaybackService(
     db: db,
@@ -95,6 +98,7 @@ Future<void> main() async {
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
       settingsProvider.overrideWithValue(settings),
+      syncServiceProvider.overrideWith((ref) => syncService),
       playbackProvider.overrideWithValue(playback),
       libraryServiceProvider.overrideWithValue(library),
       shareIntakeProvider.overrideWithValue(shareIntake),
@@ -136,6 +140,7 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with Widget
         GoRoute(path: '/bookmarks/:bookId', builder: (_, s) => BookmarksScreen(bookId: s.pathParameters['bookId']!)),
         GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+        GoRoute(path: '/settings/sync', builder: (_, __) => const SyncSettingsScreen()),
       ],
     );
 

@@ -584,6 +584,9 @@ class PlaybackService with WidgetsBindingObserver {
     if (!_stateCtrl.isClosed) _stateCtrl.add(s);
   }
 
+  /// Sync hook — set by SyncServiceBridge to push progress to cloud (debounced).
+  void Function(String bookId, Duration position, Duration bookPosition)? onProgressSync;
+
   Future<void> _persistProgress() async {
     if (_currentBookId == null || _currentQueue.isEmpty) return;
     final book = await db.getBook(_currentBookId!);
@@ -593,6 +596,10 @@ class PlaybackService with WidgetsBindingObserver {
     final filePath = _currentIndex < _currentQueue.length ? _currentQueue[_currentIndex] : _currentQueue.first;
     final bookPos = _bookPosition();
     await library.updateProgress(_currentBookId!, filePath, pos, bookPos, total);
+    // Wire to sync engine — debounced push of progress (offline queue + retry handled there).
+    try {
+      onProgressSync?.call(_currentBookId!, pos, bookPos);
+    } catch (_) {}
   }
 
   void _startAutoBookmark() {

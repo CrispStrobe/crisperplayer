@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
+import 'package:path/path.dart' as p;
 import '../../models/playback_state.dart' as m;
 import '../db/app_database.dart';
 import '../history_service.dart';
 import '../library_service.dart';
 import '../bookmark_service.dart';
+import 'audio_handler.dart';
 
 final playbackServiceProvider = Provider<PlaybackService>((ref) => throw UnimplementedError('override in main'));
 
@@ -19,9 +22,18 @@ class PlaybackService with WidgetsBindingObserver {
   final LibraryService library;
   final BookmarkService bookmarks;
   final HistoryService history;
+  final AudioPlayer? _externalPlayer;
 
   AudioPlayer? _player;
   AudioPlayer get player => _player!;
+
+  // iOS audio session & interruption handling
+  AudioSession? _audioSession;
+  bool _wasPlayingBeforeInterruption = false;
+
+  // audio_service lockscreen integration
+  CrisperAudioHandler? _audioHandler;
+  CrisperAudioHandler? get audioHandler => _audioHandler;
 
   String? _currentBookId;
   String? get currentBookId => _currentBookId;
@@ -50,37 +62,199 @@ class PlaybackService with WidgetsBindingObserver {
   static const Duration smartRewindThreshold = Duration(seconds: 60);
   static const Duration smartRewindAmount = Duration(seconds: 5);
 
-  PlaybackService({required this.db, required this.library, required this.bookmarks, required this.history});
+  PlaybackService({required this.db, required this.library, required this.bookmarks, required this.history, AudioPlayer? audioPlayer}) : _externalPlayer = audioPlayer;
 
+  /// Attach the shared audio_service handler for lockscreen / Control Center.
+  /// Call from main.dart after AudioService.init so that remote commands
+  /// route through PlaybackService (preserving history/bookmark logic).
+  void attachAudioHandler(CrisperAudioHandler handler) {
+    _audioHandler = handler;
+    handler.setDelegates(
+      onPlay: play,
+      onPause: pause,
+      onStop: stop,
+      onSeek: seek,
+      onSkipNext: nextTrack,
+      onSkipPrev: previousTrack,
+    );
+    // If a book is already loaded, sync its media items immediately.
+    if (_currentBookId != null) {
+      // Fire-and-forget, but log errors.
+      _syncHandlerForCurrentBook().catchError((e) => debugPrint('attach sync failed: $e'));
+    }
+  }
+
+  Future<void> _syncHandlerForCurrentBook() async {
+    if (_currentBookId == null || _audioHandler == null) return;
+    final book = await db.getBook(_currentBookId!);
+    if (book == null) return;
+    final paths = AppDatabase.decodePaths(book.filePathsJson);
+    await _updateHandlerMediaItems(book, paths);
+  }
+
+  List<MediaItem> _buildMediaItems(Book book, List<String> paths) {
+    // Lockscreen artwork: coverPath -> file:// URI for MPNowPlayingInfoCenter.
+    Uri? artUri;
+    try {
+      if (book.coverPath.isNotEmpty && File(book.coverPath).existsSync()) {
+        artUri = Uri.file(book.coverPath);
+      }
+    } catch (_) {}
+    final totalDur = Duration(milliseconds: book.totalDurationMs);
+    return List.generate(paths.length, (i) {
+      final path = paths[i];
+      final title = paths.length == 1
+          ? book.title
+          : '${book.title} — Part ${i + 1}';
+      // Duration: for single-file use total; for multi-file split equally
+      // until per-file probing updates via _updateHandlerDurations.
+      Duration? dur;
+      if (paths.length == 1) {
+        dur = totalDur != Duration.zero ? totalDur : null;
+      } else if (totalDur != Duration.zero) {
+        dur = Duration(milliseconds: totalDur.inMilliseconds ~/ paths.length);
+      }
+      return MediaItem(
+        id: path,
+        album: book.title,
+        title: title,
+        artist: book.author,
+        duration: dur,
+        artUri: artUri,
+        playable: true,
+        displayTitle: title,
+        displaySubtitle: book.author,
+      );
+    });
+  }
+
+  Future<void> _updateHandlerMediaItems(Book book, List<String> paths) async {
+    final handler = _audioHandler;
+    if (handler == null) return;
+    final items = _buildMediaItems(book, paths);
+    await handler.setQueueItems(items);
+    // Set current track's MediaItem to reflect _currentIndex
+    if (items.isNotEmpty) {
+      final idx = _currentIndex.clamp(0, items.length - 1);
+      await handler.updateMediaItem(items[idx]);
+    }
+  }
+
+  Future<void> _updateHandlerDurations() async {
+    final handler = _audioHandler;
+    if (handler == null || _currentQueue.isEmpty) return;
+    try {
+      // For single-file: total duration; for multi-file: per-index duration from sequence
+      final seq = _player?.sequence;
+      if (seq != null && seq.isNotEmpty) {
+        for (int i = 0; i < seq.length && i < handler._currentQueueForTest.length; i++) {
+          final d = seq[i]?.duration;
+          if (d != null && d != Duration.zero) {
+            final cur = handler._currentQueueForTest[i];
+            if (cur.duration != d) {
+              // Update that queue entry's duration
+              final updated = List<MediaItem>.from(handler._currentQueueForTest);
+              updated[i] = cur.copyWith(duration: d);
+              // Re-set queue to propagate (handler will keep current mediaItem in sync)
+              // To avoid flicker, directly update mediaItem if this is current track.
+              if (i == _currentIndex) {
+                await handler.updateMediaItem(updated[i]);
+              }
+              // Queue update happens via handler's internal list; we need a method that
+              // allows updating queue entry. Easiest: re-set full queue.
+              await handler.setQueueItems(updated);
+              if (i == _currentIndex) {
+                await handler.updateMediaItem(updated[i]);
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('updateHandlerDurations failed: $e');
+    }
+  }
+
+  // Allow PlaybackService test access to handler queue (expose via handler getter)
   Future<void> init() async {
     try {
       if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
         JustAudioMediaKit.ensureInitialized();
       }
     } catch (_) {}
-    _player = AudioPlayer();
+    _player = _externalPlayer ?? AudioPlayer();
 
     try {
       final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration.speech());
-      session.interruptionEventStream.listen((e) {
+      _audioSession = session;
+      // iOS: playback + spokenAudio + allow Bluetooth/AirPlay for headphones/car,
+      // longFormAudio for background handoff. Android: speech attributes + gain.
+      final speech = const AudioSessionConfiguration.speech();
+      await session.configure(speech.copyWith(
+        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.allowBluetooth |
+            AVAudioSessionCategoryOptions.allowBluetoothA2dp |
+            AVAudioSessionCategoryOptions.allowAirPlay,
+        avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.longFormAudio,
+      ));
+      session.interruptionEventStream.listen((e) async {
         if (e.begin) {
-          if (_player?.playing == true) _player?.pause();
+          if (_player?.playing == true) {
+            _wasPlayingBeforeInterruption = true;
+            await _player?.pause();
+          } else {
+            _wasPlayingBeforeInterruption = false;
+          }
+        } else {
+          // Interruption ended. iOS: type==pause means shouldResume==true.
+          // Android: lossTransient / duck.
+          switch (e.type) {
+            case AudioInterruptionType.pause:
+              if (_wasPlayingBeforeInterruption) {
+                await play();
+              }
+              break;
+            case AudioInterruptionType.duck:
+              // For duck we paused on begin; resume if we were playing.
+              // If platform ducked without pause, just restore volume (OS handles).
+              if (_wasPlayingBeforeInterruption && _player?.playing == false) {
+                await play();
+              }
+              break;
+            case AudioInterruptionType.unknown:
+              // Don't auto-resume for unknown (e.g., phone call without resume flag, Siri)
+              break;
+          }
+          _wasPlayingBeforeInterruption = false;
         }
       });
-      session.becomingNoisyEventStream.listen((_) => _player?.pause());
+      session.becomingNoisyEventStream.listen((_) async {
+        // Headphones unplugged / audio becoming noisy — pause for iOS + Android.
+        if (_player?.playing == true) {
+          await pause();
+        }
+      });
     } catch (e) {
       debugPrint('audio session config failed: $e');
     }
 
     _player!.positionStream.listen((pos) => _onPosition(pos));
     _player!.playerStateStream.listen((ps) => _onPlayerState(ps));
-    _player!.durationStream.listen((d) => _emit(state.copyWith(duration: d ?? Duration.zero)));
+    _player!.durationStream.listen((d) {
+      _emit(state.copyWith(duration: d ?? Duration.zero));
+      // Update lockscreen artwork duration (MediaItem.duration) for iOS Control Center.
+      if (d != null && d != Duration.zero) {
+        _updateHandlerDurations();
+      }
+    });
     _player!.currentIndexStream.listen((i) {
       if (i != null) {
         _currentIndex = i;
         _recalcBookOffset();
         _emit(state.copyWith(currentIndex: i, currentFile: _currentQueue.isNotEmpty ? _currentQueue[i] : null));
+        // Update lockscreen to show current track (multi-file audiobooks)
+        try {
+          _audioHandler?.setCurrentIndex(i);
+        } catch (_) {}
       }
     });
 
@@ -100,6 +274,8 @@ class PlaybackService with WidgetsBindingObserver {
     _autoBookmarkTimer?.cancel();
     _sleepTimer?.cancel();
     await _endSession();
+    // If player was externally owned (shared with handler), still dispose here;
+    // BaseAudioHandler will handle its own super.stop() separately.
     await _player?.dispose();
     await _stateCtrl.close();
   }
@@ -111,6 +287,8 @@ class PlaybackService with WidgetsBindingObserver {
     if (paths.isEmpty) throw Exception('Book has no files');
     _currentBookId = bookId;
     _currentQueue = paths;
+    _currentIndex = 0;
+    _currentBookOffset = Duration.zero;
 
     final sources = paths.map((p) => AudioSource.uri(Uri.file(p), tag: p)).toList();
     final playlist = ConcatenatingAudioSource(children: sources);
@@ -131,6 +309,13 @@ class PlaybackService with WidgetsBindingObserver {
       }
     }
 
+    // Update lockscreen / Control Center queue & artwork
+    try {
+      await _updateHandlerMediaItems(book, paths);
+    } catch (e) {
+      debugPrint('handler media sync failed: $e');
+    }
+
     _emit(state.copyWith(status: m.PlaybackStatus.paused, currentFile: _currentQueue[_currentIndex]));
     _startAutoBookmark();
     if (autoPlay) await play();
@@ -148,6 +333,10 @@ class PlaybackService with WidgetsBindingObserver {
       } catch (_) {}
     }
     _pausedAt = null;
+    // Activate audio session for iOS background (must be active to play in background / lockscreen)
+    try {
+      await _audioSession?.setActive(true);
+    } catch (_) {}
     if (_currentBookId == null) {
       if (_player == null) {
         // no book/player: still emit playing for test observability, but don't need session
@@ -179,6 +368,9 @@ class PlaybackService with WidgetsBindingObserver {
     await _player?.stop();
     await _persistProgress();
     await _endSession();
+    try {
+      await _audioSession?.setActive(false);
+    } catch (_) {}
   }
 
   Future<void> seek(Duration pos) async {
@@ -471,6 +663,7 @@ class PlaybackService with WidgetsBindingObserver {
   // ── Lifecycle ────────────────────────────────────────────────
 
   /// Called when app goes to background: persist progress, auto-bookmark, end session.
+  /// For iOS background audio, we do NOT pause — audio continues in background.
   Future<void> handleAppPaused() async {
     await _persistProgress();
     await _maybeAutoBookmark();
@@ -544,5 +737,17 @@ class PlaybackService with WidgetsBindingObserver {
   /// Force expiry handling for tests that use the tick helper
   void expireSleepTimerForTest() {
     _handleSleepTimerExpiryForTest();
+  }
+}
+
+// Extension to expose handler queue for duration updates (internal use only)
+extension _HandlerQueue on CrisperAudioHandler {
+  List<MediaItem> get _currentQueueForTest {
+    // Access via queue.value — behavior subject; fallback to empty.
+    try {
+      return queue.valueOrNull ?? [];
+    } catch (_) {
+      return [];
+    }
   }
 }

@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:audio_service/audio_service.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:audio_session/audio_session.dart';
 
 import 'providers/providers.dart';
 import 'screens/library_screen.dart';
@@ -14,6 +18,7 @@ import 'screens/settings_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/settings_service.dart';
 import 'services/db/app_database.dart';
+import 'services/audio/audio_handler.dart';
 import 'services/audio/playback_service.dart';
 import 'services/library_service.dart';
 import 'services/bookmark_service.dart';
@@ -23,7 +28,9 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Audio session — same pattern as CrisperWeaver proves reliable
+  // iOS: configure audio session early for background / Control Center.
+  // PlaybackService also configures with the same speech preset + Bluetooth/AirPlay,
+  // but early config ensures AVAudioSession is ready before any UI.
   try {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.speech());
@@ -33,12 +40,47 @@ Future<void> main() async {
   final settings = SettingsService(prefs);
   final db = AppDatabase();
 
+  // Shared player for both PlaybackService and audio_service handler.
+  // iOS lockscreen artwork + background controls flow through this single player.
+  final sharedPlayer = AudioPlayer();
+  CrisperAudioHandler? audioHandler;
+
+  // audio_service: lockscreen / Control Center / headset buttons + background task.
+  // Only init on mobile (iOS/Android); desktop/web/test fall back to raw AudioPlayer.
+  if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+    try {
+      audioHandler = await AudioService.init<CrisperAudioHandler>(
+        builder: () => CrisperAudioHandler(sharedPlayer),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId: 'com.crispstrobe.crisperplayer.channel.audio',
+          androidNotificationChannelName: 'CrisperPlayer',
+          androidNotificationChannelDescription: 'Audiobook playback controls',
+          androidNotificationOngoing: true,
+          androidShowNotificationBadge: true,
+          androidStopForegroundOnPause: true,
+          androidNotificationIcon: 'mipmap/ic_launcher',
+          // iOS: MediaItem artUri + title/artist/album shown via MPNowPlayingInfoCenter.
+          // No extra iOS config needed; UIBackgroundModes audio in Info.plist handles background.
+          artDownscaleWidth: 800,
+          artDownscaleHeight: 800,
+        ),
+      );
+    } catch (e) {
+      debugPrint('AudioService init failed (expected on non-mobile / test): $e');
+      audioHandler = null;
+    }
+  }
+
   final playback = PlaybackService(
     db: db,
     library: LibraryService(db),
     bookmarks: BookmarkService(db),
     history: HistoryService(db),
+    audioPlayer: sharedPlayer,
   );
+  if (audioHandler != null) {
+    playback.attachAudioHandler(audioHandler);
+  }
   unawaited(playback.init());
 
   runApp(ProviderScope(
@@ -96,7 +138,8 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with Widget
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // persist + auto-bookmark + endSession
+      // persist + auto-bookmark + endSession — but do NOT pause audio
+      // so iOS background playback continues when user locks screen.
       final playback = ref.read(playbackProvider);
       playback.handleAppPaused();
     }

@@ -23,6 +23,7 @@ import 'services/audio/playback_service.dart';
 import 'services/library_service.dart';
 import 'services/bookmark_service.dart';
 import 'services/history_service.dart';
+import 'services/share_intake_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -71,9 +72,10 @@ Future<void> main() async {
     }
   }
 
+  final library = LibraryService(db);
   final playback = PlaybackService(
     db: db,
-    library: LibraryService(db),
+    library: library,
     bookmarks: BookmarkService(db),
     history: HistoryService(db),
     audioPlayer: sharedPlayer,
@@ -83,11 +85,19 @@ Future<void> main() async {
   }
   unawaited(playback.init());
 
+  // Inbound share: wire receive_sharing_intent -> LibraryService.importFiles
+  // Lifecycle-aware: handles getInitialMedia() (cold start) and getMediaStream() (warm share)
+  final shareIntake = ShareIntakeService(library: library);
+  // Init without UI callbacks; AppState will re-bind with ScaffoldMessenger/GoRouter when mounted
+  unawaited(shareIntake.init());
+
   runApp(ProviderScope(
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
       settingsProvider.overrideWithValue(settings),
       playbackProvider.overrideWithValue(playback),
+      libraryServiceProvider.overrideWithValue(library),
+      shareIntakeProvider.overrideWithValue(shareIntake),
     ],
     child: CrisperPlayerApp(settings: settings, prefs: prefs),
   ));
@@ -104,6 +114,7 @@ class CrisperPlayerApp extends ConsumerStatefulWidget {
 
 class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with WidgetsBindingObserver {
   late final GoRouter _router;
+  ShareIntakeService? _shareIntake;
 
   @override
   void initState() {
@@ -127,11 +138,55 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with Widget
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       ],
     );
+
+    // Bind share callbacks once widget is mounted (needs context for SnackBar/navigation)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bindShareIntake());
+  }
+
+  void _bindShareIntake() {
+    if (!mounted) return;
+    try {
+      final svc = ref.read(shareIntakeProvider);
+      _shareIntake = svc;
+      // Re-init with UI callbacks (idempotent inside service)
+      unawaited(svc.init(
+        onImported: (bookId, paths) async {
+          if (!mounted) return;
+          final messenger = ScaffoldMessenger.maybeOf(context);
+          if (bookId != null) {
+            messenger?.showSnackBar(
+              SnackBar(content: Text('Imported ${paths.length} file(s)'), action: SnackBarAction(label: 'Open', onPressed: () => _router.go('/player/$bookId'))),
+            );
+            // Optionally navigate directly to player
+            // Defer to avoid calling during build
+            Future.microtask(() {
+              if (mounted) _router.go('/player/$bookId');
+            });
+          } else {
+            messenger?.showSnackBar(const SnackBar(content: Text('Import failed')));
+          }
+        },
+        onError: (msg) {
+          if (!mounted) return;
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(msg)));
+        },
+        onInfo: (msg) {
+          if (!mounted) return;
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 1)));
+        },
+      ));
+      // Also handle any pending initial media now that UI is ready
+      unawaited(svc.handleInitialMedia());
+    } catch (e) {
+      debugPrint('ShareIntake bind failed: $e');
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // Don't dispose shareIntake here; it lives for app lifetime via ProviderScope override.
+    // It will be closed when ProviderScope disposes.
     super.dispose();
   }
 
@@ -142,6 +197,15 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with Widget
       // so iOS background playback continues when user locks screen.
       final playback = ref.read(playbackProvider);
       playback.handleAppPaused();
+    }
+    if (state == AppLifecycleState.resumed) {
+      // Inbound share: check for pending shares when returning from share sheet
+      try {
+        final svc = ref.read(shareIntakeProvider);
+        unawaited(svc.handleInitialMedia());
+      } catch (_) {}
+      // Also re-bind in case service was not yet bound
+      if (_shareIntake == null) _bindShareIntake();
     }
     super.didChangeAppLifecycleState(state);
   }

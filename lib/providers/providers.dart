@@ -7,6 +7,7 @@ import '../services/bookmark_service.dart';
 import '../services/history_service.dart';
 import '../services/settings_service.dart';
 import '../services/audio/playback_service.dart';
+import '../services/share_intake_service.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -38,6 +39,13 @@ final playbackProvider = Provider<PlaybackService>((ref) {
   final bm = ref.watch(bookmarkServiceProvider);
   final hist = ref.watch(historyServiceProvider);
   final svc = PlaybackService(db: db, library: lib, bookmarks: bm, history: hist);
+  ref.onDispose(() => svc.dispose());
+  return svc;
+});
+
+final shareIntakeProvider = Provider<ShareIntakeService>((ref) {
+  final lib = ref.watch(libraryServiceProvider);
+  final svc = ShareIntakeService(library: lib);
   ref.onDispose(() => svc.dispose());
   return svc;
 });

@@ -37,4 +37,10 @@ class SettingsService {
 
   bool get resumeOnLaunch => _p.getBool('resume_on_launch') ?? true;
   set resumeOnLaunch(bool v) => _p.setBool('resume_on_launch', v);
+
+  bool get onboardingDone => _p.getBool('onboarding_done') ?? _p.getBool('onboarding_completed') ?? false;
+  set onboardingDone(bool v) {
+    _p.setBool('onboarding_done', v);
+    _p.setBool('onboarding_completed', v);
+  }
 }

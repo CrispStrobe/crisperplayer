@@ -13,7 +13,7 @@ import 'package:drift/native.dart';
 
 void main() {
   testWidgets('Library screen loads empty state', (tester) async {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({'onboarding_done': true});
     final prefs = await SharedPreferences.getInstance();
     final settings = SettingsService(prefs);
     final db = AppDatabase.forTesting(NativeDatabase.memory());

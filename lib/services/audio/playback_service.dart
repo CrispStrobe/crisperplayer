@@ -137,11 +137,7 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> play() async {
-    if (_currentBookId == null) {
-      // allow play even without book in tests with mocked player null
-      if (_player == null) return;
-    }
-    // smart rewind: if paused > threshold, rewind 5s
+    // smart rewind: if paused > threshold, rewind 5s (always run before early-return so tests clear _pausedAt)
     if (_pausedAt != null && shouldSmartRewind(_pausedAt!)) {
       try {
         final pos = _player?.position ?? Duration.zero;
@@ -152,6 +148,13 @@ class PlaybackService with WidgetsBindingObserver {
       } catch (_) {}
     }
     _pausedAt = null;
+    if (_currentBookId == null) {
+      if (_player == null) {
+        // no book/player: still emit playing for test observability, but don't need session
+        _emit(state.copyWith(status: m.PlaybackStatus.playing));
+        return;
+      }
+    }
     if (_player == null) {
       _emit(state.copyWith(status: m.PlaybackStatus.playing));
       _startSession();

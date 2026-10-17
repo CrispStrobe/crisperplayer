@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Prevent notification icons from being stripped (audio_service recommendation) -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/*,@mipmap/*" />

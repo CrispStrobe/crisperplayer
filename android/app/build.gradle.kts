@@ -19,7 +19,8 @@ android {
         applicationId = "com.crispstrobe.crisperplayer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // overridden to 21 for audio_service/just_audio compat (Flutter default 24)
+        minSdk = 21
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

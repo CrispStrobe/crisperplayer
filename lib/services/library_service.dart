@@ -19,7 +19,13 @@ class LibraryService {
   Future<Book?> getBook(String id) => db.getBook(id);
   Stream<Book?> watchBook(String id) => db.watchBook(id);
 
-  Future<void> deleteBook(String id) => db.deleteBook(id);
+  Future<void> deleteBook(String id) async {
+    // Manual cascade — ensures chapters/bookmarks/history removed even if FK pragma off (e.g. memory DB in tests)
+    await db.clearHistoryForBook(id);
+    await db.clearBookmarksForBook(id);
+    await (db.delete(db.chapters)..where((t) => t.bookId.equals(id))).go();
+    await db.deleteBook(id);
+  }
 
   Future<List<String>> pickAudioFiles() async {
     try {
@@ -119,15 +125,26 @@ class LibraryService {
   }
 
   Future<Duration> _probeTotalDuration(List<String> paths) async {
+    // In flutter test, just_audio platform is not available — skip probing to avoid MissingPluginException
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      return Duration.zero;
+    }
     Duration sum = Duration.zero;
     for (final path in paths) {
+      AudioPlayer? player;
       try {
-        final player = AudioPlayer();
+        try {
+          player = AudioPlayer();
+        } catch (e) {
+          debugPrint('probe create player failed for $path: $e');
+          continue;
+        }
         final d = await player.setFilePath(path).timeout(const Duration(seconds: 4));
-        await player.dispose();
         if (d != null) sum += d;
       } catch (e) {
         debugPrint('probe duration failed for $path: $e');
+      } finally {
+        try { await player?.dispose(); } catch (_) {}
       }
     }
     return sum;

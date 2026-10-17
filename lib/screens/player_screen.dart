@@ -55,12 +55,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       if (v=='sleep30') svc.setSleepTimer(const Duration(minutes: 30));
                       if (v=='sleep60') svc.setSleepTimer(const Duration(minutes: 60));
                       if (v=='sleepOff') svc.cancelSleepTimer();
+                      if (v=='sleepEoc') svc.setSleepTimer(Duration.zero, endOfChapter: true);
                       if (v=='chapters') setState(()=> _showChapters = !_showChapters);
                     },
                     itemBuilder: (_)=> [
                       const PopupMenuItem(value:'sleep15', child: Text('Sleep 15 min')),
                       const PopupMenuItem(value:'sleep30', child: Text('Sleep 30 min')),
                       const PopupMenuItem(value:'sleep60', child: Text('Sleep 60 min')),
+                      const PopupMenuItem(value:'sleepEoc', child: Text('End of chapter')),
                       const PopupMenuItem(value:'sleepOff', child: Text('Cancel sleep timer')),
                       const PopupMenuDivider(),
                       PopupMenuItem(value:'chapters', child: Text(_showChapters? 'Hide chapters' : 'Show chapters')),
@@ -89,6 +91,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                           const SizedBox(height: 6),
                           if (svc.sleepRemaining != Duration.zero)
                             Chip(label: Text('Sleep: ${formatDuration(svc.sleepRemaining)}'), onDeleted: ()=> svc.cancelSleepTimer(), deleteIcon: const Icon(Icons.close, size: 16)),
+                          if (svc.isWaitingForChapterEnd)
+                            Chip(label: const Text('Sleep: end of chapter'), onDeleted: ()=> svc.cancelSleepTimer(), deleteIcon: const Icon(Icons.close, size: 16)),
+                          if (svc.sleepEndOfChapter && svc.sleepRemaining != Duration.zero)
+                            Chip(label: Text('Sleep: ${formatDuration(svc.sleepRemaining)} → end of chapter'), onDeleted: ()=> svc.cancelSleepTimer(), deleteIcon: const Icon(Icons.close, size: 16)),
                           const SizedBox(height: 12),
                           Slider(
                             min: 0, max: (st.duration.inMilliseconds.toDouble() > 0 ? st.duration.inMilliseconds.toDouble() : 1),
@@ -187,7 +193,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
   Chapter? _currentChapter(List<Chapter> chs, Duration pos, dynamic svc) {
     Duration bookPos = Duration.zero;
-    try { bookPos = svc._bookPosition() as Duration; } catch (_) { bookPos = pos; }
+    try { bookPos = svc.bookPosition as Duration; } catch (_) { bookPos = pos; }
     for (final c in chs) {
       final s = Duration(milliseconds: c.startMs);
       final e = Duration(milliseconds: c.endMs);

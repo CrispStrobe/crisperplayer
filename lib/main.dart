@@ -50,19 +50,22 @@ Future<void> main() async {
   ));
 }
 
-class CrisperPlayerApp extends ConsumerWidget {
+class CrisperPlayerApp extends ConsumerStatefulWidget {
   final SettingsService settings;
   const CrisperPlayerApp({super.key, required this.settings});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = switch (settings.themeMode) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
-    };
+  ConsumerState<CrisperPlayerApp> createState() => _CrisperPlayerAppState();
+}
 
-    final router = GoRouter(
+class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with WidgetsBindingObserver {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
         GoRoute(path: '/player/:bookId', builder: (_, s) => PlayerScreen(bookId: s.pathParameters['bookId']!)),
@@ -71,13 +74,38 @@ class CrisperPlayerApp extends ConsumerWidget {
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // persist + auto-bookmark + endSession
+      final playback = ref.read(playbackProvider);
+      playback.handleAppPaused();
+    }
+    super.didChangeAppLifecycleState(state);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = switch (widget.settings.themeMode) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
 
     return MaterialApp.router(
       title: 'CrisperPlayer',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      routerConfig: router,
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );
   }

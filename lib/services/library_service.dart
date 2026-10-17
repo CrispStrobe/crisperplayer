@@ -6,6 +6,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 import '../utils/format.dart';
+import 'audio/chapter_parser.dart';
+import 'audio/cover_extractor.dart';
 import 'db/app_database.dart';
 
 class LibraryService {
@@ -52,16 +54,57 @@ class LibraryService {
     final inferredTitle = title ?? _inferTitle(paths);
     final inferredAuthor = author ?? 'Unknown';
     final total = await _probeTotalDuration(paths);
+    // Try real chapter table + cover for single-file m4b/m4a
+    List<ChaptersCompanion>? realChapters;
+    String? coverPath;
+    if (paths.length == 1 && _isSingleM4b(paths.first)) {
+      try {
+        final parsed = await ChapterParser.parseFile(paths.first, totalDuration: total);
+        if (parsed != null && parsed.isNotEmpty) {
+          realChapters = [
+            for (int i = 0; i < parsed.length; i++)
+              ChaptersCompanion.insert(
+                id: const Uuid().v4(),
+                bookId: id,
+                title: parsed[i].title,
+                startMs: parsed[i].start.inMilliseconds,
+                endMs: parsed[i].end.inMilliseconds,
+                filePath: Value(paths.first),
+                trackIndex: Value(i),
+              ),
+          ];
+          debugPrint('ChapterParser: used ${parsed.length} real chapters for ${paths.first}');
+        }
+      } catch (e) {
+        debugPrint('ChapterParser failed for ${paths.first}: $e');
+      }
+      try {
+        final cover = await CoverExtractor.extractCover(paths.first);
+        if (cover != null && cover.isNotEmpty) {
+          coverPath = cover;
+          debugPrint('CoverExtractor: found cover $cover');
+        }
+      } catch (e) {
+        debugPrint('CoverExtractor failed for ${paths.first}: $e');
+      }
+    }
+
     final book = BooksCompanion.insert(
       id: id, title: inferredTitle, author: Value(inferredAuthor),
       filePathsJson: AppDatabase.encodePaths(paths),
       totalDurationMs: Value(total.inMilliseconds),
       addedAtMs: DateTime.now().millisecondsSinceEpoch,
+      coverPath: coverPath != null ? Value(coverPath) : const Value.absent(),
     );
     await db.upsertBook(book);
-    final chapters = _chaptersFromFiles(id, paths, total);
+    final chapters = realChapters ?? _chaptersFromFiles(id, paths, total);
     await db.replaceChapters(id, chapters);
     return id;
+  }
+
+  bool _isSingleM4b(String path) {
+    final ext = p.extension(path).toLowerCase();
+    return ext == '.m4b' || ext == '.m4a';
   }
 
   String _inferTitle(List<String> paths) {

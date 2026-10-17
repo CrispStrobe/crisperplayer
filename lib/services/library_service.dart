@@ -55,9 +55,10 @@ class LibraryService {
     final inferredAuthor = author ?? 'Unknown';
     final total = await _probeTotalDuration(paths);
     // Try real chapter table + cover for single-file m4b/m4a
+    // Skip on web where dart:io file access is unavailable
     List<ChaptersCompanion>? realChapters;
     String? coverPath;
-    if (paths.length == 1 && _isSingleM4b(paths.first)) {
+    if (!kIsWeb && paths.length == 1 && _isSingleM4b(paths.first)) {
       try {
         final parsed = await ChapterParser.parseFile(paths.first, totalDuration: total);
         if (parsed != null && parsed.isNotEmpty) {

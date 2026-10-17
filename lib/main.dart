@@ -11,6 +11,7 @@ import 'screens/player_screen.dart';
 import 'screens/bookmarks_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'services/settings_service.dart';
 import 'services/db/app_database.dart';
 import 'services/audio/playback_service.dart';
@@ -65,8 +66,11 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with Widget
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    final isOnboarded = widget.settings.onboardingDone;
     _router = GoRouter(
+      initialLocation: isOnboarded ? '/' : '/onboarding',
       routes: [
+        GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
         GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
         GoRoute(path: '/player/:bookId', builder: (_, s) => PlayerScreen(bookId: s.pathParameters['bookId']!)),
         GoRoute(path: '/bookmarks/:bookId', builder: (_, s) => BookmarksScreen(bookId: s.pathParameters['bookId']!)),

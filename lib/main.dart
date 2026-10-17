@@ -47,13 +47,14 @@ Future<void> main() async {
       settingsProvider.overrideWithValue(settings),
       playbackProvider.overrideWithValue(playback),
     ],
-    child: CrisperPlayerApp(settings: settings),
+    child: CrisperPlayerApp(settings: settings, prefs: prefs),
   ));
 }
 
 class CrisperPlayerApp extends ConsumerStatefulWidget {
   final SettingsService settings;
-  const CrisperPlayerApp({super.key, required this.settings});
+  final SharedPreferences prefs;
+  const CrisperPlayerApp({super.key, required this.settings, required this.prefs});
 
   @override
   ConsumerState<CrisperPlayerApp> createState() => _CrisperPlayerAppState();
@@ -66,9 +67,15 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with Widget
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    final isOnboarded = widget.settings.onboardingDone;
     _router = GoRouter(
-      initialLocation: isOnboarded ? '/' : '/onboarding',
+      initialLocation: widget.prefs.getBool('onboarding_done') == true ? '/' : '/onboarding',
+      redirect: (context, state) {
+        final done = widget.prefs.getBool('onboarding_done') == true;
+        final isOnboarding = state.matchedLocation == '/onboarding';
+        if (!done && !isOnboarding) return '/onboarding';
+        if (done && isOnboarding) return '/';
+        return null;
+      },
       routes: [
         GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
         GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),

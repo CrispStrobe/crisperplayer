@@ -26,7 +26,7 @@ void main() {
         settingsProvider.overrideWithValue(settings),
         playbackProvider.overrideWithValue(playback),
       ],
-      child: CrisperPlayerApp(settings: settings),
+      child: CrisperPlayerApp(settings: settings, prefs: prefs),
     ));
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
     expect(find.text('CrisperPlayer'), findsOneWidget);

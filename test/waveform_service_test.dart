@@ -15,6 +15,36 @@ void main() {
     await root.delete(recursive: true);
   });
   test(
+    'short native waveform headers are not treated as audio samples',
+    () async {
+      for (final flags in [0, 1]) {
+        final stride = flags == 0 ? 4 : 2;
+        final bytes = ByteData(20 + 4 * stride);
+        bytes.setUint32(0, 1, Endian.little);
+        bytes.setUint32(4, flags, Endian.little);
+        bytes.setUint32(8, 16000, Endian.little);
+        bytes.setUint32(12, 16000, Endian.little);
+        bytes.setUint32(16, 4, Endian.little);
+        for (var index = 0; index < 4; index++) {
+          if (flags == 0) {
+            bytes.setInt16(20 + index * stride, -8192, Endian.little);
+            bytes.setInt16(22 + index * stride, 16384, Endian.little);
+          } else {
+            bytes.setInt8(20 + index * stride, -32);
+            bytes.setInt8(21 + index * stride, 64);
+          }
+        }
+        final file = File('${root.path}/short-$flags.wave');
+        await file.writeAsBytes(bytes.buffer.asUint8List());
+        final waveform = await readNativeWaveform(file);
+        expect(waveform.peaks, [.5, .5, .5, .5]);
+        expect(waveform.duration, const Duration(seconds: 4));
+        await file.writeAsBytes(bytes.buffer.asUint8List().sublist(0, 21));
+        await expectLater(readNativeWaveform(file), throwsFormatException);
+      }
+    },
+  );
+  test(
     'real PCM peaks preserve silence and amplitude, with bounded output',
     () async {
       final file = await writeTestWav(

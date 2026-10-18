@@ -11,13 +11,15 @@ A local audiobook player built with Flutter, Riverpod, Drift, just_audio and aud
 - Resume positions, bookmarks and listening history are stored locally. Bookmarks restore the book and physical track as well as the position.
 - M4B/M4A Nero and QuickTime text-track chapters and embedded covers are parsed on device, including Unicode titles. Large audio payloads are skipped rather than loaded into memory. Existing imports can reload embedded chapters from the player menu or CLI.
 - Player and system next/previous controls navigate chapters within a file and across files. Previous restarts the current chapter after three seconds. The player shows listening time remaining at the selected speed.
-- Editable titles/authors/covers, series with numbered order, named collections, and finished/unfinished/unread status. Imports read MP4 and ID3v2.3/v2.4 title/author/artwork tags.
+- Editable titles/authors/covers, series with numbered order, named collections, and finished/unfinished/unread status. Imports read MP4, ID3v2.3/v2.4, FLAC and Ogg Vorbis/Opus title/author/artwork tags. MP3 CHAP frames and Vorbis chapter tags are supported.
 - Persistent Up next queue with reordering and automatic continuation at book completion. Sleep timers prevent automatic continuation.
 - Per-book speed, skip silence, skip interval and smart rewind overrides; missing overrides inherit app defaults. Configurable volume, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
 - Sleep timers can pause immediately at expiry or at the end of the chapter playing when the countdown expires. Immediate chapter mode captures the current chapter boundary.
+- Android voice boost (0–12 dB) and speech/warm/bass-reduction equalizer presets, with per-book overrides and graceful fallback when hardware effects are unavailable.
+- Plex music-library albums and WebDAV/NAS folders download as offline books; files stream to disk and credentials stay in platform secure storage. Mounted shares can be imported as folders on desktop.
 - JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
 
-Cloud sync and accounts are unavailable. The web build displays an availability notice; browser audio import, playback and persistent library storage are not supported in this version.
+Plex and WebDAV connections support browsing and offline downloads. Cross-device progress sync is not implemented. The web build displays an availability notice; browser audio import, playback and persistent library storage are not supported in this version.
 
 ## Development
 
@@ -31,7 +33,7 @@ flutter test
 flutter run -d <device-id>
 ```
 
-The database upgrades version-one and version-two libraries in place; schema three adds organization, playback preferences and the queue. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
+The database upgrades version-one and version-two libraries in place; schema three adds organization, playback preferences and the queue; schema four adds remote download identities without credentials. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
 
 The playback tests use the production coordinator and SQLite with an injected audio backend that preserves just_audio's pending `play()` future semantics. Native decoder, interruption and background behavior still require device testing:
 
@@ -135,8 +137,9 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | Per-book playback preferences and configurable smart rewind |
 | Added | Series, collections, reading status and a persistent playback queue |
 | Added | Player keyboard shortcuts and listening time totals (today/7 days/all time) |
-| Next | Accessibility/device audit, FLAC/Vorbis metadata, audio effects, richer library folders |
-| Later | Audiobookshelf/Plex progress sync, CarPlay/Android Auto, widgets and Watch |
+| Added | FLAC/Vorbis/Opus tags, MP3 chapters, Android voice boost/EQ, Plex/WebDAV offline downloads |
+| Next | Accessibility/device audit, resumable/cancellable transfers, nested book folders, SFTP and direct SMB |
+| Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |
 
 Every new player/library operation should be available through the desktop CLI.
@@ -165,3 +168,50 @@ dart run bin/crisperplayer.dart stats
 In the player: Space toggles playback, arrows skip, Shift+arrows change chapter,
 and B adds a bookmark. Shortcuts leave text editing alone. Listening statistics
 show actual listening time, independent of playback speed.
+
+
+## Plex and NAS libraries
+
+Open **Import → Plex / WebDAV server** or **Settings → Servers & NAS**.
+For Plex, enter the server URL and an [X-Plex-Token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
+Audiobooks must be in a music library, one album per book. Albums download all
+tracks in disc/track order. For WebDAV, enter the NAS endpoint (including its
+root path), username and password/app password. Open the folder containing a
+book’s tracks and choose **Download folder as book**, or download a single file.
+Downloaded books play offline and retain independent local progress.
+
+HTTPS is the default. Private-IP and `.local` HTTP servers require explicit
+opt-in. Invalid TLS certificates remain rejected. Requests do not follow
+redirects or forward credentials to a different server or outside a WebDAV root.
+Only download identities are in library backups; connection credentials stay in
+Keychain/OS secure storage. Disconnecting leaves offline books intact.
+
+CrispCloud’s separate provider adapters and secure credential storage informed
+this design. CrisperPlayer currently implements Plex and WebDAV directly;
+SFTP, direct SMB and automatic Plex resume synchronization are still pending.
+Mount SMB shares with Finder/Explorer/the desktop file manager and use
+**Import folder / mounted share**. On iOS, connect a server in Files and select
+audio through the file picker. Folder import copies the selected folder’s audio
+(including subfolders) as one book; WebDAV folder download uses direct audio
+children only. Large remote files temporarily require both download and managed
+copy space. Transfers do not yet resume after interruption.
+
+The CLI provides the same remote operations. Read connection JSON from stdin to
+keep secrets out of process arguments and shell history:
+
+```sh
+crisperplayer servers
+crisperplayer call server-connect - < /private/path/connection.json
+# connection JSON: {"name":"NAS","kind":"webdav","url":"https://nas.example/dav/","username":"reader","secret":"APP_PASSWORD"}
+# Plex uses kind "plex", no username, and the Plex token in "secret".
+crisperplayer call server-browse '{"connectionId":"ID","path":""}'
+crisperplayer call server-download '{"connectionId":"ID","path":"RETURNED_PATH","title":"My book"}'
+# Add "file": true for a single WebDAV file. An album/folder downloads as one book.
+crisperplayer call server-disconnect '{"connectionId":"ID"}'
+crisperplayer settings boostDb 3
+crisperplayer book-settings BOOK_ID '{"equalizer":"speech","boostDb":6}'
+```
+
+Native desktop integration also tests the connection dialog, Keychain storage,
+WebDAV HTTP download and duration measurement of downloaded audio. Protocol
+fixtures do not replace testing against your Plex/NAS installation.

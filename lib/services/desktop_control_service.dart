@@ -1,3 +1,4 @@
+import 'server/remote_library_service.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -16,6 +17,7 @@ class DesktopControlService {
   final LibraryService library;
   final PlaybackService playback;
   final File descriptor;
+  final RemoteLibraryService? remote;
   final String _token = base64Url.encode(
     List<int>.generate(32, (_) => Random.secure().nextInt(256)),
   );
@@ -28,6 +30,7 @@ class DesktopControlService {
     required this.library,
     required this.playback,
     required this.descriptor,
+    this.remote,
   });
 
   Future<void> start() async {
@@ -92,6 +95,8 @@ class DesktopControlService {
       'sleepRemainingMs': playback.sleepRemaining.inMilliseconds,
       'sleepEndOfChapter': playback.sleepEndOfChapter,
       'waitingForChapterEnd': playback.isWaitingForChapterEnd,
+      'audioEffectsSupported': playback.supportsAudioEffects,
+      'audioEffectsError': playback.audioEffectsError,
     };
   }
 
@@ -210,6 +215,48 @@ class DesktopControlService {
     final command = args['command'];
     final bookId = args['bookId'];
     switch (command) {
+      case 'servers' ||
+          'server-connect' ||
+          'server-disconnect' ||
+          'server-browse' ||
+          'server-download':
+        final service = remote;
+        if (service == null) {
+          throw const FormatException('Remote libraries are unavailable');
+        }
+        await service.init();
+        switch (command) {
+          case 'server-connect':
+            await service.connect(
+              name: _string(args, 'name'),
+              kind: _string(args, 'kind'),
+              url: _string(args, 'url'),
+              secret: _string(args, 'secret'),
+              username: args['username'] as String? ?? '',
+              allowLocalHttp: args['allowLocalHttp'] == true,
+            );
+          case 'server-disconnect':
+            await service.disconnect(_string(args, 'connectionId'));
+          case 'server-browse':
+            return [
+              for (final e in await service.browse(
+                _string(args, 'connectionId'),
+                args['path'] as String? ?? '',
+              ))
+                e.toJson(),
+            ];
+          case 'server-download':
+            return {
+              'bookId': await service.download(
+                _string(args, 'connectionId'),
+                _string(args, 'path'),
+                _string(args, 'title'),
+                author: args['author'] as String? ?? '',
+                file: args['file'] == true,
+              ),
+            };
+        }
+        return service.status();
       case 'import-begin':
         final id = base64Url.encode(
           List.generate(24, (_) => Random.secure().nextInt(256)),
@@ -547,6 +594,8 @@ class DesktopControlService {
     'playbackSpeed': s.playbackSpeed,
     'volume': s.volume,
     'skipSilence': s.skipSilence,
+    'boostDb': s.boostDb,
+    'equalizer': s.equalizer,
     'seekSeconds': s.seekSeconds,
     'smartRewindSeconds': s.smartRewindSeconds,
     'smartRewindAfterSeconds': s.smartRewindAfterSeconds,
@@ -564,6 +613,13 @@ class DesktopControlService {
     switch (key) {
       case 'playbackSpeed':
         s.playbackSpeed = _number(args, 'value', .5, 3);
+      case 'boostDb':
+        s.boostDb = _number(args, 'value', 0, 12);
+      case 'equalizer':
+        if (!['off', 'speech', 'warm', 'bass-reduction'].contains(value)) {
+          throw const FormatException('Invalid equalizer preset');
+        }
+        s.equalizer = value as String;
       case 'volume':
         s.volume = _number(args, 'value', 0, 1);
       case 'autoBookmarkIntervalSeconds':

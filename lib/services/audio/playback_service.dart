@@ -11,6 +11,7 @@ import '../library_service.dart';
 import '../bookmark_service.dart';
 import '../settings_service.dart';
 import 'audio_backend.dart';
+import 'android_audio_effects.dart';
 import 'audio_handler.dart';
 
 /// Owns playback commands, persistence and listening sessions. UI and remote
@@ -61,17 +62,17 @@ class PlaybackService with WidgetsBindingObserver {
   bool get sleepEndOfChapter => _sleepEndOfChapter;
   bool get isWaitingForChapterEnd => _waitingForChapterEnd;
 
-  PlaybackService(
-      {required this.db,
-      required this.library,
-      required this.bookmarks,
-      required this.history,
-      this.settings,
-      AudioPlayer? audioPlayer,
-      this._backend,
-      DateTime Function()? now})
-      : _externalPlayer = audioPlayer,
-        now = now ?? DateTime.now;
+  PlaybackService({
+    required this.db,
+    required this.library,
+    required this.bookmarks,
+    required this.history,
+    this.settings,
+    AudioPlayer? audioPlayer,
+    this._backend,
+    DateTime Function()? now,
+  }) : _externalPlayer = audioPlayer,
+       now = now ?? DateTime.now;
 
   Future<void> _command(Future<void> Function() action) {
     if (_disposed) {
@@ -80,98 +81,128 @@ class PlaybackService with WidgetsBindingObserver {
     final next = _commands.then((_) => action());
     _commands = next.catchError((Object e, StackTrace stack) {
       _emit(
-          state.copyWith(status: m.PlaybackStatus.error, error: e.toString()));
+        state.copyWith(status: m.PlaybackStatus.error, error: e.toString()),
+      );
     });
     return next;
   }
 
   void _background(Future<void> future) {
-    unawaited(future.catchError((Object e, StackTrace stack) {
-      if (!_disposed) {
-        _emit(state.copyWith(
-            status: m.PlaybackStatus.error, error: e.toString()));
-      }
-    }));
+    unawaited(
+      future.catchError((Object e, StackTrace stack) {
+        if (!_disposed) {
+          _emit(
+            state.copyWith(status: m.PlaybackStatus.error, error: e.toString()),
+          );
+        }
+      }),
+    );
   }
 
   Future<void> init() => _initializing ??= _init();
   Future<void> _init() async {
     _backend ??= JustAudioBackend(
-        _externalPlayer ?? AudioPlayer(handleInterruptions: false));
-    _subscriptions.add(_backend!.positions.listen((_) {
-      _publishPosition();
-      _checkChapterEnd();
-    }));
-    _subscriptions.add(_backend!.indices.listen((i) {
-      if (_loading || i == null || i < 0 || i >= _tracks.length) return;
-      _publishPosition();
-      _background(_audioHandler?.setCurrentIndex(i) ?? Future.value());
-      _checkChapterEnd();
-    }));
-    _subscriptions.add(_backend!.durations.listen((d) {
-      _publishPosition();
-      if (!_loading &&
-          d != null &&
-          d > Duration.zero &&
-          _index < _tracks.length) {
-        final track = _tracks[_index];
-        if (track.durationMs != d.inMilliseconds) {
-          _background(_command(() async {
-            await library.updateTrackDuration(
-                track.bookId, track.trackIndex, d);
-            if (_currentBookId == track.bookId) {
-              _tracks = await db.tracksFor(track.bookId);
-              _chapters = await db.chaptersFor(track.bookId);
-              await _syncHandler();
-            }
-          }));
-        }
-      }
-    }));
-    _subscriptions.add(_backend!.states.listen((ps) {
-      if (_loading) return;
-      _emit(state.copyWith(status: ps.toStatus()));
-      final eventBookId = _currentBookId;
-      _background(_command(() async {
-        if (eventBookId != _currentBookId) return;
-        if (_backend!.playing &&
-            ps.playing &&
-            ps.processingState == ProcessingState.ready) {
-          await _startSession();
-        } else {
-          await _endSession();
-          if (ps.processingState == ProcessingState.completed) {
-            await _persistProgress();
-            final allowNext = ps.playing && _sleepTimer == null && !_waitingForChapterEnd;
-            await _backend!.pause();
-            cancelSleepTimer();
-            if (allowNext) await _playNextQueued();
+      _externalPlayer ?? AudioPlayer(handleInterruptions: false),
+    );
+    _subscriptions.add(
+      _backend!.positions.listen((_) {
+        _publishPosition();
+        _checkChapterEnd();
+      }),
+    );
+    _subscriptions.add(
+      _backend!.indices.listen((i) {
+        if (_loading || i == null || i < 0 || i >= _tracks.length) return;
+        _publishPosition();
+        _background(_audioHandler?.setCurrentIndex(i) ?? Future.value());
+        _checkChapterEnd();
+      }),
+    );
+    _subscriptions.add(
+      _backend!.durations.listen((d) {
+        _publishPosition();
+        if (!_loading &&
+            d != null &&
+            d > Duration.zero &&
+            _index < _tracks.length) {
+          final track = _tracks[_index];
+          if (track.durationMs != d.inMilliseconds) {
+            _background(
+              _command(() async {
+                await library.updateTrackDuration(
+                  track.bookId,
+                  track.trackIndex,
+                  d,
+                );
+                if (_currentBookId == track.bookId) {
+                  _tracks = await db.tracksFor(track.bookId);
+                  _chapters = await db.chaptersFor(track.bookId);
+                  await _syncHandler();
+                }
+              }),
+            );
           }
         }
-      }));
-    }, onError: (Object e) {
-      _emit(
-          state.copyWith(status: m.PlaybackStatus.error, error: e.toString()));
-      _background(_command(_endSession));
-    }));
+      }),
+    );
+    _subscriptions.add(
+      _backend!.states.listen(
+        (ps) {
+          if (_loading) return;
+          _emit(state.copyWith(status: ps.toStatus()));
+          final eventBookId = _currentBookId;
+          _background(
+            _command(() async {
+              if (eventBookId != _currentBookId) return;
+              if (_backend!.playing &&
+                  ps.playing &&
+                  ps.processingState == ProcessingState.ready) {
+                await _startSession();
+              } else {
+                await _endSession();
+                if (ps.processingState == ProcessingState.completed) {
+                  await _persistProgress();
+                  final allowNext =
+                      ps.playing &&
+                      _sleepTimer == null &&
+                      !_waitingForChapterEnd;
+                  await _backend!.pause();
+                  cancelSleepTimer();
+                  if (allowNext) await _playNextQueued();
+                }
+              }
+            }),
+          );
+        },
+        onError: (Object e) {
+          _emit(
+            state.copyWith(status: m.PlaybackStatus.error, error: e.toString()),
+          );
+          _background(_command(_endSession));
+        },
+      ),
+    );
     if (_backend is JustAudioBackend) {
       final session = await AudioSession.instance;
       _audioSession = session;
       await session.configure(const AudioSessionConfiguration.speech());
-      _subscriptions.add(session.interruptionEventStream.listen((event) {
-        if (event.begin) {
-          _wasPlayingBeforeInterruption = _backend!.playing;
-          if (_wasPlayingBeforeInterruption) _background(_command(_pause));
-        } else {
-          if (_wasPlayingBeforeInterruption &&
-              event.type != AudioInterruptionType.unknown) {
-            _background(play());
-          }
-          _wasPlayingBeforeInterruption = false;
-        }
-      }));
       _subscriptions.add(
-          session.becomingNoisyEventStream.listen((_) => _background(pause())));
+        session.interruptionEventStream.listen((event) {
+          if (event.begin) {
+            _wasPlayingBeforeInterruption = _backend!.playing;
+            if (_wasPlayingBeforeInterruption) _background(_command(_pause));
+          } else {
+            if (_wasPlayingBeforeInterruption &&
+                event.type != AudioInterruptionType.unknown) {
+              _background(play());
+            }
+            _wasPlayingBeforeInterruption = false;
+          }
+        }),
+      );
+      _subscriptions.add(
+        session.becomingNoisyEventStream.listen((_) => _background(pause())),
+      );
     }
     await _applySettings();
     settings?.addListener(_settingsChanged);
@@ -188,29 +219,50 @@ class PlaybackService with WidgetsBindingObserver {
   void _settingsChanged() => _background(_command(_applySettings));
   Future<void> _applySettings() async {
     if (settings == null || _backend == null) return;
-    final speed = (_bookPreferences['speed'] as num?)?.toDouble() ?? settings!.playbackSpeed;
+    final speed =
+        (_bookPreferences['speed'] as num?)?.toDouble() ??
+        settings!.playbackSpeed;
     if (state.speed != speed) await _endSession();
     await _backend!.setSpeed(speed);
     await _backend!.setVolume(settings!.volume);
-    await _backend!.setSkipSilence(_bookPreferences['skipSilence'] as bool? ?? settings!.skipSilence);
+    await _backend!.setSkipSilence(
+      _bookPreferences['skipSilence'] as bool? ?? settings!.skipSilence,
+    );
+    if (_backend is AudioEffectsBackend) {
+      await (_backend as AudioEffectsBackend).setAudioEffects(
+        boostDb:
+            (_bookPreferences['boostDb'] as num?)?.toDouble() ??
+            settings!.boostDb,
+        equalizer:
+            _bookPreferences['equalizer'] as String? ?? settings!.equalizer,
+      );
+    }
     _emit(state.copyWith(speed: speed, volume: settings!.volume));
     if (_backend!.playing) await _startSession();
     _startAutoBookmark();
   }
 
+  bool get supportsAudioEffects =>
+      _backend is AudioEffectsBackend &&
+      (_backend as AudioEffectsBackend).supportsAudioEffects;
+  String? get audioEffectsError => _backend is AudioEffectsBackend
+      ? (_backend as AudioEffectsBackend).audioEffectsError
+      : null;
+
   void attachAudioHandler(CrisperAudioHandler handler) {
     _audioHandler = handler;
     handler.setDelegates(
-        onPlay: play,
-        onPause: pause,
-        onStop: stop,
-        onSeek: seek,
-        onSkipNext: nextChapter,
-        onSkipPrev: previousChapter,
-        onSeekIndex: seekTrack,
-        onSpeed: setSpeed,
-        onForward: skipForward,
-        onBackward: skipBack);
+      onPlay: play,
+      onPause: pause,
+      onStop: stop,
+      onSeek: seek,
+      onSkipNext: nextChapter,
+      onSkipPrev: previousChapter,
+      onSeekIndex: seekTrack,
+      onSpeed: setSpeed,
+      onForward: skipForward,
+      onBackward: skipBack,
+    );
   }
 
   Future<void> _syncHandler() async {
@@ -218,8 +270,10 @@ class PlaybackService with WidgetsBindingObserver {
     final book = await db.getBook(_currentBookId!);
     if (book == null) return;
     final art = book.coverPath.isNotEmpty ? Uri.file(book.coverPath) : null;
-    await _audioHandler!.setQueueItems(_tracks
-        .map((t) => MediaItem(
+    await _audioHandler!.setQueueItems(
+      _tracks
+          .map(
+            (t) => MediaItem(
               id: t.filePath,
               album: book.title,
               title: _tracks.length == 1
@@ -230,8 +284,10 @@ class PlaybackService with WidgetsBindingObserver {
               duration: t.durationMs == null
                   ? null
                   : Duration(milliseconds: t.durationMs!),
-            ))
-        .toList());
+            ),
+          )
+          .toList(),
+    );
     await _audioHandler!.setCurrentIndex(_index);
   }
 
@@ -261,17 +317,26 @@ class PlaybackService with WidgetsBindingObserver {
     // Suppress intermediate source/index events while replacing the queue.
     try {
       _currentBookId = null;
-      _emit(m.PlaybackState(
+      _emit(
+        m.PlaybackState(
           status: m.PlaybackStatus.loading,
           speed: state.speed,
-          volume: state.volume));
-      var index =
-          tracks.indexWhere((t) => t.filePath == book.lastPositionFilePath);
+          volume: state.volume,
+        ),
+      );
+      var index = tracks.indexWhere(
+        (t) => t.filePath == book.lastPositionFilePath,
+      );
       if (index < 0) index = 0;
-      final position = _clamp(Duration(milliseconds: book.lastPositionMs),
-          tracks[index].durationMs);
-      await _backend!.load(tracks.map((t) => t.filePath).toList(),
-          index: index, position: position);
+      final position = _clamp(
+        Duration(milliseconds: book.lastPositionMs),
+        tracks[index].durationMs,
+      );
+      await _backend!.load(
+        tracks.map((t) => t.filePath).toList(),
+        index: index,
+        position: position,
+      );
       _tracks = tracks;
       final decodedDuration = _backend!.duration;
       if (decodedDuration != null &&
@@ -295,7 +360,8 @@ class PlaybackService with WidgetsBindingObserver {
       await _backend!.stop();
       await _audioHandler?.setQueueItems([]);
       _emit(
-          state.copyWith(status: m.PlaybackStatus.error, error: e.toString()));
+        state.copyWith(status: m.PlaybackStatus.error, error: e.toString()),
+      );
       rethrow;
     } finally {
       _loading = false;
@@ -317,17 +383,20 @@ class PlaybackService with WidgetsBindingObserver {
     if (_audioSession != null && !await _audioSession!.setActive(true)) {
       throw StateError('Audio session unavailable');
     }
-    await (db.update(db.books)..where((t) => t.id.equals(_currentBookId!))).write(
-      const BooksCompanion(finishedOverride: Value(null)));
+    await (db.update(db.books)..where((t) => t.id.equals(_currentBookId!)))
+        .write(const BooksCompanion(finishedOverride: Value(null)));
     // just_audio's play Future lasts until pause/stop/completion.
-    _background(_backend!.play().catchError((Object e) async {
-      await _command(() async {
-        await _endSession();
-        await _persistProgress();
-        _emit(state.copyWith(
-            status: m.PlaybackStatus.error, error: e.toString()));
-      });
-    }));
+    _background(
+      _backend!.play().catchError((Object e) async {
+        await _command(() async {
+          await _endSession();
+          await _persistProgress();
+          _emit(
+            state.copyWith(status: m.PlaybackStatus.error, error: e.toString()),
+          );
+        });
+      }),
+    );
   }
 
   Future<void> pause() {
@@ -345,24 +414,24 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> stop() => _command(() async {
-        await _pause();
-        await _backend?.stop();
-        cancelSleepTimer();
-        await _audioSession?.setActive(false);
-        _emit(state.copyWith(status: m.PlaybackStatus.idle));
-      });
+    await _pause();
+    await _backend?.stop();
+    cancelSleepTimer();
+    await _audioSession?.setActive(false);
+    _emit(state.copyWith(status: m.PlaybackStatus.idle));
+  });
   Future<void> unload() => _command(() async {
-        await _pause();
-        await _backend?.stop();
-        _currentBookId = null;
-        _tracks = [];
-        _chapters = [];
-        _bookPreferences = {};
-        cancelSleepTimer();
-        _autoBookmarkTimer?.cancel();
-        await _audioHandler?.setQueueItems([]);
-        _emit(m.PlaybackState(speed: state.speed, volume: state.volume));
-      });
+    await _pause();
+    await _backend?.stop();
+    _currentBookId = null;
+    _tracks = [];
+    _chapters = [];
+    _bookPreferences = {};
+    cancelSleepTimer();
+    _autoBookmarkTimer?.cancel();
+    await _audioHandler?.setQueueItems([]);
+    _emit(m.PlaybackState(speed: state.speed, volume: state.volume));
+  });
 
   Duration _clamp(Duration pos, int? durationMs) {
     if (pos < Duration.zero) return Duration.zero;
@@ -384,24 +453,27 @@ class PlaybackService with WidgetsBindingObserver {
 
   Duration? get bookDuration =>
       _tracks.isEmpty || _tracks.any((t) => t.durationMs == null)
-          ? null
-          : Duration(
-              milliseconds: _tracks.fold(0, (sum, t) => sum + t.durationMs!));
+      ? null
+      : Duration(
+          milliseconds: _tracks.fold(0, (sum, t) => sum + t.durationMs!),
+        );
 
   Future<void> seek(Duration pos) => _command(() async {
-        if (_tracks.isEmpty) return;
-        await _backend!.seek(_clamp(pos, _tracks[_index].durationMs));
-        _publishPosition();
-        await _persistProgress();
-      });
+    if (_tracks.isEmpty) return;
+    await _backend!.seek(_clamp(pos, _tracks[_index].durationMs));
+    _publishPosition();
+    await _persistProgress();
+  });
   Future<void> seekTrack(int index, [Duration position = Duration.zero]) =>
       _command(() => _seekTrack(index, position));
   Future<void> _seekTrack(int index, Duration position) async {
     if (index < 0 || index >= _tracks.length) {
       throw RangeError.index(index, _tracks);
     }
-    await _backend!
-        .seek(_clamp(position, _tracks[index].durationMs), index: index);
+    await _backend!.seek(
+      _clamp(position, _tracks[index].durationMs),
+      index: index,
+    );
     _publishPosition();
     await _persistProgress();
   }
@@ -441,7 +513,8 @@ class PlaybackService with WidgetsBindingObserver {
       (sum, t) => sum + (t.durationMs ?? 0),
     );
     // A physical-file chapter always starts at zero, including unknown timing.
-    final onePerFile = _tracks.length > 1 &&
+    final onePerFile =
+        _tracks.length > 1 &&
         _chapters.where((c) => c.filePath == chapter.filePath).length == 1;
     await _seekTrack(
       index,
@@ -474,31 +547,35 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> nextChapter() => _command(() async {
-        if (_chapters.isEmpty) {
-          if (_index + 1 < _tracks.length) {
-            await _seekTrack(_index + 1, Duration.zero);
-          }
-          return;
-        }
-        final next = _chapterIndex + 1;
-        if (next < _chapters.length) await _seekChapter(_chapters[next]);
-      });
+    if (_chapters.isEmpty) {
+      if (_index + 1 < _tracks.length) {
+        await _seekTrack(_index + 1, Duration.zero);
+      }
+      return;
+    }
+    final next = _chapterIndex + 1;
+    if (next < _chapters.length) await _seekChapter(_chapters[next]);
+  });
 
   /// Restart the current chapter after three seconds; otherwise go back one.
   Future<void> previousChapter() => _command(() async {
-        if (_chapters.isEmpty) {
-          if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
-          return;
-        }
-        var index = _chapterIndex;
-        if (bookPosition.inMilliseconds - _chapters[index].startMs <= 3000 &&
-            index > 0) {
-          index--;
-        }
-        await _seekChapter(_chapters[index]);
-      });
+    if (_chapters.isEmpty) {
+      if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
+      return;
+    }
+    var index = _chapterIndex;
+    if (bookPosition.inMilliseconds - _chapters[index].startMs <= 3000 &&
+        index > 0) {
+      index--;
+    }
+    await _seekChapter(_chapters[index]);
+  });
 
-  Future<void> updateBookPreferences(String id, Map<String, dynamic> values, {bool reset = false}) => _command(() async {
+  Future<void> updateBookPreferences(
+    String id,
+    Map<String, dynamic> values, {
+    bool reset = false,
+  }) => _command(() async {
     await library.setPreferences(id, values, reset: reset);
     if (id == _currentBookId) {
       _bookPreferences = await library.preferences(id);
@@ -506,41 +583,71 @@ class PlaybackService with WidgetsBindingObserver {
     }
   });
 
-  Future<void> updateBookDetails(String id, Map<String, dynamic> values) => _command(() async {
-    await library.editBook(id, values);
-    if (id == _currentBookId) await _syncHandler();
-  });
+  Future<void> updateBookDetails(String id, Map<String, dynamic> values) =>
+      _command(() async {
+        await library.editBook(id, values);
+        if (id == _currentBookId) await _syncHandler();
+      });
 
   Future<void> markBook(String id, String status) => _command(() async {
-    if (!{'finished', 'unfinished', 'unread'}.contains(status)) throw const FormatException('Invalid reading status');
+    if (!{'finished', 'unfinished', 'unread'}.contains(status)) {
+      throw const FormatException('Invalid reading status');
+    }
     if (await db.getBook(id) == null) throw StateError('Book not found');
     if (id == _currentBookId) {
       await _pause();
       cancelSleepTimer();
-      if (status == 'unread' && _tracks.isNotEmpty) await _seekTrack(0, Duration.zero);
+      if (status == 'unread' && _tracks.isNotEmpty) {
+        await _seekTrack(0, Duration.zero);
+      }
     }
     final stored = (await db.getBook(id))!;
     final tracks = await db.tracksFor(id);
     var position = stored.lastPositionMs;
-    final index = tracks.indexWhere((t) => t.filePath == stored.lastPositionFilePath);
-    for (var i = 0; i < index; i++) { position += tracks[i].durationMs ?? 0; }
-    final progress = stored.totalDurationMs > 0 ? (position / stored.totalDurationMs).clamp(0.0, 1.0) : 0.0;
-    await (db.update(db.books)..where((t) => t.id.equals(id))).write(BooksCompanion(
-      isFinished: Value(status == 'finished'),
-      finishedOverride: Value(status == 'finished'),
-      totalProgress: Value(status == 'finished' ? 1 : status == 'unread' ? 0 : progress),
-      lastPositionMs: status == 'unread' ? const Value(0) : const Value.absent(),
-      lastPositionFilePath: status == 'unread' ? const Value(null) : const Value.absent(),
-      lastPlayedAtMs: status == 'unread' ? const Value(null) : const Value.absent(),
-    ));
+    final index = tracks.indexWhere(
+      (t) => t.filePath == stored.lastPositionFilePath,
+    );
+    for (var i = 0; i < index; i++) {
+      position += tracks[i].durationMs ?? 0;
+    }
+    final progress = stored.totalDurationMs > 0
+        ? (position / stored.totalDurationMs).clamp(0.0, 1.0)
+        : 0.0;
+    await (db.update(db.books)..where((t) => t.id.equals(id))).write(
+      BooksCompanion(
+        isFinished: Value(status == 'finished'),
+        finishedOverride: Value(status == 'finished'),
+        totalProgress: Value(
+          status == 'finished'
+              ? 1
+              : status == 'unread'
+              ? 0
+              : progress,
+        ),
+        lastPositionMs: status == 'unread'
+            ? const Value(0)
+            : const Value.absent(),
+        lastPositionFilePath: status == 'unread'
+            ? const Value(null)
+            : const Value.absent(),
+        lastPlayedAtMs: status == 'unread'
+            ? const Value(null)
+            : const Value.absent(),
+      ),
+    );
   });
 
-  Future<void> enqueue(String id, {int? position}) => _command(() => db.transaction(() async {
-    if (await db.getBook(id) == null) throw StateError('Book not found');
-    final ids = (await db.queue()).map((e) => e.bookId).where((e) => e != id).toList();
-    ids.insert((position ?? ids.length).clamp(0, ids.length), id);
-    await db.replaceQueue(ids);
-  }));
+  Future<void> enqueue(String id, {int? position}) => _command(
+    () => db.transaction(() async {
+      if (await db.getBook(id) == null) throw StateError('Book not found');
+      final ids = (await db.queue())
+          .map((e) => e.bookId)
+          .where((e) => e != id)
+          .toList();
+      ids.insert((position ?? ids.length).clamp(0, ids.length), id);
+      await db.replaceQueue(ids);
+    }),
+  );
   Future<void> removeFromQueue(String id) => _command(() async {
     await (db.delete(db.playbackQueue)..where((t) => t.bookId.equals(id))).go();
   });
@@ -555,53 +662,53 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> seekBookmark(Bookmark bookmark) => _command(() async {
-        if (_currentBookId != bookmark.bookId) await _loadBook(bookmark.bookId);
-        final index =
-            _tracks.indexWhere((t) => t.filePath == bookmark.filePath);
-        if (index < 0) {
-          throw StateError('Bookmark file is missing from this book');
-        }
-        await _seekTrack(index, Duration(milliseconds: bookmark.positionMs));
-      });
-  int get seekSeconds => _bookPreferences['seekSeconds'] as int? ?? settings?.seekSeconds ?? 30;
+    if (_currentBookId != bookmark.bookId) await _loadBook(bookmark.bookId);
+    final index = _tracks.indexWhere((t) => t.filePath == bookmark.filePath);
+    if (index < 0) {
+      throw StateError('Bookmark file is missing from this book');
+    }
+    await _seekTrack(index, Duration(milliseconds: bookmark.positionMs));
+  });
+  int get seekSeconds =>
+      _bookPreferences['seekSeconds'] as int? ?? settings?.seekSeconds ?? 30;
   Future<void> skipForward([int? seconds]) => _skip(seconds ?? seekSeconds);
   Future<void> skipBack([int? seconds]) => _skip(-(seconds ?? seekSeconds));
   Future<void> _skip(int seconds) => _command(() async {
-        if (_tracks.isEmpty) return;
-        final delta = Duration(seconds: seconds);
-        if (bookDuration == null) {
-          await _seekTrack(_index, _position + delta);
-        } else {
-          await _seekBook(bookPosition + delta);
-        }
-      });
+    if (_tracks.isEmpty) return;
+    final delta = Duration(seconds: seconds);
+    if (bookDuration == null) {
+      await _seekTrack(_index, _position + delta);
+    } else {
+      await _seekBook(bookPosition + delta);
+    }
+  });
   Future<void> nextTrack() => _command(() async {
-        if (_index + 1 < _tracks.length) {
-          await _seekTrack(_index + 1, Duration.zero);
-        }
-      });
+    if (_index + 1 < _tracks.length) {
+      await _seekTrack(_index + 1, Duration.zero);
+    }
+  });
   Future<void> previousTrack() => _command(() async {
-        if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
-      });
+    if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
+  });
   Future<void> setSpeed(double speed) => _command(() async {
-        speed = speed.clamp(0.5, 3.0);
-        await _endSession();
-        await _backend?.setSpeed(speed);
-        _emit(state.copyWith(speed: speed));
-        if (_currentBookId != null) {
-          await library.setPreferences(_currentBookId!, {'speed': speed});
-          _bookPreferences = await library.preferences(_currentBookId!);
-        } else {
-          settings?.playbackSpeed = speed;
-        }
-        if (_backend?.playing == true) await _startSession();
-      });
+    speed = speed.clamp(0.5, 3.0);
+    await _endSession();
+    await _backend?.setSpeed(speed);
+    _emit(state.copyWith(speed: speed));
+    if (_currentBookId != null) {
+      await library.setPreferences(_currentBookId!, {'speed': speed});
+      _bookPreferences = await library.preferences(_currentBookId!);
+    } else {
+      settings?.playbackSpeed = speed;
+    }
+    if (_backend?.playing == true) await _startSession();
+  });
   Future<void> setVolume(double volume) => _command(() async {
-        volume = volume.clamp(0.0, 1.0);
-        await _backend?.setVolume(volume);
-        _emit(state.copyWith(volume: volume));
-        settings?.volume = volume;
-      });
+    volume = volume.clamp(0.0, 1.0);
+    await _backend?.setVolume(volume);
+    _emit(state.copyWith(volume: volume));
+    settings?.volume = volume;
+  });
 
   void setSleepTimer(Duration duration, {bool endOfChapter = false}) {
     cancelSleepTimer();
@@ -610,8 +717,10 @@ class PlaybackService with WidgetsBindingObserver {
     if (_sleepRemaining == Duration.zero) {
       if (endOfChapter) _armChapterEnd();
     } else {
-      _sleepTimer =
-          Timer.periodic(const Duration(seconds: 1), (_) => _tickSleep());
+      _sleepTimer = Timer.periodic(
+        const Duration(seconds: 1),
+        (_) => _tickSleep(),
+      );
     }
     _emit(state);
   }
@@ -645,7 +754,7 @@ class PlaybackService with WidgetsBindingObserver {
     _sleepChapterEndMs ??= _tracks.isEmpty || _tracks[_index].durationMs == null
         ? null
         : (bookPosition - _position).inMilliseconds +
-            _tracks[_index].durationMs!;
+              _tracks[_index].durationMs!;
     if (_sleepChapterEndMs == null && _currentBookId != null) {
       cancelSleepTimer();
       _background(pause());
@@ -676,22 +785,27 @@ class PlaybackService with WidgetsBindingObserver {
       throw StateError('No book loaded');
     }
     return bookmarks.addManual(
-        bookId: _currentBookId!,
-        filePath: _tracks[_index].filePath,
-        position: _position,
-        bookPosition: bookPosition,
-        title: title,
-        note: note);
+      bookId: _currentBookId!,
+      filePath: _tracks[_index].filePath,
+      position: _position,
+      bookPosition: bookPosition,
+      title: title,
+      note: note,
+    );
   }
 
   void _publishPosition() {
     if (_loading || _tracks.isEmpty || _index >= _tracks.length) return;
-    _emit(state.copyWith(
+    _emit(
+      state.copyWith(
         position: _position,
-        duration: _backend?.duration ??
+        duration:
+            _backend?.duration ??
             Duration(milliseconds: _tracks[_index].durationMs ?? 0),
         currentIndex: _index,
-        currentFile: _tracks[_index].filePath));
+        currentFile: _tracks[_index].filePath,
+      ),
+    );
   }
 
   void _emit(m.PlaybackState next) {
@@ -703,12 +817,21 @@ class PlaybackService with WidgetsBindingObserver {
     if (_currentBookId == null || _tracks.isEmpty || _index >= _tracks.length) {
       return;
     }
-    await library.updateProgress(_currentBookId!, _tracks[_index].filePath,
-        _position, bookPosition, bookDuration ?? Duration.zero, isPlaying: _backend?.playing == true);
+    await library.updateProgress(
+      _currentBookId!,
+      _tracks[_index].filePath,
+      _position,
+      bookPosition,
+      bookDuration ?? Duration.zero,
+      isPlaying: _backend?.playing == true,
+    );
     if (_activeSessionId != null) {
       await history.endSession(
-          _activeSessionId!, bookPosition, _sessionClock!.elapsed,
-          close: false);
+        _activeSessionId!,
+        bookPosition,
+        _sessionClock!.elapsed,
+        close: false,
+      );
     }
   }
 
@@ -718,9 +841,13 @@ class PlaybackService with WidgetsBindingObserver {
       return;
     }
     _autoBookmarkTimer = Timer.periodic(
-        settings?.autoBookmarkInterval ?? const Duration(minutes: 5), (_) {
-      if (_backend?.playing == true) _background(_command(_maybeAutoBookmark));
-    });
+      settings?.autoBookmarkInterval ?? const Duration(minutes: 5),
+      (_) {
+        if (_backend?.playing == true) {
+          _background(_command(_maybeAutoBookmark));
+        }
+      },
+    );
   }
 
   Future<void> _maybeAutoBookmark() async {
@@ -731,10 +858,11 @@ class PlaybackService with WidgetsBindingObserver {
       return;
     }
     await bookmarks.addAuto(
-        bookId: _currentBookId!,
-        filePath: _tracks[_index].filePath,
-        position: _position,
-        bookPosition: bookPosition);
+      bookId: _currentBookId!,
+      filePath: _tracks[_index].filePath,
+      position: _position,
+      bookPosition: bookPosition,
+    );
     await bookmarks.pruneAuto(_currentBookId!);
   }
 
@@ -742,7 +870,10 @@ class PlaybackService with WidgetsBindingObserver {
     if (_activeSessionId != null || _currentBookId == null) return;
     _sessionClock = Stopwatch()..start();
     _activeSessionId = await history.startSession(
-        bookId: _currentBookId!, startPos: bookPosition, speed: state.speed);
+      bookId: _currentBookId!,
+      startPos: bookPosition,
+      speed: state.speed,
+    );
   }
 
   Future<void> _endSession() async {
@@ -755,10 +886,21 @@ class PlaybackService with WidgetsBindingObserver {
     await history.endSession(id, bookPosition, elapsed);
   }
 
-  Duration get rewindAmount => Duration(seconds: _bookPreferences['smartRewindSeconds'] as int? ?? settings?.smartRewindSeconds ?? 5);
-  Duration get rewindThreshold => Duration(seconds: _bookPreferences['smartRewindAfterSeconds'] as int? ?? settings?.smartRewindAfterSeconds ?? 60);
+  Duration get rewindAmount => Duration(
+    seconds:
+        _bookPreferences['smartRewindSeconds'] as int? ??
+        settings?.smartRewindSeconds ??
+        5,
+  );
+  Duration get rewindThreshold => Duration(
+    seconds:
+        _bookPreferences['smartRewindAfterSeconds'] as int? ??
+        settings?.smartRewindAfterSeconds ??
+        60,
+  );
   bool shouldSmartRewind(DateTime pausedAt, {DateTime? now}) =>
-      rewindAmount > Duration.zero && (now ?? this.now()).difference(pausedAt) > rewindThreshold;
+      rewindAmount > Duration.zero &&
+      (now ?? this.now()).difference(pausedAt) > rewindThreshold;
   Duration applySmartRewind(Duration pos) =>
       pos < rewindAmount ? Duration.zero : pos - rewindAmount;
 

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import '../services/server/remote_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -255,7 +257,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
         label: const Text('Import'),
-        onPressed: _import,
+        onPressed: _chooseImport,
       ),
     );
   }
@@ -503,7 +505,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             FilledButton.icon(
               icon: const Icon(Icons.file_open),
               label: const Text('Import audiobooks'),
-              onPressed: _import,
+              onPressed: _chooseImport,
             ),
             const SizedBox(height: 8),
             TextButton.icon(
@@ -517,6 +519,72 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _chooseImport() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.audio_file_outlined),
+              title: const Text('Import audio files'),
+              onTap: () => Navigator.pop(context, 'files'),
+            ),
+            if (Platform.isMacOS ||
+                Platform.isWindows ||
+                Platform.isLinux ||
+                Platform.isAndroid)
+              ListTile(
+                leading: const Icon(Icons.folder_open),
+                title: const Text('Import folder / mounted share'),
+                onTap: () => Navigator.pop(context, 'folder'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.dns_outlined),
+              title: const Text('Plex / WebDAV server'),
+              onTap: () => Navigator.pop(context, 'server'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'files') await _import();
+    if (choice == 'server' && mounted) context.push('/settings/sync');
+    if (choice == 'folder') {
+      try {
+        final path = await FilePicker.getDirectoryPath();
+        if (path == null) return;
+        final files = <String>[];
+        await for (final entry in Directory(
+          path,
+        ).list(recursive: true, followLinks: false)) {
+          if (entry is File && RemoteClient.isAudio(entry.path)) {
+            files.add(entry.path);
+          }
+        }
+        if (files.isEmpty) {
+          throw const FormatException(
+            'No supported audio files in this folder',
+          );
+        }
+        await ref.read(libraryServiceProvider).importFiles(files);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Folder imported as one book')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Import failed: $e')));
+        }
+      }
+    }
   }
 
   Future<void> _import() async {

@@ -1,6 +1,6 @@
 # Architecture
 
-Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. There is no cloud authentication or sync implementation in the shipped application.
+Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex and WebDAV for offline imports; cross-device progress synchronization is not implemented.
 
 ## Playback
 
@@ -18,9 +18,9 @@ Chapter-end sleep captures a fixed endpoint when entering chapter mode. Subseque
 
 Library imports validate source availability, naturally sort filenames, stream-copy files into `<application-support>/library/<book-id>/`, probe durations and write books, tracks and chapters in a transaction. Import failure removes the managed copies. Deletion stops the active book, removes related metadata atomically and deletes only that book's managed directory.
 
-Schema version two adds `book_tracks`; schema three adds series/collection fields, validated per-book playback overrides, manual reading-status overrides and `playback_queue`. Earlier rows and positions remain intact. The first load adopts legacy files into managed storage, remaps chapter/bookmark/resume paths and probes timing. Missing legacy files produce an actionable error instead of silently replacing their timing.
+Schema version two adds `book_tracks`; schema three adds series/collection fields, validated per-book playback overrides, manual reading-status overrides and `playback_queue`. Schema four adds `remote_links` for imported-book identities and duplicate detection, without credentials. Earlier rows and positions remain intact. The first load adopts legacy files into managed storage, remaps chapter/bookmark/resume paths and probes timing. Missing legacy files produce an actionable error instead of silently replacing their timing.
 
-MP4 metadata extraction seeks past audio payload atoms and reads only the `moov` atom, with a 32 MB limit. Covers live alongside their managed book files. Nero and referenced QuickTime text-track chapters are supported. QuickTime sample tables and text reads are bounded, with stco/co64 offsets, Unicode titles and common edit-list timing. ID3v2.3/v2.4 text and artwork reads are capped at 16 MB of tag data.
+MP4 metadata extraction seeks past audio payload atoms and reads only the `moov` atom, with a 32 MB limit. Covers live alongside their managed book files. Nero and referenced QuickTime text-track chapters are supported. QuickTime sample tables and text reads are bounded, with stco/co64 offsets, Unicode titles and common edit-list timing. ID3v2.3/v2.4 text, artwork and CHAP reads are capped at 16 MB of tag data. FLAC metadata and Ogg Vorbis/Opus comment packets are bounded at 16 MB, with page/packet/count caps and cross-page reassembly. Vorbis chapter tags get measured final endpoints.
 
 Metadata exports include schema version, tracks, organization, per-book preferences and queue order. Imports reject unsupported versions and apply updates atomically using upserts, avoiding SQLite REPLACE's delete-and-cascade behavior. Audio is not embedded in JSON.
 
@@ -35,3 +35,28 @@ Share intake accepts cold and warm shares, supports callback rebinding and seria
 ## Platform scope
 
 Installed Android, iOS and desktop apps use local filesystem storage. The browser build displays an explicit availability notice before initializing native storage or playback. It is not a browser player. Cloud sync is unavailable; `CLOUD_SYNC.md` records design requirements for a future authenticated implementation.
+
+
+## Remote libraries and effects
+
+`RemoteLibraryService` is shared by GUI and desktop control. `RemoteClient`
+implements read-only Plex JSON and WebDAV PROPFIND/GET. Plex listings paginate;
+WebDAV uses a namespace-aware XML parser and successful propstat values. Media
+URLs must remain in the connection origin/root; credentials use headers and
+redirects are rejected. Listing bodies have a 16 MB cap, downloads a 64 GB cap,
+with connection and stalled-stream timeouts. Downloads stream to a temporary
+directory, then use the normal managed import path. Failures clean temporary
+files and partial imports. Download identities survive connection removal and
+metadata backup/restore, and book deletion cascades their removal.
+
+Connection configurations are stored together in platform secure storage,
+never SharedPreferences or SQLite. macOS uses the login Keychain to support
+locally signed desktop builds; iOS uses the app’s Keychain access group and
+first-unlock accessibility. HTTP requires explicit opt-in for private/link-local/
+loopback IPs or `.local` hostnames; all other connections require HTTPS.
+
+Android’s engine-owned `AudioEffectsPlugin` attaches Equalizer/LoudnessEnhancer
+to just_audio’s audio session, releases on session change or engine disposal,
+and reports unsupported effects without failing playback. Defaults leave native
+effects uninstantiated. Settings and per-book overrides share validated gain
+and preset values; non-Android platforms show the feature as unavailable.

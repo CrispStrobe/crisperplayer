@@ -3121,6 +3121,316 @@ class PlaybackQueueCompanion extends UpdateCompanion<PlaybackQueueData> {
   }
 }
 
+class $RemoteLinksTable extends RemoteLinks
+    with TableInfo<$RemoteLinksTable, RemoteLink> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemoteLinksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _serverUrlMeta = const VerificationMeta(
+    'serverUrl',
+  );
+  @override
+  late final GeneratedColumn<String> serverUrl = GeneratedColumn<String>(
+    'server_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [bookId, serverUrl, userId, itemId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'remote_links';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RemoteLink> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('server_url')) {
+      context.handle(
+        _serverUrlMeta,
+        serverUrl.isAcceptableOrUnknown(data['server_url']!, _serverUrlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_serverUrlMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {bookId};
+  @override
+  RemoteLink map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RemoteLink(
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      serverUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_url'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+    );
+  }
+
+  @override
+  $RemoteLinksTable createAlias(String alias) {
+    return $RemoteLinksTable(attachedDatabase, alias);
+  }
+}
+
+class RemoteLink extends DataClass implements Insertable<RemoteLink> {
+  final String bookId;
+  final String serverUrl;
+  final String userId;
+  final String itemId;
+  const RemoteLink({
+    required this.bookId,
+    required this.serverUrl,
+    required this.userId,
+    required this.itemId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['book_id'] = Variable<String>(bookId);
+    map['server_url'] = Variable<String>(serverUrl);
+    map['user_id'] = Variable<String>(userId);
+    map['item_id'] = Variable<String>(itemId);
+    return map;
+  }
+
+  RemoteLinksCompanion toCompanion(bool nullToAbsent) {
+    return RemoteLinksCompanion(
+      bookId: Value(bookId),
+      serverUrl: Value(serverUrl),
+      userId: Value(userId),
+      itemId: Value(itemId),
+    );
+  }
+
+  factory RemoteLink.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RemoteLink(
+      bookId: serializer.fromJson<String>(json['bookId']),
+      serverUrl: serializer.fromJson<String>(json['serverUrl']),
+      userId: serializer.fromJson<String>(json['userId']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'bookId': serializer.toJson<String>(bookId),
+      'serverUrl': serializer.toJson<String>(serverUrl),
+      'userId': serializer.toJson<String>(userId),
+      'itemId': serializer.toJson<String>(itemId),
+    };
+  }
+
+  RemoteLink copyWith({
+    String? bookId,
+    String? serverUrl,
+    String? userId,
+    String? itemId,
+  }) => RemoteLink(
+    bookId: bookId ?? this.bookId,
+    serverUrl: serverUrl ?? this.serverUrl,
+    userId: userId ?? this.userId,
+    itemId: itemId ?? this.itemId,
+  );
+  RemoteLink copyWithCompanion(RemoteLinksCompanion data) {
+    return RemoteLink(
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      serverUrl: data.serverUrl.present ? data.serverUrl.value : this.serverUrl,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteLink(')
+          ..write('bookId: $bookId, ')
+          ..write('serverUrl: $serverUrl, ')
+          ..write('userId: $userId, ')
+          ..write('itemId: $itemId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(bookId, serverUrl, userId, itemId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RemoteLink &&
+          other.bookId == this.bookId &&
+          other.serverUrl == this.serverUrl &&
+          other.userId == this.userId &&
+          other.itemId == this.itemId);
+}
+
+class RemoteLinksCompanion extends UpdateCompanion<RemoteLink> {
+  final Value<String> bookId;
+  final Value<String> serverUrl;
+  final Value<String> userId;
+  final Value<String> itemId;
+  final Value<int> rowid;
+  const RemoteLinksCompanion({
+    this.bookId = const Value.absent(),
+    this.serverUrl = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemoteLinksCompanion.insert({
+    required String bookId,
+    required String serverUrl,
+    required String userId,
+    required String itemId,
+    this.rowid = const Value.absent(),
+  }) : bookId = Value(bookId),
+       serverUrl = Value(serverUrl),
+       userId = Value(userId),
+       itemId = Value(itemId);
+  static Insertable<RemoteLink> custom({
+    Expression<String>? bookId,
+    Expression<String>? serverUrl,
+    Expression<String>? userId,
+    Expression<String>? itemId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (bookId != null) 'book_id': bookId,
+      if (serverUrl != null) 'server_url': serverUrl,
+      if (userId != null) 'user_id': userId,
+      if (itemId != null) 'item_id': itemId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemoteLinksCompanion copyWith({
+    Value<String>? bookId,
+    Value<String>? serverUrl,
+    Value<String>? userId,
+    Value<String>? itemId,
+    Value<int>? rowid,
+  }) {
+    return RemoteLinksCompanion(
+      bookId: bookId ?? this.bookId,
+      serverUrl: serverUrl ?? this.serverUrl,
+      userId: userId ?? this.userId,
+      itemId: itemId ?? this.itemId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (serverUrl.present) {
+      map['server_url'] = Variable<String>(serverUrl.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemoteLinksCompanion(')
+          ..write('bookId: $bookId, ')
+          ..write('serverUrl: $serverUrl, ')
+          ..write('userId: $userId, ')
+          ..write('itemId: $itemId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3132,6 +3442,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $PlaybackQueueTable playbackQueue = $PlaybackQueueTable(this);
+  late final $RemoteLinksTable remoteLinks = $RemoteLinksTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3143,6 +3454,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     bookmarks,
     listeningHistory,
     playbackQueue,
+    remoteLinks,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3180,6 +3492,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('playback_queue', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'books',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('remote_links', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -3319,6 +3638,24 @@ final class $$BooksTableReferences
     ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_playbackQueueRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RemoteLinksTable, List<RemoteLink>>
+  _remoteLinksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.remoteLinks,
+    aliasName: $_aliasNameGenerator(db.books.id, db.remoteLinks.bookId),
+  );
+
+  $$RemoteLinksTableProcessedTableManager get remoteLinksRefs {
+    final manager = $$RemoteLinksTableTableManager(
+      $_db,
+      $_db.remoteLinks,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_remoteLinksRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3534,6 +3871,31 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
           }) => $$PlaybackQueueTableFilterComposer(
             $db: $db,
             $table: $db.playbackQueue,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> remoteLinksRefs(
+    Expression<bool> Function($$RemoteLinksTableFilterComposer f) f,
+  ) {
+    final $$RemoteLinksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.remoteLinks,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RemoteLinksTableFilterComposer(
+            $db: $db,
+            $table: $db.remoteLinks,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -3845,6 +4207,31 @@ class $$BooksTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> remoteLinksRefs<T extends Object>(
+    Expression<T> Function($$RemoteLinksTableAnnotationComposer a) f,
+  ) {
+    final $$RemoteLinksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.remoteLinks,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RemoteLinksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.remoteLinks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$BooksTableTableManager
@@ -3866,6 +4253,7 @@ class $$BooksTableTableManager
             bool bookmarksRefs,
             bool listeningHistoryRefs,
             bool playbackQueueRefs,
+            bool remoteLinksRefs,
           })
         > {
   $$BooksTableTableManager(_$AppDatabase db, $BooksTable table)
@@ -3972,6 +4360,7 @@ class $$BooksTableTableManager
                 bookmarksRefs = false,
                 listeningHistoryRefs = false,
                 playbackQueueRefs = false,
+                remoteLinksRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -3981,6 +4370,7 @@ class $$BooksTableTableManager
                     if (bookmarksRefs) db.bookmarks,
                     if (listeningHistoryRefs) db.listeningHistory,
                     if (playbackQueueRefs) db.playbackQueue,
+                    if (remoteLinksRefs) db.remoteLinks,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4078,6 +4468,27 @@ class $$BooksTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (remoteLinksRefs)
+                        await $_getPrefetchedData<
+                          Book,
+                          $BooksTable,
+                          RemoteLink
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._remoteLinksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).remoteLinksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4104,6 +4515,7 @@ typedef $$BooksTableProcessedTableManager =
         bool bookmarksRefs,
         bool listeningHistoryRefs,
         bool playbackQueueRefs,
+        bool remoteLinksRefs,
       })
     >;
 typedef $$BookTracksTableCreateCompanionBuilder =
@@ -5846,6 +6258,305 @@ typedef $$PlaybackQueueTableProcessedTableManager =
       PlaybackQueueData,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$RemoteLinksTableCreateCompanionBuilder =
+    RemoteLinksCompanion Function({
+      required String bookId,
+      required String serverUrl,
+      required String userId,
+      required String itemId,
+      Value<int> rowid,
+    });
+typedef $$RemoteLinksTableUpdateCompanionBuilder =
+    RemoteLinksCompanion Function({
+      Value<String> bookId,
+      Value<String> serverUrl,
+      Value<String> userId,
+      Value<String> itemId,
+      Value<int> rowid,
+    });
+
+final class $$RemoteLinksTableReferences
+    extends BaseReferences<_$AppDatabase, $RemoteLinksTable, RemoteLink> {
+  $$RemoteLinksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) => db.books.createAlias(
+    $_aliasNameGenerator(db.remoteLinks.bookId, db.books.id),
+  );
+
+  $$BooksTableProcessedTableManager get bookId {
+    final $_column = $_itemColumn<String>('book_id')!;
+
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RemoteLinksTableFilterComposer
+    extends Composer<_$AppDatabase, $RemoteLinksTable> {
+  $$RemoteLinksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get serverUrl => $composableBuilder(
+    column: $table.serverUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemoteLinksTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemoteLinksTable> {
+  $$RemoteLinksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get serverUrl => $composableBuilder(
+    column: $table.serverUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemoteLinksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemoteLinksTable> {
+  $$RemoteLinksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get serverUrl =>
+      $composableBuilder(column: $table.serverUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RemoteLinksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RemoteLinksTable,
+          RemoteLink,
+          $$RemoteLinksTableFilterComposer,
+          $$RemoteLinksTableOrderingComposer,
+          $$RemoteLinksTableAnnotationComposer,
+          $$RemoteLinksTableCreateCompanionBuilder,
+          $$RemoteLinksTableUpdateCompanionBuilder,
+          (RemoteLink, $$RemoteLinksTableReferences),
+          RemoteLink,
+          PrefetchHooks Function({bool bookId})
+        > {
+  $$RemoteLinksTableTableManager(_$AppDatabase db, $RemoteLinksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemoteLinksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemoteLinksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemoteLinksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> bookId = const Value.absent(),
+                Value<String> serverUrl = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RemoteLinksCompanion(
+                bookId: bookId,
+                serverUrl: serverUrl,
+                userId: userId,
+                itemId: itemId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String bookId,
+                required String serverUrl,
+                required String userId,
+                required String itemId,
+                Value<int> rowid = const Value.absent(),
+              }) => RemoteLinksCompanion.insert(
+                bookId: bookId,
+                serverUrl: serverUrl,
+                userId: userId,
+                itemId: itemId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RemoteLinksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookId,
+                                referencedTable: $$RemoteLinksTableReferences
+                                    ._bookIdTable(db),
+                                referencedColumn: $$RemoteLinksTableReferences
+                                    ._bookIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$RemoteLinksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RemoteLinksTable,
+      RemoteLink,
+      $$RemoteLinksTableFilterComposer,
+      $$RemoteLinksTableOrderingComposer,
+      $$RemoteLinksTableAnnotationComposer,
+      $$RemoteLinksTableCreateCompanionBuilder,
+      $$RemoteLinksTableUpdateCompanionBuilder,
+      (RemoteLink, $$RemoteLinksTableReferences),
+      RemoteLink,
+      PrefetchHooks Function({bool bookId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5862,4 +6573,6 @@ class $AppDatabaseManager {
       $$ListeningHistoryTableTableManager(_db, _db.listeningHistory);
   $$PlaybackQueueTableTableManager get playbackQueue =>
       $$PlaybackQueueTableTableManager(_db, _db.playbackQueue);
+  $$RemoteLinksTableTableManager get remoteLinks =>
+      $$RemoteLinksTableTableManager(_db, _db.remoteLinks);
 }

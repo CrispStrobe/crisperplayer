@@ -5,6 +5,8 @@ class BookPreferences {
   static const keys = {
     'speed',
     'skipSilence',
+    'boostDb',
+    'equalizer',
     'seekSeconds',
     'smartRewindSeconds',
     'smartRewindAfterSeconds',
@@ -28,6 +30,14 @@ class BookPreferences {
       final valid = switch (entry.key) {
         'speed' => value is num && value.isFinite && value >= .5 && value <= 3,
         'skipSilence' => value is bool,
+        'boostDb' =>
+          value is num && value.isFinite && value >= 0 && value <= 12,
+        'equalizer' => [
+          'off',
+          'speech',
+          'warm',
+          'bass-reduction',
+        ].contains(value),
         'seekSeconds' => value is int && [10, 15, 30, 60].contains(value),
         'smartRewindSeconds' => value is int && value >= 0 && value <= 60,
         'smartRewindAfterSeconds' =>
@@ -35,7 +45,7 @@ class BookPreferences {
         _ => false,
       };
       if (!valid) throw FormatException('Invalid ${entry.key}');
-      result[entry.key] = entry.key == 'speed'
+      result[entry.key] = {'speed', 'boostDb'}.contains(entry.key)
           ? (value as num).toDouble()
           : value;
     }

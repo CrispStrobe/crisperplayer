@@ -54,7 +54,7 @@ class _BookPreferencesState extends ConsumerState<_BookPreferences> {
             : (value) {
                 _values[key] = value == 'inherit'
                     ? null
-                    : key == 'speed'
+                    : {'speed', 'boostDb'}.contains(key)
                     ? double.parse(value!)
                     : int.parse(value!);
               },
@@ -118,6 +118,39 @@ class _BookPreferencesState extends ConsumerState<_BookPreferences> {
               'Rewind after a pause longer than',
               [0, 30, 60, 120, 300, 600],
             ),
+            if (isAndroid) ...[
+              _choice('boostDb', 'Voice boost', [
+                0,
+                3,
+                6,
+                9,
+                12,
+              ], suffix: ' dB'),
+              DropdownButtonFormField<String>(
+                initialValue: _values['equalizer'] as String? ?? 'inherit',
+                decoration: const InputDecoration(labelText: 'Equalizer'),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'inherit',
+                    child: Text('Use app default'),
+                  ),
+                  DropdownMenuItem(value: 'off', child: Text('Off')),
+                  DropdownMenuItem(
+                    value: 'speech',
+                    child: Text('Speech clarity'),
+                  ),
+                  DropdownMenuItem(value: 'warm', child: Text('Warm')),
+                  DropdownMenuItem(
+                    value: 'bass-reduction',
+                    child: Text('Reduce bass'),
+                  ),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (v) => _values['equalizer'] = v == 'inherit' ? null : v,
+              ),
+              const SizedBox(height: 12),
+            ],
             DropdownButtonFormField<String>(
               initialValue: _values['skipSilence']?.toString() ?? 'inherit',
               decoration: const InputDecoration(labelText: 'Skip silence'),

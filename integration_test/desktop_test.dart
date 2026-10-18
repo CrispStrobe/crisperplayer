@@ -1,3 +1,6 @@
+import 'package:crisperplayer/screens/sync_settings_screen.dart';
+import 'package:crisperplayer/services/server/credential_store.dart';
+import 'package:crisperplayer/services/server/remote_library_service.dart';
 import 'dart:io';
 import 'package:crisperplayer/cli/control_client.dart';
 import 'package:crisperplayer/main.dart';
@@ -99,9 +102,15 @@ void main() {
         expect(player.position.inMilliseconds, closeTo(4000, 100));
         await db.replaceChapters(bookId, [
           for (var i = 0; i < 2; i++)
-            ChaptersCompanion.insert(id: 'native-chapter-$i', bookId: bookId,
-              title: 'Chapter ${i + 1}', startMs: i * 6000, endMs: (i + 1) * 6000,
-              filePath: Value(owned.path), trackIndex: const Value(0)),
+            ChaptersCompanion.insert(
+              id: 'native-chapter-$i',
+              bookId: bookId,
+              title: 'Chapter ${i + 1}',
+              startMs: i * 6000,
+              endMs: (i + 1) * 6000,
+              filePath: Value(owned.path),
+              trackIndex: const Value(0),
+            ),
         ]);
         await playback.loadBook(bookId);
         await client.command('next-chapter');
@@ -121,24 +130,38 @@ void main() {
           ),
           isTrue,
         );
-        await client.command('book-edit', {'bookId': bookId, 'changes': {
-          'title': 'Native edited book', 'series': 'Native saga', 'seriesOrder': 2,
-          'collection': 'Smoke tests'}});
+        await client.command('book-edit', {
+          'bookId': bookId,
+          'changes': {
+            'title': 'Native edited book',
+            'series': 'Native saga',
+            'seriesOrder': 2,
+            'collection': 'Smoke tests',
+          },
+        });
         await tester.pumpAndSettle();
         expect(find.text('Native edited book'), findsWidgets);
         await tester.tap(find.byType(PopupMenuButton<String>));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Edit book details'));
         await tester.pumpAndSettle();
-        final authorField = find.byWidgetPredicate((widget) => widget is TextField && widget.decoration?.labelText == 'Author');
+        final authorField = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField && widget.decoration?.labelText == 'Author',
+        );
         await tester.enterText(authorField, 'Native edited author');
         await tester.tap(find.text('Save'));
         await Future<void>.delayed(const Duration(milliseconds: 150));
         await tester.pumpAndSettle();
         expect((await db.getBook(bookId))!.author, 'Native edited author');
-        await client.command('book-settings', {'bookId': bookId, 'values': {'speed': 1.75, 'seekSeconds': 15}});
+        await client.command('book-settings', {
+          'bookId': bookId,
+          'values': {'speed': 1.75, 'seekSeconds': 15},
+        });
         expect(player.speed, 1.75);
-        final second = await client.importFiles([owned], title: 'Queued native book') as Map;
+        final second =
+            await client.importFiles([owned], title: 'Queued native book')
+                as Map;
         final secondId = second['bookId'] as String;
         await client.command('queue-add', {'bookId': secondId});
         final queued = await client.command('queue') as List;
@@ -196,5 +219,84 @@ void main() {
       }
     },
     timeout: const Timeout(Duration(minutes: 3)),
+  );
+
+  testWidgets(
+    'native NAS connection UI, Keychain, HTTP download and audio import',
+    (tester) async {
+      final root = await Directory.systemTemp.createTemp('crisper_native_nas_');
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final library = LibraryService(db, storageDirectory: () async => root);
+      final secure = KeychainCredentialStore(
+        key:
+            'crisperplayer.test.remote.${DateTime.now().microsecondsSinceEpoch}',
+      );
+      final service = RemoteLibraryService(library, credentials: secure);
+      final fixture = await writeTestWav(File('${root.path}/fixture.wav'));
+      final audio = await fixture.readAsBytes();
+      final nas = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final url = 'http://127.0.0.1:${nas.port}/dav/';
+      nas.listen((request) async {
+        if (request.method == 'PROPFIND') {
+          request.response.statusCode = 207;
+          request.response.write(
+            '<multistatus xmlns="DAV:"><response><href>/dav/Book.wav</href><propstat><prop><displayname>Book.wav</displayname><resourcetype/></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>',
+          );
+        } else {
+          request.response.headers.contentLength = audio.length;
+          request.response.add(audio);
+        }
+        await request.response.close();
+      });
+      try {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [remoteLibraryProvider.overrideWith((ref) => service)],
+            child: const MaterialApp(home: SyncSettingsScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Add server'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(DropdownButtonFormField<String>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('WebDAV / NAS').last);
+        await tester.pumpAndSettle();
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), 'Native NAS');
+        await tester.enterText(fields.at(1), url);
+        await tester.enterText(fields.at(2), 'test-user');
+        await tester.enterText(fields.at(3), 'test-password');
+        await tester.ensureVisible(find.byType(CheckboxListTile));
+        await tester.tap(find.byType(CheckboxListTile));
+        await tester.tap(find.text('Connect'));
+        await tester.pumpAndSettle();
+        expect(find.text('Native NAS'), findsOneWidget);
+        final stored = await secure.read();
+        expect(stored, contains('test-user'));
+        expect(stored, contains('test-password'));
+        await tester.tap(find.text('Native NAS'));
+        await tester.pumpAndSettle();
+        expect(find.text('Book.wav'), findsOneWidget);
+        await tester.tap(find.text('Book.wav'));
+        await tester.pumpAndSettle();
+        final books = await db.allBooks;
+        expect(books, hasLength(1));
+        expect(books.single.totalDurationMs, closeTo(12000, 100));
+        expect(await db.select(db.remoteLinks).get(), hasLength(1));
+        expect(
+          find.text('Book available offline in your library'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await secure.delete();
+        await nas.close(force: true);
+        await db.close();
+        await root.delete(recursive: true);
+      }
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
   );
 }

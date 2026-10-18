@@ -3,18 +3,52 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'cover_extractor.dart';
 import 'mp4_metadata.dart';
+import 'vorbis_metadata.dart';
+import 'chapter_parser.dart';
 
 class AudioMetadata {
   final String? title;
   final String? author;
   final Uint8List? artwork;
-  const AudioMetadata({this.title, this.author, this.artwork});
+  final List<ParsedChapter> chapters;
+  const AudioMetadata({
+    this.title,
+    this.author,
+    this.artwork,
+    this.chapters = const [],
+  });
 
   /// Read tag data only. Never read an entire audiobook to discover metadata.
   static Future<AudioMetadata> read(String path) async {
     final input = await File(path).open();
     try {
       final header = await input.read(10);
+      final signature = String.fromCharCodes(header.take(4));
+      if (signature == 'fLaC' || signature == 'OggS') {
+        final metadata = await VorbisMetadata.read(
+          input,
+          flac: signature == 'fLaC',
+        );
+        final chapters = metadata.chapters;
+        return AudioMetadata(
+          title: metadata.tags['ALBUM'] ?? metadata.tags['TITLE'],
+          author:
+              metadata.tags['ARTIST'] ??
+              metadata.tags['ALBUMARTIST'] ??
+              metadata.tags['COMPOSER'],
+          artwork: metadata.artwork,
+          chapters: [
+            for (var i = 0; i < chapters.length; i++)
+              ParsedChapter(
+                title: chapters[i].title,
+                start: chapters[i].start,
+                end: i + 1 < chapters.length
+                    ? chapters[i + 1].start
+                    : chapters[i].start,
+              ),
+          ],
+        );
+      }
       if (header.length == 10 &&
           ascii.decode(header.sublist(0, 3), allowInvalid: true) == 'ID3') {
         final size = _syncSafe(header, 6);
@@ -84,7 +118,7 @@ class AudioMetadata {
   }
 
   /// ID3v2.3 and 2.4 text/APIC frames, with UTF-16 and unsynchronisation.
-  static AudioMetadata id3(Uint8List bytes) {
+  static AudioMetadata id3(Uint8List bytes, {bool nested = false}) {
     if (bytes.length < 10 ||
         latin1.decode(bytes.sublist(0, 3)) != 'ID3' ||
         ![3, 4].contains(bytes[3])) {
@@ -106,6 +140,7 @@ class AudioMetadata {
     final tags = <String, String>{};
     Uint8List? artwork;
     var frontCover = false;
+    final chapters = <ParsedChapter>[];
     while (p + 10 <= body.length) {
       final id = latin1.decode(body.sublist(p, p + 4));
       if (!RegExp(r'^[A-Z0-9]{4}$').hasMatch(id)) break;
@@ -125,7 +160,37 @@ class AudioMetadata {
         }
       }
       if (data.isEmpty) continue;
-      if ({'TIT2', 'TALB', 'TPE1', 'TPE2', 'TCOM'}.contains(id)) {
+      if (id == 'CHAP' && !nested && chapters.length < 10000) {
+        final separator = data.indexOf(0);
+        if (separator < 0 || separator + 17 > data.length) continue;
+        final timing = ByteData.sublistView(data);
+        final start = timing.getUint32(separator + 1);
+        final end = timing.getUint32(separator + 5);
+        final nested = data.sublist(separator + 17);
+        final header = Uint8List.fromList([
+          73,
+          68,
+          51,
+          version,
+          0,
+          0,
+          (nested.length >> 21) & 127,
+          (nested.length >> 14) & 127,
+          (nested.length >> 7) & 127,
+          nested.length & 127,
+          ...nested,
+        ]);
+        final title = nested.isEmpty ? null : id3(header, nested: true).title;
+        chapters.add(
+          ParsedChapter(
+            title: title ?? 'Chapter ${chapters.length + 1}',
+            start: Duration(milliseconds: start),
+            end: Duration(
+              milliseconds: end == 0xffffffff || end < start ? start : end,
+            ),
+          ),
+        );
+      } else if ({'TIT2', 'TALB', 'TPE1', 'TPE2', 'TCOM'}.contains(id)) {
         final value = _clean(_text(data.sublist(1), data.first));
         if (value != null) tags[id] = value;
       } else if (id == 'APIC' && data.length < 10 * 1024 * 1024) {
@@ -147,7 +212,9 @@ class AudioMetadata {
         frontCover = kind == 3;
       }
     }
+    chapters.sort((a, b) => a.start.compareTo(b.start));
     return AudioMetadata(
+      chapters: chapters,
       title: tags['TALB'] ?? tags['TIT2'],
       author: tags['TPE1'] ?? tags['TPE2'] ?? tags['TCOM'],
       artwork: artwork,
@@ -155,7 +222,10 @@ class AudioMetadata {
   }
 
   static String? imageExtension(List<int> data) {
-    if (data.length >= 3 && data[0] == 255 && data[1] == 216 && data[2] == 255) {
+    if (data.length >= 3 &&
+        data[0] == 255 &&
+        data[1] == 216 &&
+        data[2] == 255) {
       return 'jpg';
     }
     if (data.length >= 8 &&

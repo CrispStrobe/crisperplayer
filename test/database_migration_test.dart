@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  for (final prior in [1, 2]) {
+  for (final prior in [1, 2, 3]) {
     test(
       'version-$prior library upgrades without losing books or bookmarks',
       () async {
@@ -37,15 +37,18 @@ void main() {
             ),
           );
           // Remove v3 additions to reconstruct the actual older schema.
-          await db.customStatement('DROP TABLE playback_queue');
-          for (final column in [
-            'series',
-            'series_order',
-            'collection',
-            'playback_preferences_json',
-            'finished_override',
-          ]) {
-            await db.customStatement('ALTER TABLE books DROP COLUMN $column');
+          await db.customStatement('DROP TABLE remote_links');
+          if (prior < 3) {
+            await db.customStatement('DROP TABLE playback_queue');
+            for (final column in [
+              'series',
+              'series_order',
+              'collection',
+              'playback_preferences_json',
+              'finished_override',
+            ]) {
+              await db.customStatement('ALTER TABLE books DROP COLUMN $column');
+            }
           }
           // The v1 schema also predates book_tracks.
           if (prior == 1) await db.customStatement('DROP TABLE book_tracks');
@@ -63,7 +66,7 @@ void main() {
           final version = await db
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(version.read<int>('user_version'), 3);
+          expect(version.read<int>('user_version'), 4);
         } finally {
           await db.close();
           await dir.delete(recursive: true);

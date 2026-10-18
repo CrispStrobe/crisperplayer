@@ -22,3 +22,13 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+// receive_sharing_intent 1.8.x predates AGP 9. Match its Java bytecode target
+// instead of inheriting the JDK used to run Gradle.
+subprojects {
+    if (name == "receive_sharing_intent") {
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+            compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
+    }
+}

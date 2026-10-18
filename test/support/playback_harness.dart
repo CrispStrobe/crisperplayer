@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:crisperplayer/services/audio/audio_backend.dart';
+import 'package:crisperplayer/services/audio/android_audio_effects.dart';
 import 'package:crisperplayer/services/audio/playback_service.dart';
 import 'package:crisperplayer/services/bookmark_service.dart';
 import 'package:crisperplayer/services/db/app_database.dart';
@@ -14,7 +15,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Implements the native player's completion semantics: play stays pending until
 /// paused or stopped. Tests exercise the real coordinator and database above it.
-class FakeAudioBackend implements AudioBackend {
+class FakeAudioBackend implements AudioBackend, AudioEffectsBackend {
+  @override
+  bool get supportsAudioEffects => true;
+  @override
+  String? get audioEffectsError => null;
+  double boostDb = 0;
+  String equalizer = 'off';
+  @override
+  Future<void> setAudioEffects({required double boostDb, required String equalizer}) async {
+    this.boostDb = boostDb; this.equalizer = equalizer;
+  }
   @override
   bool get supportsSkipSilence => true;
   final _positions = StreamController<Duration>.broadcast(sync: true);

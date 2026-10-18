@@ -45,6 +45,50 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          ListTile(
+            title: const Text('Voice boost'),
+            subtitle: const Text('Available on Android'),
+            trailing: SizedBox(
+              width: 160,
+              child: Slider(
+                value: settings.boostDb,
+                min: 0,
+                max: 12,
+                divisions: 12,
+                label: '${settings.boostDb.toStringAsFixed(0)} dB',
+                onChanged: isAndroid ? (v) => settings.boostDb = v : null,
+              ),
+            ),
+          ),
+          ListTile(
+            title: const Text('Equalizer'),
+            subtitle: const Text('Available on Android'),
+            trailing: DropdownButton<String>(
+              value: settings.equalizer,
+              items: const [
+                DropdownMenuItem(value: 'off', child: Text('Off')),
+                DropdownMenuItem(
+                  value: 'speech',
+                  child: Text('Speech clarity'),
+                ),
+                DropdownMenuItem(value: 'warm', child: Text('Warm')),
+                DropdownMenuItem(
+                  value: 'bass-reduction',
+                  child: Text('Reduce bass'),
+                ),
+              ],
+              onChanged: isAndroid
+                  ? (v) {
+                      if (v != null) settings.equalizer = v;
+                    }
+                  : null,
+            ),
+          ),
+          if (ref.watch(playbackProvider).audioEffectsError != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(ref.watch(playbackProvider).audioEffectsError!),
+            ),
           SwitchListTile(
             title: const Text('Skip silence'),
             subtitle: isAndroid ? null : const Text('Available on Android'),
@@ -187,12 +231,15 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('Cloud', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              'Servers',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           ListTile(
-            leading: const Icon(Icons.cloud_off),
-            title: const Text('Cloud sync'),
-            subtitle: const Text('Unavailable in this version'),
+            leading: const Icon(Icons.dns_outlined),
+            title: const Text('Servers & NAS'),
+            subtitle: const Text('Plex and WebDAV offline libraries'),
             onTap: () => context.push('/settings/sync'),
           ),
           const Divider(),

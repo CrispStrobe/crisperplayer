@@ -18,6 +18,7 @@ import 'screens/settings_screen.dart';
 import 'screens/sync_settings_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/settings_service.dart';
+import 'services/server/remote_library_service.dart';
 import 'services/db/app_database.dart';
 import 'services/audio/audio_handler.dart';
 import 'services/audio/playback_service.dart';
@@ -66,6 +67,7 @@ Future<void> main() async {
     final database = db = AppDatabase();
     player = AudioPlayer(handleInterruptions: false);
     final library = LibraryService(database);
+    final remote = RemoteLibraryService(library);
     final service = playback = PlaybackService(
       db: database,
       library: library,
@@ -100,6 +102,7 @@ Future<void> main() async {
           library: library,
           playback: service,
           descriptor: File('${directory.path}/cli.json'),
+          remote: remote,
         );
         await control.start();
       } catch (error) {
@@ -130,6 +133,7 @@ Future<void> main() async {
           settingsProvider.overrideWith((ref) => settings),
           playbackProvider.overrideWithValue(service),
           libraryServiceProvider.overrideWithValue(library),
+          remoteLibraryProvider.overrideWith((ref) => remote),
           shareIntakeProvider.overrideWithValue(shareIntake),
         ],
         child: CrisperPlayerApp(

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:just_audio/just_audio.dart';
+import 'android_audio_effects.dart';
 import 'package:flutter/foundation.dart';
 
 /// The player boundary used by playback coordination and its regression tests.
@@ -12,8 +14,11 @@ abstract interface class AudioBackend {
   Stream<PlayerState> get states;
   Stream<Duration?> get durations;
   Stream<int?> get indices;
-  Future<void> load(List<String> paths,
-      {required int index, required Duration position});
+  Future<void> load(
+    List<String> paths, {
+    required int index,
+    required Duration position,
+  });
   Future<void> play();
   Future<void> pause();
   Future<void> stop();
@@ -24,9 +29,40 @@ abstract interface class AudioBackend {
   Future<void> dispose();
 }
 
-class JustAudioBackend implements AudioBackend {
+class JustAudioBackend implements AudioBackend, AudioEffectsBackend {
   final AudioPlayer player;
-  JustAudioBackend(this.player);
+  final _effects = AndroidAudioEffects();
+  StreamSubscription<int?>? _sessionSubscription;
+  double _boostDb = 0;
+  String _equalizer = 'off';
+  JustAudioBackend(this.player) {
+    if (supportsAudioEffects) {
+      _sessionSubscription = player.androidAudioSessionIdStream.listen((id) {
+        unawaited(_effects.configure(id, _boostDb, _equalizer));
+      });
+    }
+  }
+  @override
+  bool get supportsAudioEffects =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  @override
+  String? get audioEffectsError => _effects.error;
+  @override
+  Future<void> setAudioEffects({
+    required double boostDb,
+    required String equalizer,
+  }) async {
+    _boostDb = boostDb;
+    _equalizer = equalizer;
+    if (supportsAudioEffects) {
+      await _effects.configure(
+        player.androidAudioSessionId,
+        boostDb,
+        equalizer,
+      );
+    }
+  }
+
   @override
   bool get supportsSkipSilence =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -47,8 +83,11 @@ class JustAudioBackend implements AudioBackend {
   @override
   Stream<int?> get indices => player.currentIndexStream;
   @override
-  Future<void> load(List<String> paths,
-      {required int index, required Duration position}) async {
+  Future<void> load(
+    List<String> paths, {
+    required int index,
+    required Duration position,
+  }) async {
     await player.setAudioSources(
       paths.map((path) => AudioSource.uri(Uri.file(path))).toList(),
       initialIndex: index,
@@ -75,5 +114,9 @@ class JustAudioBackend implements AudioBackend {
   }
 
   @override
-  Future<void> dispose() => player.dispose();
+  Future<void> dispose() async {
+    await _sessionSubscription?.cancel();
+    if (supportsAudioEffects) await _effects.dispose();
+    await player.dispose();
+  }
 }

@@ -16,7 +16,8 @@ class SettingsService extends ChangeNotifier {
   double get volume => (_p.getDouble('volume') ?? 1.0).clamp(0.0, 1.0);
   set volume(double v) => _changed(_p.setDouble('volume', v.clamp(0.0, 1.0)));
   Duration get autoBookmarkInterval => Duration(
-      seconds: (_p.getInt('auto_bookmark_sec') ?? 300).clamp(1, 86400));
+    seconds: (_p.getInt('auto_bookmark_sec') ?? 300).clamp(1, 86400),
+  );
   set autoBookmarkInterval(Duration d) =>
       _changed(_p.setInt('auto_bookmark_sec', d.inSeconds.clamp(1, 86400)));
   bool get autoBookmarkEnabled => _p.getBool('auto_bookmark_enabled') ?? true;
@@ -40,10 +41,25 @@ class SettingsService extends ChangeNotifier {
   }
 
   set themeMode(String v) => _changed(_p.setString('theme_mode', v));
-  int get smartRewindSeconds => (_p.getInt('smart_rewind_sec') ?? 5).clamp(0, 60);
-  set smartRewindSeconds(int v) => _changed(_p.setInt('smart_rewind_sec', v.clamp(0, 60)));
-  int get smartRewindAfterSeconds => (_p.getInt('smart_rewind_after_sec') ?? 60).clamp(0, 86400);
-  set smartRewindAfterSeconds(int v) => _changed(_p.setInt('smart_rewind_after_sec', v.clamp(0, 86400)));
+  int get smartRewindSeconds =>
+      (_p.getInt('smart_rewind_sec') ?? 5).clamp(0, 60);
+  set smartRewindSeconds(int v) =>
+      _changed(_p.setInt('smart_rewind_sec', v.clamp(0, 60)));
+  int get smartRewindAfterSeconds =>
+      (_p.getInt('smart_rewind_after_sec') ?? 60).clamp(0, 86400);
+  set smartRewindAfterSeconds(int v) =>
+      _changed(_p.setInt('smart_rewind_after_sec', v.clamp(0, 86400)));
+  double get boostDb => (_p.getDouble('boost_db') ?? 0).clamp(0, 12);
+  set boostDb(double value) =>
+      _changed(_p.setDouble('boost_db', value.clamp(0, 12)));
+  String get equalizer {
+    final value = _p.getString('equalizer') ?? 'off';
+    return ['off', 'speech', 'warm', 'bass-reduction'].contains(value)
+        ? value
+        : 'off';
+  }
+
+  set equalizer(String value) => _changed(_p.setString('equalizer', value));
   bool get resumeOnLaunch => _p.getBool('resume_on_launch') ?? true;
   set resumeOnLaunch(bool v) => _changed(_p.setBool('resume_on_launch', v));
   bool get onboardingDone =>

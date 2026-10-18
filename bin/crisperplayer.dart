@@ -5,6 +5,9 @@ import 'package:crisperplayer/cli/control_client.dart';
 const usage = '''CrisperPlayer desktop CLI
 Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
 
+  servers                List Plex / WebDAV connections (credentials omitted)
+  call server-connect JSON / call server-disconnect JSON
+  call server-browse JSON / call server-download JSON
   status                 Show playback state
   book-edit BOOK_ID JSON Edit title, author, series, seriesOrder, collection
   book-cover BOOK_ID FILE Set JPEG/PNG cover
@@ -30,6 +33,7 @@ Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
   export FILE / restore FILE    Export or restore library metadata JSON
   clear-history --yes / clear-bookmarks --yes
   call COMMAND JSON      Structured access to every CLI operation
+                         Use - instead of JSON to read stdin (for credentials)
   delete BOOK_ID         Delete a book and its managed audio copies
   play [BOOK_ID]         Play a book or resume the loaded book
   load BOOK_ID           Load a book paused
@@ -123,7 +127,11 @@ Future<void> main(List<String> arguments) async {
           throw FormatException('$command requires BOOK_ID and a JSON object');
         }
         final values = args.length == 2 && args[1] != 'reset'
-            ? jsonDecode(args[1])
+            ? jsonDecode(
+                args[1] == '-'
+                    ? await utf8.decoder.bind(stdin).join()
+                    : args[1],
+              )
             : null;
         if (values != null && values is! Map<String, dynamic>) {
           throw const FormatException('Expected a JSON object');
@@ -185,7 +193,8 @@ Future<void> main(List<String> arguments) async {
           options[flag.substring(2)] = args.removeAt(0);
         }
         result = await client.command(command, options);
-      case 'stats' ||
+      case 'servers' ||
+          'stats' ||
           'queue' ||
           'queue-play' ||
           'status' ||
@@ -271,7 +280,9 @@ Future<void> main(List<String> arguments) async {
           }
           Object? value;
           try {
-            value = jsonDecode(args[1]);
+            value = jsonDecode(
+              args[1] == '-' ? await utf8.decoder.bind(stdin).join() : args[1],
+            );
           } on FormatException {
             value = args[1];
           }
@@ -314,7 +325,9 @@ Future<void> main(List<String> arguments) async {
         if (args.length != 2) {
           throw const FormatException('call requires COMMAND JSON_OBJECT');
         }
-        final data = jsonDecode(args[1]);
+        final data = jsonDecode(
+          args[1] == '-' ? await utf8.decoder.bind(stdin).join() : args[1],
+        );
         if (data is! Map<String, dynamic>) {
           throw const FormatException('Expected a JSON object');
         }

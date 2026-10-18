@@ -26,7 +26,9 @@ def verify(run_id):
             run['head_repository']['full_name'].lower() != repository.lower()):
         raise ValueError('The source must be this repository\'s master Pages workflow.')
     jobs = api(f'repos/{repository}/actions/runs/{run_id}/jobs?per_page=100')['jobs']
-    if not any(job['name'] == 'build' and job['conclusion'] == 'success' for job in jobs):
+    if not any(job['name'] == 'build' and job['conclusion'] == 'success' and
+               any(step['name'] == 'Run npm test' and step['conclusion'] == 'success'
+                   for step in job.get('steps', [])) for job in jobs):
         raise ValueError('The browser build and checks have not passed.')
     revision = run['head_sha']
     if not re.fullmatch(r'[0-9a-f]{40}', revision):

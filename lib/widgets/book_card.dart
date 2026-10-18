@@ -26,7 +26,7 @@ class BookCard extends StatelessWidget {
                 child: hasCover
                     ? Image.file(File(book.coverPath),
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _fallbackIcon(context))
+                        errorBuilder: (_, _, _) => _fallbackIcon(context))
                     : _fallbackIcon(context)),
             if (progress > 0)
               Positioned(

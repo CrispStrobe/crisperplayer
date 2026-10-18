@@ -175,7 +175,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         StreamBuilder(
             stream: svc.stateStream,
             initialData: svc.state,
-            builder: (_, __) => svc.currentBookId == null
+            builder: (_, _) => svc.currentBookId == null
                 ? const SizedBox.shrink()
                 : const MiniPlayer()),
       ]),
@@ -392,7 +392,7 @@ class _BookCardWithMeta extends StatelessWidget {
                         child: hasCover
                             ? Image.file(File(book.coverPath),
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
+                                errorBuilder: (_, _, _) =>
                                     _coverFallback(context))
                             : _coverFallback(context)),
                     if (progress > 0)

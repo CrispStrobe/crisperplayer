@@ -164,7 +164,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                                   hasCover
                                       ? Image.file(File(book.coverPath),
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Center(
+                                          errorBuilder: (_, _, _) => Center(
                                               child: Icon(Icons.menu_book,
                                                   size: 96,
                                                   color:
@@ -340,7 +340,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: chapters.length,
-                                separatorBuilder: (_, __) =>
+                                separatorBuilder: (_, _) =>
                                     const SizedBox(width: 8),
                                 itemBuilder: (ctx, i) {
                                   final ch = chapters[i];
@@ -493,7 +493,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                                   ]);
                             },
                             loading: () => const SizedBox.shrink(),
-                            error: (_, __) => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
                           ),
                           const SizedBox(height: 12),
 

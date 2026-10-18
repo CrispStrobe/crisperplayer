@@ -66,10 +66,9 @@ class PlaybackService with WidgetsBindingObserver {
       required this.history,
       this.settings,
       AudioPlayer? audioPlayer,
-      AudioBackend? backend,
+      this._backend,
       DateTime Function()? now})
       : _externalPlayer = audioPlayer,
-        _backend = backend,
         now = now ?? DateTime.now;
 
   Future<void> _command(Future<void> Function() action) {

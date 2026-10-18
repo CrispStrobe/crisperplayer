@@ -55,7 +55,7 @@ class HistoryScreen extends ConsumerWidget {
                         loading: () => ListTile(
                             title: Text(e.bookId),
                             subtitle: Text(formatDateTime(start))),
-                        error: (_, __) => ListTile(title: Text(e.bookId)),
+                        error: (_, _) => ListTile(title: Text(e.bookId)),
                       );
                     }),
                     const Divider(),

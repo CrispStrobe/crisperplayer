@@ -153,10 +153,10 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp>
           return null;
         },
         routes: [
-          GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
+          GoRoute(path: '/', builder: (_, _) => const LibraryScreen()),
           GoRoute(
               path: '/onboarding',
-              builder: (_, __) => const OnboardingScreen()),
+              builder: (_, _) => const OnboardingScreen()),
           GoRoute(
               path: '/player/:bookId',
               builder: (_, s) =>
@@ -165,12 +165,12 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp>
               path: '/bookmarks/:bookId',
               builder: (_, s) =>
                   BookmarksScreen(bookId: s.pathParameters['bookId']!)),
-          GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
+          GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
           GoRoute(
-              path: '/settings', builder: (_, __) => const SettingsScreen()),
+              path: '/settings', builder: (_, _) => const SettingsScreen()),
           GoRoute(
               path: '/settings/sync',
-              builder: (_, __) => const SyncSettingsScreen()),
+              builder: (_, _) => const SyncSettingsScreen()),
         ]);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

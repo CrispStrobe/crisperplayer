@@ -273,6 +273,7 @@ class DesktopControlService {
               secret: _string(args, 'secret'),
               username: args['username'] as String? ?? '',
               allowLocalHttp: args['allowLocalHttp'] == true,
+              requireEncryption: args['requireEncryption'] != false,
               hostKey: args['hostKey'] as String?,
             );
           case 'server-disconnect':
@@ -286,10 +287,14 @@ class DesktopControlService {
                 e.toJson(),
             ];
           case 'server-download':
+            final path = args['path'];
+            if (path is! String) {
+              throw const FormatException('path is required');
+            }
             if (args['background'] == true) {
               return (await service.startDownload(
                 _string(args, 'connectionId'),
-                _string(args, 'path'),
+                path,
                 _string(args, 'title'),
                 author: args['author'] as String? ?? '',
                 file: args['file'] == true,
@@ -298,7 +303,7 @@ class DesktopControlService {
             return {
               'bookId': await service.download(
                 _string(args, 'connectionId'),
-                _string(args, 'path'),
+                path,
                 _string(args, 'title'),
                 author: args['author'] as String? ?? '',
                 file: args['file'] == true,

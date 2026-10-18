@@ -20,17 +20,20 @@ jobs:
       - name: Check release automation
         run: |
           python3 -m venv "$RUNNER_TEMP/release-checks"
-          "$RUNNER_TEMP/release-checks/bin/pip" install --quiet cryptography paramiko
+          "$RUNNER_TEMP/release-checks/bin/pip" install --quiet cryptography paramiko impacket
           "$RUNNER_TEMP/release-checks/bin/python" -m unittest discover -s scripts/tests -v
       - run: flutter pub get
       - run: nice -n 10 dart run build_runner build --build-filter lib/services/db/app_database.g.dart
       - run: nice -n 10 flutter analyze
-      - name: Unit and isolated SFTP tests
+      - name: Unit and isolated SFTP/SMB tests
         env:
           CRISPER_SFTP_PYTHON: ${{ runner.temp }}/release-checks/bin/python
+          CRISPER_SMB_PYTHON: ${{ runner.temp }}/release-checks/bin/python
         run: nice -n 10 flutter test
       - name: Compile CLI bundle
-        run: nice -n 10 dart build cli -o build/cli
+        run: |
+          nice -n 10 dart build cli -o build/cli
+          python3 scripts/package_cli_notices.py build/cli/bundle
       - uses: actions/upload-artifact@v4
         with:
           name: crisperplayer-cli-linux

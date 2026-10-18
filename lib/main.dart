@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:crisp_storage/crisp_storage.dart' show smbLicense;
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,10 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(
+    () =>
+        Stream.value(const LicenseEntryWithLineBreaks(['libsmb2'], smbLicense)),
+  );
   if (kIsWeb) {
     runApp(
       const MaterialApp(

@@ -54,19 +54,21 @@ python3 scripts/macos_local.py run
 
 Desktop debug builds enable an authenticated loopback CLI. For a release build,
 opt in with `--dart-define=CRISPERPLAYER_CLI=true`. The app must stay running:
-the CLI controls its actual playback service and library.
+the CLI controls its actual playback service and library. Build the CLI with
+`dart build cli -o build/cli`, then run
+`python3 scripts/package_cli_notices.py build/cli/bundle`.
 
 ```sh
-dart run bin/crisperplayer.dart status
-dart run bin/crisperplayer.dart import "/path/to/book.m4b"
-dart run bin/crisperplayer.dart list
-dart run bin/crisperplayer.dart play BOOK_ID
-dart run bin/crisperplayer.dart pause
-dart run bin/crisperplayer.dart seek 120
-dart run bin/crisperplayer.dart speed 1.25
-dart run bin/crisperplayer.dart bookmark "Start of chapter"
-dart run bin/crisperplayer.dart bookmarks
-dart run bin/crisperplayer.dart delete BOOK_ID
+build/cli/bundle/bin/crisperplayer status
+build/cli/bundle/bin/crisperplayer import "/path/to/book.m4b"
+build/cli/bundle/bin/crisperplayer list
+build/cli/bundle/bin/crisperplayer play BOOK_ID
+build/cli/bundle/bin/crisperplayer pause
+build/cli/bundle/bin/crisperplayer seek 120
+build/cli/bundle/bin/crisperplayer speed 1.25
+build/cli/bundle/bin/crisperplayer bookmark "Start of chapter"
+build/cli/bundle/bin/crisperplayer bookmarks
+build/cli/bundle/bin/crisperplayer delete BOOK_ID
 ```
 
 Commands return JSON; failures exit with code 1. `seek` uses seconds from the
@@ -83,23 +85,22 @@ Library search/filter/sort are available through `list --query`, `--filter`, and
 bookmark notes. The desktop app continues to own audio and SQLite.
 
 ```sh
-dart run bin/crisperplayer.dart import --title "My Book" --author "Author" "/path/to/tracks"
-dart run bin/crisperplayer.dart chapters
-dart run bin/crisperplayer.dart refresh-chapters
-dart run bin/crisperplayer.dart next-chapter
-dart run bin/crisperplayer.dart chapter 2
-dart run bin/crisperplayer.dart sleep 900 --chapter-end
-dart run bin/crisperplayer.dart settings themeMode dark
-dart run bin/crisperplayer.dart bookmark-edit BOOKMARK_ID "New title" "Note"
-dart run bin/crisperplayer.dart export library-backup.json
-dart run bin/crisperplayer.dart restore library-backup.json
+build/cli/bundle/bin/crisperplayer import --title "My Book" --author "Author" "/path/to/tracks"
+build/cli/bundle/bin/crisperplayer chapters
+build/cli/bundle/bin/crisperplayer refresh-chapters
+build/cli/bundle/bin/crisperplayer next-chapter
+build/cli/bundle/bin/crisperplayer chapter 2
+build/cli/bundle/bin/crisperplayer sleep 900 --chapter-end
+build/cli/bundle/bin/crisperplayer settings themeMode dark
+build/cli/bundle/bin/crisperplayer bookmark-edit BOOKMARK_ID "New title" "Note"
+build/cli/bundle/bin/crisperplayer export library-backup.json
+build/cli/bundle/bin/crisperplayer restore library-backup.json
 ```
 
 `clear-history` and `clear-bookmarks` require `--yes`. JSON backups contain
 metadata and audio paths; audio files are not embedded in the backup.
 
-Build a CLI executable with `dart build cli -o build/cli`, then run
-`build/cli/bundle/bin/crisperplayer --help`. Keep the generated `bundle` folder
+Run `build/cli/bundle/bin/crisperplayer --help` for all commands. Keep the generated `bundle` folder
 together when moving it. The CLI automatically finds the macOS connection file;
 use `--control-file PATH` or `CRISPERPLAYER_CONTROL_FILE` to override discovery.
 The connection file holds a per-run token and is private to the current user.
@@ -142,7 +143,8 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | Nested library-folder imports with book selection and numbered disc grouping; CLI dry run |
 | Added | Player large-text layout, labeled touch targets, spoken seek values and reduced-motion waveform |
 | Added | Saved automatic/grid/list library layouts, responsive search/filter controls and accessible book actions |
-| Next | Wider accessibility/device audit and direct SMB |
+| Added | Direct SMB2/3 NAS browsing, signed connections, optional required encryption and resumable offline downloads |
+| Next | Wider accessibility/device audit |
 | Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |
 
@@ -155,18 +157,18 @@ are remembered for that book. Application settings remain the defaults for books
 without overrides.
 
 ```sh
-dart run bin/crisperplayer.dart book-edit BOOK_ID '{"title":"Title","author":"Author","series":"Saga","seriesOrder":2,"collection":"Favorites"}'
-dart run bin/crisperplayer.dart book-cover BOOK_ID /path/to/cover.jpg
-dart run bin/crisperplayer.dart book-settings BOOK_ID '{"speed":1.5,"seekSeconds":15,"smartRewindSeconds":10}'
-dart run bin/crisperplayer.dart book-settings BOOK_ID '{"speed":null}' # inherit default speed
-dart run bin/crisperplayer.dart book-settings BOOK_ID reset
-dart run bin/crisperplayer.dart mark BOOK_ID finished # or unfinished / unread
-dart run bin/crisperplayer.dart list --series Saga --collection Favorites --sort series
-dart run bin/crisperplayer.dart queue-add BOOK_ID 1 # position 1 plays next
-dart run bin/crisperplayer.dart queue
-dart run bin/crisperplayer.dart queue-remove BOOK_ID
-dart run bin/crisperplayer.dart queue-play
-dart run bin/crisperplayer.dart stats
+build/cli/bundle/bin/crisperplayer book-edit BOOK_ID '{"title":"Title","author":"Author","series":"Saga","seriesOrder":2,"collection":"Favorites"}'
+build/cli/bundle/bin/crisperplayer book-cover BOOK_ID /path/to/cover.jpg
+build/cli/bundle/bin/crisperplayer book-settings BOOK_ID '{"speed":1.5,"seekSeconds":15,"smartRewindSeconds":10}'
+build/cli/bundle/bin/crisperplayer book-settings BOOK_ID '{"speed":null}' # inherit default speed
+build/cli/bundle/bin/crisperplayer book-settings BOOK_ID reset
+build/cli/bundle/bin/crisperplayer mark BOOK_ID finished # or unfinished / unread
+build/cli/bundle/bin/crisperplayer list --series Saga --collection Favorites --sort series
+build/cli/bundle/bin/crisperplayer queue-add BOOK_ID 1 # position 1 plays next
+build/cli/bundle/bin/crisperplayer queue
+build/cli/bundle/bin/crisperplayer queue-remove BOOK_ID
+build/cli/bundle/bin/crisperplayer queue-play
+build/cli/bundle/bin/crisperplayer stats
 ```
 
 In the player: Space toggles playback, arrows skip, Shift+arrows change chapter,
@@ -249,7 +251,7 @@ Failed or paused transfers remain under **Downloads** in Servers &
 NAS. Use Resume to continue, or Discard to remove their cached files. Partial
 files survive app restarts; downloads are not automatically restarted in the
 background. HTTP resume requires a strong ETag and a valid Range/If-Range
-response; otherwise the transfer restarts safely. SFTP checks remote size and
+response; otherwise the transfer restarts safely. SFTP and SMB check remote size and
 modification time before resuming and after downloading. A book’s final import
 must complete before it can be paused. Disconnecting a server leaves partial
 jobs available to discard; resume requires the original connection.
@@ -262,6 +264,8 @@ crisperplayer servers
 crisperplayer call server-connect - < /private/path/connection.json
 # connection JSON: {"name":"NAS","kind":"webdav","url":"https://nas.example/dav/","username":"reader","secret":"APP_PASSWORD"}
 # Plex uses kind "plex", no username, and the Plex token in "secret".
+# SMB: "kind":"smb", "url":"smb://nas.local/Audiobooks/", "username":"reader".
+# SMB requires encryption by default; "requireEncryption":false permits signed SMB2 on a trusted LAN.
 crisperplayer call server-browse '{"connectionId":"ID","path":""}'
 crisperplayer call server-download '{"connectionId":"ID","path":"RETURNED_PATH","title":"My book"}'
 # Add "file": true for a single NAS file. An album/folder downloads as one book.
@@ -326,3 +330,19 @@ keychains fail without searching the login keychain. Existing credentials are
 not moved automatically. The helper does not change the system keychain search
 list or default, export private keys, or create signing identities. Ordinary
 builds without this local override retain platform secure storage.
+
+SMB connects directly to `smb://host/share/` (an optional subfolder is supported).
+SMB3 encryption is required by default; older NAS servers can use signed SMB2
+by explicitly turning that setting off. Domain accounts use `DOMAIN\user`.
+SMB1 and browser connections are unsupported. Files are downloaded into the local
+library before playback; server-side Plex progress sync remains pending.
+
+Run the isolated signed SMB2 transport suite with
+`CRISPER_SMB_PYTHON=/path/to/python-with-impacket flutter test test/smb_live_test.dart`.
+The tests verify rejected encryption downgrades, authentication, resume, changed
+source detection, encoded names and file operations without using an OS share.
+
+To include the native SMB connection, Brickwright credential and offline-playback
+smoke test, use `python3 scripts/macos_smb_smoke.py --python /path/to/python-with-impacket`.
+It starts a temporary loopback server and deletes its files and test credential
+entry afterwards. No OS file share or NAS configuration is changed.

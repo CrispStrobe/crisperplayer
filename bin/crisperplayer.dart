@@ -4,9 +4,9 @@ import 'package:crisperplayer/cli/control_client.dart';
 import 'package:crisperplayer/utils/folder_import.dart';
 
 const usage = '''CrisperPlayer desktop CLI
-Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
+Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
 
-  servers                List Plex / WebDAV / SFTP connections
+  servers                List Plex / WebDAV / SFTP / SMB connections
   server-downloads       Show active and paused downloads
   server-cancel          Pause the active transfer; keep partial files
   call server-resume JSON / call server-discard JSON

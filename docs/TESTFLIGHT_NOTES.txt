@@ -8,10 +8,12 @@ Requires iOS 15 or newer. Corrected document import configuration for App Store 
 
 Library and playback improvements: editable book details and covers; MP4/MP3 embedded metadata and artwork; numbered series and collections; finished/unfinished/unread controls; per-book playback preferences; configurable smart rewind; persistent Up next queue; listening statistics; player keyboard shortcuts. CLI covers the same operations.
 
-Server libraries: Plex, WebDAV and SFTP offline downloads, queued jobs, pause/resume/discard and verified SSH host keys. Progress is local to this device. Direct SMB and automatic Plex progress sync are pending.
+Server libraries: Plex, WebDAV, SFTP and SMB offline downloads, queued jobs, pause/resume/discard and verified SSH host keys. Progress is local to this device. Automatic Plex progress sync remains pending.
 
 Nested library folders (desktop and Android): preview and select separate books from author/book folders or mounted NAS shares. Numbered CD/Disc/Part folders join their parent book. Existing single-book folder import remains available. CLI adds import-library with --dry-run. Stop between books; completed books remain imported.
 
 Player accessibility: enlarged text no longer overflows the player, mini player or speed/sleep sheets. Seek announcements use spoken elapsed/total times; screen-reader increments follow the configured skip interval. Skip buttons have descriptive labels, touch targets are larger, and the waveform respects Reduce Motion. Sleep-sheet refresh timers are released when closed. Please check VoiceOver and large text on your iPhone.
 
 Library browser: saved Automatic/Cover grid/List layouts, an automatic list for enlarged text, scalable cover cards, scrolling search/status/sort/collection/series controls, clear search, larger book-action targets and a pinned mini player. CLI settings expose the same libraryView preference.
+
+Direct NAS access: add an SMB share with smb://host/share/. SMB3 encryption is required by default; older NAS servers can explicitly use signed SMB2. Downloads support pause/resume and changed-file detection. GUI and CLI use the same connection settings.

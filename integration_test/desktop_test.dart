@@ -425,4 +425,74 @@ void main() {
     },
     timeout: const Timeout(Duration(minutes: 2)),
   );
+
+  final smbUrl = Platform.environment['CRISPER_SMB_TEST_URL'];
+  testWidgets(
+    'native SMB connection UI, Brickwright credentials and offline audio',
+    (tester) async {
+      final root = await Directory.systemTemp.createTemp('crisper_native_smb_');
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final library = LibraryService(db, storageDirectory: () async => root);
+      final secure = KeychainCredentialStore(
+        key: 'crisperplayer.test.smb.${DateTime.now().microsecondsSinceEpoch}',
+      );
+      final service = RemoteLibraryService(library, credentials: secure);
+      final player = AudioPlayer(handleInterruptions: false);
+      try {
+        if (Platform.isMacOS) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        }
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [remoteLibraryProvider.overrideWith((ref) => service)],
+            child: const MaterialApp(home: SyncSettingsScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Add server'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(DropdownButtonFormField<String>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('SMB / NAS').last);
+        await tester.pumpAndSettle();
+        final fields = find.byType(TextField);
+        await tester.enterText(fields.at(0), 'Native SMB');
+        await tester.enterText(fields.at(1), smbUrl!);
+        await tester.enterText(fields.at(2), 'reader');
+        await tester.enterText(fields.at(3), 'fixture-password');
+        await tester.ensureVisible(find.text('Require SMB3 encryption'));
+        await tester.tap(find.text('Require SMB3 encryption'));
+        await tester.tap(find.text('Connect'));
+        await tester.pumpAndSettle();
+        expect(find.text('Native SMB'), findsOneWidget);
+        expect(await secure.read(), contains('fixture-password'));
+        await tester.tap(find.text('Native SMB'));
+        await tester.pumpAndSettle();
+        expect(find.text('SMB audio.wav'), findsOneWidget);
+        await tester.tap(find.text('SMB audio.wav'));
+        await tester.pumpAndSettle();
+        final book = (await db.allBooks).single;
+        expect(book.totalDurationMs, closeTo(12000, 100));
+        final path = AppDatabase.decodePaths(book.filePathsJson).single;
+        await service.disconnect(service.connections.single.id);
+        await player.setVolume(0);
+        await player.setFilePath(path);
+        unawaited(player.play());
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+        expect(player.position.inMilliseconds, greaterThan(100));
+        await player.pause();
+        expect(tester.takeException(), isNull);
+      } finally {
+        await player.dispose();
+        await tester.pumpWidget(const SizedBox.shrink());
+        await secure.delete();
+        await db.close();
+        await root.delete(recursive: true);
+      }
+    },
+    skip: smbUrl == null,
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
 }

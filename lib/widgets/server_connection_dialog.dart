@@ -15,6 +15,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
   String _kind = 'plex';
   String? _error, _hostKey;
   bool _localHttp = false, _connecting = false, _trustHostKey = false;
+  bool _requireEncryption = true;
   void _clearTrust() {
     _hostKey = null;
     _trustHostKey = false;
@@ -39,6 +40,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
         username: _username.text,
         secret: _secret.text,
         allowLocalHttp: _localHttp,
+        requireEncryption: _requireEncryption,
         hostKey: _trustHostKey ? _hostKey : null,
       );
       if (mounted) Navigator.pop(context);
@@ -85,6 +87,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                     child: Text('WebDAV / NAS'),
                   ),
                   DropdownMenuItem(value: 'sftp', child: Text('SFTP / NAS')),
+                  DropdownMenuItem(value: 'smb', child: Text('SMB / NAS')),
                 ],
                 onChanged: _connecting
                     ? null
@@ -105,7 +108,9 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                 onChanged: (_) => setState(_clearTrust),
                 decoration: InputDecoration(
                   labelText: 'Server URL',
-                  hintText: _kind == 'sftp'
+                  hintText: _kind == 'smb'
+                      ? 'smb://nas.local/Audiobooks/'
+                      : _kind == 'sftp'
                       ? 'sftp://nas.local/books/'
                       : 'https://server.example.com/',
                 ),
@@ -115,7 +120,11 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                   controller: _username,
                   enabled: !_connecting,
                   autocorrect: false,
-                  decoration: const InputDecoration(labelText: 'Username'),
+                  decoration: InputDecoration(
+                    labelText: _kind == 'smb'
+                        ? r'Username (or DOMAIN\user)'
+                        : 'Username',
+                  ),
                 ),
               TextField(
                 controller: _secret,
@@ -129,7 +138,19 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                       : 'Password / app password',
                 ),
               ),
-              if (_kind != 'sftp')
+              if (_kind == 'smb')
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _requireEncryption,
+                  onChanged: _connecting
+                      ? null
+                      : (v) => setState(() => _requireEncryption = v!),
+                  title: const Text('Require SMB3 encryption'),
+                  subtitle: const Text(
+                    'Turn off only for an older NAS on a trusted network. Connections always require signing.',
+                  ),
+                ),
+              if (_kind == 'plex' || _kind == 'webdav')
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _localHttp,

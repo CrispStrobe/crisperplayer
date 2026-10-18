@@ -173,6 +173,7 @@ class RemoteLibraryService extends ChangeNotifier {
     required String secret,
     String username = '',
     bool allowLocalHttp = false,
+    bool requireEncryption = true,
     String? hostKey,
   }) async {
     await init();
@@ -184,6 +185,7 @@ class RemoteLibraryService extends ChangeNotifier {
       secret: secret,
       username: username,
       allowLocalHttp: allowLocalHttp,
+      requireEncryption: requireEncryption,
       hostKey: hostKey,
     );
     final client = RemoteClient(connection);

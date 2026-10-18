@@ -28,6 +28,7 @@ class HostKeyProbe extends RemoteLibraryService {
     required String secret,
     String username = '',
     bool allowLocalHttp = false,
+    bool requireEncryption = true,
     String? hostKey,
   }) async {
     attempts++;
@@ -45,7 +46,78 @@ class HostKeyProbe extends RemoteLibraryService {
   }
 }
 
+class SmbProbe extends RemoteLibraryService {
+  RemoteConnection? connected;
+  SmbProbe(super.library) : super(credentials: MemoryCredentials());
+  @override
+  Future<void> init() async {}
+  @override
+  List<RemoteConnection> get connections => [?connected];
+  @override
+  Future<void> connect({
+    required String name,
+    required String kind,
+    required String url,
+    required String secret,
+    String username = '',
+    bool allowLocalHttp = false,
+    bool requireEncryption = true,
+    String? hostKey,
+  }) async {
+    connected = RemoteConnection(
+      id: 'smb-fixture',
+      name: name,
+      kind: kind,
+      url: url,
+      username: username,
+      secret: secret,
+      requireEncryption: requireEncryption,
+    );
+    notifyListeners();
+  }
+}
+
 void main() {
+  testWidgets(
+    'SMB dialog requires encryption by default and passes an explicit SMB2 choice',
+    (tester) async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final remote = SmbProbe(LibraryService(db));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [remoteLibraryProvider.overrideWith((ref) => remote)],
+          child: const MaterialApp(home: SyncSettingsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Add server'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('SMB / NAS').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Allow HTTP on the local network'), findsNothing);
+      expect(
+        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+        isTrue,
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'My NAS');
+      await tester.enterText(fields.at(1), 'smb://nas.local/Audio%20Books/');
+      await tester.enterText(fields.at(2), r'HOME\reader');
+      await tester.enterText(fields.at(3), 'fixture-password');
+      await tester.ensureVisible(find.text('Require SMB3 encryption'));
+      await tester.tap(find.text('Require SMB3 encryption'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Connect'));
+      await tester.pumpAndSettle();
+      expect(remote.connected!.kind, 'smb');
+      expect(remote.connected!.requireEncryption, isFalse);
+      expect(remote.connected!.username, r'HOME\reader');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await db.close();
+    },
+  );
   testWidgets(
     'SFTP dialog requires explicit trust, and changing the address clears the offered key',
     (tester) async {

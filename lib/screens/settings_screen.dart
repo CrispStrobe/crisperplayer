@@ -239,7 +239,9 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.dns_outlined),
             title: const Text('Servers & NAS'),
-            subtitle: const Text('Plex, WebDAV and SFTP offline libraries'),
+            subtitle: const Text(
+              'Plex, WebDAV, SFTP and SMB offline libraries',
+            ),
             onTap: () => context.push('/settings/sync'),
           ),
           const Divider(),
@@ -268,6 +270,14 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
+          ListTile(
+            leading: const Icon(Icons.article_outlined),
+            title: const Text('Open-source licenses'),
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'CrisperPlayer',
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(

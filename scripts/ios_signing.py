@@ -69,6 +69,50 @@ def expected_version():
     return match.group(1), match.group(2)
 
 
+def group_entitlements(current, authorized):
+    require(current.get('application-identifier') == authorized['application-identifier'],
+            'Signed bundle identity does not match its profile')
+    require(not current.get('get-task-allow', False), 'Cannot re-sign a development bundle for TestFlight')
+    allowed = authorized.get('com.apple.security.application-groups', [])
+    require(APP_GROUP in allowed, 'Profile does not authorize the required App Group')
+    groups = list(current.get('com.apple.security.application-groups', []))
+    require(set(groups).issubset(allowed), 'Signed bundle has an unauthorized App Group')
+    if APP_GROUP not in groups:
+        groups.append(APP_GROUP)
+    return {**current, 'com.apple.security.application-groups': groups}
+
+
+def restore_groups():
+    """Unsigned archives lose custom entitlements at export; restore them using
+    the already-installed canonical identity, nested extension before host.
+    See ../appstore.md, 'profile carrying the app group is NOT enough'.
+    """
+    ipas = list(Path('build/ios/ipa').glob('*.ipa'))
+    require(len(ipas) == 1, 'Expected exactly one newly exported IPA')
+    ipa = ipas[0].resolve()
+    with tempfile.TemporaryDirectory(prefix='crisper-sign-') as folder:
+        root = Path(folder) / 'contents'
+        subprocess.run(['ditto', '-x', '-k', str(ipa), str(root)], check=True)
+        host = root / 'Payload/Runner.app'
+        for bundle, identifier in [(host / 'PlugIns/ShareExtension.appex', EXTENSION_ID), (host, BUNDLE_ID)]:
+            profile = profile_data(bundle / 'embedded.mobileprovision')
+            validate_profile(profile, identifier, profile['TeamIdentifier'][0])
+            current = plistlib.loads(subprocess.check_output(
+                ['codesign', '-d', '--entitlements', ':-', str(bundle)], stderr=subprocess.DEVNULL))
+            entitlements = group_entitlements(current, profile['Entitlements'])
+            path = Path(folder) / (bundle.name + '.entitlements')
+            path.write_bytes(plistlib.dumps(entitlements))
+            subprocess.run(['codesign', '--force', '--sign', CANONICAL_CERT_SHA1,
+                '--preserve-metadata=identifier,requirements,flags', '--generate-entitlement-der',
+                '--entitlements', str(path), str(bundle)], check=True)
+        updated = Path(folder) / 'signed.ipa'
+        subprocess.run(['ditto', '-c', '-k', '--norsrc', str(root), str(updated)], check=True)
+        # The unpacking directory may be on a different filesystem from build/.
+        import shutil
+        shutil.copyfile(updated, ipa)
+    print('Restored authorized App Group entitlements in extension and host with the canonical identity.')
+
+
 def verify():
     ipas = list(Path('build/ios/ipa').glob('*.ipa'))
     require(len(ipas) == 1, 'Expected exactly one newly exported IPA')
@@ -110,4 +154,4 @@ def check_app():
 
 
 if __name__ == '__main__':
-    {'install': install, 'verify': verify, 'check-app': check_app}[sys.argv[1]]()
+    {'install': install, 'restore-groups': restore_groups, 'verify': verify, 'check-app': check_app}[sys.argv[1]]()

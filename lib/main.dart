@@ -31,14 +31,21 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
-    runApp(const MaterialApp(
+    runApp(
+      const MaterialApp(
         home: Scaffold(
-            body: Center(
-                child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text(
-                        'CrisperPlayer requires the installed Android, iOS or desktop app. '
-                        'Browser playback and library storage are not available in this version.'))))));
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'CrisperPlayer requires the installed Android, iOS or desktop app. '
+                'Browser playback and library storage are not available in this version.',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
     return;
   }
   AppDatabase? db;
@@ -60,26 +67,28 @@ Future<void> main() async {
     player = AudioPlayer(handleInterruptions: false);
     final library = LibraryService(database);
     final service = playback = PlaybackService(
-        db: database,
-        library: library,
-        bookmarks: BookmarkService(database),
-        history: HistoryService(database),
-        settings: settings,
-        audioPlayer: player);
+      db: database,
+      library: library,
+      bookmarks: BookmarkService(database),
+      history: HistoryService(database),
+      settings: settings,
+      audioPlayer: player,
+    );
     if (Platform.isAndroid || Platform.isIOS) {
       final handler = await AudioService.init<CrisperAudioHandler>(
-          builder: () => CrisperAudioHandler(player!),
-          config: const AudioServiceConfig(
-              androidNotificationChannelId:
-                  'com.crispstrobe.crisperplayer.channel.audio',
-              androidNotificationChannelName: 'CrisperPlayer',
-              androidNotificationChannelDescription:
-                  'Audiobook playback controls',
-              androidNotificationOngoing: true,
-              androidStopForegroundOnPause: true,
-              androidNotificationIcon: 'mipmap/ic_launcher',
-              artDownscaleWidth: 800,
-              artDownscaleHeight: 800));
+        builder: () => CrisperAudioHandler(player!),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId:
+              'com.crispstrobe.crisperplayer.channel.audio',
+          androidNotificationChannelName: 'CrisperPlayer',
+          androidNotificationChannelDescription: 'Audiobook playback controls',
+          androidNotificationOngoing: true,
+          androidStopForegroundOnPause: true,
+          androidNotificationIcon: 'mipmap/ic_launcher',
+          artDownscaleWidth: 800,
+          artDownscaleHeight: 800,
+        ),
+      );
       service.attachAudioHandler(handler);
     }
     await service.init();
@@ -88,9 +97,10 @@ Future<void> main() async {
       try {
         final directory = await getApplicationSupportDirectory();
         control = DesktopControlService(
-            library: library,
-            playback: service,
-            descriptor: File('${directory.path}/cli.json'));
+          library: library,
+          playback: service,
+          descriptor: File('${directory.path}/cli.json'),
+        );
         await control.start();
       } catch (error) {
         debugPrint('Desktop CLI could not start: $error');
@@ -103,15 +113,18 @@ Future<void> main() async {
       restoreError = 'Could not restore your last book: $e';
     }
     final shareIntake = ShareIntakeService(library: library);
-    runApp(ProviderScope(
+    runApp(
+      ProviderScope(
         overrides: [
           appDatabaseProvider.overrideWith((ref) {
-            ref.onDispose(() => unawaited(() async {
-                  await shareIntake.dispose();
-                  await control?.dispose();
-                  await service.dispose();
-                  await database.close();
-                }()));
+            ref.onDispose(
+              () => unawaited(() async {
+                await shareIntake.dispose();
+                await control?.dispose();
+                await service.dispose();
+                await database.close();
+              }()),
+            );
             return database;
           }),
           settingsProvider.overrideWith((ref) => settings),
@@ -120,7 +133,12 @@ Future<void> main() async {
           shareIntakeProvider.overrideWithValue(shareIntake),
         ],
         child: CrisperPlayerApp(
-            settings: settings, prefs: prefs, startupMessage: restoreError)));
+          settings: settings,
+          prefs: prefs,
+          startupMessage: restoreError,
+        ),
+      ),
+    );
   } catch (e, stack) {
     debugPrint('Startup failed: $e\n$stack');
     await control?.dispose();
@@ -130,13 +148,20 @@ Future<void> main() async {
       await player?.dispose();
     }
     await db?.close();
-    runApp(MaterialApp(
+    runApp(
+      MaterialApp(
         home: Scaffold(
-            body: Center(
-                child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                        'CrisperPlayer could not start. Please restart the app.\n\n$e'))))));
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'CrisperPlayer could not start. Please restart the app.\n\n$e',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -144,11 +169,12 @@ class CrisperPlayerApp extends ConsumerStatefulWidget {
   final SettingsService settings;
   final SharedPreferences prefs;
   final String? startupMessage;
-  const CrisperPlayerApp(
-      {super.key,
-      required this.settings,
-      required this.prefs,
-      this.startupMessage});
+  const CrisperPlayerApp({
+    super.key,
+    required this.settings,
+    required this.prefs,
+    this.startupMessage,
+  });
   @override
   ConsumerState<CrisperPlayerApp> createState() => _CrisperPlayerAppState();
 }
@@ -162,45 +188,54 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _router = GoRouter(
-        initialLocation: widget.settings.onboardingDone ? '/' : '/onboarding',
-        redirect: (context, state) {
-          final done = widget.settings.onboardingDone;
-          final onboarding = state.matchedLocation == '/onboarding';
-          if (!done && !onboarding) return '/onboarding';
-          if (done && onboarding) return '/';
-          return null;
-        },
-        routes: [
-          GoRoute(path: '/', builder: (_, _) => const LibraryScreen()),
-          GoRoute(
-              path: '/onboarding',
-              builder: (_, _) => const OnboardingScreen()),
-          GoRoute(
-              path: '/player/:bookId',
-              builder: (_, s) =>
-                  PlayerScreen(bookId: s.pathParameters['bookId']!)),
-          GoRoute(
-              path: '/bookmarks/:bookId',
-              builder: (_, s) =>
-                  BookmarksScreen(bookId: s.pathParameters['bookId']!)),
-          GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
-          GoRoute(
-              path: '/settings', builder: (_, _) => const SettingsScreen()),
-          GoRoute(
-              path: '/settings/sync',
-              builder: (_, _) => const SyncSettingsScreen()),
-        ]);
+      refreshListenable: widget.settings,
+      initialLocation: widget.settings.onboardingDone ? '/' : '/onboarding',
+      redirect: (context, state) {
+        final done = widget.settings.onboardingDone;
+        final onboarding = state.matchedLocation == '/onboarding';
+        if (!done && !onboarding) return '/onboarding';
+        if (done && onboarding) return '/';
+        return null;
+      },
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const LibraryScreen()),
+        GoRoute(
+          path: '/onboarding',
+          builder: (_, _) => const OnboardingScreen(),
+        ),
+        GoRoute(
+          path: '/player/:bookId',
+          builder: (_, s) => PlayerScreen(bookId: s.pathParameters['bookId']!),
+        ),
+        GoRoute(
+          path: '/bookmarks/:bookId',
+          builder: (_, s) =>
+              BookmarksScreen(bookId: s.pathParameters['bookId']!),
+        ),
+        GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
+        GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+        GoRoute(
+          path: '/settings/sync',
+          builder: (_, _) => const SyncSettingsScreen(),
+        ),
+      ],
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (widget.startupMessage != null) _message(widget.startupMessage!);
-      unawaited(ref.read(shareIntakeProvider).init(
-          onImported: (id, paths) async {
-            if (!mounted || id == null) return;
-            _message('Imported ${paths.length} file(s)');
-            if (widget.settings.onboardingDone) _router.go('/player/$id');
-          },
-          onError: _message,
-          onInfo: _message));
+      unawaited(
+        ref
+            .read(shareIntakeProvider)
+            .init(
+              onImported: (id, paths) async {
+                if (!mounted || id == null) return;
+                _message('Imported ${paths.length} file(s)');
+                if (widget.settings.onboardingDone) _router.go('/player/$id');
+              },
+              onError: _message,
+              onInfo: _message,
+            ),
+      );
     });
   }
 
@@ -235,12 +270,13 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp>
       _ => ThemeMode.system,
     };
     return MaterialApp.router(
-        title: 'CrisperPlayer',
-        scaffoldMessengerKey: _messenger,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: themeMode,
-        routerConfig: _router,
-        debugShowCheckedModeBanner: false);
+      title: 'CrisperPlayer',
+      scaffoldMessengerKey: _messenger,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
+      routerConfig: _router,
+      debugShowCheckedModeBanner: false,
+    );
   }
 }

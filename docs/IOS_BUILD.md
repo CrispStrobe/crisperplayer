@@ -6,7 +6,7 @@ Use Flutter 3.44.4, Dart 3.12 and iOS 14+. The project uses CocoaPods only; Swif
 
 The CI workflow checks analysis, Dart tests, release helper tests, Android APK generation and the iOS simulator build. It saves the APK and simulator app as artifacts.
 
-`ios-release.yml` archives unsigned, then signs at export with the existing canonical Apple Distribution certificate `L9PHHNLY9Y`. It never enables automatic provisioning or creates/revokes certificates. A `v*` tag uploads; manual dispatch defaults to `dry_run: true` and saves the signed IPA without uploading.
+`ios-release.yml` archives unsigned, then signs at export with the existing canonical Apple Distribution certificate `L9PHHNLY9Y`. It explicitly restores the authorized App Group entitlement after export, re-signing the extension before its host with that same identity. Unsigned archives otherwise lose this custom entitlement during export. It never enables automatic provisioning or creates/revokes certificates. A `v*` tag uploads; manual dispatch defaults to `dry_run: true` and saves the signed IPA without uploading.
 
 The exported IPA is checked for the exact bundle identifiers, marketing/build versions, minimum iOS version, export-compliance declaration, signatures, profiles and App Group entitlements in BOTH the host and extension. TestFlight delivery waits for the exact iOS platform/version/build, creates beta metadata in the primary locale, assigns an internal group and verifies `IN_BETA_TESTING`. It does not submit external Beta App Review or an App Store release.
 

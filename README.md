@@ -65,10 +65,31 @@ dart run bin/crisperplayer.dart delete BOOK_ID
 ```
 
 Commands return JSON; failures exit with code 1. `seek` uses seconds from the
-start of the whole book. `import` streams one audio file into the sandbox and
-then creates a managed library copy; the source stays untouched. Use the GUI
-for multi-file book imports. `list.lastPositionMs` is the saved position within
+start of the whole book. `import` streams files or recursively scanned folders
+into the sandbox as one multi-track book, with natural filename order. It
+creates managed copies and leaves source files untouched. `list.lastPositionMs` is the saved position within
 the physical track; `status.positionMs` is the current position within the book.
+
+The CLI exposes the GUI's library, playback, chapters, sleep timers, bookmarks,
+history, settings, and metadata backup/restore operations. Use file paths and
+JSON in place of file pickers and dialogs. `load BOOK_ID` opens a book paused.
+Library search/filter/sort are available through `list --query`, `--filter`, and
+`--sort`. `call COMMAND JSON_OBJECT` accepts structured arguments, including
+bookmark notes. The desktop app continues to own audio and SQLite.
+
+```sh
+dart run bin/crisperplayer.dart import --title "My Book" --author "Author" "/path/to/tracks"
+dart run bin/crisperplayer.dart chapters
+dart run bin/crisperplayer.dart chapter 2
+dart run bin/crisperplayer.dart sleep 900 --chapter-end
+dart run bin/crisperplayer.dart settings themeMode dark
+dart run bin/crisperplayer.dart bookmark-edit BOOKMARK_ID "New title" "Note"
+dart run bin/crisperplayer.dart export library-backup.json
+dart run bin/crisperplayer.dart restore library-backup.json
+```
+
+`clear-history` and `clear-bookmarks` require `--yes`. JSON backups contain
+metadata and audio paths; audio files are not embedded in the backup.
 
 Build a CLI executable with `dart build cli -o build/cli`, then run
 `build/cli/bundle/bin/crisperplayer --help`. Keep the generated `bundle` folder
@@ -87,3 +108,11 @@ decoder, the UI, and the CLI endpoint. It checks duration, advancing playback,
 pause, seek, speed, bookmarks, history, and persistence after reopening SQLite.
 Audio is muted during the test. It does not establish audible output quality,
 Bluetooth routing, or mobile interruption/background behavior.
+
+## App icon
+
+The source artwork is in `assets/branding/`. Run
+`python3 scripts/generate_icons.py` with ImageMagick 7 installed to regenerate
+the iOS, macOS, Android legacy/adaptive, Windows, Linux, and web icon assets.
+iOS icons are opaque; macOS uses a rounded tile; adaptive and maskable icons
+keep the emblem inside their mask's safe area.

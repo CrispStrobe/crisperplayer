@@ -101,6 +101,7 @@ jobs:
           test -d build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app
           PATH="/usr/bin:$PATH" xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive \
             -exportPath build/ios/ipa -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist"
+          python3 scripts/ios_signing.py restore-groups
           python3 scripts/ios_signing.py verify
       - name: Save signed IPA
         if: ${{ !inputs.distribute_only }}

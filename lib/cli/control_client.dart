@@ -40,10 +40,44 @@ class ControlClient {
 
   Future<Object?> importFile(File file) => _request('/import', file: file);
 
+  Future<Object?> importFiles(
+    List<File> files, {
+    String? title,
+    String? author,
+  }) async {
+    if (files.isEmpty) throw const FormatException('No audio files supplied');
+    if (title == null && files.length > 1) {
+      final parts = files.first.parent.uri.pathSegments.where(
+        (part) => part.isNotEmpty,
+      );
+      title = parts.isEmpty ? 'Imported audiobook' : parts.last;
+    }
+    final started = await command('import-begin') as Map;
+    final batch = started['batch'] as String;
+    try {
+      for (final file in files) {
+        await _request('/import', file: file, batch: batch);
+      }
+      return await command('import-commit', {
+        'batch': batch,
+        'title': ?title,
+        'author': ?author,
+      });
+    } catch (_) {
+      try {
+        await command('import-cancel', {'batch': batch});
+      } catch (_) {
+        /* Commit already cleaned up. */
+      }
+      rethrow;
+    }
+  }
+
   Future<Object?> _request(
     String path, {
     Map<String, Object?>? body,
     File? file,
+    String? batch,
   }) async {
     if (!await descriptor.exists()) {
       throw StateError(
@@ -68,7 +102,7 @@ class ControlClient {
         path: path,
         queryParameters: file == null
             ? null
-            : {'name': file.uri.pathSegments.last},
+            : {'name': file.uri.pathSegments.last, 'batch': ?batch},
       );
       final request = await client.postUrl(uri);
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');

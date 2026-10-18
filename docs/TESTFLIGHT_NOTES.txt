@@ -1,3 +1,3 @@
-Please test importing M4B and multi-file audiobooks, playback with the screen locked, headset/lock-screen controls, switching books, bookmarks on later tracks, resume after relaunch, speed and seek settings, and sleep-at-chapter-end timers.
+Please test the new app icon, compact player layout with pinned playback controls, stable chapter selection while playing, importing M4B and multi-file audiobooks, playback with the screen locked, headset/lock-screen controls, switching books, bookmarks on later tracks, resume after relaunch, speed and seek settings, and sleep-at-chapter-end timers.
 
 This build rewrites playback/history coordination, uses measured per-file durations, copies imported audio into durable app storage, migrates existing metadata, fixes share intake and connects settings to playback. Cloud sync is unavailable. JSON exports contain metadata, not audio files.

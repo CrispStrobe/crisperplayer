@@ -4,6 +4,7 @@ import 'package:crisperplayer/cli/control_client.dart';
 import 'package:crisperplayer/services/desktop_control_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'support/playback_harness.dart';
+import 'package:crisperplayer/services/db/app_database.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -123,6 +124,130 @@ void main() {
         );
       }
       expect((await client.command('status') as Map)['status'], 'idle');
+    },
+  );
+
+  test(
+    'chapters, track controls, sleep and settings use the shared services',
+    () async {
+      await h.book('commands', [30, 60]);
+      await client.command('load', {'bookId': 'commands'});
+      expect(h.backend.playing, isFalse);
+      expect(
+        await client.command('list', {'query': 'commands', 'sort': 'title'}),
+        hasLength(1),
+      );
+      expect(await client.command('list', {'filter': 'finished'}), isEmpty);
+      await client.command('play');
+      expect(await client.command('chapters'), hasLength(2));
+      await client.command('chapter', {'index': 2});
+      expect(h.backend.currentIndex, 1);
+      await client.command('skip', {'seconds': 5});
+      expect(h.backend.position.inSeconds, 5);
+      await client.command('previous');
+      expect(h.backend.currentIndex, 0);
+      await client.command('next');
+      expect(h.backend.currentIndex, 1);
+      await client.command('sleep', {'seconds': 60, 'endOfChapter': true});
+      expect(h.playback.sleepEndOfChapter, isTrue);
+      expect(
+        (await client.command('status') as Map)['sleepRemainingMs'],
+        60000,
+      );
+      await client.command('sleep', {'cancel': true});
+      expect(h.playback.sleepRemaining, Duration.zero);
+      await client.command('settings', {'key': 'themeMode', 'value': 'light'});
+      await client.command('settings', {'key': 'seekSeconds', 'value': 60});
+      expect(h.settings.themeMode, 'light');
+      expect(h.playback.seekSeconds, 60);
+      final before = await client.command('settings');
+      await expectLater(
+        client.command('settings', {'key': 'seekSeconds', 'value': 17}),
+        throwsStateError,
+      );
+      expect(await client.command('settings'), before);
+      await client.command('stop');
+      expect(h.backend.playing, isFalse);
+    },
+  );
+
+  test(
+    'bookmark editing, seeking, history clearing and metadata restore',
+    () async {
+      await h.book('metadata', [60]);
+      await client.command('play', {'bookId': 'metadata'});
+      await client.command('seek', {'seconds': 7});
+      final bookmark =
+          await client.command('bookmark', {
+                'title': 'Original',
+                'note': 'Note',
+              })
+              as Map;
+      final id = bookmark['bookmarkId'] as String;
+      await client.command('bookmark-edit', {
+        'id': id,
+        'title': 'Edited',
+        'note': 'Updated',
+      });
+      await client.command('bookmark-edit', {'id': id, 'title': 'Edited'});
+      await client.command('seek', {'seconds': 1});
+      await client.command('bookmark-go', {'id': id});
+      expect(h.backend.position.inSeconds, 7);
+      final bookmarks = await client.command('bookmarks') as List;
+      expect(
+        bookmarks.any(
+          (row) => row['title'] == 'Edited' && row['note'] == 'Updated',
+        ),
+        isTrue,
+      );
+      await client.command('pause');
+      expect(await client.command('history'), isNotEmpty);
+      final backup = await client.command('export') as Map;
+      await expectLater(client.command('clear-history'), throwsStateError);
+      await client.command('clear-history', {'confirm': true});
+      expect(await client.command('history'), isEmpty);
+      await client.command('clear-bookmarks', {'confirm': true});
+      expect(await client.command('bookmarks'), isEmpty);
+      await client.command('restore', {'data': backup});
+      expect(
+        await client.command('history', {'bookId': 'metadata'}),
+        isNotEmpty,
+      );
+      expect(
+        await client.command('bookmarks', {'bookId': 'metadata'}),
+        isNotEmpty,
+      );
+      await client.command('bookmark-delete', {'id': id});
+      expect(
+        (await h.db.bookmarksFor('metadata')).any((row) => row.id == id),
+        isFalse,
+      );
+    },
+  );
+
+  test(
+    'multi-file CLI import keeps natural order and cleans up failed batches',
+    () async {
+      final ten = File('${h.root.path}/chapter10.wav');
+      final two = File('${h.root.path}/chapter2.wav');
+      await ten.writeAsBytes([10]);
+      await two.writeAsBytes([2]);
+      final imported =
+          await client.importFiles([ten, two], title: 'Book', author: 'Reader')
+              as Map;
+      final book = (await h.library.getBook(imported['bookId'] as String))!;
+      expect(book.title, 'Book');
+      expect(book.author, 'Reader');
+      final paths = AppDatabase.decodePaths(book.filePathsJson);
+      expect(await File(paths.first).readAsBytes(), [2]);
+      expect(await File(paths.last).readAsBytes(), [10]);
+      await expectLater(
+        client.importFiles([ten, File('${h.root.path}/missing.wav')]),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(await h.library.allBooks(), hasLength(1));
+      await client.command('delete', {'bookId': book.id});
+      expect(await two.exists(), isTrue);
     },
   );
 

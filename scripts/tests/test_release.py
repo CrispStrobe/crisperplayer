@@ -11,6 +11,21 @@ import testflight_internal
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_restore_group_preserves_exported_identity_and_other_entitlements(self):
+        current = {'application-identifier': 'TEAM.' + ios_signing.BUNDLE_ID,
+                   'beta-reports-active': True, 'keychain-access-groups': ['TEAM.shared']}
+        authorized = {**current, 'com.apple.security.application-groups': [ios_signing.APP_GROUP]}
+        restored = ios_signing.group_entitlements(current, authorized)
+        self.assertEqual(restored['com.apple.security.application-groups'], [ios_signing.APP_GROUP])
+        self.assertTrue(restored['beta-reports-active'])
+        self.assertEqual(restored['keychain-access-groups'], ['TEAM.shared'])
+        self.assertNotIn('com.apple.security.application-groups', current)
+
+    def test_restore_group_rejects_profile_that_does_not_authorize_it(self):
+        current = {'application-identifier': 'TEAM.app'}
+        with self.assertRaisesRegex(RuntimeError, 'authorize'):
+            ios_signing.group_entitlements(current, current)
+
     def test_selects_exact_ios_release_instead_of_same_number_macos_build(self):
         builds = [{'id': name, 'relationships': {'preReleaseVersion': {'data': {'id': name}}}}
                   for name in ['mac', 'old-ios', 'wanted-ios']]

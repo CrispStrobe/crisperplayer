@@ -1,5 +1,10 @@
-CrisperPlayer 0.1.0 build 13
+CrisperPlayer 0.1.0 build 14
 
+- Editable elapsed time with keyboard entry, clock formats, range validation and touch stepping.
+- Measured, cached current-track waveforms with local generation and scrubbing, replacing decorative animation.
+- Playback volume sheet with percentage slider, mute/restore, 5% steps and persisted app volume.
+- CLI clock-format seeks and waveform generation; browser time editing and mute/restore.
+- Paused book loads now immediately publish the correct track, duration and position.
 - Permanent release downloads: signed Android APK, complete Windows/Linux/Mac
   app bundles and CLI companions, including both Apple silicon and Intel Macs.
 - New GitHub Pages local-file browser player with audio imports, multiple tracks,

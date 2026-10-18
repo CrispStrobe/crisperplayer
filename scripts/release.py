@@ -111,6 +111,30 @@ def checksums(directory):
     (directory / 'SHA256SUMS.txt').write_text('\n'.join(lines) + '\n')
 
 
+
+def should_be_latest(tag, current):
+    def version(value):
+        match = re.fullmatch(r'v(\d+)\.(\d+)\.(\d+)(?:\+(\d+))?', value)
+        if not match:
+            raise ValueError('Cannot compare release tag: ' + value)
+        return tuple(int(part or 0) for part in match.groups())
+    return not current or version(tag) >= version(current)
+
+
+def publish(tag, directory):
+    release_info(tag)
+    checksums(directory)
+    latest = subprocess.run(['gh', 'api', 'repos/{owner}/{repo}/releases/latest'],
+                            capture_output=True, text=True)
+    if latest.returncode and '(HTTP 404)' not in latest.stderr:
+        raise RuntimeError('Could not determine the current latest release; publication stopped.')
+    current = json.loads(latest.stdout)['tag_name'] if latest.returncode == 0 else ''
+    make_latest = should_be_latest(tag, current)
+    subprocess.run(['gh', 'release', 'upload', tag, *[str(p) for p in sorted(directory.iterdir()) if p.is_file()], '--clobber'], check=True)
+    subprocess.run(['gh', 'release', 'edit', tag, '--draft=false',
+                    '--latest=' + str(make_latest).lower(), '--notes-file', str(ROOT / 'docs/RELEASE_NOTES.md')], check=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
@@ -122,6 +146,9 @@ def main():
     build.add_argument('--app', type=Path, required=True)
     build.add_argument('--cli', type=Path, default=Path('build/cli/bundle'))
     build.add_argument('--output', type=Path, default=Path('dist'))
+    publish_command = commands.add_parser('publish')
+    publish_command.add_argument('--tag', required=True)
+    publish_command.add_argument('--directory', type=Path, required=True)
     check = commands.add_parser('checksums')
     check.add_argument('directory', type=Path)
     args = parser.parse_args()
@@ -134,6 +161,8 @@ def main():
                     output.write(f'{key}={value}\n')
     elif args.command == 'package':
         package(args.platform, args.app.resolve(), args.cli.resolve(), args.output.resolve(), release_info(args.tag))
+    elif args.command == 'publish':
+        publish(args.tag, args.directory)
     else:
         checksums(args.directory)
 

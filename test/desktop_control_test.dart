@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:crisperplayer/services/audio/waveform_service.dart';
+import 'package:drift/drift.dart' show Value;
 import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,33 +36,158 @@ void main() {
     await h.dispose();
   });
 
-  test('CLI metadata, preferences, organization, reading status and queue share GUI behavior', () async {
-    await h.book('a',[60]); await h.book('b',[90]);
-    await client.command('book-edit', {'bookId':'a','changes':{
-      'title':'Edited title','author':'Author','series':'Saga','seriesOrder':2,'collection':'Favorites'}});
-    final books = await client.command('list', {'series':'Saga','collection':'Favorites','sort':'series'}) as List;
-    expect(books,hasLength(1)); expect(books.single['title'],'Edited title');
-    await client.command('load',{'bookId':'a'});
-    await client.command('book-settings',{'bookId':'a','values':{'speed':1.75,'seekSeconds':15}});
-    expect(h.backend.speed,1.75); expect(h.settings.playbackSpeed,1);
-    await client.command('book-settings',{'bookId':'a','values':{'speed':null}});
-    expect(h.backend.speed,1);
-    await client.command('book-cover',{'bookId':'a','base64':base64Encode([137,80,78,71,13,10,26,10])});
-    expect((await h.db.getBook('a'))!.coverPath,isNotEmpty);
-    await client.command('mark',{'bookId':'a','status':'finished'});
-    expect(await client.command('list',{'filter':'finished'}),hasLength(1));
-    await client.command('mark',{'bookId':'a','status':'unread'});
-    expect((await h.db.getBook('a'))!.totalProgress,0);
-    await client.command('queue-add',{'bookId':'a'}); await client.command('queue-add',{'bookId':'b','position':1});
-    expect(((await client.command('queue') as List).first as Map)['book']['id'],'b');
-    await client.command('queue-remove',{'bookId':'a'});
-    await client.command('queue-play'); expect(h.playback.currentBookId,'b');
-    expect(await client.command('queue'),isEmpty);
-    expect((await client.command('stats') as Map).containsKey('totalMs'),isTrue);
-    await expectLater(client.command('book-settings',{'bookId':'b','values':{'speed':99}}),throwsStateError);
-    await expectLater(client.command('queue-add',{'bookId':'missing'}),throwsStateError);
-    expect((await client.command('status') as Map)['bookId'],'b');
-  });
+  test(
+    'waveform analysis keeps playback commands responsive and shares measured data',
+    () async {
+      await h.book('wave', [12]);
+      final file = File('${h.root.path}/audio.wav');
+      await file.writeAsBytes([1, 2, 3]);
+      await h.db.replaceTracks('wave', [
+        BookTracksCompanion.insert(
+          bookId: 'wave',
+          trackIndex: 0,
+          filePath: file.path,
+          durationMs: const Value(12000),
+        ),
+      ]);
+      await h.playback.loadBook('wave');
+      await server.dispose();
+      final started = Completer<void>(), finish = Completer<void>();
+      final waveforms = WaveformService(
+        cacheDirectory: () async => Directory('${h.root.path}/waves'),
+        extractor: (path, duration, progress) async {
+          started.complete();
+          await finish.future;
+          return const AudioWaveform([.1, .5, 0], Duration(seconds: 12));
+        },
+      );
+      server = DesktopControlService(
+        library: h.library,
+        playback: h.playback,
+        descriptor: descriptor,
+        waveforms: waveforms,
+      );
+      await server.start();
+      final result = client.command('waveform');
+      await started.future.timeout(const Duration(seconds: 3));
+      try {
+        await client
+            .command('volume', {'value': .25})
+            .timeout(const Duration(seconds: 3));
+        expect((await client.command('status') as Map)['volume'], .25);
+        await client.command('mute');
+        expect(h.backend.volume, 0);
+        await client.command('unmute');
+        expect(h.backend.volume, .25);
+        await client.command('settings', {
+          'key': 'showWaveform',
+          'value': false,
+        });
+        expect(
+          (await client.command('settings') as Map)['showWaveform'],
+          false,
+        );
+        final token = jsonDecode(await descriptor.readAsString())['token'];
+        final port = jsonDecode(await descriptor.readAsString())['port'];
+        final http = HttpClient();
+        try {
+          final request = await http.postUrl(
+            Uri.parse('http://127.0.0.1:$port/waveform'),
+          );
+          request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+          request.write(jsonEncode({'command': 'delete', 'bookId': 'wave'}));
+          final response = await request.close();
+          await response.drain<void>();
+          expect(response.statusCode, HttpStatus.badRequest);
+          expect(await h.db.getBook('wave'), isNotNull);
+        } finally {
+          http.close(force: true);
+        }
+      } finally {
+        finish.complete();
+      }
+      expect((await result as Map)['peaks'], [.1, .5, 0]);
+      expect((await waveforms.cached(file.path))!.peaks, [.1, .5, 0]);
+      waveforms.dispose();
+    },
+  );
+
+  test(
+    'CLI metadata, preferences, organization, reading status and queue share GUI behavior',
+    () async {
+      await h.book('a', [60]);
+      await h.book('b', [90]);
+      await client.command('book-edit', {
+        'bookId': 'a',
+        'changes': {
+          'title': 'Edited title',
+          'author': 'Author',
+          'series': 'Saga',
+          'seriesOrder': 2,
+          'collection': 'Favorites',
+        },
+      });
+      final books =
+          await client.command('list', {
+                'series': 'Saga',
+                'collection': 'Favorites',
+                'sort': 'series',
+              })
+              as List;
+      expect(books, hasLength(1));
+      expect(books.single['title'], 'Edited title');
+      await client.command('load', {'bookId': 'a'});
+      await client.command('book-settings', {
+        'bookId': 'a',
+        'values': {'speed': 1.75, 'seekSeconds': 15},
+      });
+      expect(h.backend.speed, 1.75);
+      expect(h.settings.playbackSpeed, 1);
+      await client.command('book-settings', {
+        'bookId': 'a',
+        'values': {'speed': null},
+      });
+      expect(h.backend.speed, 1);
+      await client.command('book-cover', {
+        'bookId': 'a',
+        'base64': base64Encode([137, 80, 78, 71, 13, 10, 26, 10]),
+      });
+      expect((await h.db.getBook('a'))!.coverPath, isNotEmpty);
+      await client.command('mark', {'bookId': 'a', 'status': 'finished'});
+      expect(
+        await client.command('list', {'filter': 'finished'}),
+        hasLength(1),
+      );
+      await client.command('mark', {'bookId': 'a', 'status': 'unread'});
+      expect((await h.db.getBook('a'))!.totalProgress, 0);
+      await client.command('queue-add', {'bookId': 'a'});
+      await client.command('queue-add', {'bookId': 'b', 'position': 1});
+      expect(
+        ((await client.command('queue') as List).first as Map)['book']['id'],
+        'b',
+      );
+      await client.command('queue-remove', {'bookId': 'a'});
+      await client.command('queue-play');
+      expect(h.playback.currentBookId, 'b');
+      expect(await client.command('queue'), isEmpty);
+      expect(
+        (await client.command('stats') as Map).containsKey('totalMs'),
+        isTrue,
+      );
+      await expectLater(
+        client.command('book-settings', {
+          'bookId': 'b',
+          'values': {'speed': 99},
+        }),
+        throwsStateError,
+      );
+      await expectLater(
+        client.command('queue-add', {'bookId': 'missing'}),
+        throwsStateError,
+      );
+      expect((await client.command('status') as Map)['bookId'], 'b');
+    },
+  );
 
   test(
     'CLI controls the production coordinator and persists bookmark/progress',
@@ -201,32 +329,38 @@ void main() {
     },
   );
 
-  test('library view settings persist and leave live playback intact', () async {
-    await h.book('view', [120]);
-    await client.command('play', {'bookId': 'view'});
-    await client.command('seek', {'seconds': 45});
-    final before = await client.command('status') as Map;
-    expect((await client.command('settings') as Map)['libraryView'], 'auto');
-    for (final view in ['list', 'grid', 'auto']) {
-      await client.command('settings', {'key': 'libraryView', 'value': view});
-      expect(h.settings.libraryView, view);
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.reload();
-      final reloaded = SettingsService(preferences);
-      expect(reloaded.libraryView, view);
-      reloaded.dispose();
-      final after = await client.command('status') as Map;
-      expect(after['bookId'], before['bookId']);
-      expect(after['positionMs'], before['positionMs']);
-      expect(after['status'], before['status']);
-      expect(after['speed'], before['speed']);
-    }
-    final settings = await client.command('settings');
-    for (final invalid in ['invalid', 42]) {
-      await expectLater(client.command('settings', {'key': 'libraryView', 'value': invalid}), throwsStateError);
-      expect(await client.command('settings'), settings);
-    }
-  });
+  test(
+    'library view settings persist and leave live playback intact',
+    () async {
+      await h.book('view', [120]);
+      await client.command('play', {'bookId': 'view'});
+      await client.command('seek', {'seconds': 45});
+      final before = await client.command('status') as Map;
+      expect((await client.command('settings') as Map)['libraryView'], 'auto');
+      for (final view in ['list', 'grid', 'auto']) {
+        await client.command('settings', {'key': 'libraryView', 'value': view});
+        expect(h.settings.libraryView, view);
+        final preferences = await SharedPreferences.getInstance();
+        await preferences.reload();
+        final reloaded = SettingsService(preferences);
+        expect(reloaded.libraryView, view);
+        reloaded.dispose();
+        final after = await client.command('status') as Map;
+        expect(after['bookId'], before['bookId']);
+        expect(after['positionMs'], before['positionMs']);
+        expect(after['status'], before['status']);
+        expect(after['speed'], before['speed']);
+      }
+      final settings = await client.command('settings');
+      for (final invalid in ['invalid', 42]) {
+        await expectLater(
+          client.command('settings', {'key': 'libraryView', 'value': invalid}),
+          throwsStateError,
+        );
+        expect(await client.command('settings'), settings);
+      }
+    },
+  );
 
   test(
     'bookmark editing, seeking, history clearing and metadata restore',

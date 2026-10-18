@@ -214,7 +214,7 @@ void main() {
   );
 
   testWidgets(
-    'decorative waveform stops and resumes when reduced motion changes',
+    'measured waveform never animates amplitudes, with or without reduced motion',
     (tester) async {
       Future<void> show(bool reduced) => tester.pumpWidget(
         MaterialApp(
@@ -229,7 +229,7 @@ void main() {
       expect(tester.binding.transientCallbackCount, 0);
       await show(false);
       await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.binding.transientCallbackCount, greaterThan(0));
+      expect(tester.binding.transientCallbackCount, 0);
       await show(true);
       await tester.pumpAndSettle();
       expect(tester.binding.transientCallbackCount, 0);

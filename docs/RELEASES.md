@@ -81,3 +81,11 @@ Public Mac archives deliberately use ad-hoc CI signing; Apple Distribution is fo
 Store delivery and cannot replace Developer ID notarization. Local Mac builds and tests
 use the explicit Brickwright keychain via `scripts/macos_local.py`; never change the
 user's default keychain or export its signing identity for a public archive.
+
+
+Waveform analysis uses native Android/Apple decoders for compressed audio. Windows/Linux
+users can install FFmpeg and put it on PATH for compressed-file waveform generation.
+PCM WAV analysis needs no external executable. This optional dependency is independent
+of normal native playback. Waveform caches contain measured peaks, not audio copies.
+Publication compares semantic versions/builds so a slower older build cannot replace
+a newer release as latest.

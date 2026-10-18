@@ -43,7 +43,34 @@ def main():
         definition = f'--dart-define=CRISPERPLAYER_MACOS_KEYCHAIN={keychain}'
         command = (['flutter', 'test', args.test_file, '-d', 'macos', definition]
                    if args.action == 'test' else ['flutter', 'build', 'macos', '--debug', definition])
-        subprocess.run(command, cwd=ROOT, env=environment, check=True)
+        foreground = None
+        if args.action == 'test':
+            # LaunchServices sometimes cannot foreground a locally signed test
+            # bundle. Activate only the new test process, never a running user app.
+            process_list = subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True)
+            executable = str(ROOT / 'build/macos/Build/Products/Debug/crisperplayer.app/Contents/MacOS/crisperplayer')
+            existing = [int(line.strip().split(None, 1)[0]) for line in process_list.splitlines()
+                        if line.strip().endswith(executable)]
+            excluded = ', '.join(str(pid) for pid in existing)
+            swift = f'''import AppKit
+let excluded: Set<pid_t> = [{excluded}]
+let deadline = Date().addingTimeInterval(600)
+while Date() < deadline {{
+    if let app = NSWorkspace.shared.runningApplications.first(where: {{
+        $0.bundleIdentifier == "com.crispstrobe.crisperplayer" && !excluded.contains($0.processIdentifier)
+    }}) {{
+        _ = app.activate(options: [.activateAllWindows]); break
+    }}
+    RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+}}
+'''
+            foreground = subprocess.Popen(['swift', '-e', swift], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            subprocess.run(command, cwd=ROOT, env=environment, check=True)
+        finally:
+            if foreground is not None and foreground.poll() is None:
+                foreground.terminate()
+                foreground.wait(timeout=10)
         app = ROOT / 'build/macos/Build/Products/Debug/crisperplayer.app'
         subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
         signature = subprocess.check_output(['codesign', '-d', '--verbose=4', str(app)],

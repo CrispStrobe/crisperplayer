@@ -13,8 +13,22 @@ class SettingsService extends ChangeNotifier {
       (_p.getDouble('playback_speed') ?? 1.0).clamp(0.5, 3.0);
   set playbackSpeed(double v) =>
       _changed(_p.setDouble('playback_speed', v.clamp(0.5, 3.0)));
+  bool get showWaveform => _p.getBool('show_waveform') ?? true;
+  set showWaveform(bool value) => _changed(_p.setBool('show_waveform', value));
   double get volume => (_p.getDouble('volume') ?? 1.0).clamp(0.0, 1.0);
-  set volume(double v) => _changed(_p.setDouble('volume', v.clamp(0.0, 1.0)));
+  double get unmutedVolume {
+    final value = _p.getDouble('unmuted_volume') ?? 1.0;
+    return value > 0 && value <= 1 ? value : 1;
+  }
+
+  set volume(double v) {
+    final volume = v.clamp(0.0, 1.0);
+    if (volume > 0) {
+      _p.setDouble('unmuted_volume', volume);
+    }
+    _changed(_p.setDouble('volume', volume));
+  }
+
   Duration get autoBookmarkInterval => Duration(
     seconds: (_p.getInt('auto_bookmark_sec') ?? 300).clamp(1, 86400),
   );

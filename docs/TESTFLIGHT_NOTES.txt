@@ -19,3 +19,5 @@ Library browser: saved Automatic/Cover grid/List layouts, an automatic list for 
 Direct NAS access: add an SMB share with smb://host/share/. SMB3 encryption is required by default; older NAS servers can explicitly use signed SMB2. Downloads support pause/resume and changed-file detection. GUI and CLI use the same connection settings.
 
 About CrisperPlayer: dynamic installed version/build, provider/contact/privacy details, source and download links, collected dependency licenses and native storage/audio notices. Please check scrolling and license navigation with enlarged text.
+
+Playback controls: tap the elapsed time to enter HH:MM:SS/MM:SS/seconds and jump. Check Enter, Cancel, invalid times and 30-second target adjustments. Volume now has a percentage slider, mute/unmute and 5% buttons. Generate a real current-track waveform locally; inspect quiet/loud passages and tap/drag to seek. Generation is explicit and cached. The waveform has no decorative animation. Check a long M4B while playback continues.

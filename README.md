@@ -61,6 +61,43 @@ Third-party components retain their upstream licenses.
 
 Plex, WebDAV, SFTP and SMB connections support browsing and offline downloads. Cross-device progress sync is not implemented. The Pages browser player has the smaller local-file scope described above.
 
+## Playback controls
+
+Tap/click the elapsed time to jump to an exact book position. Enter `HH:MM:SS`,
+`MM:SS` or seconds (including milliseconds), then press Enter or **Jump**.
+The dialog also has touch buttons to adjust the target by 30 seconds; Cancel
+leaves playback untouched. When whole-book durations are unavailable, this
+control explicitly targets the current track.
+
+The volume button beside the time opens a percentage slider, 5% adjustment
+buttons and mute/unmute that restores the previous level. It controls the app's
+gain; hardware/device volume is separate. Volume is saved across launches.
+
+The decorative animation is replaced with **Audio waveform · current track**.
+Choose **Generate audio waveform** to analyze that track locally, then tap/drag
+the measured waveform to seek within it. Silence stays flat; playback only moves
+the playhead and tint. Generation is explicit because long tracks may take time.
+Results are cached by file identity; changing the audio invalidates its cache.
+Use the eye button to hide/show the waveform. PCM WAV analysis works on every
+native platform. Android/iOS/macOS decode compressed audio natively; Windows/Linux
+also need an installed `ffmpeg` executable on PATH for compressed-file waveforms.
+Playback remains available if analysis is unsupported or fails. No audio is uploaded.
+
+The desktop CLI shares these operations:
+
+```sh
+crisperplayer seek 01:23:45.500
+crisperplayer volume 0.65
+crisperplayer mute
+crisperplayer unmute
+crisperplayer waveform # JSON measured peaks for the current track; may take time
+crisperplayer settings showWaveform false
+```
+
+Waveform analysis runs separately from the CLI playback command queue, so another
+CLI invocation can still pause/seek/change volume while it is generating. The
+Pages player also has editable track timecodes and a mute/restore volume control.
+
 ## Development
 
 Use Flutter 3.44 or newer (Dart 3.12). The iOS deployment minimum is 15.0; Android uses the Flutter SDK minimum.
@@ -231,8 +268,7 @@ crisperplayer settings libraryView list # auto / grid / list
 The player and mini player support enlarged system text. Speed and sleep sheets
 scroll on short screens. Screen readers announce elapsed/total seek times in
 hours, minutes and seconds; increase/decrease actions use the configured skip
-interval and stop at the book boundaries. Touch seeking stays continuous. The
-waveform respects the system reduced-motion setting. These automated checks cover
+interval and stop at the book boundaries. Touch seeking stays continuous. Measured waveforms do not animate their amplitudes, including when Reduce Motion is off. These automated checks cover
 player controls at 200% text and 320-pixel width; VoiceOver/TalkBack validation on
 physical phones and a wider screen audit are still pending.
 
@@ -409,3 +445,10 @@ node scripts/serve_site.js # http://127.0.0.1:8765/crisperplayer/
 Browser tests import generated WAV files, exercise native browser playback, natural track
 order, independent resume positions, bookmarks, export, deletion and a narrow viewport.
 They also check that listening does not issue uploads.
+
+
+To exercise native compressed-audio waveform extraction on this Mac, run
+`python3 scripts/macos_waveform_smoke.py`. It generates an AAC tone with the
+system encoder, writes it inside the test sandbox, checks measured/cached peaks
+while the muted native player continues, and uses Brickwright signing. It leaves
+your audiobook library untouched.

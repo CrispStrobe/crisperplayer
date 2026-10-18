@@ -40,6 +40,8 @@ class ControlClient {
   ]) => _request(
     {'server-cancel', 'server-downloads'}.contains(name)
         ? '/transfers'
+        : name == 'waveform'
+        ? '/waveform'
         : '/command',
     body: {'command': name, ...args},
   );

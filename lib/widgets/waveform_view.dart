@@ -1,91 +1,62 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// Decorative waveform: synthetic bars animated when playing.
-/// Not tied to real PCM — cosmetic polish, deterministic via seed.
-class WaveformView extends StatefulWidget {
-  final bool isPlaying;
-  final Duration position;
-  final Duration duration;
-  final List<int> chapterEndFractions; // 0..1000 for markers if wanted
+/// Static peaks measured from audio. Playback changes only the playhead/tint.
+class WaveformView extends StatelessWidget {
+  final bool isPlaying; // Kept for callers; never animates amplitude.
+  final Duration position, duration;
+  final List<double> peaks;
+  final List<int> chapterEndFractions;
   final double height;
   final Color? color;
-
+  final ValueChanged<Duration>? onSeek;
   const WaveformView({
     super.key,
-    required this.isPlaying,
+    this.isPlaying = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
+    this.peaks = const [],
     this.chapterEndFractions = const [],
-    this.height = 36,
+    this.height = 48,
     this.color,
+    this.onSeek,
   });
-
-  @override
-  State<WaveformView> createState() => _WaveformViewState();
-}
-
-class _WaveformViewState extends State<WaveformView>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  bool _animate = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-  }
-
-  void _updateAnimation() {
-    _animate =
-        widget.isPlaying &&
-        !MediaQuery.disableAnimationsOf(context) &&
-        TickerMode.valuesOf(context).enabled;
-    if (_animate && !_ctrl.isAnimating) {
-      _ctrl.repeat();
-    } else if (!_animate && _ctrl.isAnimating) {
-      _ctrl.stop();
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateAnimation();
-  }
-
-  @override
-  void didUpdateWidget(covariant WaveformView old) {
-    super.didUpdateWidget(old);
-    _updateAnimation();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final baseColor = widget.color ?? cs.primary;
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (ctx, _) {
-        return CustomPaint(
-          size: Size(double.infinity, widget.height),
-          painter: _WaveformPainter(
-            anim: _ctrl.value,
-            isPlaying: _animate,
-            position: widget.position,
-            duration: widget.duration,
-            chapterFractions: widget.chapterEndFractions,
-            color: baseColor,
-            inactiveColor: cs.surfaceContainerHighest,
+    final colors = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        void seek(Offset local) {
+          if (duration <= Duration.zero || constraints.maxWidth <= 0) return;
+          onSeek?.call(
+            Duration(
+              milliseconds:
+                  (duration.inMilliseconds *
+                          (local.dx / constraints.maxWidth).clamp(0, 1))
+                      .round(),
+            ),
+          );
+        }
+
+        return GestureDetector(
+          onTapDown: onSeek == null
+              ? null
+              : (event) => seek(event.localPosition),
+          onHorizontalDragUpdate: onSeek == null
+              ? null
+              : (event) => seek(event.localPosition),
+          child: SizedBox(
+            width: double.infinity,
+            height: height,
+            child: CustomPaint(
+              painter: _WaveformPainter(
+                peaks,
+                position,
+                duration,
+                color ?? colors.primary,
+                colors.surfaceContainerHighest,
+              ),
+            ),
           ),
         );
       },
@@ -94,145 +65,88 @@ class _WaveformViewState extends State<WaveformView>
 }
 
 class _WaveformPainter extends CustomPainter {
-  final double anim;
-  final bool isPlaying;
-  final Duration position;
-  final Duration duration;
-  final List<int> chapterFractions;
-  final Color color;
-  final Color inactiveColor;
-
-  _WaveformPainter({
-    required this.anim,
-    required this.isPlaying,
-    required this.position,
-    required this.duration,
-    required this.chapterFractions,
-    required this.color,
-    required this.inactiveColor,
-  });
-
-  static const int barCount = 48;
-  // deterministic pseudo-random heights seeded per bar
-  static List<double> _heights(int count) {
-    final rng = math.Random(42);
-    return List.generate(count, (_) => 0.25 + rng.nextDouble() * 0.75);
-  }
-
-  static final _cachedHeights = _heights(barCount);
-
+  final List<double> peaks;
+  final Duration position, duration;
+  final Color color, inactive;
+  _WaveformPainter(
+    this.peaks,
+    this.position,
+    this.duration,
+    this.color,
+    this.inactive,
+  );
   @override
   void paint(Canvas canvas, Size size) {
-    final barW = size.width / barCount;
-    final gap = barW * 0.25;
-    final bw = barW - gap;
-    final centerY = size.height / 2;
-
-    final totalMs = duration.inMilliseconds;
-    final posMs = position.inMilliseconds.clamp(0, totalMs > 0 ? totalMs : 1);
-    final progress = totalMs == 0 ? 0 : posMs / totalMs;
-    final progressX = size.width * progress;
-
-    for (int i = 0; i < barCount; i++) {
-      final baseH = _cachedHeights[i];
-      // animate when playing: small wave modulation per bar phase
-      double amp = baseH;
-      if (isPlaying) {
-        final phase = (anim * 2 * math.pi + i * 0.35);
-        amp = (baseH * (0.85 + 0.3 * math.sin(phase))).clamp(0.15, 1.0);
-      }
-      final h = amp * size.height;
-      final x = i * barW + gap / 2;
-      final y = centerY - h / 2;
-
-      final isPassed = x < progressX;
-      final paint = Paint()
-        ..color = (isPassed ? color : inactiveColor).withValues(
-          alpha: isPassed ? 0.95 : 0.9,
-        )
-        ..style = PaintingStyle.fill;
-      final rrect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, y, bw.clamp(2, 10), h),
-        Radius.circular(bw / 2),
-      );
-      canvas.drawRRect(rrect, paint);
-    }
-
-    // playhead line
-    if (totalMs > 0) {
+    if (size.width <= 0 || size.height <= 0) return;
+    final fraction = duration.inMilliseconds > 0
+        ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+    final count = math.min(peaks.length, math.max(1, size.width ~/ 3));
+    if (count == 0) {
       canvas.drawLine(
-        Offset(progressX, 0),
-        Offset(progressX, size.height),
+        Offset(0, size.height / 2),
+        Offset(size.width, size.height / 2),
         Paint()
-          ..color = color
-          ..strokeWidth = 2,
+          ..color = inactive
+          ..strokeWidth = 1,
       );
-      canvas.drawCircle(Offset(progressX, centerY), 4, Paint()..color = color);
-      canvas.drawCircle(
-        Offset(progressX, centerY),
-        2,
-        Paint()..color = Colors.white,
+      return;
+    }
+    final width = size.width / count;
+    for (var index = 0; index < count; index++) {
+      var peak = 0.0;
+      for (
+        var sample = index * peaks.length ~/ count;
+        sample < (index + 1) * peaks.length ~/ count;
+        sample++
+      ) {
+        peak = math.max(peak, peaks[sample].clamp(0, 1));
+      }
+      final height = math.max(1.0, peak * size.height);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          index * width,
+          (size.height - height) / 2,
+          math.max(1.0, width - 1),
+          height,
+        ),
+        Paint()..color = index / count < fraction ? color : inactive,
       );
     }
-  }
-
-  @override
-  bool shouldRepaint(covariant _WaveformPainter old) =>
-      old.anim != anim ||
-      old.position != position ||
-      old.duration != duration ||
-      old.isPlaying != isPlaying ||
-      old.color != color ||
-      old.inactiveColor != inactiveColor;
-}
-
-/// Compact inline waveform for mini player (static, no animation)
-class MiniWaveform extends StatelessWidget {
-  final double progress; // 0..1
-  final Color? color;
-  const MiniWaveform({super.key, required this.progress, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return CustomPaint(
-      size: const Size(40, 14),
-      painter: _MiniPainter(
-        progress: progress,
-        color: color ?? cs.primary,
-        bg: cs.surfaceContainerHighest,
-      ),
+    final x = size.width * fraction;
+    canvas.drawLine(
+      Offset(x, 0),
+      Offset(x, size.height),
+      Paint()
+        ..color = color
+        ..strokeWidth = 2,
     );
   }
+
+  @override
+  bool shouldRepaint(_WaveformPainter old) =>
+      old.peaks != peaks ||
+      old.position != position ||
+      old.duration != duration ||
+      old.color != color ||
+      old.inactive != inactive;
 }
 
-class _MiniPainter extends CustomPainter {
+/// Honest compact progress indicator; no fabricated audio amplitudes.
+class MiniWaveform extends StatelessWidget {
   final double progress;
-  final Color color;
-  final Color bg;
-  _MiniPainter({required this.progress, required this.color, required this.bg});
-
+  final Color? color;
+  const MiniWaveform({super.key, required this.progress, this.color});
   @override
-  void paint(Canvas canvas, Size size) {
-    final bars = 12;
-    final rng = math.Random(7);
-    final bw = size.width / bars;
-    for (int i = 0; i < bars; i++) {
-      final h = (0.3 + rng.nextDouble() * 0.7) * size.height;
-      final x = i * bw + 1;
-      final y = (size.height - h) / 2;
-      final isActive = (i / bars) < progress;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, y, bw - 2, h),
-          const Radius.circular(2),
-        ),
-        Paint()..color = isActive ? color : bg,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MiniPainter old) =>
-      old.progress != progress || old.color != color || old.bg != bg;
+  Widget build(BuildContext context) => SizedBox(
+    width: 40,
+    height: 14,
+    child: Center(
+      child: LinearProgressIndicator(
+        value: progress.clamp(0, 1),
+        color: color,
+        minHeight: 3,
+      ),
+    ),
+  );
 }

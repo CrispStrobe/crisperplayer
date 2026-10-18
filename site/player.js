@@ -31,7 +31,7 @@ const database = new Promise((resolve, reject) => {
 });
 let books = [], selected = null, tracks = [], objectUrl = null;
 let loading = false, pendingPosition = 0, playWhenReady = false, generation = 0;
-let lastCheckpoint = 0;
+let lastCheckpoint = 0, beforeMute = 1;
 const safe = fn => (...args) => Promise.resolve().then(() => fn(...args)).catch(e => message(e.message || String(e)));
 
 async function saveBook(book) {
@@ -47,11 +47,12 @@ async function checkpoint() {
   book.position = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
   book.speed = audio.playbackRate;
   book.volume = audio.volume;
+  if (audio.volume > 0) book.unmutedVolume = audio.volume;
   book.updatedAt = Date.now();
   await saveBook(book);
 }
 function controls() {
-  for (const id of ['play', 'rewind', 'forward', 'bookmark', 'export', 'delete']) $(id).disabled = !selected || loading;
+  for (const id of ['play', 'rewind', 'forward', 'bookmark', 'export', 'delete', 'elapsed', 'mute']) $(id).disabled = !selected || loading;
   $('previous').disabled = !selected || loading || selected.track === 0;
   $('next').disabled = !selected || loading || selected.track >= tracks.length - 1;
   $('play').textContent = audio.paused ? 'Play' : 'Pause';
@@ -63,7 +64,8 @@ function progress() {
   $('seek').value = pos;
   $('seek').disabled = !selected || loading || total <= 0;
   $('seek').setAttribute('aria-valuetext', `${duration(pos)} of ${duration(total)}`);
-  $('elapsed').textContent = duration(pos);
+  $('elapsed').textContent = `${duration(pos)} ✎`;
+  $('elapsed').setAttribute('aria-label', `Jump to time. Current track position ${duration(pos)}`);
   $('duration').textContent = duration(total);
 }
 function renderBooks() {
@@ -113,8 +115,10 @@ async function switchTrack(index, position = 0, autoplay = false) {
   audio.defaultPlaybackRate = selected.speed || 1;
   audio.playbackRate = selected.speed || 1;
   audio.volume = selected.volume ?? 1;
+  beforeMute = selected.unmutedVolume ?? (audio.volume > 0 ? audio.volume : 1);
   $('speed').value = String(audio.playbackRate);
   $('volume').value = audio.volume;
+  $('mute').textContent = audio.volume === 0 ? 'Unmute' : 'Mute';
   $('title').textContent = selected.title;
   $('track-name').textContent = `Track ${index + 1} of ${tracks.length} · ${selected.names[index]}`;
   audio.load(); renderTracks(); controls(); progress();
@@ -162,6 +166,38 @@ $('forward').onclick = safe(async () => { audio.currentTime = Math.min(audio.dur
 $('seek').oninput = safe(async event => { audio.currentTime = Number(event.target.value); await checkpoint(); progress(); });
 $('speed').onchange = safe(async event => { audio.playbackRate = Number(event.target.value); await checkpoint(); });
 $('volume').oninput = safe(async event => { audio.volume = Number(event.target.value); await checkpoint(); });
+function parseTime(text) {
+  if (!/^\d+(?::\d{1,2}){0,2}(?:\.\d{1,3})?$/.test(text.trim())) throw new Error('Use seconds, MM:SS or HH:MM:SS.');
+  let value = 0;
+  for (const [index, part] of text.trim().split(':').entries()) {
+    if (index > 0 && Number(part) >= 60) throw new Error('Minutes and seconds must be below 60.');
+    value = value * 60 + Number(part);
+  }
+  if (!Number.isFinite(value) || value > audio.duration) throw new Error(`Enter a time up to ${duration(audio.duration)}.`);
+  return value;
+}
+$('elapsed').onclick = () => {
+  $('jump-input').value = duration(audio.currentTime); $('jump-error').textContent = '';
+  $('jump-limit').textContent = `Track duration ${duration(audio.duration)}`;
+  $('jump').showModal(); $('jump-input').focus(); $('jump-input').select();
+};
+$('jump-cancel').onclick = () => $('jump').close();
+$('jump-form').addEventListener('submit', event => event.preventDefault());
+$('jump-form').onsubmit = safe(async () => {
+  try { audio.currentTime = parseTime($('jump-input').value); await checkpoint(); progress(); $('jump').close(); }
+  catch (error) { $('jump-error').textContent = error.message; }
+});
+for (const [id, change] of [['jump-back', -30], ['jump-forward', 30]]) {
+  $(id).onclick = () => {
+    let current; try { current = parseTime($('jump-input').value); } catch (_) { current = audio.currentTime; }
+    $('jump-input').value = duration(Math.max(0, Math.min(audio.duration, current + change))); $('jump-error').textContent = '';
+  };
+}
+$('mute').onclick = safe(async () => {
+  if (audio.volume > 0) { beforeMute = audio.volume; selected.unmutedVolume = beforeMute; audio.volume = 0; } else audio.volume = beforeMute;
+  $('volume').value = audio.volume; $('mute').textContent = audio.volume === 0 ? 'Unmute' : 'Mute'; await checkpoint();
+});
+audio.onvolumechange = () => { $('volume').value = audio.volume; $('mute').textContent = audio.volume === 0 ? 'Unmute' : 'Mute'; };
 $('bookmark-form').onsubmit = safe(async event => {
   if (!selected || loading) return;
   selected.bookmarks.push({id: crypto.randomUUID(), track: selected.track, seconds: audio.currentTime, label: $('bookmark-label').value.trim()});

@@ -53,3 +53,22 @@ String titleFromPath(String p) {
 extension DurationX on Duration {
   String get hhmmss => formatDuration(this);
 }
+
+/// Absolute seconds, MM:SS or HH:MM:SS, optionally with milliseconds.
+Duration parseTimecode(String text) {
+  final value = text.trim();
+  if (!RegExp(r'^\d+(?::\d{1,2}){0,2}(?:\.\d{1,3})?$').hasMatch(value)) {
+    throw const FormatException('Use seconds, MM:SS or HH:MM:SS.');
+  }
+  final parts = value.split(':');
+  var seconds = 0.0;
+  for (var index = 0; index < parts.length; index++) {
+    final part = double.parse(parts[index]);
+    if (!part.isFinite || (index > 0 && part >= 60)) {
+      throw const FormatException('Minutes and seconds must be below 60.');
+    }
+    seconds = seconds * 60 + part;
+  }
+  if (seconds > 315360000) throw const FormatException('Time is too large.');
+  return Duration(milliseconds: (seconds * 1000).round());
+}

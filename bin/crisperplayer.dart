@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:crisperplayer/utils/format.dart' show parseTimecode;
 import 'package:crisperplayer/cli/control_client.dart';
 import 'package:crisperplayer/utils/folder_import.dart';
 
@@ -43,9 +44,11 @@ Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
   play [BOOK_ID]         Play a book or resume the loaded book
   load BOOK_ID           Load a book paused
   pause                  Pause and save progress
-  seek SECONDS           Seek from the start of the whole book
+  seek SECONDS_OR_HH:MM:SS           Seek from the start of the whole book
   speed NUMBER           Set playback speed (0.5–3.0)
   volume NUMBER          Set volume (0–1)
+  mute / unmute          Mute or restore the last audible level
+  waveform               Generate/read measured peaks for the current track
   bookmark [TITLE]       Bookmark the current position
   bookmarks [BOOK_ID]    List bookmarks
 
@@ -184,7 +187,10 @@ Future<void> main(List<String> arguments) async {
           options[flag.substring(2)] = args.removeAt(0);
         }
         result = await client.command(command, options);
-      case 'server-cancel' ||
+      case 'mute' ||
+          'unmute' ||
+          'waveform' ||
+          'server-cancel' ||
           'server-downloads' ||
           'servers' ||
           'stats' ||
@@ -220,9 +226,15 @@ Future<void> main(List<String> arguments) async {
         });
       case 'seek' || 'speed' || 'volume' || 'skip':
         if (args.length != 1) {
-          throw FormatException('$command requires one number');
+          throw FormatException(
+            command == 'seek'
+                ? 'seek requires seconds, MM:SS or HH:MM:SS'
+                : '$command requires one number',
+          );
         }
-        final number = double.tryParse(args.single);
+        final number = command == 'seek'
+            ? parseTimecode(args.single).inMilliseconds / 1000
+            : double.tryParse(args.single);
         if (number == null || !number.isFinite) {
           throw const FormatException('Expected a finite number');
         }

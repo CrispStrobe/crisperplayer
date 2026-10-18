@@ -206,6 +206,9 @@ jobs:
           if-no-files-found: error
 
   publish:
+    concurrency:
+      group: binary-release-publication
+      cancel-in-progress: false
     needs: [prepare, android, desktop]
     runs-on: ubuntu-latest
     permissions:
@@ -225,5 +228,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
-          gh release upload "$RELEASE_TAG" dist/* --clobber
-          gh release edit "$RELEASE_TAG" --draft=false --latest --notes-file docs/RELEASE_NOTES.md
+          python3 scripts/release.py publish --tag "$RELEASE_TAG" --directory dist

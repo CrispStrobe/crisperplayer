@@ -31,7 +31,7 @@ void main() {
       expect(
         tester
             .widget<LinearProgressIndicator>(
-              find.byType(LinearProgressIndicator),
+              find.byKey(const ValueKey('mini-book-progress')),
             )
             .value,
         closeTo(35 / 90, .001),

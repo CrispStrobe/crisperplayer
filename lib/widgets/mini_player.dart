@@ -44,6 +44,7 @@ class MiniPlayer extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     LinearProgressIndicator(
+                      key: const ValueKey('mini-book-progress'),
                       value: progress,
                       minHeight: 3,
                       backgroundColor: cs.surfaceContainerHighest,

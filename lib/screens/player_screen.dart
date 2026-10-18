@@ -9,7 +9,9 @@ import '../utils/format.dart';
 import '../widgets/chapter_tile.dart';
 import '../widgets/chapter_progress.dart';
 import '../widgets/playback_seek_slider.dart';
-import '../widgets/waveform_view.dart';
+import '../widgets/audio_waveform_panel.dart';
+import '../widgets/jump_to_time_dialog.dart';
+import '../widgets/volume_control.dart';
 import '../widgets/sleep_timer_sheet.dart';
 import '../widgets/speed_sheet.dart';
 import '../widgets/chapter_list_sheet.dart';
@@ -320,20 +322,64 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
                           SizedBox(
                             width: double.infinity,
-                            child: Wrap(
-                              alignment: WrapAlignment.spaceBetween,
-                              spacing: 12,
+                            child: Row(
                               children: [
-                                Text(
-                                  formatDuration(displayPosition),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                Expanded(
+                                  child: Wrap(
+                                    children: [
+                                      TextButton.icon(
+                                        key: const ValueKey(
+                                          'edit-playback-time',
+                                        ),
+                                        icon: const Icon(
+                                          Icons.edit_outlined,
+                                          size: 16,
+                                        ),
+                                        label: Text(
+                                          formatDuration(displayPosition),
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          minimumSize: const Size(48, 48),
+                                        ),
+                                        onPressed:
+                                            displayDuration > Duration.zero
+                                            ? () async {
+                                                final target =
+                                                    await showJumpToTimeDialog(
+                                                      context,
+                                                      position: displayPosition,
+                                                      duration: displayDuration,
+                                                      wholeBook:
+                                                          wholeDuration != null,
+                                                    );
+                                                if (target == null ||
+                                                    !context.mounted ||
+                                                    svc.currentBookId !=
+                                                        widget.bookId) {
+                                                  return;
+                                                }
+                                                if (wholeDuration == null) {
+                                                  await svc.seek(target);
+                                                } else {
+                                                  await svc.seekBook(target);
+                                                }
+                                              }
+                                            : null,
+                                      ),
+                                      VolumeControlButton(
+                                        playback: svc,
+                                        volume: st.volume,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  '${(displayProgress * 100).toStringAsFixed(0)}% • ${formatDuration(remaining)} left',
-                                  style: const TextStyle(fontSize: 12),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${(displayProgress * 100).toStringAsFixed(0)}% • ${formatDuration(remaining)} left',
+                                    style: const TextStyle(fontSize: 12),
+                                    textAlign: TextAlign.end,
+                                  ),
                                 ),
                               ],
                             ),
@@ -595,11 +641,15 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                             const SizedBox(height: 12),
 
                             // Waveform view
-                            WaveformView(
-                              isPlaying: st.isPlaying,
+                            AudioWaveformPanel(
+                              path: st.currentFile,
                               position: st.position,
                               duration: st.duration,
-                              height: 40,
+                              onSeek: svc.seek,
+                              visible: svc.settings?.showWaveform ?? true,
+                              onVisibilityChanged: (visible) => setState(() {
+                                svc.settings?.showWaveform = visible;
+                              }),
                             ),
                             const SizedBox(height: 8),
 

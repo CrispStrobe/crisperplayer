@@ -351,7 +351,6 @@ class PlaybackService with WidgetsBindingObserver {
       await _applySettings();
       await _syncHandler();
       _emit(state.copyWith(status: m.PlaybackStatus.paused));
-      _publishPosition();
       _startAutoBookmark();
     } catch (e) {
       _tracks = [];
@@ -366,6 +365,9 @@ class PlaybackService with WidgetsBindingObserver {
     } finally {
       _loading = false;
     }
+    // Loading suppresses backend position events; publish the selected track once
+    // loading has ended, including for a paused load with no later audio event.
+    _publishPosition();
     if (autoPlay) await _play();
   }
 

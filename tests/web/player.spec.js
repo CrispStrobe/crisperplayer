@@ -74,3 +74,17 @@ test('mobile layout, literal filenames, About and version-independent downloads'
   await page.locator('#about-close').click();
   await expect(page.getByRole('link', {name:'Windows x64', exact:true})).toHaveAttribute('href', /releases\/latest\/download\/CrisperPlayer-windows-x64.zip$/);
 });
+
+test('editable timecode validates input and supports Enter, touch stepping and mute', async ({page}) => {
+  await page.goto('./'); await add(page, [wav('Test.wav')]);
+  await page.locator('#volume').fill('0.35'); await page.locator('#mute').click();
+  await expect.poll(() => page.locator('#audio').evaluate(a => a.volume)).toBe(0);
+  await page.locator('#mute').click(); await expect.poll(() => page.locator('#audio').evaluate(a => a.volume)).toBe(0.35);
+  await page.locator('#elapsed').click(); await page.locator('#jump-input').fill('1:99');
+  await page.locator('#jump-input').press('Enter'); await expect(page.locator('#jump-error')).toContainText('below 60');
+  await page.locator('#jump-input').fill('00:10'); await page.locator('#jump-forward').click();
+  await page.locator('#jump-input').press('Enter'); await expect(page.locator('#jump')).not.toBeVisible();
+  await expect.poll(() => page.locator('#audio').evaluate(a => a.currentTime)).toBe(40);
+  await page.locator('#elapsed').click(); await page.locator('#jump-input').fill('00:05'); await page.locator('#jump-cancel').click();
+  await expect.poll(() => page.locator('#audio').evaluate(a => a.currentTime)).toBe(40);
+});

@@ -9,6 +9,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import release
 
 class BinaryReleaseTests(unittest.TestCase):
+    def test_older_build_cannot_replace_a_newer_latest_release(self):
+        self.assertFalse(release.should_be_latest('v0.1.0+13', 'v0.1.0+14'))
+        self.assertTrue(release.should_be_latest('v0.1.0+14', 'v0.1.0'))
+        self.assertTrue(release.should_be_latest('v0.2.0+15', 'v0.1.0+99'))
+        self.assertTrue(release.should_be_latest('v0.1.0+14', ''))
+        with self.assertRaises(ValueError):
+            release.should_be_latest('v0.1.0+14', 'unversioned')
+
     def test_rejects_mistagged_build(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

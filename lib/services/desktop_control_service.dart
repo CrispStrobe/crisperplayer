@@ -1,4 +1,5 @@
 import 'server/remote_library_service.dart';
+import 'audio/waveform_service.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -18,6 +19,7 @@ class DesktopControlService {
   final PlaybackService playback;
   final File descriptor;
   final RemoteLibraryService? remote;
+  final WaveformService waveforms;
   final String _token = base64Url.encode(
     List<int>.generate(32, (_) => Random.secure().nextInt(256)),
   );
@@ -31,7 +33,8 @@ class DesktopControlService {
     required this.playback,
     required this.descriptor,
     this.remote,
-  });
+    WaveformService? waveforms,
+  }) : waveforms = waveforms ?? WaveformService.shared;
 
   Future<void> start() async {
     if (_server != null) throw StateError('Desktop control is already running');
@@ -43,7 +46,7 @@ class DesktopControlService {
     _requests = server.listen((request) {
       // Transfer pause/status must remain responsive while a download command
       // owns the normal mutation queue. Authentication is still checked below.
-      if (request.uri.path == '/transfers') {
+      if (request.uri.path == '/transfers' || request.uri.path == '/waveform') {
         unawaited(_handle(request));
         return;
       }
@@ -127,7 +130,8 @@ class DesktopControlService {
       if (request.uri.path == '/import') {
         result = await _import(request);
       } else if (request.uri.path == '/command' ||
-          request.uri.path == '/transfers') {
+          request.uri.path == '/transfers' ||
+          request.uri.path == '/waveform') {
         final bytes = <int>[];
         await for (final chunk in request) {
           bytes.addAll(chunk);
@@ -143,6 +147,11 @@ class DesktopControlService {
             !{'server-cancel', 'server-downloads'}.contains(body['command'])) {
           throw const FormatException(
             'Only transfer pause/status can bypass the command queue',
+          );
+        }
+        if (request.uri.path == '/waveform' && body['command'] != 'waveform') {
+          throw const FormatException(
+            'Only waveform analysis can bypass this queue',
           );
         }
         result = await _command(body);
@@ -506,6 +515,18 @@ class DesktopControlService {
         if (settings == null) throw StateError('Settings are unavailable');
         if (args.containsKey('key')) _setSetting(settings, args);
         return _settings(settings);
+      case 'waveform':
+        final state = playback.state;
+        final waveBook = playback.currentBookId;
+        final path = state.currentFile;
+        if (path == null) throw StateError('Load a book first');
+        final wave = await waveforms.generate(path, state.duration);
+        return {
+          'scope': 'currentTrack',
+          'bookId': waveBook,
+          'trackIndex': state.currentIndex,
+          ...wave.toJson(),
+        };
       case 'status':
         return _status();
       case 'list':
@@ -537,6 +558,10 @@ class DesktopControlService {
         );
       case 'speed':
         await playback.setSpeed(_number(args, 'value', 0.5, 3));
+      case 'mute':
+        await playback.setVolume(0);
+      case 'unmute':
+        await playback.setVolume(playback.settings?.unmutedVolume ?? 1);
       case 'volume':
         await playback.setVolume(_number(args, 'value', 0, 1));
       case 'bookmark':
@@ -647,6 +672,7 @@ class DesktopControlService {
   Map<String, Object> _settings(SettingsService s) => {
     'playbackSpeed': s.playbackSpeed,
     'volume': s.volume,
+    'unmutedVolume': s.unmutedVolume,
     'skipSilence': s.skipSilence,
     'boostDb': s.boostDb,
     'equalizer': s.equalizer,
@@ -658,6 +684,7 @@ class DesktopControlService {
     'sleepTimerDefaultMinutes': s.sleepTimerDefault.inMinutes,
     'themeMode': s.themeMode,
     'libraryView': s.libraryView,
+    'showWaveform': s.showWaveform,
     'resumeOnLaunch': s.resumeOnLaunch,
     'onboardingDone': s.onboardingDone,
   };
@@ -704,7 +731,8 @@ class DesktopControlService {
           throw const FormatException('Invalid themeMode');
         }
         s.themeMode = value as String;
-      case 'skipSilence' ||
+      case 'showWaveform' ||
+          'skipSilence' ||
           'autoBookmarkEnabled' ||
           'resumeOnLaunch' ||
           'onboardingDone':
@@ -712,6 +740,8 @@ class DesktopControlService {
           throw const FormatException('Expected true or false');
         }
         switch (key) {
+          case 'showWaveform':
+            s.showWaveform = value;
           case 'skipSilence':
             s.skipSilence = value;
           case 'autoBookmarkEnabled':

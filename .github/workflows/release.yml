@@ -16,44 +16,17 @@ concurrency:
   cancel-in-progress: false
 env:
   FLUTTER_VERSION: '3.44.4'
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
-  prepare:
-    runs-on: ubuntu-slim
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    outputs:
-      tag: ${{ steps.version.outputs.tag }}
-      version: ${{ steps.version.outputs.version }}
-      build: ${{ steps.version.outputs.build }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: refs/tags/${{ inputs.tag || github.ref_name }}
-          fetch-depth: 0
-      - id: version
-        env:
-          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-        run: |
-          git show-ref --verify "refs/tags/$RELEASE_TAG"
-          python3 scripts/release.py validate "$RELEASE_TAG"
-      - name: Prepare draft release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --verify-tag --draft --title "CrisperPlayer $RELEASE_TAG" --notes-file docs/RELEASE_NOTES.md
-          fi
-
   verify:
-    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+      - name: Validate tag and version
+        run: python scripts/release.py validate "$RELEASE_TAG"
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -79,7 +52,6 @@ jobs:
           npm test
 
   android:
-    needs: [prepare, verify]
     runs-on: ubuntu-latest
     env:
       CRISPER_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
@@ -88,7 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+      - name: Validate tag and version
+        run: python scripts/release.py validate "$RELEASE_TAG"
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -133,7 +107,6 @@ jobs:
           if-no-files-found: error
 
   desktop:
-    needs: [prepare, verify]
     strategy:
       fail-fast: false
       matrix:
@@ -163,7 +136,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+      - name: Validate tag and version
+        run: python scripts/release.py validate "$RELEASE_TAG"
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -197,8 +172,6 @@ jobs:
           python scripts/package_cli_notices.py build/cli/bundle
           if [ -f build/cli/bundle/bin/crisperplayer.exe ]; then build/cli/bundle/bin/crisperplayer.exe --help; else build/cli/bundle/bin/crisperplayer --help; fi
       - name: Package complete app and CLI
-        env:
-          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: python scripts/release.py package --tag "$RELEASE_TAG" --platform '${{ matrix.platform }}' --app '${{ matrix.app }}'
       - uses: actions/upload-artifact@v4
         with:
@@ -210,7 +183,7 @@ jobs:
     concurrency:
       group: binary-release-publication
       cancel-in-progress: false
-    needs: [prepare, android, desktop]
+    needs: [verify, android, desktop]
     runs-on: ubuntu-slim
     timeout-minutes: 15
     permissions:
@@ -218,16 +191,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: refs/tags/${{ needs.prepare.outputs.tag }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
       - uses: actions/download-artifact@v4
         with:
           pattern: release-*
           merge-multiple: true
           path: dist
       - run: python3 scripts/release.py checksums dist
-      - name: Publish only after all native builds succeed
+      - name: Publish only after verification and all native builds succeed
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "CrisperPlayer $RELEASE_TAG" --notes-file docs/RELEASE_NOTES.md
+          fi
           python3 scripts/release.py publish --tag "$RELEASE_TAG" --directory dist

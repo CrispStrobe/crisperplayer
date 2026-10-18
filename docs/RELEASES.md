@@ -49,9 +49,9 @@ can use `Get-FileHash PATH -Algorithm SHA256` and compare with the manifest.
    Use the isolated SFTP/SMB test interpreters described in the README.
 3. Commit and push master; confirm CI. Tag that exact commit to match the full pubspec
    version: `git tag v0.1.0+13` then `git push origin v0.1.0+13`.
-4. `release.yml` validates the tag, prepares a draft, repeats checks, builds every required
-   platform, hashes assets, then publishes the complete release as latest. A failed
-   platform leaves the draft unpublished. Fix the issue and use a fresh build/tag if
+4. `release.yml` validates the tag in each job and runs verification and every required
+   platform build in parallel. Only when all succeed does it hash assets, create the
+   draft and publish the complete release. A failed check or platform publishes nothing. Fix the issue and use a fresh build/tag if
    source changes are necessary; do not move a published tag.
 5. The same tag triggers `ios-release.yml`: existing App Store identity, profiles,
    entitlement validation, upload, processing, and internal TestFlight group assignment.
@@ -94,8 +94,8 @@ of normal native playback. Waveform caches contain measured peaks, not audio cop
 Publication compares semantic versions/builds so a slower older build cannot replace
 a newer release as latest.
 
-Release staging and publication use lightweight hosted runners; Flutter verification
-and platform builds use full build runners. Manual retries use the current workflow
+Publication uses a lightweight hosted runner; independent Flutter verification and
+platform builds use full build runners in parallel. Manual retries use the current workflow
 definition and check out the fully qualified existing tag for every build job.
 
 If a Pages build passed but deployment is delayed or failed, `Deploy verified Pages

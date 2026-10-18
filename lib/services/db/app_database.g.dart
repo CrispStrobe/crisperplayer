@@ -626,6 +626,288 @@ class BooksCompanion extends UpdateCompanion<Book> {
   }
 }
 
+class $BookTracksTable extends BookTracks
+    with TableInfo<$BookTracksTable, BookTrack> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BookTracksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+      'book_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      $customConstraints: 'NOT NULL REFERENCES books(id) ON DELETE CASCADE');
+  static const VerificationMeta _trackIndexMeta =
+      const VerificationMeta('trackIndex');
+  @override
+  late final GeneratedColumn<int> trackIndex = GeneratedColumn<int>(
+      'track_index', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _filePathMeta =
+      const VerificationMeta('filePath');
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+      'file_path', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _durationMsMeta =
+      const VerificationMeta('durationMs');
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+      'duration_ms', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [bookId, trackIndex, filePath, durationMs];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'book_tracks';
+  @override
+  VerificationContext validateIntegrity(Insertable<BookTrack> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('book_id')) {
+      context.handle(_bookIdMeta,
+          bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta));
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('track_index')) {
+      context.handle(
+          _trackIndexMeta,
+          trackIndex.isAcceptableOrUnknown(
+              data['track_index']!, _trackIndexMeta));
+    } else if (isInserting) {
+      context.missing(_trackIndexMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(_filePathMeta,
+          filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta));
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+          _durationMsMeta,
+          durationMs.isAcceptableOrUnknown(
+              data['duration_ms']!, _durationMsMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {bookId, trackIndex};
+  @override
+  BookTrack map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BookTrack(
+      bookId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}book_id'])!,
+      trackIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}track_index'])!,
+      filePath: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}file_path'])!,
+      durationMs: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}duration_ms']),
+    );
+  }
+
+  @override
+  $BookTracksTable createAlias(String alias) {
+    return $BookTracksTable(attachedDatabase, alias);
+  }
+}
+
+class BookTrack extends DataClass implements Insertable<BookTrack> {
+  final String bookId;
+  final int trackIndex;
+  final String filePath;
+  final int? durationMs;
+  const BookTrack(
+      {required this.bookId,
+      required this.trackIndex,
+      required this.filePath,
+      this.durationMs});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['book_id'] = Variable<String>(bookId);
+    map['track_index'] = Variable<int>(trackIndex);
+    map['file_path'] = Variable<String>(filePath);
+    if (!nullToAbsent || durationMs != null) {
+      map['duration_ms'] = Variable<int>(durationMs);
+    }
+    return map;
+  }
+
+  BookTracksCompanion toCompanion(bool nullToAbsent) {
+    return BookTracksCompanion(
+      bookId: Value(bookId),
+      trackIndex: Value(trackIndex),
+      filePath: Value(filePath),
+      durationMs: durationMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationMs),
+    );
+  }
+
+  factory BookTrack.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BookTrack(
+      bookId: serializer.fromJson<String>(json['bookId']),
+      trackIndex: serializer.fromJson<int>(json['trackIndex']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      durationMs: serializer.fromJson<int?>(json['durationMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'bookId': serializer.toJson<String>(bookId),
+      'trackIndex': serializer.toJson<int>(trackIndex),
+      'filePath': serializer.toJson<String>(filePath),
+      'durationMs': serializer.toJson<int?>(durationMs),
+    };
+  }
+
+  BookTrack copyWith(
+          {String? bookId,
+          int? trackIndex,
+          String? filePath,
+          Value<int?> durationMs = const Value.absent()}) =>
+      BookTrack(
+        bookId: bookId ?? this.bookId,
+        trackIndex: trackIndex ?? this.trackIndex,
+        filePath: filePath ?? this.filePath,
+        durationMs: durationMs.present ? durationMs.value : this.durationMs,
+      );
+  BookTrack copyWithCompanion(BookTracksCompanion data) {
+    return BookTrack(
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      trackIndex:
+          data.trackIndex.present ? data.trackIndex.value : this.trackIndex,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      durationMs:
+          data.durationMs.present ? data.durationMs.value : this.durationMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookTrack(')
+          ..write('bookId: $bookId, ')
+          ..write('trackIndex: $trackIndex, ')
+          ..write('filePath: $filePath, ')
+          ..write('durationMs: $durationMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(bookId, trackIndex, filePath, durationMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BookTrack &&
+          other.bookId == this.bookId &&
+          other.trackIndex == this.trackIndex &&
+          other.filePath == this.filePath &&
+          other.durationMs == this.durationMs);
+}
+
+class BookTracksCompanion extends UpdateCompanion<BookTrack> {
+  final Value<String> bookId;
+  final Value<int> trackIndex;
+  final Value<String> filePath;
+  final Value<int?> durationMs;
+  final Value<int> rowid;
+  const BookTracksCompanion({
+    this.bookId = const Value.absent(),
+    this.trackIndex = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BookTracksCompanion.insert({
+    required String bookId,
+    required int trackIndex,
+    required String filePath,
+    this.durationMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : bookId = Value(bookId),
+        trackIndex = Value(trackIndex),
+        filePath = Value(filePath);
+  static Insertable<BookTrack> custom({
+    Expression<String>? bookId,
+    Expression<int>? trackIndex,
+    Expression<String>? filePath,
+    Expression<int>? durationMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (bookId != null) 'book_id': bookId,
+      if (trackIndex != null) 'track_index': trackIndex,
+      if (filePath != null) 'file_path': filePath,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BookTracksCompanion copyWith(
+      {Value<String>? bookId,
+      Value<int>? trackIndex,
+      Value<String>? filePath,
+      Value<int?>? durationMs,
+      Value<int>? rowid}) {
+    return BookTracksCompanion(
+      bookId: bookId ?? this.bookId,
+      trackIndex: trackIndex ?? this.trackIndex,
+      filePath: filePath ?? this.filePath,
+      durationMs: durationMs ?? this.durationMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (trackIndex.present) {
+      map['track_index'] = Variable<int>(trackIndex.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookTracksCompanion(')
+          ..write('bookId: $bookId, ')
+          ..write('trackIndex: $trackIndex, ')
+          ..write('filePath: $filePath, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ChaptersTable extends Chapters with TableInfo<$ChaptersTable, Chapter> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -1959,6 +2241,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $BooksTable books = $BooksTable(this);
+  late final $BookTracksTable bookTracks = $BookTracksTable(this);
   late final $ChaptersTable chapters = $ChaptersTable(this);
   late final $BookmarksTable bookmarks = $BookmarksTable(this);
   late final $ListeningHistoryTable listeningHistory =
@@ -1968,10 +2251,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [books, chapters, bookmarks, listeningHistory];
+      [books, bookTracks, chapters, bookmarks, listeningHistory];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
         [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('books',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('book_tracks', kind: UpdateKind.delete),
+            ],
+          ),
           WritePropagation(
             on: TableUpdateQuery.onTableName('books',
                 limitUpdateKind: UpdateKind.delete),
@@ -2031,6 +2321,20 @@ typedef $$BooksTableUpdateCompanionBuilder = BooksCompanion Function({
 final class $$BooksTableReferences
     extends BaseReferences<_$AppDatabase, $BooksTable, Book> {
   $$BooksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$BookTracksTable, List<BookTrack>>
+      _bookTracksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+          db.bookTracks,
+          aliasName: $_aliasNameGenerator(db.books.id, db.bookTracks.bookId));
+
+  $$BookTracksTableProcessedTableManager get bookTracksRefs {
+    final manager = $$BookTracksTableTableManager($_db, $_db.bookTracks)
+        .filter((f) => f.bookId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_bookTracksRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 
   static MultiTypedResultKey<$ChaptersTable, List<Chapter>> _chaptersRefsTable(
           _$AppDatabase db) =>
@@ -2125,6 +2429,27 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
 
   ColumnFilters<bool> get isFinished => $composableBuilder(
       column: $table.isFinished, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> bookTracksRefs(
+      Expression<bool> Function($$BookTracksTableFilterComposer f) f) {
+    final $$BookTracksTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.bookTracks,
+        getReferencedColumn: (t) => t.bookId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BookTracksTableFilterComposer(
+              $db: $db,
+              $table: $db.bookTracks,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 
   Expression<bool> chaptersRefs(
       Expression<bool> Function($$ChaptersTableFilterComposer f) f) {
@@ -2287,6 +2612,27 @@ class $$BooksTableAnnotationComposer
   GeneratedColumn<bool> get isFinished => $composableBuilder(
       column: $table.isFinished, builder: (column) => column);
 
+  Expression<T> bookTracksRefs<T extends Object>(
+      Expression<T> Function($$BookTracksTableAnnotationComposer a) f) {
+    final $$BookTracksTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.bookTracks,
+        getReferencedColumn: (t) => t.bookId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BookTracksTableAnnotationComposer(
+              $db: $db,
+              $table: $db.bookTracks,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
   Expression<T> chaptersRefs<T extends Object>(
       Expression<T> Function($$ChaptersTableAnnotationComposer a) f) {
     final $$ChaptersTableAnnotationComposer composer = $composerBuilder(
@@ -2363,7 +2709,10 @@ class $$BooksTableTableManager extends RootTableManager<
     (Book, $$BooksTableReferences),
     Book,
     PrefetchHooks Function(
-        {bool chaptersRefs, bool bookmarksRefs, bool listeningHistoryRefs})> {
+        {bool bookTracksRefs,
+        bool chaptersRefs,
+        bool bookmarksRefs,
+        bool listeningHistoryRefs})> {
   $$BooksTableTableManager(_$AppDatabase db, $BooksTable table)
       : super(TableManagerState(
           db: db,
@@ -2439,12 +2788,14 @@ class $$BooksTableTableManager extends RootTableManager<
                   (e.readTable(table), $$BooksTableReferences(db, table, e)))
               .toList(),
           prefetchHooksCallback: (
-              {chaptersRefs = false,
+              {bookTracksRefs = false,
+              chaptersRefs = false,
               bookmarksRefs = false,
               listeningHistoryRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
+                if (bookTracksRefs) db.bookTracks,
                 if (chaptersRefs) db.chapters,
                 if (bookmarksRefs) db.bookmarks,
                 if (listeningHistoryRefs) db.listeningHistory
@@ -2452,6 +2803,18 @@ class $$BooksTableTableManager extends RootTableManager<
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
+                  if (bookTracksRefs)
+                    await $_getPrefetchedData<Book, $BooksTable, BookTrack>(
+                        currentTable: table,
+                        referencedTable:
+                            $$BooksTableReferences._bookTracksRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$BooksTableReferences(db, table, p0)
+                                .bookTracksRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.bookId == item.id),
+                        typedResults: items),
                   if (chaptersRefs)
                     await $_getPrefetchedData<Book, $BooksTable, Chapter>(
                         currentTable: table,
@@ -2506,7 +2869,267 @@ typedef $$BooksTableProcessedTableManager = ProcessedTableManager<
     (Book, $$BooksTableReferences),
     Book,
     PrefetchHooks Function(
-        {bool chaptersRefs, bool bookmarksRefs, bool listeningHistoryRefs})>;
+        {bool bookTracksRefs,
+        bool chaptersRefs,
+        bool bookmarksRefs,
+        bool listeningHistoryRefs})>;
+typedef $$BookTracksTableCreateCompanionBuilder = BookTracksCompanion Function({
+  required String bookId,
+  required int trackIndex,
+  required String filePath,
+  Value<int?> durationMs,
+  Value<int> rowid,
+});
+typedef $$BookTracksTableUpdateCompanionBuilder = BookTracksCompanion Function({
+  Value<String> bookId,
+  Value<int> trackIndex,
+  Value<String> filePath,
+  Value<int?> durationMs,
+  Value<int> rowid,
+});
+
+final class $$BookTracksTableReferences
+    extends BaseReferences<_$AppDatabase, $BookTracksTable, BookTrack> {
+  $$BookTracksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) => db.books
+      .createAlias($_aliasNameGenerator(db.bookTracks.bookId, db.books.id));
+
+  $$BooksTableProcessedTableManager get bookId {
+    final $_column = $_itemColumn<String>('book_id')!;
+
+    final manager = $$BooksTableTableManager($_db, $_db.books)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$BookTracksTableFilterComposer
+    extends Composer<_$AppDatabase, $BookTracksTable> {
+  $$BookTracksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get trackIndex => $composableBuilder(
+      column: $table.trackIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+      column: $table.filePath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => ColumnFilters(column));
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.bookId,
+        referencedTable: $db.books,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BooksTableFilterComposer(
+              $db: $db,
+              $table: $db.books,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$BookTracksTableOrderingComposer
+    extends Composer<_$AppDatabase, $BookTracksTable> {
+  $$BookTracksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get trackIndex => $composableBuilder(
+      column: $table.trackIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+      column: $table.filePath, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => ColumnOrderings(column));
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.bookId,
+        referencedTable: $db.books,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BooksTableOrderingComposer(
+              $db: $db,
+              $table: $db.books,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$BookTracksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BookTracksTable> {
+  $$BookTracksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get trackIndex => $composableBuilder(
+      column: $table.trackIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+      column: $table.durationMs, builder: (column) => column);
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.bookId,
+        referencedTable: $db.books,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$BooksTableAnnotationComposer(
+              $db: $db,
+              $table: $db.books,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$BookTracksTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $BookTracksTable,
+    BookTrack,
+    $$BookTracksTableFilterComposer,
+    $$BookTracksTableOrderingComposer,
+    $$BookTracksTableAnnotationComposer,
+    $$BookTracksTableCreateCompanionBuilder,
+    $$BookTracksTableUpdateCompanionBuilder,
+    (BookTrack, $$BookTracksTableReferences),
+    BookTrack,
+    PrefetchHooks Function({bool bookId})> {
+  $$BookTracksTableTableManager(_$AppDatabase db, $BookTracksTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BookTracksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BookTracksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BookTracksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> bookId = const Value.absent(),
+            Value<int> trackIndex = const Value.absent(),
+            Value<String> filePath = const Value.absent(),
+            Value<int?> durationMs = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              BookTracksCompanion(
+            bookId: bookId,
+            trackIndex: trackIndex,
+            filePath: filePath,
+            durationMs: durationMs,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String bookId,
+            required int trackIndex,
+            required String filePath,
+            Value<int?> durationMs = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              BookTracksCompanion.insert(
+            bookId: bookId,
+            trackIndex: trackIndex,
+            filePath: filePath,
+            durationMs: durationMs,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$BookTracksTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (bookId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.bookId,
+                    referencedTable:
+                        $$BookTracksTableReferences._bookIdTable(db),
+                    referencedColumn:
+                        $$BookTracksTableReferences._bookIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$BookTracksTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $BookTracksTable,
+    BookTrack,
+    $$BookTracksTableFilterComposer,
+    $$BookTracksTableOrderingComposer,
+    $$BookTracksTableAnnotationComposer,
+    $$BookTracksTableCreateCompanionBuilder,
+    $$BookTracksTableUpdateCompanionBuilder,
+    (BookTrack, $$BookTracksTableReferences),
+    BookTrack,
+    PrefetchHooks Function({bool bookId})>;
 typedef $$ChaptersTableCreateCompanionBuilder = ChaptersCompanion Function({
   required String id,
   required String bookId,
@@ -3483,6 +4106,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$BooksTableTableManager get books =>
       $$BooksTableTableManager(_db, _db.books);
+  $$BookTracksTableTableManager get bookTracks =>
+      $$BookTracksTableTableManager(_db, _db.bookTracks);
   $$ChaptersTableTableManager get chapters =>
       $$ChaptersTableTableManager(_db, _db.chapters);
   $$BookmarksTableTableManager get bookmarks =>

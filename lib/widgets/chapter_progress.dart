@@ -136,19 +136,25 @@ class _ProgressPainter extends CustomPainter {
           ..strokeWidth = 2
           ..strokeCap = StrokeCap.round;
         // tick spanning track + a bit above/below
-        canvas.drawLine(Offset(x, trackY - 5), Offset(x, trackY + trackH + 5), paint);
+        canvas.drawLine(
+            Offset(x, trackY - 5), Offset(x, trackY + trackH + 5), paint);
         // small dot at top for visibility
-        canvas.drawCircle(Offset(x, trackY - 5), 2, Paint()..color = paint.color);
+        canvas.drawCircle(
+            Offset(x, trackY - 5), 2, Paint()..color = paint.color);
       }
     }
 
     // thumb circle at progress
     final thumbX = size.width * progress;
-    canvas.drawCircle(Offset(thumbX, size.height / 2), 7, Paint()..color = activeColor);
-    canvas.drawCircle(Offset(thumbX, size.height / 2), 3.5, Paint()..color = Colors.white);
+    canvas.drawCircle(
+        Offset(thumbX, size.height / 2), 7, Paint()..color = activeColor);
+    canvas.drawCircle(
+        Offset(thumbX, size.height / 2), 3.5, Paint()..color = Colors.white);
   }
 
   @override
   bool shouldRepaint(covariant _ProgressPainter old) =>
-      old.progress != progress || old.chapters != chapters || old.totalMs != totalMs;
+      old.progress != progress ||
+      old.chapters != chapters ||
+      old.totalMs != totalMs;
 }

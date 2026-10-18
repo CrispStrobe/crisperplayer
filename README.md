@@ -1,37 +1,39 @@
 # CrisperPlayer
 
-Versatile cross-platform audiobook player — Flutter, like CrisperWeaver.
+A local audiobook player built with Flutter, Riverpod, Drift, just_audio and audio_service.
 
-## Why Flutter
+## Current scope
 
-Single Dart codebase for Android+iOS+desktop+web, proven in CrisperWeaver. just_audio delegates to ExoPlayer (Android) + AVPlayer (iOS) — native decoders handle m4b/m4a/mp3/flac/ogg/wav/aac/opus/wma/aiff and more. just_audio_media_kit (libmpv) covers Linux/Windows/macOS. Background/lockscreen via audio_service + audio_session (speech). Riverpod + Drift (SQLite) for library/history/bookmarks; shared_preferences for settings. Direct reuse of CrisperWeaver patterns.
+- Android and iOS playback, with notification/lock-screen controls and background audio.
+- Desktop playback using the native macOS backend or media_kit on Linux/Windows.
+- Imports copy selected audio into application storage; deleting a book removes its managed copies, not the source files.
+- Multi-file books use natural filename order and measured per-track durations. Unknown durations remain unknown until the decoder provides them.
+- Resume positions, bookmarks and listening history are stored locally. Bookmarks restore the book and physical track as well as the position.
+- M4B/M4A Nero chapter tables and embedded covers are parsed on device. QuickTime text-track chapters are not implemented.
+- Configurable playback speed, volume, skip silence, seek interval, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
+- Sleep timers can pause immediately at expiry or at the end of the chapter playing when the countdown expires. Immediate chapter mode captures the current chapter boundary.
+- JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
 
-See docs/ARCHITECTURE.md for decision matrix.
+Cloud sync and accounts are unavailable. The web build displays an availability notice; browser audio import, playback and persistent library storage are not supported in this version.
 
-## Features
+## Development
 
-- Library: import via file_picker (single or multi-file books), title/author inference, duration probe, grid with progress, search/filter, delete (DB cascade)
-- Playback: ConcatenatingAudioSource queue per book, resume from lastPosition, bookPosition = bookOffset + player.position, skip +/-30s, next/prev, speed 0.5-3x, sleep timer (15/30/60/off)
-- Resume & history: 2s persist timer, listeningHistory startSession/endSession, history grouped by day shows when we played what
-- Bookmarks: manual (FAB title+note) + auto (5min ticker + on pause) -> pruneAuto(20), tap seek, edit/delete
-- Chapters: one per file MVP; single-file m4b hook for real MP4 chapter table via FFI
-- Settings: speed, skipSilence, seek interval, autoBookmark, resumeOnLaunch, theme
+Use Flutter 3.44 or newer (Dart 3.12). The current dependencies require iOS 14 or newer; Android uses the Flutter SDK minimum.
 
-## Supported formats
-
-m4b = m4a (AAC) + chapters. Native decoders handle m4b as m4a. Common: m4b, m4a, mp3, flac, ogg, wav, aac, opus, wma, aiff/aif, mp2, mov, webm, 3gp, mkv/mka. Desktop via just_audio_media_kit.
-
-## Getting started
-
-```
+```sh
 flutter pub get
-dart run build_runner build
-flutter run -d android   # or ios, macos, linux, chrome
-flutter build apk --release
-flutter build ios --release
-flutter build web --no-wasm-dry-run
+dart run build_runner build --build-filter lib/services/db/app_database.g.dart
+flutter analyze
+flutter test
+flutter run -d <device-id>
 ```
 
-Android: FOREGROUND_SERVICE + POST_NOTIFICATIONS + READ_MEDIA_AUDIO in manifest. iOS: UIBackgroundModes audio in Info.plist.
+The database upgrades version-one libraries in place. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
 
-All data on device, offline-first.
+The playback tests use the production coordinator and SQLite with an injected audio backend that preserves just_audio's pending `play()` future semantics. Native decoder, interruption and background behavior still require device testing:
+
+```sh
+flutter test integration_test/app_test.dart -d <device-id>
+```
+
+See [architecture](docs/ARCHITECTURE.md), [Android build](docs/ANDROID_BUILD.md), [iOS build](docs/IOS_BUILD.md), and [sync design](docs/CLOUD_SYNC.md).

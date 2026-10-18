@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:audio_service/audio_service.dart';
-import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'providers/providers.dart';
 import 'screens/library_screen.dart';
 import 'screens/player_screen.dart';
@@ -18,7 +17,6 @@ import 'screens/settings_screen.dart';
 import 'screens/sync_settings_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/settings_service.dart';
-import 'services/sync_service.dart';
 import 'services/db/app_database.dart';
 import 'services/audio/audio_handler.dart';
 import 'services/audio/playback_service.dart';
@@ -30,208 +28,201 @@ import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // iOS: configure audio session early for background / Control Center.
-  // PlaybackService also configures with the same speech preset + Bluetooth/AirPlay,
-  // but early config ensures AVAudioSession is ready before any UI.
+  if (kIsWeb) {
+    runApp(const MaterialApp(
+        home: Scaffold(
+            body: Center(
+                child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                        'CrisperPlayer requires the installed Android, iOS or desktop app. '
+                        'Browser playback and library storage are not available in this version.'))))));
+    return;
+  }
+  AppDatabase? db;
+  PlaybackService? playback;
+  AudioPlayer? player;
   try {
-    final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.speech());
-  } catch (_) {}
-
-  final prefs = await SharedPreferences.getInstance();
-  final settings = SettingsService(prefs);
-  final db = AppDatabase();
-
-  // Shared player for both PlaybackService and audio_service handler.
-  // iOS lockscreen artwork + background controls flow through this single player.
-  final sharedPlayer = AudioPlayer();
-  CrisperAudioHandler? audioHandler;
-
-  // audio_service: lockscreen / Control Center / headset buttons + background task.
-  // Only init on mobile (iOS/Android); desktop/web/test fall back to raw AudioPlayer.
-  if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-    try {
-      audioHandler = await AudioService.init<CrisperAudioHandler>(
-        builder: () => CrisperAudioHandler(sharedPlayer),
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.crispstrobe.crisperplayer.channel.audio',
-          androidNotificationChannelName: 'CrisperPlayer',
-          androidNotificationChannelDescription: 'Audiobook playback controls',
-          androidNotificationOngoing: true,
-          androidShowNotificationBadge: true,
-          androidStopForegroundOnPause: true,
-          androidNotificationIcon: 'mipmap/ic_launcher',
-          // iOS: MediaItem artUri + title/artist/album shown via MPNowPlayingInfoCenter.
-          // No extra iOS config needed; UIBackgroundModes audio in Info.plist handles background.
-          artDownscaleWidth: 800,
-          artDownscaleHeight: 800,
-        ),
-      );
-    } catch (e) {
-      debugPrint('AudioService init failed (expected on non-mobile / test): $e');
-      audioHandler = null;
+    if (Platform.isWindows || Platform.isLinux) {
+      JustAudioMediaKit.ensureInitialized();
     }
+    final prefs = await SharedPreferences.getInstance();
+    // Earlier versions stored simulated sign-ins. They are not real accounts.
+    for (final key
+        in prefs.getKeys().where((key) => key.startsWith('sync_')).toList()) {
+      await prefs.remove(key);
+    }
+    final settings = SettingsService(prefs);
+    final database = db = AppDatabase();
+    player = AudioPlayer(handleInterruptions: false);
+    final library = LibraryService(database);
+    final service = playback = PlaybackService(
+        db: database,
+        library: library,
+        bookmarks: BookmarkService(database),
+        history: HistoryService(database),
+        settings: settings,
+        audioPlayer: player);
+    if (Platform.isAndroid || Platform.isIOS) {
+      final handler = await AudioService.init<CrisperAudioHandler>(
+          builder: () => CrisperAudioHandler(player!),
+          config: const AudioServiceConfig(
+              androidNotificationChannelId:
+                  'com.crispstrobe.crisperplayer.channel.audio',
+              androidNotificationChannelName: 'CrisperPlayer',
+              androidNotificationChannelDescription:
+                  'Audiobook playback controls',
+              androidNotificationOngoing: true,
+              androidStopForegroundOnPause: true,
+              androidNotificationIcon: 'mipmap/ic_launcher',
+              artDownscaleWidth: 800,
+              artDownscaleHeight: 800));
+      service.attachAudioHandler(handler);
+    }
+    await service.init();
+    String? restoreError;
+    try {
+      await service.restoreLastBook();
+    } catch (e) {
+      restoreError = 'Could not restore your last book: $e';
+    }
+    final shareIntake = ShareIntakeService(library: library);
+    runApp(ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWith((ref) {
+            ref.onDispose(() => unawaited(() async {
+                  await shareIntake.dispose();
+                  await service.dispose();
+                  await database.close();
+                }()));
+            return database;
+          }),
+          settingsProvider.overrideWith((ref) => settings),
+          playbackProvider.overrideWithValue(service),
+          libraryServiceProvider.overrideWithValue(library),
+          shareIntakeProvider.overrideWithValue(shareIntake),
+        ],
+        child: CrisperPlayerApp(
+            settings: settings, prefs: prefs, startupMessage: restoreError)));
+  } catch (e, stack) {
+    debugPrint('Startup failed: $e\n$stack');
+    if (playback != null) {
+      await playback.dispose();
+    } else {
+      await player?.dispose();
+    }
+    await db?.close();
+    runApp(MaterialApp(
+        home: Scaffold(
+            body: Center(
+                child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                        'CrisperPlayer could not start. Please restart the app.\n\n$e'))))));
   }
-
-  final syncService = SyncService(prefs);
-  final library = LibraryService(db);
-  final playback = PlaybackService(
-    db: db,
-    library: library,
-    bookmarks: BookmarkService(db),
-    history: HistoryService(db),
-    audioPlayer: sharedPlayer,
-  );
-  if (audioHandler != null) {
-    playback.attachAudioHandler(audioHandler);
-  }
-  unawaited(playback.init());
-
-  // Inbound share: wire receive_sharing_intent -> LibraryService.importFiles
-  // Lifecycle-aware: handles getInitialMedia() (cold start) and getMediaStream() (warm share)
-  final shareIntake = ShareIntakeService(library: library);
-  // Init without UI callbacks; AppState will re-bind with ScaffoldMessenger/GoRouter when mounted
-  unawaited(shareIntake.init());
-
-  runApp(ProviderScope(
-    overrides: [
-      appDatabaseProvider.overrideWithValue(db),
-      settingsProvider.overrideWithValue(settings),
-      syncServiceProvider.overrideWith((ref) => syncService),
-      playbackProvider.overrideWithValue(playback),
-      libraryServiceProvider.overrideWithValue(library),
-      shareIntakeProvider.overrideWithValue(shareIntake),
-    ],
-    child: CrisperPlayerApp(settings: settings, prefs: prefs),
-  ));
 }
 
 class CrisperPlayerApp extends ConsumerStatefulWidget {
   final SettingsService settings;
   final SharedPreferences prefs;
-  const CrisperPlayerApp({super.key, required this.settings, required this.prefs});
-
+  final String? startupMessage;
+  const CrisperPlayerApp(
+      {super.key,
+      required this.settings,
+      required this.prefs,
+      this.startupMessage});
   @override
   ConsumerState<CrisperPlayerApp> createState() => _CrisperPlayerAppState();
 }
 
-class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp> with WidgetsBindingObserver {
+class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp>
+    with WidgetsBindingObserver {
   late final GoRouter _router;
-  ShareIntakeService? _shareIntake;
-
+  final _messenger = GlobalKey<ScaffoldMessengerState>();
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _router = GoRouter(
-      initialLocation: widget.prefs.getBool('onboarding_done') == true ? '/' : '/onboarding',
-      redirect: (context, state) {
-        final done = widget.prefs.getBool('onboarding_done') == true;
-        final isOnboarding = state.matchedLocation == '/onboarding';
-        if (!done && !isOnboarding) return '/onboarding';
-        if (done && isOnboarding) return '/';
-        return null;
-      },
-      routes: [
-        GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-        GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
-        GoRoute(path: '/player/:bookId', builder: (_, s) => PlayerScreen(bookId: s.pathParameters['bookId']!)),
-        GoRoute(path: '/bookmarks/:bookId', builder: (_, s) => BookmarksScreen(bookId: s.pathParameters['bookId']!)),
-        GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
-        GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
-        GoRoute(path: '/settings/sync', builder: (_, __) => const SyncSettingsScreen()),
-      ],
-    );
-
-    // Bind share callbacks once widget is mounted (needs context for SnackBar/navigation)
-    WidgetsBinding.instance.addPostFrameCallback((_) => _bindShareIntake());
+        initialLocation: widget.settings.onboardingDone ? '/' : '/onboarding',
+        redirect: (context, state) {
+          final done = widget.settings.onboardingDone;
+          final onboarding = state.matchedLocation == '/onboarding';
+          if (!done && !onboarding) return '/onboarding';
+          if (done && onboarding) return '/';
+          return null;
+        },
+        routes: [
+          GoRoute(path: '/', builder: (_, __) => const LibraryScreen()),
+          GoRoute(
+              path: '/onboarding',
+              builder: (_, __) => const OnboardingScreen()),
+          GoRoute(
+              path: '/player/:bookId',
+              builder: (_, s) =>
+                  PlayerScreen(bookId: s.pathParameters['bookId']!)),
+          GoRoute(
+              path: '/bookmarks/:bookId',
+              builder: (_, s) =>
+                  BookmarksScreen(bookId: s.pathParameters['bookId']!)),
+          GoRoute(path: '/history', builder: (_, __) => const HistoryScreen()),
+          GoRoute(
+              path: '/settings', builder: (_, __) => const SettingsScreen()),
+          GoRoute(
+              path: '/settings/sync',
+              builder: (_, __) => const SyncSettingsScreen()),
+        ]);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.startupMessage != null) _message(widget.startupMessage!);
+      unawaited(ref.read(shareIntakeProvider).init(
+          onImported: (id, paths) async {
+            if (!mounted || id == null) return;
+            _message('Imported ${paths.length} file(s)');
+            if (widget.settings.onboardingDone) _router.go('/player/$id');
+          },
+          onError: _message,
+          onInfo: _message));
+    });
   }
 
-  void _bindShareIntake() {
-    if (!mounted) return;
-    try {
-      final svc = ref.read(shareIntakeProvider);
-      _shareIntake = svc;
-      // Re-init with UI callbacks (idempotent inside service)
-      unawaited(svc.init(
-        onImported: (bookId, paths) async {
-          if (!mounted) return;
-          final messenger = ScaffoldMessenger.maybeOf(context);
-          if (bookId != null) {
-            messenger?.showSnackBar(
-              SnackBar(content: Text('Imported ${paths.length} file(s)'), action: SnackBarAction(label: 'Open', onPressed: () => _router.go('/player/$bookId'))),
-            );
-            // Optionally navigate directly to player
-            // Defer to avoid calling during build
-            Future.microtask(() {
-              if (mounted) _router.go('/player/$bookId');
-            });
-          } else {
-            messenger?.showSnackBar(const SnackBar(content: Text('Import failed')));
-          }
-        },
-        onError: (msg) {
-          if (!mounted) return;
-          ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(msg)));
-        },
-        onInfo: (msg) {
-          if (!mounted) return;
-          ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 1)));
-        },
-      ));
-      // Also handle any pending initial media now that UI is ready
-      unawaited(svc.handleInitialMedia());
-    } catch (e) {
-      debugPrint('ShareIntake bind failed: $e');
+  void _message(String message) {
+    if (mounted) {
+      _messenger.currentState?.showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    // Don't dispose shareIntake here; it lives for app lifetime via ProviderScope override.
-    // It will be closed when ProviderScope disposes.
+    _router.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      // persist + auto-bookmark + endSession — but do NOT pause audio
-      // so iOS background playback continues when user locks screen.
-      final playback = ref.read(playbackProvider);
-      playback.handleAppPaused();
-    }
     if (state == AppLifecycleState.resumed) {
-      // Inbound share: check for pending shares when returning from share sheet
-      try {
-        final svc = ref.read(shareIntakeProvider);
-        unawaited(svc.handleInitialMedia());
-      } catch (_) {}
-      // Also re-bind in case service was not yet bound
-      if (_shareIntake == null) _bindShareIntake();
+      unawaited(ref.read(shareIntakeProvider).handleInitialMedia());
     }
-    super.didChangeAppLifecycleState(state);
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = switch (widget.settings.themeMode) {
+    // Establish the resource owner's lifetime even while onboarding is visible.
+    ref.watch(appDatabaseProvider);
+    final settings = ref.watch(settingsProvider);
+    final themeMode = switch (settings.themeMode) {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
       _ => ThemeMode.system,
     };
-
     return MaterialApp.router(
-      title: 'CrisperPlayer',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      routerConfig: _router,
-      debugShowCheckedModeBanner: false,
-    );
+        title: 'CrisperPlayer',
+        scaffoldMessengerKey: _messenger,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeMode,
+        routerConfig: _router,
+        debugShowCheckedModeBanner: false);
   }
 }
-
-void unawaited(Future<void> f) {}

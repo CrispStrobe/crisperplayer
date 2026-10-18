@@ -31,23 +31,23 @@ This repo’s `ios/` is already configured for background audio + lockscreen con
 
 | Item | Expected | Actual |
 |------|----------|--------|
-| `ios/Podfile` `platform :ios` | `13.0` | `13.0` ✓ |
+| `ios/Podfile` `platform :ios` | `14.0` | `14.0` ✓ |
 | `use_frameworks! :linkage => :static` | required for Flutter | present ✓ |
 | `use_modular_headers!` | required | present ✓ |
 | `flutter_install_all_ios_pods` | required | present ✓ |
-| `IPHONEOS_DEPLOYMENT_TARGET` (Pods + project) | `13.0` | `13.0` ✓ |
-| `ios/Runner.xcodeproj` deployment target | `13.0` | `13.0` ✓ |
+| `IPHONEOS_DEPLOYMENT_TARGET` (Pods + project) | `14.0` | `14.0` ✓ |
+| `ios/Runner.xcodeproj` deployment target | `14.0` | `14.0` ✓ |
 | Bundle ID | `com.crispstrobe.crisperplayer` | present ✓ |
 | `ios/Runner/Info.plist` `UIBackgroundModes = audio` | required for background playback | present ✓ |
 | `NSAppleMusicUsageDescription` | App Store requires usage string | present ✓ |
 | `AppDelegate.swift` `FlutterImplicitEngineDelegate` + `GeneratedPluginRegistrant` | Flutter 3.44 template | present ✓ |
 
-If you change deployment target, keep `Podfile`, Xcode project, and `post_install` hook in sync (all at `13.0`).
+If you change deployment target, keep `Podfile`, Xcode project, and `post_install` hook in sync (all at `14.0`).
 
 `ios/Podfile` key excerpt:
 
 ```ruby
-platform :ios, '13.0'
+platform :ios, '14.0'
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 target 'Runner' do
@@ -60,8 +60,8 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
-      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 13.0
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 14.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
       end
     end
   end
@@ -133,7 +133,7 @@ flutter run -d ios --release # release-mode test
 |---------|-----|
 | `Generated.xcconfig must exist. Run flutter pub get` during `pod install` | Run `flutter pub get` first, then `pod install`. |
 | `CocoaPods could not find compatible versions for pod "audio_service"` | `cd ios && pod repo update && pod install --repo-update` |
-| `IPHONEOS_DEPLOYMENT_TARGET is set to 12.0` warnings | `pod install` reapplies Podfile `post_install` hook forcing `13.0`; ensure Xcode project also at `13.0`. |
+| `IPHONEOS_DEPLOYMENT_TARGET is set to 12.0` warnings | `pod install` reapplies Podfile `post_install` hook forcing `14.0`; ensure Xcode project also at `14.0`. |
 | `Signing for "Runner" requires a development team` | Expected with `--no-codesign`; open `Runner.xcworkspace` in Xcode and set signing team, or pass `--no-codesign` only for CI. |
 | `No Apple Music usage description` App Store validation error | `Info.plist` already contains `NSAppleMusicUsageDescription`; keep it even if app doesn’t browse library (covers lockscreen metadata). |
 | `flutter build ios` fails with `requires Xcode 15+` | Update Xcode via App Store or `xcode-select`. |
@@ -167,7 +167,7 @@ Date: 2026-10-17T20:49Z · Host: `6.8.0-124-generic` (Linux, **not macOS**) · F
 
 ```
 $ cat ios/Podfile | head -1
-platform :ios, '13.0'
+platform :ios, '14.0'
 
 $ grep -E "UIBackgroundModes|NSAppleMusicUsageDescription" ios/Runner/Info.plist
   <key>UIBackgroundModes</key>

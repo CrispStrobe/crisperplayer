@@ -48,3 +48,11 @@ app.*.map.json
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# App Store signing material must stay out of git.
+.appstoreconnect/
+*.p8
+*.p12
+*.mobileprovision
+
+__pycache__/

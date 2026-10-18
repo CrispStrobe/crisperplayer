@@ -22,7 +22,7 @@ String formatDateTime(DateTime dt) {
   }
   if (diff.inDays == 1) return 'Yesterday';
   if (diff.inDays < 7) return '${diff.inDays}d ago';
-  return '${dt.day.toString().padLeft(2,'0')}.${dt.month.toString().padLeft(2,'0')}.${dt.year}';
+  return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
 }
 
 String safeBasename(String p) {
@@ -40,4 +40,3 @@ String titleFromPath(String p) {
 extension DurationX on Duration {
   String get hhmmss => formatDuration(this);
 }
-

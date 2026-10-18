@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:crisperplayer/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,18 +19,31 @@ void main() {
     final settings = SettingsService(prefs);
     final db = AppDatabase.forTesting(NativeDatabase.memory());
 
-    final playback = PlaybackService(db: db, library: LibraryService(db), bookmarks: BookmarkService(db), history: HistoryService(db));
+    final playback = PlaybackService(
+        db: db,
+        library: LibraryService(db),
+        bookmarks: BookmarkService(db),
+        history: HistoryService(db));
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
         appDatabaseProvider.overrideWithValue(db),
-        settingsProvider.overrideWithValue(settings),
+        libraryBooksProvider.overrideWith((ref) => Stream.value(<Book>[])),
+        settingsProvider.overrideWith((ref) => settings),
         playbackProvider.overrideWithValue(playback),
       ],
       child: CrisperPlayerApp(settings: settings, prefs: prefs),
     ));
     await tester.pumpAndSettle(const Duration(milliseconds: 200));
     expect(find.text('CrisperPlayer'), findsOneWidget);
-    await db.close();
+    settings.themeMode = 'dark';
+    await tester.pumpAndSettle();
+    expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+        ThemeMode.dark);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(() async {
+      await playback.dispose();
+      await db.close();
+    });
   });
 }

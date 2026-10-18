@@ -12,14 +12,16 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(seedColor: primaryBlue, brightness: Brightness.light),
+      colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryBlue, brightness: Brightness.light),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 1,
         foregroundColor: Colors.black87,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        titleTextStyle: TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w600),
+        titleTextStyle: TextStyle(
+            color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w600),
       ),
       cardTheme: CardThemeData(
         elevation: 2,
@@ -34,7 +36,10 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(seedColor: primaryBlue, brightness: Brightness.dark, surface: surfaceDark),
+      colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryBlue,
+          brightness: Brightness.dark,
+          surface: surfaceDark),
       scaffoldBackgroundColor: surfaceDark,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -42,7 +47,8 @@ class AppTheme {
         scrolledUnderElevation: 0,
         foregroundColor: Colors.white,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+        titleTextStyle: TextStyle(
+            color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
       ),
       cardTheme: CardThemeData(
         color: cardDark,

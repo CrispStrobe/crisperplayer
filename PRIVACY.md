@@ -12,7 +12,7 @@ CrisperPlayer is an **offline-first audiobook player**. This policy explains wha
 
 ## Data stored on your device
 
-When you import audiobooks via the system file picker, the app stores locally (SQLite via Drift + SharedPreferences):
+When you import audiobooks via the system file picker, the app copies selected audio and cover art into its application storage and stores metadata locally (SQLite via Drift + SharedPreferences):
 
 - Book metadata you import (title, author, file paths, duration, cover art cache)
 - Playback state (last position, progress)

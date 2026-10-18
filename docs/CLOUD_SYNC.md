@@ -1,6 +1,6 @@
 # CrisperPlayer — Cloud Sync Design
 
-> **Status:** Design doc (not yet implemented). Offline-first. Drift (SQLite) is the single source of truth on device. Cloud is a thin state mirror for multi-device continuity.
+> **Status:** Future design only. Cloud sync and accounts are unavailable in the app. The earlier simulated sign-in UI and unused experimental engine (including custom XOR encryption) have been removed. No replacement backend is configured. Offline-first. Drift (SQLite) is the single source of truth on device. Cloud is a thin state mirror for multi-device continuity.
 
 ## 1. Goals & non-goals
 

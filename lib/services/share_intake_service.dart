@@ -13,14 +13,62 @@ class ShareIntakeService {
   final LibraryService library;
   StreamSubscription<List<SharedMediaFile>>? _sub;
   bool _initialized = false;
+  Future<void> _pending = Future.value();
+  final Set<String> _inFlight = {};
+  final Future<List<SharedMediaFile>> Function()? initialMedia;
+  final Stream<List<SharedMediaFile>>? mediaStream;
+  final Future<void> Function()? resetMedia;
 
   // Supported audio extensions (matches file_picker allow + CFBundleDocumentTypes)
   static const _supportedExts = {
-    '.m4b', '.m4a', '.mp3', '.flac', '.ogg', '.wav', '.aac', '.opus',
-    '.wma', '.aiff', '.aif', '.mp2', '.mov', '.webm', '.3gp', '.mkv', '.mka',
+    '.m4b',
+    '.m4a',
+    '.mp3',
+    '.flac',
+    '.ogg',
+    '.wav',
+    '.aac',
+    '.opus',
+    '.wma',
+    '.aiff',
+    '.aif',
+    '.mp2',
+    '.mov',
+    '.webm',
+    '.3gp',
+    '.mkv',
+    '.mka',
   };
 
-  ShareIntakeService({required this.library});
+  ShareIntakeService(
+      {required this.library,
+      this.initialMedia,
+      this.mediaStream,
+      this.resetMedia});
+
+  Future<void> _reset() async {
+    if (resetMedia != null) {
+      await resetMedia!();
+    } else {
+      await ReceiveSharingIntent.instance.reset();
+    }
+  }
+
+  Future<void> _accept(List<SharedMediaFile> files) async {
+    if (files.isEmpty) return;
+    final key = (files.map((f) => f.path).toList()..sort()).join('\n');
+    if (!_inFlight.add(key)) return;
+    final work = _pending.then((_) => _handleFiles(files));
+    _pending = work.catchError((Object e) {
+      onError?.call('Import failed: $e');
+    });
+    try {
+      await work;
+      await _reset();
+    } finally {
+      _inFlight.remove(key);
+    }
+  }
 
   /// Callback when import completes. bookId is null on failure.
   Future<void> Function(String? bookId, List<String> paths)? onImported;
@@ -32,30 +80,31 @@ class ShareIntakeService {
     void Function(String message)? onError,
     void Function(String message)? onInfo,
   }) async {
+    if (onImported != null) this.onImported = onImported;
+    if (onError != null) this.onError = onError;
+    if (onInfo != null) this.onInfo = onInfo;
     if (_initialized) return;
     _initialized = true;
-    this.onImported = onImported;
-    this.onError = onError;
-    this.onInfo = onInfo;
 
     if (kIsWeb) return;
-    if (!(Platform.isAndroid || Platform.isIOS)) return;
+    if (initialMedia == null && !(Platform.isAndroid || Platform.isIOS)) return;
 
     // Cold start: app launched via share
     await handleInitialMedia();
 
     // Warm share: app in foreground/background receives SEND
-    _sub = ReceiveSharingIntent.instance.getMediaStream().listen(
+    _sub =
+        (mediaStream ?? ReceiveSharingIntent.instance.getMediaStream()).listen(
       (List<SharedMediaFile> files) async {
         if (files.isEmpty) return;
-        debugPrint('ShareIntake: getMediaStream ${files.length} files: ${files.map((f) => f.path).join(", ")}');
-        await _handleFiles(files);
+        debugPrint(
+            'ShareIntake: getMediaStream ${files.length} files: ${files.map((f) => f.path).join(", ")}');
+        await _accept(files);
         // Clear so same share not re-delivered on next resume
-        try { ReceiveSharingIntent.instance.reset(); } catch (_) {}
       },
       onError: (err) {
         debugPrint('ShareIntake stream error: $err');
-        onError?.call('Share failed: $err');
+        this.onError?.call('Share failed: $err');
       },
     );
   }
@@ -63,13 +112,14 @@ class ShareIntakeService {
   /// Call from AppLifecycleState.resumed or manually to handle any pending share.
   Future<void> handleInitialMedia() async {
     if (kIsWeb) return;
-    if (!(Platform.isAndroid || Platform.isIOS)) return;
+    if (initialMedia == null && !(Platform.isAndroid || Platform.isIOS)) return;
     try {
-      final initial = await ReceiveSharingIntent.instance.getInitialMedia();
+      final initial = await (initialMedia?.call() ??
+          ReceiveSharingIntent.instance.getInitialMedia());
       if (initial.isNotEmpty) {
-        debugPrint('ShareIntake: getInitialMedia ${initial.length} files: ${initial.map((f) => f.path).join(", ")}');
-        await _handleFiles(initial);
-        try { ReceiveSharingIntent.instance.reset(); } catch (_) {}
+        debugPrint(
+            'ShareIntake: getInitialMedia ${initial.length} files: ${initial.map((f) => f.path).join(", ")}');
+        await _accept(initial);
       }
     } catch (e) {
       debugPrint('ShareIntake getInitialMedia failed: $e');
@@ -101,15 +151,21 @@ class ShareIntakeService {
       if (ext.isEmpty || _supportedExts.contains(ext)) {
         existingPaths.add(path);
       } else {
-        debugPrint('ShareIntake: skipping unsupported extension $ext for $path');
+        debugPrint(
+            'ShareIntake: skipping unsupported extension $ext for $path');
       }
     }
 
     // If filtering removed all, fallback to raw (handles m4b served as application/octet-stream without ext in some share providers)
-    final pathsToImport = existingPaths.isNotEmpty ? existingPaths : rawPaths;
+    if (existingPaths.isEmpty) {
+      onError?.call('No supported audio files in share');
+      return;
+    }
+    final pathsToImport = existingPaths;
     pathsToImport.sort();
 
-    debugPrint('ShareIntake: importing ${pathsToImport.length} files via LibraryService.importFiles');
+    debugPrint(
+        'ShareIntake: importing ${pathsToImport.length} files via LibraryService.importFiles');
     onInfo?.call('Importing ${pathsToImport.length} file(s)...');
 
     try {
@@ -129,8 +185,9 @@ class ShareIntakeService {
     }
   }
 
-  void dispose() {
-    _sub?.cancel();
+  Future<void> dispose() async {
+    await _sub?.cancel();
+    await _pending;
     _sub = null;
     _initialized = false;
   }

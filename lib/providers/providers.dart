@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/db/app_database.dart';
 import '../services/library_service.dart';
 import '../services/bookmark_service.dart';
@@ -31,14 +30,20 @@ final historyServiceProvider = Provider<HistoryService>((ref) {
 });
 
 // settings is overridden in main with real prefs
-final settingsProvider = Provider<SettingsService>((ref) => throw UnimplementedError('settingsProvider not overridden'));
+final settingsProvider = ChangeNotifierProvider<SettingsService>(
+    (ref) => throw UnimplementedError('settingsProvider not overridden'));
 
 final playbackProvider = Provider<PlaybackService>((ref) {
   final db = ref.watch(appDatabaseProvider);
   final lib = ref.watch(libraryServiceProvider);
   final bm = ref.watch(bookmarkServiceProvider);
   final hist = ref.watch(historyServiceProvider);
-  final svc = PlaybackService(db: db, library: lib, bookmarks: bm, history: hist);
+  final svc = PlaybackService(
+      db: db,
+      library: lib,
+      bookmarks: bm,
+      history: hist,
+      settings: ref.read(settingsProvider));
   ref.onDispose(() => svc.dispose());
   return svc;
 });
@@ -63,12 +68,14 @@ final bookProvider = StreamProvider.family<Book?, String>((ref, id) {
   return db.watchBook(id);
 });
 
-final chaptersProvider = StreamProvider.family<List<Chapter>, String>((ref, bookId) {
+final chaptersProvider =
+    StreamProvider.family<List<Chapter>, String>((ref, bookId) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchChapters(bookId);
 });
 
-final bookmarksProvider = StreamProvider.family<List<Bookmark>, String>((ref, bookId) {
+final bookmarksProvider =
+    StreamProvider.family<List<Bookmark>, String>((ref, bookId) {
   final db = ref.watch(appDatabaseProvider);
   return db.watchBookmarks(bookId);
 });

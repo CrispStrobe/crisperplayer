@@ -25,13 +25,15 @@ class WaveformView extends StatefulWidget {
   State<WaveformView> createState() => _WaveformViewState();
 }
 
-class _WaveformViewState extends State<WaveformView> with SingleTickerProviderStateMixin {
+class _WaveformViewState extends State<WaveformView>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900));
     if (widget.isPlaying) _ctrl.repeat();
   }
 
@@ -129,7 +131,8 @@ class _WaveformPainter extends CustomPainter {
 
       final isPassed = x < progressX;
       final paint = Paint()
-        ..color = (isPassed ? color : inactiveColor).withValues(alpha: isPassed ? 0.95 : 0.9)
+        ..color = (isPassed ? color : inactiveColor)
+            .withValues(alpha: isPassed ? 0.95 : 0.9)
         ..style = PaintingStyle.fill;
       final rrect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, y, bw.clamp(2, 10), h),
@@ -148,13 +151,17 @@ class _WaveformPainter extends CustomPainter {
           ..strokeWidth = 2,
       );
       canvas.drawCircle(Offset(progressX, centerY), 4, Paint()..color = color);
-      canvas.drawCircle(Offset(progressX, centerY), 2, Paint()..color = Colors.white);
+      canvas.drawCircle(
+          Offset(progressX, centerY), 2, Paint()..color = Colors.white);
     }
   }
 
   @override
   bool shouldRepaint(covariant _WaveformPainter old) =>
-      old.anim != anim || old.position != position || old.duration != duration || old.isPlaying != isPlaying;
+      old.anim != anim ||
+      old.position != position ||
+      old.duration != duration ||
+      old.isPlaying != isPlaying;
 }
 
 /// Compact inline waveform for mini player (static, no animation)
@@ -168,7 +175,10 @@ class MiniWaveform extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return CustomPaint(
       size: const Size(40, 14),
-      painter: _MiniPainter(progress: progress, color: color ?? cs.primary, bg: cs.surfaceContainerHighest),
+      painter: _MiniPainter(
+          progress: progress,
+          color: color ?? cs.primary,
+          bg: cs.surfaceContainerHighest),
     );
   }
 }
@@ -190,7 +200,8 @@ class _MiniPainter extends CustomPainter {
       final y = (size.height - h) / 2;
       final isActive = (i / bars) < progress;
       canvas.drawRRect(
-        RRect.fromRectAndRadius(Rect.fromLTWH(x, y, bw - 2, h), const Radius.circular(2)),
+        RRect.fromRectAndRadius(
+            Rect.fromLTWH(x, y, bw - 2, h), const Radius.circular(2)),
         Paint()..color = isActive ? color : bg,
       );
     }

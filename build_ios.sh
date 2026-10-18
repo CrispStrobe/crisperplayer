@@ -1,4 +1,4 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 cd "$(dirname "$0")"
-/home/claudeuser/flutter/bin/flutter build ios --release --no-codesign
+flutter build ios --release --no-codesign "$@"

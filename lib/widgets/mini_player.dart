@@ -43,24 +43,33 @@ class MiniPlayer extends ConsumerWidget {
                       child: Row(
                         children: [
                           Container(
-                            width: 40, height: 40,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               color: cs.primaryContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.menu_book, size: 20, color: cs.onPrimaryContainer),
+                            child: Icon(Icons.menu_book,
+                                size: 20, color: cs.onPrimaryContainer),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                Text(book.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13)),
                                 const SizedBox(height: 2),
                                 Row(children: [
-                                  Text('${formatDuration(st.position)} / ${formatDuration(st.duration)}',
-                                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                                  Text(
+                                      '${formatDuration(st.position)} / ${formatDuration(st.duration)}',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: cs.onSurfaceVariant)),
                                   const SizedBox(width: 8),
                                   MiniWaveform(progress: st.progress),
                                 ]),
@@ -68,8 +77,11 @@ class MiniPlayer extends ConsumerWidget {
                             ),
                           ),
                           IconButton(
-                            icon: Icon(st.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                            onPressed: () => st.isPlaying ? svc.pause() : svc.play(),
+                            icon: Icon(st.isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded),
+                            onPressed: () =>
+                                st.isPlaying ? svc.pause() : svc.play(),
                             visualDensity: VisualDensity.compact,
                           ),
                           IconButton(

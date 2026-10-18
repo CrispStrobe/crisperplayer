@@ -3,7 +3,8 @@ import '../services/db/app_database.dart';
 import '../utils/format.dart';
 import '../services/audio/playback_service.dart';
 
-Future<void> showChapterListSheet(BuildContext context, {
+Future<void> showChapterListSheet(
+  BuildContext context, {
   required List<Chapter> chapters,
   required Duration position,
   required PlaybackService svc,
@@ -43,9 +44,16 @@ class _ChapterSheet extends StatelessWidget {
 
   Chapter? _current(Duration pos) {
     Duration bookPos;
-    try { bookPos = svc.bookPosition; } catch (_) { bookPos = pos; }
+    try {
+      bookPos = svc.bookPosition;
+    } catch (_) {
+      bookPos = pos;
+    }
     for (final c in chapters) {
-      if (bookPos.inMilliseconds >= c.startMs && bookPos.inMilliseconds < c.endMs) return c;
+      if (bookPos.inMilliseconds >= c.startMs &&
+          bookPos.inMilliseconds < c.endMs) {
+        return c;
+      }
     }
     return chapters.isEmpty ? null : chapters.first;
   }
@@ -65,8 +73,11 @@ class _ChapterSheet extends StatelessWidget {
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(20)),
-              child: Text('${chapters.length} chapters', style: const TextStyle(fontSize: 12)),
+              decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text('${chapters.length} chapters',
+                  style: const TextStyle(fontSize: 12)),
             ),
           ]),
         ),
@@ -86,17 +97,29 @@ class _ChapterSheet extends StatelessWidget {
                 selectedTileColor: cs.primaryContainer.withValues(alpha: 0.35),
                 leading: CircleAvatar(
                   radius: 16,
-                  backgroundColor: isCur ? cs.primary : cs.surfaceContainerHighest,
+                  backgroundColor:
+                      isCur ? cs.primary : cs.surfaceContainerHighest,
                   child: isCur
                       ? Icon(Icons.equalizer, size: 16, color: cs.onPrimary)
-                      : Text('${i+1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.onSurfaceVariant)),
+                      : Text('${i + 1}',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: cs.onSurfaceVariant)),
                 ),
-                title: Text(ch.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: isCur ? FontWeight.w700 : FontWeight.w500)),
-                subtitle: Text('${formatDuration(start)} — ${formatDuration(end)}  •  ${formatDuration(end - start)}'),
-                trailing: isCur ? Icon(Icons.play_arrow_rounded, color: cs.primary) : const Icon(Icons.chevron_right, size: 18),
+                title: Text(ch.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontWeight: isCur ? FontWeight.w700 : FontWeight.w500)),
+                subtitle: Text(
+                    '${formatDuration(start)} — ${formatDuration(end)}  •  ${formatDuration(end - start)}'),
+                trailing: isCur
+                    ? Icon(Icons.play_arrow_rounded, color: cs.primary)
+                    : const Icon(Icons.chevron_right, size: 18),
                 onTap: () async {
                   Navigator.pop(context);
-                  await svc.seekBook(Duration(milliseconds: ch.startMs));
+                  await svc.seekChapter(ch);
                 },
               );
             },

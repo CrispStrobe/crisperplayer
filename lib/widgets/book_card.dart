@@ -12,16 +12,66 @@ class BookCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = book.totalProgress;
-    final hasCover = book.coverPath.isNotEmpty && File(book.coverPath).existsSync();
+    final hasCover = book.coverPath.isNotEmpty;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Expanded(child: Stack(fit: StackFit.expand, children: [Container(color: Theme.of(context).colorScheme.primaryContainer, child: hasCover ? Image.file(File(book.coverPath), fit: BoxFit.cover, errorBuilder: (_, __, ___) => _fallbackIcon(context)) : _fallbackIcon(context)), if (progress > 0) Positioned(bottom: 0, left: 0, right: 0, child: LinearProgressIndicator(value: progress, minHeight: 4, backgroundColor: Colors.black26)) ])),
-          Padding(padding: const EdgeInsets.fromLTRB(10, 8, 10, 4), child: Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
-          Padding(padding: const EdgeInsets.fromLTRB(10, 0, 10, 2), child: Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7)))),
-          Padding(padding: const EdgeInsets.fromLTRB(10, 0, 10, 8), child: Row(children: [Text(formatDuration(Duration(milliseconds: book.totalDurationMs)), style: const TextStyle(fontSize: 10)), const Spacer(), if (book.isFinished) const Icon(Icons.check_circle, size: 14, color: Colors.green), if (onDelete != null) InkWell(onTap: onDelete, child: const Icon(Icons.more_horiz, size: 16))]))
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Expanded(
+              child: Stack(fit: StackFit.expand, children: [
+            Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: hasCover
+                    ? Image.file(File(book.coverPath),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _fallbackIcon(context))
+                    : _fallbackIcon(context)),
+            if (progress > 0)
+              Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 4,
+                      backgroundColor: Colors.black26))
+          ])),
+          Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+              child: Text(book.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13))),
+          Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 2),
+              child: Text(book.author,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.color
+                          ?.withValues(alpha: 0.7)))),
+          Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+              child: Row(children: [
+                Text(
+                    formatDuration(
+                        Duration(milliseconds: book.totalDurationMs)),
+                    style: const TextStyle(fontSize: 10)),
+                const Spacer(),
+                if (book.isFinished)
+                  const Icon(Icons.check_circle, size: 14, color: Colors.green),
+                if (onDelete != null)
+                  InkWell(
+                      onTap: onDelete,
+                      child: const Icon(Icons.more_horiz, size: 16))
+              ]))
         ]),
       ),
     );
@@ -29,6 +79,34 @@ class BookCard extends StatelessWidget {
 
   Widget _fallbackIcon(BuildContext ctx) {
     final cs = Theme.of(ctx).colorScheme;
-    final initial = book.title.trim().isNotEmpty ? book.title.trim()[0].toUpperCase() : '?';
-    return Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [cs.primaryContainer, cs.primary.withValues(alpha: 0.6)])), child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Container(width: 48, height: 48, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), shape: BoxShape.circle), child: Center(child: Text(initial, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cs.primary)))), const SizedBox(height: 6), Icon(Icons.menu_book_rounded, size: 16, color: Colors.white.withValues(alpha: 0.8))]))); }
+    final initial =
+        book.title.trim().isNotEmpty ? book.title.trim()[0].toUpperCase() : '?';
+    return Container(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+              cs.primaryContainer,
+              cs.primary.withValues(alpha: 0.6)
+            ])),
+        child: Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shape: BoxShape.circle),
+              child: Center(
+                  child: Text(initial,
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: cs.primary)))),
+          const SizedBox(height: 6),
+          Icon(Icons.menu_book_rounded,
+              size: 16, color: Colors.white.withValues(alpha: 0.8))
+        ])));
+  }
 }

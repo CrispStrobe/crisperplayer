@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'mp4_metadata.dart';
 import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 
@@ -10,15 +11,17 @@ import 'package:path/path.dart' as p;
 class CoverExtractor {
   /// Try to extract cover to a temp file. Returns absolute path or null.
   /// Writes as `<tmp>/<basename>_cover.<ext>` (jpg/png).
-  static Future<String?> extractCover(String filePath) async {
+  static Future<String?> extractCover(String filePath,
+      {Directory? outputDirectory}) async {
     final file = File(filePath);
     if (!await file.exists()) return null;
     try {
-      final bytes = await file.readAsBytes();
+      final bytes = await readMp4Metadata(file);
       if (bytes.length < 16) return null;
       final imageData = _parseBytes(bytes);
       if (imageData == null || imageData.isEmpty) return null;
-      return await _writeTemp(filePath, imageData);
+      return await _writeTemp(filePath, imageData,
+          outputDirectory: outputDirectory);
     } catch (_) {
       return null;
     }
@@ -28,7 +31,8 @@ class CoverExtractor {
   static Uint8List? extractBytes(Uint8List bytes) => _parseBytes(bytes);
 
   /// Build synthetic MP4 with a covr atom for testing.
-  static Uint8List buildSyntheticMp4(Uint8List imageBytes, {int dataType = 13}) {
+  static Uint8List buildSyntheticMp4(Uint8List imageBytes,
+      {int dataType = 13}) {
     // dataType 13 = JPEG, 14 = PNG
     final dataPayload = _buildDataPayload(imageBytes, dataType: dataType);
     final dataAtom = _atom('data', dataPayload);
@@ -51,8 +55,22 @@ class CoverExtractor {
     final udtaAtom = _atom('udta', metaAtom);
     final moovAtom = _atom('moov', udtaAtom);
     final ftypPayload = Uint8List.fromList([
-      0x4d, 0x34, 0x41, 0x20,
-      0x00, 0x00, 0x02, 0x00, 0x4d, 0x34, 0x41, 0x20, 0x69, 0x73, 0x6f, 0x6d,
+      0x4d,
+      0x34,
+      0x41,
+      0x20,
+      0x00,
+      0x00,
+      0x02,
+      0x00,
+      0x4d,
+      0x34,
+      0x41,
+      0x20,
+      0x69,
+      0x73,
+      0x6f,
+      0x6d,
     ]);
     final ftypAtom = _atom('ftyp', ftypPayload);
     final mdatAtom = _atom('mdat', Uint8List.fromList([0x00]));
@@ -97,7 +115,8 @@ class CoverExtractor {
     return inner.sublist(8);
   }
 
-  static Uint8List? _payloadDataAtomInner(_Atom atom, Uint8List containerBytes) {
+  static Uint8List? _payloadDataAtomInner(
+      _Atom atom, Uint8List containerBytes) {
     final end = atom.offset + atom.size;
     final start = atom.dataStart;
     if (start >= end) return null;
@@ -106,7 +125,8 @@ class CoverExtractor {
     return containerBytes.sublist(s, e);
   }
 
-  static Uint8List _buildDataPayload(Uint8List imageBytes, {int dataType = 13}) {
+  static Uint8List _buildDataPayload(Uint8List imageBytes,
+      {int dataType = 13}) {
     // data payload: 4 typeFlags (?) where low 24 bits = type, then 4 locale=0, then image
     // Use 16 bytes before image: 4 type(1 byte type in low?), 4+8 as in Go expects
     // Go parseDataAtoms expects: at pos+8: 4 bytes type where low 24 bits is type, pos+12: 4 bytes locale?
@@ -121,25 +141,20 @@ class CoverExtractor {
     // For simplicity put 0x00 0x00 0x00 type
     out[3] = dataType;
     // next 4 bytes 0
-    for (int i = 0; i < imageBytes.length; i++) out[8 + i] = imageBytes[i];
+    for (int i = 0; i < imageBytes.length; i++) {
+      out[8 + i] = imageBytes[i];
+    }
     return out;
   }
 
-  static Future<String> _writeTemp(String originalPath, Uint8List imageData) async {
+  static Future<String> _writeTemp(String originalPath, Uint8List imageData,
+      {Directory? outputDirectory}) async {
     final ext = _extForImage(imageData);
     final base = p.basenameWithoutExtension(originalPath);
-    String tmpDir;
-    try {
-      // Try to get temp from system; path_provider would need Flutter binding.
-      // Use system temp.
-      tmpDir = Directory.systemTemp.path;
-      // Ensure subdir
-      final sub = Directory(p.join(tmpDir, 'crisper_covers'));
-      if (!await sub.exists()) await sub.create(recursive: true);
-      tmpDir = sub.path;
-    } catch (_) {
-      tmpDir = Directory.systemTemp.path;
-    }
+    final directory = outputDirectory ??
+        await Directory.systemTemp.createTemp('crisper_cover_');
+    await directory.create(recursive: true);
+    final tmpDir = directory.path;
     final outPath = p.join(tmpDir, '${base}_cover$ext');
     final outFile = File(outPath);
     await outFile.writeAsBytes(imageData);
@@ -147,9 +162,25 @@ class CoverExtractor {
   }
 
   static String _extForImage(Uint8List data) {
-    if (data.length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF) return '.jpg';
-    if (data.length >= 4 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47) return '.png';
-    if (data.length >= 4 && data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46) return '.gif';
+    if (data.length >= 3 &&
+        data[0] == 0xFF &&
+        data[1] == 0xD8 &&
+        data[2] == 0xFF) {
+      return '.jpg';
+    }
+    if (data.length >= 4 &&
+        data[0] == 0x89 &&
+        data[1] == 0x50 &&
+        data[2] == 0x4E &&
+        data[3] == 0x47) {
+      return '.png';
+    }
+    if (data.length >= 4 &&
+        data[0] == 0x47 &&
+        data[1] == 0x49 &&
+        data[2] == 0x46) {
+      return '.gif';
+    }
     if (data.length >= 2 && data[0] == 0x42 && data[1] == 0x4D) return '.bmp';
     return '.jpg';
   }
@@ -157,7 +188,9 @@ class CoverExtractor {
   // -- Atom helpers (mirrored from chapter_parser) ---------------------------
 
   static _Atom? _findAtom(List<_Atom> atoms, String type, Uint8List bytes) {
-    for (final a in atoms) if (a.type == type) return a;
+    for (final a in atoms) {
+      if (a.type == type) return a;
+    }
     return null;
   }
 
@@ -198,13 +231,23 @@ class CoverExtractor {
       }
       if (atomSize < headerSize || atomSize == 0) break;
       if (pos + atomSize > end) {
-        if (type == 'mdat' || type == 'moov' || type == 'udta' || type == 'meta' || type == 'ilst' || type == 'covr') {
+        if (type == 'mdat' ||
+            type == 'moov' ||
+            type == 'udta' ||
+            type == 'meta' ||
+            type == 'ilst' ||
+            type == 'covr') {
           atomSize = end - pos;
         } else {
           break;
         }
       }
-      out.add(_Atom(type: type, offset: pos, size: atomSize, headerSize: headerSize, dataStart: pos + headerSize));
+      out.add(_Atom(
+          type: type,
+          offset: pos,
+          size: atomSize,
+          headerSize: headerSize,
+          dataStart: pos + headerSize));
       pos += atomSize;
     }
     return out;
@@ -219,14 +262,16 @@ class CoverExtractor {
     return bytes.sublist(s, e);
   }
 
-  static int _u32BE(Uint8List b, int off) => (b[off] << 24) | (b[off + 1] << 16) | (b[off + 2] << 8) | b[off + 3];
+  static int _u32BE(Uint8List b, int off) =>
+      (b[off] << 24) | (b[off + 1] << 16) | (b[off + 2] << 8) | b[off + 3];
   static int _u64BE(Uint8List b, int off) {
     final hi = _u32BE(b, off);
     final lo = _u32BE(b, off + 4);
     return (hi * 0x100000000) + lo;
   }
 
-  static String _typeStr(Uint8List b, int off) => String.fromCharCodes([b[off], b[off + 1], b[off + 2], b[off + 3]]);
+  static String _typeStr(Uint8List b, int off) =>
+      String.fromCharCodes([b[off], b[off + 1], b[off + 2], b[off + 3]]);
 
   static Uint8List _atom(String type, Uint8List payload) {
     final size = 8 + payload.length;
@@ -236,8 +281,12 @@ class CoverExtractor {
     out[2] = (size >> 8) & 0xFF;
     out[3] = size & 0xFF;
     final codes = type.codeUnits;
-    for (int i = 0; i < 4; i++) out[4 + i] = codes[i];
-    for (int i = 0; i < payload.length; i++) out[8 + i] = payload[i];
+    for (int i = 0; i < 4; i++) {
+      out[4 + i] = codes[i];
+    }
+    for (int i = 0; i < payload.length; i++) {
+      out[8 + i] = payload[i];
+    }
     return out;
   }
 }
@@ -248,5 +297,10 @@ class _Atom {
   final int size;
   final int headerSize;
   final int dataStart;
-  _Atom({required this.type, required this.offset, required this.size, required this.headerSize, required this.dataStart});
+  _Atom(
+      {required this.type,
+      required this.offset,
+      required this.size,
+      required this.headerSize,
+      required this.dataStart});
 }

@@ -51,12 +51,20 @@ class PlaybackState {
         error: error,
       );
 
-  double get progress => duration.inMilliseconds == 0 ? 0 : (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0);
+  double get progress => duration.inMilliseconds == 0
+      ? 0
+      : (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0);
 }
 
 extension PlayerStateX on PlayerState {
   PlaybackStatus toStatus() {
-    if (processingState == ProcessingState.completed) return PlaybackStatus.completed;
+    if (processingState == ProcessingState.loading ||
+        processingState == ProcessingState.buffering) {
+      return PlaybackStatus.loading;
+    }
+    if (processingState == ProcessingState.completed) {
+      return PlaybackStatus.completed;
+    }
     return playing ? PlaybackStatus.playing : PlaybackStatus.paused;
   }
 }

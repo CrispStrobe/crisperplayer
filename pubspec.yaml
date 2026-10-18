@@ -1,11 +1,11 @@
 name: crisperplayer
 description: "CrisperPlayer — versatile cross-platform audiobook player (Flutter). Plays m4b/m4a/mp3/flac/ogg/wav/aac/opus/wma/aiff. Resume, auto/manual bookmarks, listening history. Android+iOS+Desktop."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.1.0+2
 
 environment:
-  sdk: '>=3.5.0 <4.0.0'
-  flutter: ">=3.24.0"
+  sdk: '>=3.12.0 <4.0.0'
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
@@ -26,7 +26,6 @@ dependencies:
   media_kit_libs_windows_audio: any
   media_kit_libs_linux: any
   audio_service: ^0.18.18
-  just_audio_background: ^0.0.1-beta.15
 
   # Storage — drift for library/history/bookmarks (robust, migratable)
   drift: ^2.28.1
@@ -42,7 +41,8 @@ dependencies:
   device_info_plus: ^13.0.0
   package_info_plus: ^10.1.0
   share_plus: ^13.0.0
-  receive_sharing_intent: ^1.8.0
+  # Keep the CocoaPods integration used by the iOS host and share extension.
+  receive_sharing_intent: ">=1.8.1 <1.9.0"
 
   # Utils
   uuid: ^4.3.3
@@ -59,8 +59,7 @@ dev_dependencies:
   drift_dev: ^2.28.2
 
 flutter:
+  config:
+    enable-swift-package-manager: false
   uses-material-design: true
   generate: true
-  assets:
-    - assets/covers/
-    - assets/images/

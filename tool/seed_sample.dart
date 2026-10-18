@@ -6,7 +6,7 @@ import 'package:drift/drift.dart';
 Future<void> main() async {
   final sample = File('/home/claudeuser/jfk-test.m4a');
   if (!await sample.exists()) {
-    print('no sample at /home/claudeuser/jfk-test.m4a');
+    stdout.writeln('no sample at /home/claudeuser/jfk-test.m4a');
     return;
   }
   final db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -19,8 +19,8 @@ Future<void> main() async {
     totalDurationMs: const Value(12000),
     addedAtMs: DateTime.now().millisecondsSinceEpoch,
   ));
-  print('seeded $id with ${sample.path}');
+  stdout.writeln('seeded $id with ${sample.path}');
   final books = await db.allBooks;
-  print('books: ${books.map((b)=> b.title).join(', ')}');
+  stdout.writeln('books: ${books.map((b) => b.title).join(', ')}');
   await db.close();
 }

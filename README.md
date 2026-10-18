@@ -19,7 +19,7 @@ Cloud sync and accounts are unavailable. The web build displays an availability 
 
 ## Development
 
-Use Flutter 3.44 or newer (Dart 3.12). The current dependencies require iOS 14 or newer; Android uses the Flutter SDK minimum.
+Use Flutter 3.44 or newer (Dart 3.12). The iOS deployment minimum is 15.0; Android uses the Flutter SDK minimum.
 
 ```sh
 flutter pub get

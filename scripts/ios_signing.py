@@ -113,6 +113,15 @@ def restore_groups():
     print('Restored authorized App Group entitlements in extension and host with the canonical identity.')
 
 
+def validate_app_configuration(info):
+    minimum = tuple(int(part) for part in info['MinimumOSVersion'].split('.'))
+    require(minimum >= (15, 0), 'Exported minimum iOS version is below 15.0')
+    if info.get('CFBundleDocumentTypes'):
+        require(info.get('UISupportsDocumentBrowser') is True or
+                isinstance(info.get('LSSupportsOpeningDocumentsInPlace'), bool),
+                'Document types require an explicit document-opening configuration')
+
+
 def verify():
     ipas = list(Path('build/ios/ipa').glob('*.ipa'))
     require(len(ipas) == 1, 'Expected exactly one newly exported IPA')
@@ -127,8 +136,7 @@ def verify():
             require(info['CFBundleIdentifier'] == identifier, 'Exported bundle identifier mismatch')
             require(info['CFBundleShortVersionString'] == expected, 'Exported marketing version mismatch')
             require(info['CFBundleVersion'] == number, 'Exported build number mismatch')
-            minimum = tuple(int(part) for part in info['MinimumOSVersion'].split('.'))
-            require(minimum >= (14, 0), 'Exported minimum iOS version is below 14.0')
+            validate_app_configuration(info)
             require(info.get('ITSAppUsesNonExemptEncryption') is False, 'Export compliance declaration is missing')
             subprocess.run(['codesign', '--verify', '--deep', '--strict', str(bundle)], check=True)
             entitlements = plistlib.loads(subprocess.check_output(

@@ -188,7 +188,7 @@ Declared in `ios/Runner/Info.plist` (verified 2026-10-17):
 | `UIBackgroundModes = audio` | `<string>audio</string>` | Background playback via `audio_service` + `AVAudioSessionCategory.playback` | None (capability) |
 | `NSAppleMusicUsageDescription` | “CrisperPlayer plays audiobooks … shown on lock screen …” | Lockscreen / Control Center metadata (required even without library browsing) | System dialog if triggered |
 
-No `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription`, `NSCameraUsageDescription` — file import uses `UIDocumentPickerViewController` (no photo-library permission on iOS 14+). No tracking (`NSUserTrackingUsageDescription` not declared).
+No `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription`, `NSCameraUsageDescription` — file import uses `UIDocumentPickerViewController` (no photo-library permission on iOS 15+). No tracking (`NSUserTrackingUsageDescription` not declared).
 
 ### App Privacy (App Store Connect → App Privacy → Nutrition Label)
 

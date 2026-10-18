@@ -64,6 +64,21 @@ class ReleaseTests(unittest.TestCase):
                 testflight_internal.enroll_internal_tester('group', 'outsider@example.com')
         api.assert_not_called()
 
+    def test_release_rejects_deployment_target_below_ios_15(self):
+        with self.assertRaisesRegex(RuntimeError, 'below 15.0'):
+            ios_signing.validate_app_configuration({'MinimumOSVersion': '14.0'})
+        ios_signing.validate_app_configuration({'MinimumOSVersion': '15.0'})
+
+    def test_document_import_configuration_must_be_explicit_and_boolean(self):
+        info = {'MinimumOSVersion': '15.0', 'CFBundleDocumentTypes': [{'CFBundleTypeName': 'Audiobook'}]}
+        with self.assertRaisesRegex(RuntimeError, 'document-opening'):
+            ios_signing.validate_app_configuration(info)
+        with self.assertRaisesRegex(RuntimeError, 'document-opening'):
+            ios_signing.validate_app_configuration(dict(info, LSSupportsOpeningDocumentsInPlace='NO'))
+        ios_signing.validate_app_configuration(dict(info, LSSupportsOpeningDocumentsInPlace=False))
+        ios_signing.validate_app_configuration(dict(info, LSSupportsOpeningDocumentsInPlace=True))
+        ios_signing.validate_app_configuration(dict(info, UISupportsDocumentBrowser=True))
+
     def valid_profile(self):
         return {'Entitlements': {'application-identifier': 'TEAM.' + ios_signing.BUNDLE_ID,
             'com.apple.security.application-groups': [ios_signing.APP_GROUP], 'get-task-allow': False},

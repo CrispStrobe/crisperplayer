@@ -1,6 +1,6 @@
 # iOS builds and internal TestFlight
 
-Use Flutter 3.44.4, Dart 3.12 and iOS 14+. The project uses CocoaPods only; Swift Package Manager is disabled in pubspec and CI to avoid duplicate plugin linkage. The host and share extension both use App Group `group.com.crispstrobe.crisperplayer`.
+Use Flutter 3.44.4, Dart 3.12 and iOS 15+. The project uses CocoaPods only; Swift Package Manager is disabled in pubspec and CI to avoid duplicate plugin linkage. The host and share extension both use App Group `group.com.crispstrobe.crisperplayer`.
 
 ## GitHub Actions
 
@@ -49,3 +49,5 @@ env -u GEM_HOME -u GEM_PATH -u RUBYOPT pod install --project-directory=ios
 ```
 
 The local SDK/cache tools can stall on this machine. CI is the binary-build verification path; do not treat a stalled local attempt as a successful build.
+
+The host, share extension and CocoaPods deployment targets are all iOS 15.0 or newer. IPA verification rejects a lower minimum or missing document-opening configuration. `LSSupportsOpeningDocumentsInPlace` is explicitly false because imports copy audio into app-owned storage.

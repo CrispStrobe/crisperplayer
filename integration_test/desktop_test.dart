@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:crisperplayer/screens/sync_settings_screen.dart';
 import 'package:crisperplayer/services/server/credential_store.dart';
 import 'package:crisperplayer/services/server/remote_library_service.dart';
@@ -236,17 +238,43 @@ void main() {
       final audio = await fixture.readAsBytes();
       final nas = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final url = 'http://127.0.0.1:${nas.port}/dav/';
+      final releaseTransfer = Completer<void>();
+      final ranges = <String?>[];
       nas.listen((request) async {
-        if (request.method == 'PROPFIND') {
-          request.response.statusCode = 207;
-          request.response.write(
-            '<multistatus xmlns="DAV:"><response><href>/dav/Book.wav</href><propstat><prop><displayname>Book.wav</displayname><resourcetype/></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>',
-          );
-        } else {
-          request.response.headers.contentLength = audio.length;
-          request.response.add(audio);
+        try {
+          if (request.method == 'PROPFIND') {
+            request.response.statusCode = 207;
+            request.response.write(
+              '<multistatus xmlns="DAV:"><response><href>/dav/Book.wav</href><propstat><prop><displayname>Book.wav</displayname><resourcetype/></prop><status>HTTP/1.1 200 OK</status></propstat></response></multistatus>',
+            );
+          } else {
+            final range = request.headers.value('range');
+            ranges.add(range);
+            final offset = range == null
+                ? 0
+                : int.parse(RegExp(r'bytes=(\d+)-').firstMatch(range)![1]!);
+            request.response.headers.set('etag', '"native-fixture-v1"');
+            if (offset > 0) {
+              request.response.statusCode = 206;
+              request.response.headers.set(
+                'content-range',
+                'bytes $offset-${audio.length - 1}/${audio.length}',
+              );
+            }
+            request.response.headers.contentLength = audio.length - offset;
+            request.response.bufferOutput = false;
+            final first = (offset + 65536).clamp(0, audio.length);
+            request.response.add(audio.sublist(offset, first));
+            await request.response.flush();
+            await releaseTransfer.future;
+            request.response.add(audio.sublist(first));
+          }
+          await request.response.close();
+        } on IOException {
+          /* The UI paused the first request. */
+        } on StateError {
+          /* The UI paused the first request. */
         }
-        await request.response.close();
       });
       try {
         await tester.pumpWidget(
@@ -279,18 +307,40 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Book.wav'), findsOneWidget);
         await tester.tap(find.text('Book.wav'));
+        for (var tick = 0; tick < 100 && service.downloadedBytes == 0; tick++) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          await tester.pump();
+        }
+        expect(
+          service.downloadedBytes,
+          greaterThan(0),
+          reason: 'Transfer state: ${service.status()}, requests: $ranges',
+        );
+        await tester.tap(find.text('Pause download'));
+        releaseTransfer.complete();
         await tester.pumpAndSettle();
+        expect(service.downloads.single.phase, 'paused');
+        expect(await db.allBooks, isEmpty);
+        await tester.tap(find.text('Downloads (1)'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Resume download'));
+        await tester.pumpAndSettle();
+        expect(ranges.last, startsWith('bytes='));
+        expect(service.downloads, isEmpty);
         final books = await db.allBooks;
         expect(books, hasLength(1));
         expect(books.single.totalDurationMs, closeTo(12000, 100));
         expect(await db.select(db.remoteLinks).get(), hasLength(1));
         expect(
-          find.text('Book available offline in your library'),
-          findsOneWidget,
+          await File(
+            (jsonDecode(books.single.filePathsJson) as List).single as String,
+          ).readAsBytes(),
+          audio,
         );
         expect(tester.takeException(), isNull);
       } finally {
         await tester.pumpWidget(const SizedBox.shrink());
+        if (!releaseTransfer.isCompleted) releaseTransfer.complete();
         await secure.delete();
         await nas.close(force: true);
         await db.close();

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -9,18 +11,72 @@ import 'credential_store.dart';
 import 'remote_client.dart';
 import '../db/app_database.dart';
 
+class RemoteDownload {
+  final String id, connectionId, path, title, author;
+  final bool file;
+  String phase = 'paused';
+  String? error;
+  int bytes = 0;
+  RemoteDownload({
+    required this.id,
+    required this.connectionId,
+    required this.path,
+    required this.title,
+    this.author = '',
+    this.file = false,
+  });
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'connectionId': connectionId,
+    'path': path,
+    'title': title,
+    'author': author,
+    'file': file,
+    'phase': phase,
+    'error': error,
+    'bytes': bytes,
+  };
+  factory RemoteDownload.fromJson(Map<String, dynamic> row) => RemoteDownload(
+    id: row['id'] as String,
+    connectionId: row['connectionId'] as String,
+    path: row['path'] as String,
+    title: row['title'] as String,
+    author: row['author'] as String? ?? '',
+    file: row['file'] == true,
+  );
+}
+
 class RemoteLibraryService extends ChangeNotifier {
   final LibraryService library;
   final ServerCredentialStore credentials;
   final List<RemoteConnection> _connections = [];
-  bool _loaded = false;
-  bool busy = false;
-  int downloadedBytes = 0;
-  String? downloadName;
+  final Map<String, RemoteDownload> _downloads = {};
+  bool _loaded = false, _disposed = false, _pausing = false;
+  bool get busy => _active != null;
+  int get downloadedBytes => _active?.bytes ?? 0;
+  String? get downloadName => _active?.title;
+  bool get canPause => _active?.phase == 'downloading';
+  RemoteDownload? _active;
+  RemoteClient? _activeClient;
   Future<void>? _loading;
+  Future<void> _credentialWrites = Future.value();
   RemoteLibraryService(this.library, {ServerCredentialStore? credentials})
     : credentials = credentials ?? KeychainCredentialStore();
   List<RemoteConnection> get connections => List.unmodifiable(_connections);
+  List<RemoteDownload> get downloads => List.unmodifiable(_downloads.values);
+  void _changed() {
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<Directory> _root() async =>
+      Directory(p.join((await library.storageDirectory()).path, 'downloads'));
+  Future<Directory> _directory(String id) async {
+    if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(id)) {
+      throw const FormatException('Invalid download ID');
+    }
+    return Directory(p.join((await _root()).path, id));
+  }
+
   Future<void> init() {
     if (_loaded) return Future.value();
     return _loading ??= _load().catchError((Object error) {
@@ -31,19 +87,52 @@ class RemoteLibraryService extends ChangeNotifier {
 
   Future<void> _load() async {
     final saved = await credentials.read();
-    if (saved != null) {
-      final rows = jsonDecode(saved) as List;
-      _connections.addAll(
-        rows
-            .map(
-              (r) =>
-                  RemoteConnection.fromJson((r as Map).cast<String, dynamic>()),
-            )
-            .toList(),
-      );
+    final connections = saved == null
+        ? <RemoteConnection>[]
+        : (jsonDecode(saved) as List)
+              .map(
+                (r) => RemoteConnection.fromJson(
+                  (r as Map).cast<String, dynamic>(),
+                ),
+              )
+              .toList();
+    final root = await _root();
+    final jobs = <RemoteDownload>[];
+    if (await root.exists()) {
+      await for (final entry in root.list(followLinks: false)) {
+        if (entry is! Directory ||
+            !RegExp(r'^[a-f0-9]{64}$').hasMatch(p.basename(entry.path))) {
+          continue;
+        }
+        try {
+          final manifest = File(p.join(entry.path, 'job.json'));
+          if (await manifest.length() > 64 * 1024) continue;
+          final job = RemoteDownload.fromJson(
+            (jsonDecode(await manifest.readAsString()) as Map)
+                .cast<String, dynamic>(),
+          );
+          if (job.id != p.basename(entry.path)) continue;
+          await for (final part in entry.list(followLinks: false)) {
+            if (part is File && RemoteClient.isAudio(part.path)) {
+              job.bytes += await part.length();
+            }
+          }
+          jobs.add(job);
+        } on IOException {
+          /* A damaged disposable transfer cannot affect the library. */
+        } on FormatException {
+          /* Skip invalid manifests. */
+        } on TypeError {
+          /* Skip invalid manifests. */
+        }
+      }
     }
+    _connections
+      ..clear()
+      ..addAll(connections);
+    _downloads.addEntries(jobs.map((j) => MapEntry(j.id, j)));
     _loaded = true;
-    notifyListeners();
+    _changed();
   }
 
   Future<void> connect({
@@ -53,6 +142,7 @@ class RemoteLibraryService extends ChangeNotifier {
     required String secret,
     String username = '',
     bool allowLocalHttp = false,
+    String? hostKey,
   }) async {
     await init();
     final connection = RemoteConnection(
@@ -63,6 +153,7 @@ class RemoteLibraryService extends ChangeNotifier {
       secret: secret,
       username: username,
       allowLocalHttp: allowLocalHttp,
+      hostKey: hostKey,
     );
     final client = RemoteClient(connection);
     try {
@@ -70,25 +161,34 @@ class RemoteLibraryService extends ChangeNotifier {
     } finally {
       client.close();
     }
-    final next = [..._connections, connection];
-    await credentials.write(
-      jsonEncode(next.map((c) => c.toJson(credentials: true)).toList()),
-    );
-    _connections.add(connection);
-    notifyListeners();
+    await _saveConnections((current) => [...current, connection]);
+  }
+
+  Future<void> _saveConnections(
+    List<RemoteConnection> Function(List<RemoteConnection>) build,
+  ) {
+    final result = _credentialWrites.then((_) async {
+      final next = build(_connections);
+      await credentials.write(
+        jsonEncode(next.map((c) => c.toJson(credentials: true)).toList()),
+      );
+      _connections
+        ..clear()
+        ..addAll(next);
+      _changed();
+    });
+    _credentialWrites = result.catchError((Object _) {});
+    return result;
   }
 
   Future<void> disconnect(String id) async {
     await init();
-    if (busy) {
-      throw const RemoteException('Wait for the current download to finish.');
-    }
-    final next = _connections.where((c) => c.id != id).toList();
-    await credentials.write(
-      jsonEncode(next.map((c) => c.toJson(credentials: true)).toList()),
-    );
-    _connections.removeWhere((c) => c.id == id);
-    notifyListeners();
+    await _saveConnections((current) {
+      if (busy) {
+        throw const RemoteException('Wait for the current download to finish.');
+      }
+      return current.where((c) => c.id != id).toList();
+    });
   }
 
   RemoteConnection _connection(String id) => _connections.firstWhere(
@@ -105,7 +205,7 @@ class RemoteLibraryService extends ChangeNotifier {
     }
   }
 
-  Future<String> download(
+  Future<RemoteDownload> _prepare(
     String connectionId,
     String path,
     String title, {
@@ -114,30 +214,140 @@ class RemoteLibraryService extends ChangeNotifier {
   }) async {
     await init();
     if (busy) throw const RemoteException('Another download is in progress.');
-    final connection = _connection(connectionId);
-    final identity = '${connection.kind}:${connection.username}';
+    final validation = RemoteClient(_connection(connectionId));
+    try {
+      validation.uri(path);
+    } finally {
+      validation.close();
+    }
+    final id = sha256
+        .convert(utf8.encode(jsonEncode([connectionId, path, file])))
+        .toString();
+    final job =
+        _downloads[id] ??
+        RemoteDownload(
+          id: id,
+          connectionId: connectionId,
+          path: path,
+          title: title,
+          author: author,
+          file: file,
+        );
+    final directory = await _directory(id);
+    await directory.create(recursive: true);
+    final temporary = File(p.join(directory.path, 'job.tmp'));
+    await temporary.writeAsString(jsonEncode(job.toJson()), flush: true);
+    await temporary.rename(p.join(directory.path, 'job.json'));
+    _downloads[id] = job;
+    return job;
+  }
+
+  Future<String> download(
+    String connectionId,
+    String path,
+    String title, {
+    String author = '',
+    bool file = false,
+  }) async => _perform(
+    await _prepare(connectionId, path, title, author: author, file: file),
+  );
+  Future<RemoteDownload> startDownload(
+    String connectionId,
+    String path,
+    String title, {
+    String author = '',
+    bool file = false,
+  }) async {
+    final job = await _prepare(
+      connectionId,
+      path,
+      title,
+      author: author,
+      file: file,
+    );
+    unawaited(
+      _perform(job).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+    );
+    return job;
+  }
+
+  Future<String> resume(String id) async {
+    await init();
+    final job = _downloads[id];
+    if (job == null) throw const RemoteException('Download was not found.');
+    return _perform(job);
+  }
+
+  Future<void> discard(String id) async {
+    await init();
+    if (_active?.id == id) {
+      throw const RemoteException('Pause the download before discarding it.');
+    }
+    final directory = await _directory(id);
+    if (await directory.exists()) await directory.delete(recursive: true);
+    _downloads.remove(id);
+    _changed();
+  }
+
+  void pauseDownload() {
+    if (!busy) return;
+    if (!canPause) {
+      throw const RemoteException(
+        'Finishing the library import. Wait for it to complete.',
+      );
+    }
+    _pausing = true;
+    _activeClient?.close();
+  }
+
+  void _checkPaused() {
+    if (_pausing || _disposed) {
+      throw const RemoteException(
+        'Download paused. Resume it from Servers & NAS.',
+      );
+    }
+  }
+
+  Future<String> _perform(RemoteDownload job) async {
+    if (busy) throw const RemoteException('Another download is in progress.');
+    final connection = _connection(job.connectionId);
+    _pausing = false;
+    _active = job;
+    job.phase = 'downloading';
+    job.error = null;
+    job.bytes = 0;
+    final client = _activeClient = RemoteClient(connection);
+    _changed();
     final db = library.db;
-    final existing =
-        await (db.select(db.remoteLinks)..where(
-              (t) =>
-                  t.serverUrl.equals(connection.url.toString()) &
-                  t.userId.equals(identity) &
-                  t.itemId.equals(path),
-            ))
-            .getSingleOrNull();
-    if (existing != null) return existing.bookId;
-    busy = true;
-    downloadedBytes = 0;
-    downloadName = title;
-    notifyListeners();
-    final client = RemoteClient(connection);
-    Directory? temporary;
     String? importedId;
     try {
-      temporary = await Directory.systemTemp.createTemp('crisper_remote_');
-      final entries = file
-          ? [RemoteEntry(path, title, 'file')]
-          : await client.tracks(path);
+      final existing =
+          await (db.select(db.remoteLinks)..where(
+                (t) =>
+                    t.serverUrl.equals(connection.url.toString()) &
+                    t.userId.equals(
+                      '${connection.kind}:${connection.username}',
+                    ) &
+                    t.itemId.equals(job.path),
+              ))
+              .getSingleOrNull();
+      if (existing != null) {
+        await _complete(job);
+        return existing.bookId;
+      }
+      final directory = await _directory(job.id);
+      final entries = job.file
+          ? [
+              RemoteEntry(
+                job.path,
+                RemoteClient.isAudio(job.title)
+                    ? job.title
+                    : Uri.parse(job.path).pathSegments.last,
+                'file',
+              ),
+            ]
+          : await client.tracks(job.path);
+      _checkPaused();
       if (entries.isEmpty) {
         throw const RemoteException(
           'No supported audio files were found here. Open the folder containing the book’s tracks.',
@@ -146,28 +356,34 @@ class RemoteLibraryService extends ChangeNotifier {
       final files = <String>[];
       var completed = 0;
       for (var i = 0; i < entries.length; i++) {
+        _checkPaused();
         final entry = entries[i];
         final name = p
             .basename(entry.name)
             .replaceAll(RegExp(r'[^\w. -]'), '_');
+        // Keep the audio extension for native probing.
         final output = File(
-          p.join(temporary.path, '${i.toString().padLeft(5, '0')}_$name'),
+          p.join(directory.path, '${i.toString().padLeft(5, '0')}_$name'),
         );
         await client.download(
           entry.path,
           output,
           onBytes: (bytes) {
-            downloadedBytes = completed + bytes;
-            notifyListeners();
+            _checkPaused();
+            job.bytes = completed + bytes;
+            _changed();
           },
         );
         completed += await output.length();
         files.add(output.path);
       }
+      _checkPaused();
+      job.phase = 'importing';
+      _changed();
       importedId = await library.importFiles(
         files,
-        title: file ? p.basenameWithoutExtension(title) : title,
-        author: author.isEmpty ? null : author,
+        title: job.file ? p.basenameWithoutExtension(job.title) : job.title,
+        author: job.author.isEmpty ? null : job.author,
       );
       if (importedId == null) {
         throw const RemoteException('No book was imported.');
@@ -178,23 +394,35 @@ class RemoteLibraryService extends ChangeNotifier {
             RemoteLinksCompanion.insert(
               bookId: importedId,
               serverUrl: connection.url.toString(),
-              userId: identity,
-              itemId: path,
+              userId: '${connection.kind}:${connection.username}',
+              itemId: job.path,
             ),
           );
+      await _complete(job);
       return importedId;
-    } catch (_) {
+    } catch (error) {
       if (importedId != null) await library.deleteBook(importedId);
+      job.phase = _pausing || _disposed ? 'paused' : 'failed';
+      job.error = job.phase == 'paused' ? null : '$error';
+      if (_pausing) throw const RemoteException('Download paused.');
       rethrow;
     } finally {
       client.close();
-      if (temporary != null && await temporary.exists()) {
-        await temporary.delete(recursive: true);
-      }
-      busy = false;
-      downloadName = null;
-      notifyListeners();
+      _activeClient = null;
+      _active = null;
+      _changed();
     }
+  }
+
+  Future<void> _complete(RemoteDownload job) async {
+    final directory = await _directory(job.id);
+    // A successfully imported book must survive disposable-cache cleanup errors.
+    try {
+      if (await directory.exists()) await directory.delete(recursive: true);
+    } on IOException {
+      /* Retry cleanup on next import. */
+    }
+    _downloads.remove(job.id);
   }
 
   Map<String, Object?> status() => {
@@ -203,5 +431,14 @@ class RemoteLibraryService extends ChangeNotifier {
     'downloading': busy,
     'downloadName': downloadName,
     'downloadedBytes': downloadedBytes,
+    'canPause': canPause,
+    'downloads': [for (final job in downloads) job.toJson()],
   };
+  @override
+  void dispose() {
+    _disposed = true;
+    _pausing = true;
+    _activeClient?.close();
+    super.dispose();
+  }
 }

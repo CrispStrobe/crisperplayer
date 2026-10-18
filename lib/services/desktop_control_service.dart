@@ -41,6 +41,12 @@ class DesktopControlService {
     );
     server.idleTimeout = const Duration(seconds: 30);
     _requests = server.listen((request) {
+      // Transfer pause/status must remain responsive while a download command
+      // owns the normal mutation queue. Authentication is still checked below.
+      if (request.uri.path == '/transfers') {
+        unawaited(_handle(request));
+        return;
+      }
       // Serialize CLI mutations, including imports and their responses.
       _commands = _commands.then((_) => _handle(request)).catchError((
         Object error,
@@ -120,7 +126,8 @@ class DesktopControlService {
       Object? result;
       if (request.uri.path == '/import') {
         result = await _import(request);
-      } else if (request.uri.path == '/command') {
+      } else if (request.uri.path == '/command' ||
+          request.uri.path == '/transfers') {
         final bytes = <int>[];
         await for (final chunk in request) {
           bytes.addAll(chunk);
@@ -131,6 +138,12 @@ class DesktopControlService {
         final body = jsonDecode(utf8.decode(bytes));
         if (body is! Map<String, dynamic>) {
           throw const FormatException('Expected a command object');
+        }
+        if (request.uri.path == '/transfers' &&
+            !{'server-cancel', 'server-downloads'}.contains(body['command'])) {
+          throw const FormatException(
+            'Only transfer pause/status can bypass the command queue',
+          );
         }
         result = await _command(body);
       } else {
@@ -215,6 +228,29 @@ class DesktopControlService {
     final command = args['command'];
     final bookId = args['bookId'];
     switch (command) {
+      case 'server-cancel':
+        if (remote == null) {
+          throw const FormatException('Remote libraries are unavailable');
+        }
+        remote!.pauseDownload();
+        return remote!.status();
+      case 'server-downloads':
+        if (remote == null) {
+          throw const FormatException('Remote libraries are unavailable');
+        }
+        await remote!.init();
+        return remote!.status();
+      case 'server-discard':
+        if (remote == null) {
+          throw const FormatException('Remote libraries are unavailable');
+        }
+        await remote!.discard(_string(args, 'downloadId'));
+        return remote!.status();
+      case 'server-resume':
+        if (remote == null) {
+          throw const FormatException('Remote libraries are unavailable');
+        }
+        return {'bookId': await remote!.resume(_string(args, 'downloadId'))};
       case 'servers' ||
           'server-connect' ||
           'server-disconnect' ||
@@ -234,6 +270,7 @@ class DesktopControlService {
               secret: _string(args, 'secret'),
               username: args['username'] as String? ?? '',
               allowLocalHttp: args['allowLocalHttp'] == true,
+              hostKey: args['hostKey'] as String?,
             );
           case 'server-disconnect':
             await service.disconnect(_string(args, 'connectionId'));
@@ -246,6 +283,15 @@ class DesktopControlService {
                 e.toJson(),
             ];
           case 'server-download':
+            if (args['background'] == true) {
+              return (await service.startDownload(
+                _string(args, 'connectionId'),
+                _string(args, 'path'),
+                _string(args, 'title'),
+                author: args['author'] as String? ?? '',
+                file: args['file'] == true,
+              )).toJson();
+            }
             return {
               'bookId': await service.download(
                 _string(args, 'connectionId'),

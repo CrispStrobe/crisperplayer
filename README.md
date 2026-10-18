@@ -16,10 +16,10 @@ A local audiobook player built with Flutter, Riverpod, Drift, just_audio and aud
 - Per-book speed, skip silence, skip interval and smart rewind overrides; missing overrides inherit app defaults. Configurable volume, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
 - Sleep timers can pause immediately at expiry or at the end of the chapter playing when the countdown expires. Immediate chapter mode captures the current chapter boundary.
 - Android voice boost (0–12 dB) and speech/warm/bass-reduction equalizer presets, with per-book overrides and graceful fallback when hardware effects are unavailable.
-- Plex music-library albums and WebDAV/NAS folders download as offline books; files stream to disk and credentials stay in platform secure storage. Mounted shares can be imported as folders on desktop.
+- Plex music-library albums and WebDAV/SFTP NAS folders download as offline books; files stream to disk and credentials stay in platform secure storage. Mounted shares can be imported as folders on desktop.
 - JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
 
-Plex and WebDAV connections support browsing and offline downloads. Cross-device progress sync is not implemented. The web build displays an availability notice; browser audio import, playback and persistent library storage are not supported in this version.
+Plex, WebDAV and SFTP connections support browsing and offline downloads. Cross-device progress sync is not implemented. The web build displays an availability notice; browser audio import, playback and persistent library storage are not supported in this version.
 
 ## Development
 
@@ -138,7 +138,8 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | Series, collections, reading status and a persistent playback queue |
 | Added | Player keyboard shortcuts and listening time totals (today/7 days/all time) |
 | Added | FLAC/Vorbis/Opus tags, MP3 chapters, Android voice boost/EQ, Plex/WebDAV offline downloads |
-| Next | Accessibility/device audit, resumable/cancellable transfers, nested book folders, SFTP and direct SMB |
+| Added | Persistent partial downloads with pause/resume/discard, verified HTTP ranges, SFTP with pinned host keys |
+| Next | Accessibility/device audit, nested book folders and direct SMB |
 | Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |
 
@@ -178,6 +179,11 @@ Audiobooks must be in a music library, one album per book. Albums download all
 tracks in disc/track order. For WebDAV, enter the NAS endpoint (including its
 root path), username and password/app password. Open the folder containing a
 book’s tracks and choose **Download folder as book**, or download a single file.
+For SFTP, enter `sftp://hostname:22/books/`, a username and password. The first
+connection shows the server’s SHA256 host-key fingerprint. Verify it with your
+NAS and explicitly trust it; later connections require the pinned key. SFTP
+browsing/downloads stay inside the configured root and omit symbolic links.
+SSH private-key authentication is not implemented yet.
 Downloaded books play offline and retain independent local progress.
 
 HTTPS is the default. Private-IP and `.local` HTTP servers require explicit
@@ -187,14 +193,21 @@ Only download identities are in library backups; connection credentials stay in
 Keychain/OS secure storage. Disconnecting leaves offline books intact.
 
 CrispCloud’s separate provider adapters and secure credential storage informed
-this design. CrisperPlayer currently implements Plex and WebDAV directly;
-SFTP, direct SMB and automatic Plex resume synchronization are still pending.
+this design. CrisperPlayer implements Plex, WebDAV and SFTP directly;
+direct SMB and automatic Plex progress synchronization are still pending.
 Mount SMB shares with Finder/Explorer/the desktop file manager and use
 **Import folder / mounted share**. On iOS, connect a server in Files and select
 audio through the file picker. Folder import copies the selected folder’s audio
-(including subfolders) as one book; WebDAV folder download uses direct audio
-children only. Large remote files temporarily require both download and managed
-copy space. Transfers do not yet resume after interruption.
+(including subfolders) as one book; WebDAV/SFTP folder downloads use direct audio
+children only, in natural filename order. Large remote files temporarily require both download and managed
+copy space. Failed or paused transfers remain under **Downloads** in Servers &
+NAS. Use Resume to continue, or Discard to remove their cached files. Partial
+files survive app restarts; downloads are not automatically restarted in the
+background. HTTP resume requires a strong ETag and a valid Range/If-Range
+response; otherwise the transfer restarts safely. SFTP checks remote size and
+modification time before resuming and after downloading. A book’s final import
+must complete before it can be paused. Disconnecting a server leaves partial
+jobs available to discard; resume requires the original connection.
 
 The CLI provides the same remote operations. Read connection JSON from stdin to
 keep secrets out of process arguments and shell history:
@@ -206,7 +219,14 @@ crisperplayer call server-connect - < /private/path/connection.json
 # Plex uses kind "plex", no username, and the Plex token in "secret".
 crisperplayer call server-browse '{"connectionId":"ID","path":""}'
 crisperplayer call server-download '{"connectionId":"ID","path":"RETURNED_PATH","title":"My book"}'
-# Add "file": true for a single WebDAV file. An album/folder downloads as one book.
+# Add "file": true for a single NAS file. An album/folder downloads as one book.
+# Add "background": true to return immediately while the transfer runs.
+crisperplayer server-downloads
+crisperplayer server-cancel # pauses the active transfer, preserving its files
+crisperplayer call server-resume '{"downloadId":"DOWNLOAD_ID"}'
+crisperplayer call server-discard '{"downloadId":"DOWNLOAD_ID"}'
+# SFTP connection JSON also uses "hostKey":"SHA256:...", obtained from your NAS.
+# With no hostKey, connection fails and reports the fingerprint without authenticating.
 crisperplayer call server-disconnect '{"connectionId":"ID"}'
 crisperplayer settings boostDb 3
 crisperplayer book-settings BOOK_ID '{"equalizer":"speech","boostDb":6}'
@@ -215,3 +235,17 @@ crisperplayer book-settings BOOK_ID '{"equalizer":"speech","boostDb":6}'
 Native desktop integration also tests the connection dialog, Keychain storage,
 WebDAV HTTP download and duration measurement of downloaded audio. Protocol
 fixtures do not replace testing against your Plex/NAS installation.
+
+
+Run isolated HTTP-resume and SFTP protocol tests (no NAS or OS account required):
+
+```sh
+python3 -m venv /tmp/crisper-protocol-tests
+/tmp/crisper-protocol-tests/bin/pip install paramiko
+CRISPER_SFTP_PYTHON=/tmp/crisper-protocol-tests/bin/python flutter test
+```
+
+CI runs the same SFTP fixture. It verifies host-key rejection before password
+authentication, root confinement, ordered tracks, partial-file resume and offline
+import. HTTP fixtures cover changed validators, malformed ranges, restarts,
+cache cleanup, concurrent credential writes and out-of-band CLI cancellation.

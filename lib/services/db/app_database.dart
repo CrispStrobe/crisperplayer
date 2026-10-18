@@ -392,7 +392,7 @@ class AppDatabase extends _$AppDatabase {
         final link = RemoteLink.fromJson((row as Map).cast<String, dynamic>());
         final uri = Uri.tryParse(link.serverUrl);
         if (uri == null ||
-            !{'https', 'http'}.contains(uri.scheme) ||
+            !{'https', 'http', 'sftp'}.contains(uri.scheme) ||
             uri.host.isEmpty ||
             uri.userInfo.isNotEmpty ||
             uri.hasQuery ||

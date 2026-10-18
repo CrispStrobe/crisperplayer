@@ -5,7 +5,10 @@ import 'package:crisperplayer/cli/control_client.dart';
 const usage = '''CrisperPlayer desktop CLI
 Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
 
-  servers                List Plex / WebDAV connections (credentials omitted)
+  servers                List Plex / WebDAV / SFTP connections
+  server-downloads       Show active and paused downloads
+  server-cancel          Pause the active transfer; keep partial files
+  call server-resume JSON / call server-discard JSON
   call server-connect JSON / call server-disconnect JSON
   call server-browse JSON / call server-download JSON
   status                 Show playback state
@@ -193,7 +196,9 @@ Future<void> main(List<String> arguments) async {
           options[flag.substring(2)] = args.removeAt(0);
         }
         result = await client.command(command, options);
-      case 'servers' ||
+      case 'server-cancel' ||
+          'server-downloads' ||
+          'servers' ||
           'stats' ||
           'queue' ||
           'queue-play' ||

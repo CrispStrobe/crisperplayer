@@ -544,7 +544,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
             ListTile(
               leading: const Icon(Icons.dns_outlined),
-              title: const Text('Plex / WebDAV server'),
+              title: const Text('Plex / WebDAV / SFTP server'),
               onTap: () => Navigator.pop(context, 'server'),
             ),
           ],

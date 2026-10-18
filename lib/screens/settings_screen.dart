@@ -239,7 +239,7 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.dns_outlined),
             title: const Text('Servers & NAS'),
-            subtitle: const Text('Plex and WebDAV offline libraries'),
+            subtitle: const Text('Plex, WebDAV and SFTP offline libraries'),
             onTap: () => context.push('/settings/sync'),
           ),
           const Divider(),

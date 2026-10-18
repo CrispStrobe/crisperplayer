@@ -1,3 +1,4 @@
+import '../widgets/server_connection_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/providers.dart';
@@ -70,141 +71,11 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
           );
         }
       });
-  Future<void> _connect() async {
-    final name = TextEditingController(), url = TextEditingController();
-    final username = TextEditingController(), secret = TextEditingController();
-    var kind = 'plex', localHttp = false, connecting = false;
-    String? error;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, update) => PopScope(
-          canPop: !connecting,
-          child: AlertDialog(
-            title: const Text('Add server'),
-            content: SizedBox(
-              width: 420,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      initialValue: kind,
-                      decoration: const InputDecoration(labelText: 'Source'),
-                      items: const [
-                        DropdownMenuItem(value: 'plex', child: Text('Plex')),
-                        DropdownMenuItem(
-                          value: 'webdav',
-                          child: Text('WebDAV / NAS'),
-                        ),
-                      ],
-                      onChanged: connecting
-                          ? null
-                          : (value) => update(() => kind = value!),
-                    ),
-                    TextField(
-                      controller: name,
-                      decoration: const InputDecoration(
-                        labelText: 'Connection name',
-                      ),
-                    ),
-                    TextField(
-                      controller: url,
-                      autocorrect: false,
-                      decoration: const InputDecoration(
-                        labelText: 'Server URL',
-                        hintText: 'https://server.example.com/',
-                      ),
-                    ),
-                    if (kind == 'webdav')
-                      TextField(
-                        controller: username,
-                        autocorrect: false,
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                        ),
-                      ),
-                    TextField(
-                      controller: secret,
-                      obscureText: true,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      decoration: InputDecoration(
-                        labelText: kind == 'plex'
-                            ? 'X-Plex-Token'
-                            : 'Password / app password',
-                      ),
-                    ),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: localHttp,
-                      onChanged: connecting
-                          ? null
-                          : (v) => update(() => localHttp = v!),
-                      title: const Text('Allow HTTP on the local network'),
-                      subtitle: const Text(
-                        'For a private IP address or .local hostname. Credentials travel without encryption.',
-                      ),
-                    ),
-                    if (kind == 'plex')
-                      const Text(
-                        'Use a Plex music library with one album per audiobook. Enter the server address and your Plex token.',
-                      ),
-                    if (error != null)
-                      Text(
-                        error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    if (connecting) const LinearProgressIndicator(),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: connecting ? null : () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: connecting
-                    ? null
-                    : () async {
-                        update(() {
-                          connecting = true;
-                          error = null;
-                        });
-                        try {
-                          await service.connect(
-                            name: name.text,
-                            kind: kind,
-                            url: url.text,
-                            username: username.text,
-                            secret: secret.text,
-                            allowLocalHttp: localHttp,
-                          );
-                          if (context.mounted) Navigator.pop(context);
-                        } catch (e) {
-                          update(() {
-                            connecting = false;
-                            error = '$e';
-                          });
-                        }
-                      },
-                child: const Text('Connect'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    name.dispose();
-    url.dispose();
-    username.dispose();
-    secret.dispose();
-  }
+  Future<void> _connect() => showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => ServerConnectionDialog(service: service),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -233,6 +104,55 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                 'Downloading ${remote.downloadName} · ${(remote.downloadedBytes / 1048576).toStringAsFixed(1)} MB',
               ),
             ),
+          if (remote.busy)
+            TextButton.icon(
+              onPressed: remote.canPause ? remote.pauseDownload : null,
+              icon: const Icon(Icons.pause),
+              label: Text(
+                remote.canPause ? 'Pause download' : 'Finishing import…',
+              ),
+            ),
+          if (remote.downloads.isNotEmpty)
+            ExpansionTile(
+              title: Text('Downloads (${remote.downloads.length})'),
+              children: [
+                SizedBox(
+                  height: 180,
+                  child: ListView(
+                    children: [
+                      for (final job in remote.downloads)
+                        ListTile(
+                          title: Text(job.title),
+                          subtitle: Text(
+                            '${job.phase} · ${(job.bytes / 1048576).toStringAsFixed(1)} MB${job.error == null ? '' : '\n${job.error}'}',
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Resume download',
+                                onPressed: _loading || remote.busy
+                                    ? null
+                                    : () => _run(() async {
+                                        await remote.resume(job.id);
+                                      }),
+                                icon: const Icon(Icons.play_arrow),
+                              ),
+                              IconButton(
+                                tooltip: 'Discard download',
+                                onPressed: _loading || remote.busy
+                                    ? null
+                                    : () => _run(() => remote.discard(job.id)),
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.all(16),
@@ -248,7 +168,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                   const Padding(
                     padding: EdgeInsets.all(16),
                     child: Text(
-                      'Browse Plex or WebDAV servers and download books for offline listening. Credentials stay in secure storage. Downloads have independent progress on this device.\n\nFor SMB shares, mount the share in your operating system and use Import folder from the library, or select files through your device’s Files app.',
+                      'Browse Plex, WebDAV or SFTP servers and download books for offline listening. Credentials stay in secure storage. Downloads have independent progress on this device.\n\nFor SMB shares, mount the share in your operating system and use Import folder from the library, or select files through your device’s Files app.',
                     ),
                   ),
                   for (final c in remote.connections)
@@ -298,7 +218,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                       },
               ),
               title: Text(_trail.lastOrNull?.name ?? selected.name),
-              trailing: selected.kind == 'webdav' && _trail.length > 1
+              trailing: selected.kind != 'plex' && _trail.isNotEmpty
                   ? TextButton.icon(
                       onPressed: _loading || remote.busy
                           ? null

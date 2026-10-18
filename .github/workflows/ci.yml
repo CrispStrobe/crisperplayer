@@ -21,12 +21,15 @@ jobs:
       - name: Check release automation
         run: |
           python3 -m venv "$RUNNER_TEMP/release-checks"
-          "$RUNNER_TEMP/release-checks/bin/pip" install --quiet cryptography
+          "$RUNNER_TEMP/release-checks/bin/pip" install --quiet cryptography paramiko
           "$RUNNER_TEMP/release-checks/bin/python" -m unittest discover -s scripts/tests -v
       - run: flutter pub get
       - run: nice -n 10 dart run build_runner build --build-filter lib/services/db/app_database.g.dart
       - run: nice -n 10 flutter analyze
-      - run: nice -n 10 flutter test
+      - name: Unit and isolated SFTP tests
+        env:
+          CRISPER_SFTP_PYTHON: ${{ runner.temp }}/release-checks/bin/python
+        run: nice -n 10 flutter test
       - run: nice -n 10 flutter build web --no-wasm-dry-run --no-pub
 
   android:

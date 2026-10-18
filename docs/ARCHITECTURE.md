@@ -1,6 +1,6 @@
 # Architecture
 
-Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex and WebDAV for offline imports; cross-device progress synchronization is not implemented.
+Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex, WebDAV and SFTP for offline imports; cross-device progress synchronization is not implemented.
 
 ## Playback
 
@@ -44,9 +44,10 @@ implements read-only Plex JSON and WebDAV PROPFIND/GET. Plex listings paginate;
 WebDAV uses a namespace-aware XML parser and successful propstat values. Media
 URLs must remain in the connection origin/root; credentials use headers and
 redirects are rejected. Listing bodies have a 16 MB cap, downloads a 64 GB cap,
-with connection and stalled-stream timeouts. Downloads stream to a temporary
-directory, then use the normal managed import path. Failures clean temporary
-files and partial imports. Download identities survive connection removal and
+with connection and stalled-stream timeouts. Downloads stream to durable per-job directories under application support,
+then use the normal managed import path. Pauses/failures retain cached audio
+and validators; failed imports remove partial managed books. Successful imports
+remove cached transfer files. Explicit discard removes a paused job. Download identities survive connection removal and
 metadata backup/restore, and book deletion cascades their removal.
 
 Connection configurations are stored together in platform secure storage,
@@ -60,3 +61,26 @@ to just_audio’s audio session, releases on session change or engine disposal,
 and reports unsupported effects without failing playback. Defaults leave native
 effects uninstantiated. Settings and per-book overrides share validated gain
 and preset values; non-Android platforms show the feature as unavailable.
+
+
+Transfer manifests contain connection IDs and item paths, without passwords or
+tokens. HTTP sidecars bind a strong ETag to a source URL; Range/If-Range and
+Content-Range checks prevent appending a replacement object to old bytes.
+Ignored ranges restart the file, and an unchanged complete object can be reused
+via a validated 416 response. Encoded responses are rejected. Servers lacking
+strong validators restart. SFTP uses size/mtime validation and offset reads.
+
+SFTP uses dartssh2 with explicit SHA256 host-key pinning before password
+authentication. The first connection reports a fingerprint and requires explicit
+trust in the dialog or a known hostKey in CLI connection JSON. Canonical paths
+must remain within the configured root; folder listings omit symlinks. The
+connection dialog owns its text controllers until its route is removed, and
+fields are disabled during connection so the displayed address and offered host
+key cannot diverge.
+
+GUI and CLI share persistent jobs. The CLI supports immediate background starts;
+blocking downloads remain cancellable through a separately authenticated,
+allowlisted `/transfers` endpoint for pause/status only. Normal mutations remain
+serialized. Credential writes are serialized separately to prevent concurrent
+GUI/CLI sign-ins from losing stored accounts. Offline playback and listening
+progress remain independent of remote transfer state.

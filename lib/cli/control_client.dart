@@ -36,7 +36,12 @@ class ControlClient {
   Future<Object?> command(
     String name, [
     Map<String, Object?> args = const {},
-  ]) => _request('/command', body: {'command': name, ...args});
+  ]) => _request(
+    {'server-cancel', 'server-downloads'}.contains(name)
+        ? '/transfers'
+        : '/command',
+    body: {'command': name, ...args},
+  );
 
   Future<Object?> importFile(File file) => _request('/import', file: file);
 

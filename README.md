@@ -272,8 +272,9 @@ interval and stop at the book boundaries. Touch seeking stays continuous. Measur
 player controls at 200% text and 320-pixel width; VoiceOver/TalkBack validation on
 physical phones and a wider screen audit are still pending.
 
-CI cancels superseded checks separately from binary jobs, so a newer push does
-not interrupt Android or iOS simulator builds that have already passed checks.
+CI skips documentation-only pushes. Code checks cancel superseded checks separately
+from binary jobs, so a newer code push does not interrupt Android or iOS simulator
+builds that have already passed checks. Tagged releases always run their full checks.
 
 ## Plex and NAS libraries
 

@@ -2,6 +2,8 @@ name: CI
 on:
   push:
     branches: [master, main, develop]
+    # Documentation edits must not cancel code checks or queue native binaries.
+    paths-ignore: ['**/*.md', 'docs/**/*.txt']
   pull_request:
   workflow_dispatch:
 

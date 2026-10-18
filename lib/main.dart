@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import 'providers/providers.dart';
 import 'screens/library_screen.dart';
 import 'screens/player_screen.dart';
@@ -24,6 +25,7 @@ import 'services/library_service.dart';
 import 'services/bookmark_service.dart';
 import 'services/history_service.dart';
 import 'services/share_intake_service.dart';
+import 'services/desktop_control_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -42,6 +44,7 @@ Future<void> main() async {
   AppDatabase? db;
   PlaybackService? playback;
   AudioPlayer? player;
+  DesktopControlService? control;
   try {
     if (Platform.isWindows || Platform.isLinux) {
       JustAudioMediaKit.ensureInitialized();
@@ -80,6 +83,19 @@ Future<void> main() async {
       service.attachAudioHandler(handler);
     }
     await service.init();
+    if ((Platform.isMacOS || Platform.isLinux || Platform.isWindows) &&
+        (kDebugMode || const bool.fromEnvironment('CRISPERPLAYER_CLI'))) {
+      try {
+        final directory = await getApplicationSupportDirectory();
+        control = DesktopControlService(
+            library: library,
+            playback: service,
+            descriptor: File('${directory.path}/cli.json'));
+        await control.start();
+      } catch (error) {
+        debugPrint('Desktop CLI could not start: $error');
+      }
+    }
     String? restoreError;
     try {
       await service.restoreLastBook();
@@ -92,6 +108,7 @@ Future<void> main() async {
           appDatabaseProvider.overrideWith((ref) {
             ref.onDispose(() => unawaited(() async {
                   await shareIntake.dispose();
+                  await control?.dispose();
                   await service.dispose();
                   await database.close();
                 }()));
@@ -106,6 +123,7 @@ Future<void> main() async {
             settings: settings, prefs: prefs, startupMessage: restoreError)));
   } catch (e, stack) {
     debugPrint('Startup failed: $e\n$stack');
+    await control?.dispose();
     if (playback != null) {
       await playback.dispose();
     } else {

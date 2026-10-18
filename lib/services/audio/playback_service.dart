@@ -350,7 +350,7 @@ class PlaybackService with WidgetsBindingObserver {
         cancelSleepTimer();
         _autoBookmarkTimer?.cancel();
         await _audioHandler?.setQueueItems([]);
-        _emit(const m.PlaybackState());
+        _emit(m.PlaybackState(speed: state.speed, volume: state.volume));
       });
 
   Duration _clamp(Duration pos, int? durationMs) {
@@ -362,6 +362,7 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Duration get bookPosition {
+    if (_currentBookId == null || _tracks.isEmpty) return Duration.zero;
     var offset = Duration.zero;
     for (final track in _tracks.take(_index)) {
       if (track.durationMs == null) return offset + _position;

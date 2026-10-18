@@ -37,3 +37,53 @@ flutter test integration_test/app_test.dart -d <device-id>
 ```
 
 See [architecture](docs/ARCHITECTURE.md), [Android build](docs/ANDROID_BUILD.md), [iOS build](docs/IOS_BUILD.md), and [sync design](docs/CLOUD_SYNC.md).
+
+## macOS and CLI
+
+Run the desktop app with `flutter run -d macos`. On this Mac, clear inherited
+Ruby overrides before Flutter commands that run CocoaPods:
+
+```sh
+env -u GEM_HOME -u GEM_PATH -u RUBYOPT flutter run -d macos
+```
+
+Desktop debug builds enable an authenticated loopback CLI. For a release build,
+opt in with `--dart-define=CRISPERPLAYER_CLI=true`. The app must stay running:
+the CLI controls its actual playback service and library.
+
+```sh
+dart run bin/crisperplayer.dart status
+dart run bin/crisperplayer.dart import "/path/to/book.m4b"
+dart run bin/crisperplayer.dart list
+dart run bin/crisperplayer.dart play BOOK_ID
+dart run bin/crisperplayer.dart pause
+dart run bin/crisperplayer.dart seek 120
+dart run bin/crisperplayer.dart speed 1.25
+dart run bin/crisperplayer.dart bookmark "Start of chapter"
+dart run bin/crisperplayer.dart bookmarks
+dart run bin/crisperplayer.dart delete BOOK_ID
+```
+
+Commands return JSON; failures exit with code 1. `seek` uses seconds from the
+start of the whole book. `import` streams one audio file into the sandbox and
+then creates a managed library copy; the source stays untouched. Use the GUI
+for multi-file book imports. `list.lastPositionMs` is the saved position within
+the physical track; `status.positionMs` is the current position within the book.
+
+Build a CLI executable with `dart build cli -o build/cli`, then run
+`build/cli/bundle/bin/crisperplayer --help`. Keep the generated `bundle` folder
+together when moving it. The CLI automatically finds the macOS connection file;
+use `--control-file PATH` or `CRISPERPLAYER_CONTROL_FILE` to override discovery.
+The connection file holds a per-run token and is private to the current user.
+
+Run the native desktop integration test:
+
+```sh
+env -u GEM_HOME -u GEM_PATH -u RUBYOPT flutter test integration_test/desktop_test.dart -d macos
+```
+
+It uses an isolated on-disk library and generated WAV audio, the real native
+decoder, the UI, and the CLI endpoint. It checks duration, advancing playback,
+pause, seek, speed, bookmarks, history, and persistence after reopening SQLite.
+Audio is muted during the test. It does not establish audible output quality,
+Bluetooth routing, or mobile interruption/background behavior.

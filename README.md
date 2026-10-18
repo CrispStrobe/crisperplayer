@@ -193,14 +193,16 @@ Only download identities are in library backups; connection credentials stay in
 Keychain/OS secure storage. Disconnecting leaves offline books intact.
 
 CrispCloud’s separate provider adapters and secure credential storage informed
-this design. CrisperPlayer implements Plex, WebDAV and SFTP directly;
+this design. The shared `crisp_storage` package in CrispCloud now supplies
+Plex, WebDAV and SFTP transports, SSH trust, profiles and transfer scheduling;
 direct SMB and automatic Plex progress synchronization are still pending.
 Mount SMB shares with Finder/Explorer/the desktop file manager and use
 **Import folder / mounted share**. On iOS, connect a server in Files and select
 audio through the file picker. Folder import copies the selected folder’s audio
 (including subfolders) as one book; WebDAV/SFTP folder downloads use direct audio
 children only, in natural filename order. Large remote files temporarily require both download and managed
-copy space. Failed or paused transfers remain under **Downloads** in Servers &
+copy space. You can queue several books while browsing; downloads run one at a time.
+Failed or paused transfers remain under **Downloads** in Servers &
 NAS. Use Resume to continue, or Discard to remove their cached files. Partial
 files survive app restarts; downloads are not automatically restarted in the
 background. HTTP resume requires a strong ETag and a valid Range/If-Range
@@ -249,3 +251,9 @@ CI runs the same SFTP fixture. It verifies host-key rejection before password
 authentication, root confinement, ordered tracks, partial-file resume and offline
 import. HTTP fixtures cover changed validators, malformed ranges, restarts,
 cache cleanup, concurrent credential writes and out-of-band CLI cancellation.
+
+The shared package is pinned to an exact CrispCloud Git commit in pubspec.yaml;
+a fresh checkout and CI resolve it without a sibling repository. To develop the
+package locally, use an untracked pubspec_overrides.yaml path override. Shared
+package tests run in CrispCloud CI, while CrisperPlayer retains audiobook import,
+resume, queue, GUI and native playback coverage.

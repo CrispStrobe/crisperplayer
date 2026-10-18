@@ -1,3 +1,10 @@
+import 'package:crisp_storage/crisp_storage.dart'
+    show
+        StoredList,
+        TransferOperation,
+        TransferScheduler,
+        ScheduledTransfer,
+        TransferCancelled;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -46,20 +53,53 @@ class RemoteDownload {
   );
 }
 
+class _DownloadOperation implements TransferOperation {
+  final _cancelled = Completer<void>();
+  @override
+  bool get isCancelled => _cancelled.isCompleted;
+  @override
+  Future<void> get cancellationFuture => _cancelled.future;
+  @override
+  bool get isPaused => false;
+  @override
+  Future<void>? get pauseFuture => null;
+  @override
+  void cancel() {
+    if (!isCancelled) _cancelled.complete();
+  }
+}
+
 class RemoteLibraryService extends ChangeNotifier {
   final LibraryService library;
   final ServerCredentialStore credentials;
   final List<RemoteConnection> _connections = [];
   final Map<String, RemoteDownload> _downloads = {};
   bool _loaded = false, _disposed = false, _pausing = false;
-  bool get busy => _active != null;
+  late final _queue = TransferScheduler<_DownloadOperation>(
+    maxConcurrent: 1,
+    maxRetries: 2,
+    onChanged: _changed,
+  );
+  final _scheduled = <String, _DownloadOperation>{};
+  final _preparing = <String>{};
+  bool get busy => _queue.hasActive || _queue.pendingCount > 0;
   int get downloadedBytes => _active?.bytes ?? 0;
-  String? get downloadName => _active?.title;
-  bool get canPause => _active?.phase == 'downloading';
+  RemoteDownload? get _current =>
+      _active ??
+      (_queue.activeTasks.isEmpty
+          ? null
+          : _downloads[_queue.activeTasks.first.id]);
+  String? get downloadName => _current?.title;
+  bool get canPause => ['downloading', 'retrying'].contains(_current?.phase);
   RemoteDownload? _active;
   RemoteClient? _activeClient;
   Future<void>? _loading;
-  Future<void> _credentialWrites = Future.value();
+  late final StoredList<RemoteConnection> _profiles = StoredList(
+    read: credentials.read,
+    write: credentials.write,
+    decode: RemoteConnection.fromJson,
+    encode: (c) => c.toJson(credentials: true),
+  );
   RemoteLibraryService(this.library, {ServerCredentialStore? credentials})
     : credentials = credentials ?? KeychainCredentialStore();
   List<RemoteConnection> get connections => List.unmodifiable(_connections);
@@ -86,16 +126,7 @@ class RemoteLibraryService extends ChangeNotifier {
   }
 
   Future<void> _load() async {
-    final saved = await credentials.read();
-    final connections = saved == null
-        ? <RemoteConnection>[]
-        : (jsonDecode(saved) as List)
-              .map(
-                (r) => RemoteConnection.fromJson(
-                  (r as Map).cast<String, dynamic>(),
-                ),
-              )
-              .toList();
+    final connections = await _profiles.getAll();
     final root = await _root();
     final jobs = <RemoteDownload>[];
     if (await root.exists()) {
@@ -167,18 +198,12 @@ class RemoteLibraryService extends ChangeNotifier {
   Future<void> _saveConnections(
     List<RemoteConnection> Function(List<RemoteConnection>) build,
   ) {
-    final result = _credentialWrites.then((_) async {
-      final next = build(_connections);
-      await credentials.write(
-        jsonEncode(next.map((c) => c.toJson(credentials: true)).toList()),
-      );
+    return _profiles.update(build).then((next) {
       _connections
         ..clear()
         ..addAll(next);
       _changed();
     });
-    _credentialWrites = result.catchError((Object _) {});
-    return result;
   }
 
   Future<void> disconnect(String id) async {
@@ -213,7 +238,6 @@ class RemoteLibraryService extends ChangeNotifier {
     bool file = false,
   }) async {
     await init();
-    if (busy) throw const RemoteException('Another download is in progress.');
     final validation = RemoteClient(_connection(connectionId));
     try {
       validation.uri(path);
@@ -233,13 +257,20 @@ class RemoteLibraryService extends ChangeNotifier {
           author: author,
           file: file,
         );
-    final directory = await _directory(id);
-    await directory.create(recursive: true);
-    final temporary = File(p.join(directory.path, 'job.tmp'));
-    await temporary.writeAsString(jsonEncode(job.toJson()), flush: true);
-    await temporary.rename(p.join(directory.path, 'job.json'));
-    _downloads[id] = job;
-    return job;
+    if (_scheduled.containsKey(id) || !_preparing.add(id)) {
+      throw const RemoteException('This download is already queued.');
+    }
+    try {
+      final directory = await _directory(id);
+      await directory.create(recursive: true);
+      final temporary = File(p.join(directory.path, 'job.tmp'));
+      await temporary.writeAsString(jsonEncode(job.toJson()), flush: true);
+      await temporary.rename(p.join(directory.path, 'job.json'));
+      _downloads[id] = job;
+      return job;
+    } finally {
+      _preparing.remove(id);
+    }
   }
 
   Future<String> download(
@@ -248,7 +279,7 @@ class RemoteLibraryService extends ChangeNotifier {
     String title, {
     String author = '',
     bool file = false,
-  }) async => _perform(
+  }) async => _schedule(
     await _prepare(connectionId, path, title, author: author, file: file),
   );
   Future<RemoteDownload> startDownload(
@@ -266,7 +297,7 @@ class RemoteLibraryService extends ChangeNotifier {
       file: file,
     );
     unawaited(
-      _perform(job).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+      _schedule(job).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
     );
     return job;
   }
@@ -275,7 +306,16 @@ class RemoteLibraryService extends ChangeNotifier {
     await init();
     final job = _downloads[id];
     if (job == null) throw const RemoteException('Download was not found.');
-    return _perform(job);
+    return _schedule(job);
+  }
+
+  Future<void> queueResume(String id) async {
+    await init();
+    final job = _downloads[id];
+    if (job == null) throw const RemoteException('Download was not found.');
+    unawaited(
+      _schedule(job).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+    );
   }
 
   Future<void> discard(String id) async {
@@ -283,6 +323,7 @@ class RemoteLibraryService extends ChangeNotifier {
     if (_active?.id == id) {
       throw const RemoteException('Pause the download before discarding it.');
     }
+    _queue.cancel(id);
     final directory = await _directory(id);
     if (await directory.exists()) await directory.delete(recursive: true);
     _downloads.remove(id);
@@ -297,6 +338,7 @@ class RemoteLibraryService extends ChangeNotifier {
       );
     }
     _pausing = true;
+    if (_current != null) _scheduled[_current!.id]?.cancel();
     _activeClient?.close();
   }
 
@@ -308,8 +350,62 @@ class RemoteLibraryService extends ChangeNotifier {
     }
   }
 
+  Future<String> _schedule(RemoteDownload job) {
+    if (_scheduled.containsKey(job.id)) {
+      throw const RemoteException('This download is already queued.');
+    }
+    final operation = _DownloadOperation();
+    final result = Completer<String>();
+    _scheduled[job.id] = operation;
+    job.phase = 'queued';
+    job.error = null;
+    _queue.enqueue(
+      ScheduledTransfer(
+        id: job.id,
+        operation: operation,
+        execute: () async {
+          try {
+            final id = await _perform(job);
+            if (!result.isCompleted) result.complete(id);
+          } catch (error) {
+            if (error is RemoteException &&
+                error.retryable &&
+                !operation.isCancelled) {
+              job.phase = 'retrying';
+              _changed();
+            }
+            rethrow;
+          }
+        },
+        onDone: (error) {
+          _scheduled.remove(job.id);
+          if (error != null) {
+            if (error is TransferCancelled) {
+              job.phase = 'paused';
+              job.error = null;
+            } else {
+              job.phase = 'failed';
+              job.error = '$error';
+            }
+            if (!result.isCompleted) {
+              result.completeError(
+                error is TransferCancelled
+                    ? const RemoteException('Download paused.')
+                    : error,
+              );
+            }
+          }
+          _changed();
+        },
+      ),
+    );
+    return result.future;
+  }
+
   Future<String> _perform(RemoteDownload job) async {
-    if (busy) throw const RemoteException('Another download is in progress.');
+    if (_active != null) {
+      throw const RemoteException('Another download is in progress.');
+    }
     final connection = _connection(job.connectionId);
     _pausing = false;
     _active = job;
@@ -432,11 +528,13 @@ class RemoteLibraryService extends ChangeNotifier {
     'downloadName': downloadName,
     'downloadedBytes': downloadedBytes,
     'canPause': canPause,
+    'queuedDownloads': _queue.pendingCount,
     'downloads': [for (final job in downloads) job.toJson()],
   };
   @override
   void dispose() {
     _disposed = true;
+    _queue.dispose();
     _pausing = true;
     _activeClient?.close();
     super.dispose();

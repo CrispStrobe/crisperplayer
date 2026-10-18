@@ -30,6 +30,13 @@ jobs:
         env:
           CRISPER_SFTP_PYTHON: ${{ runner.temp }}/release-checks/bin/python
         run: nice -n 10 flutter test
+      - name: Compile CLI bundle
+        run: nice -n 10 dart build cli -o build/cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: crisperplayer-cli-linux
+          path: build/cli/bundle
+          if-no-files-found: error
       - run: nice -n 10 flutter build web --no-wasm-dry-run --no-pub
 
   android:

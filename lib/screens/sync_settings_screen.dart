@@ -54,23 +54,24 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
           }
         });
       });
-  Future<void> _download(RemoteEntry entry, {bool file = false}) =>
-      _run(() async {
-        await service.download(
-          _connectionId!,
-          entry.path,
-          entry.name,
-          author: entry.author,
-          file: file,
+  Future<void> _download(RemoteEntry entry, {bool file = false}) => _run(
+    () async {
+      await service.startDownload(
+        _connectionId!,
+        entry.path,
+        entry.name,
+        author: entry.author,
+        file: file,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Download queued. Follow its progress in Downloads.'),
+          ),
         );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Book available offline in your library'),
-            ),
-          );
-        }
-      });
+      }
+    },
+  );
   Future<void> _connect() => showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -88,7 +89,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
         title: const Text('Servers & NAS'),
         actions: [
           IconButton(
-            onPressed: _loading || remote.busy ? null : _connect,
+            onPressed: _loading ? null : _connect,
             icon: const Icon(Icons.add),
             tooltip: 'Add server',
           ),
@@ -131,16 +132,27 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                             children: [
                               IconButton(
                                 tooltip: 'Resume download',
-                                onPressed: _loading || remote.busy
+                                onPressed:
+                                    _loading ||
+                                        ![
+                                          'paused',
+                                          'failed',
+                                        ].contains(job.phase)
                                     ? null
                                     : () => _run(() async {
-                                        await remote.resume(job.id);
+                                        await remote.queueResume(job.id);
                                       }),
                                 icon: const Icon(Icons.play_arrow),
                               ),
                               IconButton(
                                 tooltip: 'Discard download',
-                                onPressed: _loading || remote.busy
+                                onPressed:
+                                    _loading ||
+                                        [
+                                          'downloading',
+                                          'importing',
+                                          'retrying',
+                                        ].contains(job.phase)
                                     ? null
                                     : () => _run(() => remote.discard(job.id)),
                                 icon: const Icon(Icons.delete_outline),
@@ -203,7 +215,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
               leading: IconButton(
                 tooltip: 'Back',
                 icon: const Icon(Icons.arrow_back),
-                onPressed: _loading || remote.busy
+                onPressed: _loading
                     ? null
                     : () {
                         if (_trail.length <= 1) {
@@ -220,7 +232,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
               title: Text(_trail.lastOrNull?.name ?? selected.name),
               trailing: selected.kind != 'plex' && _trail.isNotEmpty
                   ? TextButton.icon(
-                      onPressed: _loading || remote.busy
+                      onPressed: _loading
                           ? null
                           : () => _download(
                               RemoteEntry(
@@ -252,7 +264,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                         trailing: e.type == 'folder'
                             ? const Icon(Icons.chevron_right)
                             : const Icon(Icons.download),
-                        onTap: _loading || remote.busy
+                        onTap: _loading
                             ? null
                             : () => e.type == 'folder'
                                   ? _browse(e.path, e.name)

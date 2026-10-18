@@ -413,4 +413,81 @@ void main() {
       }
     },
   );
+  test(
+    'queued NAS books download serially and queued cancellation never imports',
+    () async {
+      final h = PlaybackHarness();
+      await h.init();
+      final remote = RemoteLibraryService(
+        h.library,
+        credentials: MemoryCredentials(),
+      );
+      Future<void> until(bool Function() condition) async {
+        final limit = DateTime.now().add(const Duration(seconds: 10));
+        while (!condition()) {
+          if (DateTime.now().isAfter(limit)) {
+            throw StateError('Timed out waiting for download queue');
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+      }
+
+      try {
+        await remote.connect(
+          name: 'NAS',
+          kind: 'webdav',
+          url: base,
+          username: 'reader',
+          secret: 'pass',
+          allowLocalHttp: true,
+        );
+        slow = true;
+        final connectionId = remote.connections.single.id;
+        final first = await remote.startDownload(
+          connectionId,
+          'one.mp3',
+          'One',
+          file: true,
+        );
+        await until(() => remote.downloadedBytes > 0);
+        final second = await remote.startDownload(
+          connectionId,
+          'two.mp3',
+          'Two',
+          file: true,
+        );
+        final removed = await remote.startDownload(
+          connectionId,
+          'three.mp3',
+          'Three',
+          file: true,
+        );
+        expect(first.phase, 'downloading');
+        expect(second.phase, 'queued');
+        expect(remote.status()['queuedDownloads'], 2);
+        expect(ranges, hasLength(1));
+        await expectLater(
+          remote.startDownload(
+            connectionId,
+            'two.mp3',
+            'Duplicate',
+            file: true,
+          ),
+          throwsA(isA<RemoteException>()),
+        );
+        await remote.discard(removed.id);
+        expect(remote.status()['queuedDownloads'], 1);
+        await until(() => !remote.busy);
+        expect(ranges, hasLength(2));
+        expect(remote.downloads, isEmpty);
+        expect((await h.db.allBooks).map((b) => b.title).toSet(), {
+          'One',
+          'Two',
+        });
+      } finally {
+        remote.dispose();
+        await h.dispose();
+      }
+    },
+  );
 }

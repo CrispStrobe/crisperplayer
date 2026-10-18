@@ -201,8 +201,8 @@ class PlaybackService with WidgetsBindingObserver {
         onPause: pause,
         onStop: stop,
         onSeek: seek,
-        onSkipNext: nextTrack,
-        onSkipPrev: previousTrack,
+        onSkipNext: nextChapter,
+        onSkipPrev: previousChapter,
         onSeekIndex: seekTrack,
         onSpeed: setSpeed,
         onForward: skipForward,
@@ -415,24 +415,76 @@ class PlaybackService with WidgetsBindingObserver {
     }
   }
 
-  Future<void> seekChapter(Chapter chapter) => _command(() async {
-        if (_currentBookId != chapter.bookId) await _loadBook(chapter.bookId);
-        var index = _tracks.indexWhere((t) => t.filePath == chapter.filePath);
-        if (index < 0) index = chapter.trackIndex;
-        if (index < 0 || index >= _tracks.length) {
-          throw StateError('Chapter file is unavailable');
+  Future<void> seekChapter(Chapter chapter) =>
+      _command(() => _seekChapter(chapter));
+  Future<void> _seekChapter(Chapter chapter) async {
+    if (_currentBookId != chapter.bookId) await _loadBook(chapter.bookId);
+    var index = _tracks.indexWhere((t) => t.filePath == chapter.filePath);
+    if (index < 0) index = chapter.trackIndex;
+    if (index < 0 || index >= _tracks.length) {
+      throw StateError('Chapter file is unavailable');
+    }
+    final preceding = _tracks.take(index);
+    final offset = preceding.fold<int>(
+      0,
+      (sum, t) => sum + (t.durationMs ?? 0),
+    );
+    // A physical-file chapter always starts at zero, including unknown timing.
+    final onePerFile = _tracks.length > 1 &&
+        _chapters.where((c) => c.filePath == chapter.filePath).length == 1;
+    await _seekTrack(
+      index,
+      onePerFile
+          ? Duration.zero
+          : Duration(milliseconds: chapter.startMs - offset),
+    );
+  }
+
+  Future<bool> refreshChapters(String bookId) async {
+    var refreshed = false;
+    await _command(() async {
+      refreshed = await library.refreshChapters(bookId);
+      if (refreshed && _currentBookId == bookId) {
+        _chapters = await db.chaptersFor(bookId);
+        _publishPosition();
+      }
+    });
+    return refreshed;
+  }
+
+  int get _chapterIndex {
+    if (_chapters.isEmpty) return -1;
+    final position = bookPosition.inMilliseconds;
+    for (var i = _chapters.length - 1; i >= 0; i--) {
+      final chapter = _chapters[i];
+      if (chapter.trackIndex <= _index && chapter.startMs <= position) return i;
+    }
+    return 0;
+  }
+
+  Future<void> nextChapter() => _command(() async {
+        if (_chapters.isEmpty) {
+          if (_index + 1 < _tracks.length) {
+            await _seekTrack(_index + 1, Duration.zero);
+          }
+          return;
         }
-        final preceding = _tracks.take(index);
-        final offset =
-            preceding.fold<int>(0, (sum, t) => sum + (t.durationMs ?? 0));
-        // A physical-file chapter always starts at zero, including unknown timing.
-        final onePerFile = _tracks.length > 1 &&
-            _chapters.where((c) => c.filePath == chapter.filePath).length == 1;
-        await _seekTrack(
-            index,
-            onePerFile
-                ? Duration.zero
-                : Duration(milliseconds: chapter.startMs - offset));
+        final next = _chapterIndex + 1;
+        if (next < _chapters.length) await _seekChapter(_chapters[next]);
+      });
+
+  /// Restart the current chapter after three seconds; otherwise go back one.
+  Future<void> previousChapter() => _command(() async {
+        if (_chapters.isEmpty) {
+          if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
+          return;
+        }
+        var index = _chapterIndex;
+        if (bookPosition.inMilliseconds - _chapters[index].startMs <= 3000 &&
+            index > 0) {
+          index--;
+        }
+        await _seekChapter(_chapters[index]);
       });
 
   Future<void> seekBookmark(Bookmark bookmark) => _command(() async {

@@ -9,7 +9,8 @@ A local audiobook player built with Flutter, Riverpod, Drift, just_audio and aud
 - Imports copy selected audio into application storage; deleting a book removes its managed copies, not the source files.
 - Multi-file books use natural filename order and measured per-track durations. Unknown durations remain unknown until the decoder provides them.
 - Resume positions, bookmarks and listening history are stored locally. Bookmarks restore the book and physical track as well as the position.
-- M4B/M4A Nero chapter tables and embedded covers are parsed on device. QuickTime text-track chapters are not implemented.
+- M4B/M4A Nero and QuickTime text-track chapters and embedded covers are parsed on device, including Unicode titles. Large audio payloads are skipped rather than loaded into memory. Existing imports can reload embedded chapters from the player menu or CLI.
+- Player and system next/previous controls navigate chapters within a file and across files. Previous restarts the current chapter after three seconds. The player shows listening time remaining at the selected speed.
 - Configurable playback speed, volume, skip silence, seek interval, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
 - Sleep timers can pause immediately at expiry or at the end of the chapter playing when the countdown expires. Immediate chapter mode captures the current chapter boundary.
 - JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
@@ -80,6 +81,8 @@ bookmark notes. The desktop app continues to own audio and SQLite.
 ```sh
 dart run bin/crisperplayer.dart import --title "My Book" --author "Author" "/path/to/tracks"
 dart run bin/crisperplayer.dart chapters
+dart run bin/crisperplayer.dart refresh-chapters
+dart run bin/crisperplayer.dart next-chapter
 dart run bin/crisperplayer.dart chapter 2
 dart run bin/crisperplayer.dart sleep 900 --chapter-end
 dart run bin/crisperplayer.dart settings themeMode dark
@@ -116,3 +119,22 @@ The source artwork is in `assets/branding/`. Run
 the iOS, macOS, Android legacy/adaptive, Windows, Linux, and web icon assets.
 iOS icons are opaque; macOS uses a rounded tile; adaptive and maskable icons
 keep the emblem inside their mask's safe area.
+
+## Feature priorities
+
+The local audiobook experience is the first milestone. The reference apps are
+[BookPlayer](https://github.com/TortugaPower/BookPlayer),
+[Smart AudioBook Player](https://play.google.com/store/apps/details?id=ak.alizandro.smartaudiobookplayer),
+and [Prologue](https://prologue.audio/). These are priorities, not a claim of complete parity.
+
+| Priority | Work remaining |
+| --- | --- |
+| Next | Embedded title/author metadata, MP3 artwork, editable book details |
+| Next | Per-book speed and playback preferences; configurable smart rewind |
+| Next | Series/collections, manual finished/unread status, and a playback queue |
+| Then | Desktop keyboard shortcuts, accessibility audit, listening statistics |
+| Later | Audiobookshelf/Plex progress sync, CarPlay/Android Auto, widgets and Watch |
+| Deferred | Optional local CrispASR transcripts and full-text search |
+
+Every new player/library operation should be available through the desktop CLI.
+Server integrations and platform extensions require their own device validation.

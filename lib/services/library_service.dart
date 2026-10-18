@@ -146,6 +146,38 @@ class LibraryService {
     }
   }
 
+  /// Re-read embedded chapters without changing progress, bookmarks or audio.
+  /// An absent/unsupported chapter table leaves the existing table intact.
+  Future<bool> refreshChapters(String id) async {
+    final book = await getBook(id);
+    if (book == null) throw StateError('Book not found');
+    final paths = AppDatabase.decodePaths(book.filePathsJson);
+    if (paths.length != 1 ||
+        !{'.m4b', '.m4a'}.contains(p.extension(paths.single).toLowerCase())) {
+      return false;
+    }
+    final parsed = await ChapterParser.parseFile(
+      paths.single,
+      totalDuration: book.totalDurationMs > 0
+          ? Duration(milliseconds: book.totalDurationMs)
+          : null,
+    );
+    if (parsed == null || parsed.isEmpty) return false;
+    await db.replaceChapters(id, [
+      for (final chapter in parsed)
+        ChaptersCompanion.insert(
+          id: const Uuid().v4(),
+          bookId: id,
+          title: chapter.title,
+          startMs: chapter.start.inMilliseconds,
+          endMs: chapter.end.inMilliseconds,
+          filePath: Value(paths.single),
+          trackIndex: const Value(0),
+        ),
+    ]);
+    return true;
+  }
+
   /// Version-one libraries have no track rows. Probe their actual files rather
   /// than trusting the old equal-duration chapter estimates.
   Future<List<BookTrack>> ensureTracks(Book book) async {

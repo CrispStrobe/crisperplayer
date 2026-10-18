@@ -68,6 +68,9 @@ void main() {
         final chip = find.byKey(ValueKey('chapter-${chapters.first.id}'));
         await tester.ensureVisible(chip);
         final element = tester.element(chip);
+        await tester.runAsync(() => h.playback.setSpeed(2));
+        await tester.pump();
+        expect(find.text('0% • 30:00 left'), findsOneWidget);
         await tester.runAsync(h.playback.play);
         for (var i = 1; i < 10; i++) {
           h.backend.move(Duration(seconds: i));

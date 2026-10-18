@@ -86,6 +86,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             final displayPosition = wholeDuration == null
                 ? st.position
                 : svc.bookPosition;
+            final remaining = Duration(
+              milliseconds:
+                  ((displayDuration.inMilliseconds -
+                                  displayPosition.inMilliseconds)
+                              .clamp(0, displayDuration.inMilliseconds) /
+                          st.speed)
+                      .ceil(),
+            );
             final displayProgress = displayDuration.inMilliseconds == 0
                 ? 0.0
                 : (displayPosition.inMilliseconds /
@@ -126,6 +134,33 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                   ),
                   PopupMenuButton<String>(
                     onSelected: (v) async {
+                      if (v == 'refreshChapters') {
+                        try {
+                          final refreshed = await svc.refreshChapters(
+                            widget.bookId,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  refreshed
+                                      ? 'Chapters updated'
+                                      : 'No embedded chapters found',
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Could not reload chapters: $e'),
+                              ),
+                            );
+                          }
+                        }
+                      }
+                      if (!context.mounted) return;
                       if (v == 'chapters') {
                         setState(() => _showChapters = !_showChapters);
                       }
@@ -139,6 +174,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       }
                     },
                     itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'refreshChapters',
+                        child: Text('Reload embedded chapters'),
+                      ),
                       PopupMenuItem(
                         value: 'chapters',
                         child: Text(
@@ -198,7 +237,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                               ),
                             ),
                             Text(
-                              '${(displayProgress * 100).toStringAsFixed(0)}% • ${formatDuration(displayDuration)}',
+                              '${(displayProgress * 100).toStringAsFixed(0)}% • ${formatDuration(remaining)} left',
                               style: const TextStyle(fontSize: 12),
                             ),
                           ],
@@ -212,8 +251,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                             IconButton(
                               icon: const Icon(Icons.skip_previous),
                               iconSize: 36,
-                              tooltip: 'Previous',
-                              onPressed: () => svc.previousTrack(),
+                              tooltip: 'Previous chapter',
+                              onPressed: () => svc.previousChapter(),
                             ),
                             IconButton(
                               icon: const Icon(Icons.replay),
@@ -243,8 +282,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                             IconButton(
                               icon: const Icon(Icons.skip_next),
                               iconSize: 36,
-                              tooltip: 'Next',
-                              onPressed: () => svc.nextTrack(),
+                              tooltip: 'Next chapter',
+                              onPressed: () => svc.nextChapter(),
                             ),
                           ],
                         ),

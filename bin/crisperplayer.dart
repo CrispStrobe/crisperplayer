@@ -9,7 +9,9 @@ Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
   list [--query TEXT] [--sort FIELD] [--filter all|recent|finished]
   import FILE...         Import files or folders as one multi-track book
   chapters [BOOK_ID]      List chapters
+  refresh-chapters [BOOK_ID]  Re-read embedded chapters without re-importing
   chapter INDEX [BOOK_ID] Seek to a chapter (numbered from 1)
+  next-chapter / previous-chapter  Navigate chapters (previous restarts first)
   next / previous        Change physical track
   skip SECONDS           Skip forward or backward
   stop                   Stop playback
@@ -120,7 +122,13 @@ Future<void> main(List<String> arguments) async {
           options[flag.substring(2)] = args.removeAt(0);
         }
         result = await client.command(command, options);
-      case 'status' || 'pause' || 'stop' || 'next' || 'previous':
+      case 'status' ||
+          'pause' ||
+          'stop' ||
+          'next' ||
+          'previous' ||
+          'next-chapter' ||
+          'previous-chapter':
         if (args.isNotEmpty) {
           throw FormatException('$command takes no arguments');
         }
@@ -130,7 +138,11 @@ Future<void> main(List<String> arguments) async {
           throw FormatException('$command requires one book ID');
         }
         result = await client.command(command, {'bookId': args.single});
-      case 'play' || 'bookmarks' || 'chapters' || 'history':
+      case 'play' ||
+          'bookmarks' ||
+          'chapters' ||
+          'history' ||
+          'refresh-chapters':
         if (args.length > 1) {
           throw FormatException('$command accepts one book ID');
         }

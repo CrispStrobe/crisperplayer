@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'mp4_metadata.dart';
 import 'dart:typed_data';
@@ -10,16 +11,19 @@ class ParsedChapter {
   final String title;
   final Duration start;
   final Duration end;
-  const ParsedChapter(
-      {required this.title, required this.start, required this.end});
+  const ParsedChapter({
+    required this.title,
+    required this.start,
+    required this.end,
+  });
 }
 
 /// Parse chapters from a single-file m4a/m4b without FFI.
 ///
 /// Strategy:
 /// 1. Scan MP4 atoms to find `moov.udta.chpl` (Nero chapters).
-/// 2. If no chpl, look for QuickTime chapter track (`trak` with text handler)
-///    – not fully decoded, returns null to allow fallback.
+/// 2. Otherwise read the text samples from a referenced QuickTime chapter track.
+///    Sample tables and text reads are bounded; audio payloads are never loaded.
 /// 3. If found, convert 100-ns start times to ms and synthesize end times
 ///    from the next chapter or totalDuration.
 class ChapterParser {
@@ -40,16 +44,61 @@ class ChapterParser {
     }
     if (bytes.length < 16) return null;
     final chapters = _parseBytes(bytes, totalDuration: totalDuration);
-    if (chapters == null || chapters.isEmpty) return null;
-    return chapters;
+    if (chapters != null && chapters.isNotEmpty) return chapters;
+    final samples = _quickTimeSamples(bytes);
+    if (samples == null) return null;
+    final input = await file.open();
+    try {
+      final length = await input.length();
+      final entries = <_RawEntry>[];
+      for (final sample in samples) {
+        if (sample.offset < 0 || sample.offset + sample.size > length) {
+          return null;
+        }
+        await input.setPosition(sample.offset);
+        final data = await input.read(sample.size);
+        if (data.length != sample.size) return null;
+        final title = _sampleTitle(data);
+        if (title == null) return null;
+        entries.add(_RawEntry(start100ns: sample.start100ns, title: title));
+      }
+      return _toParsedChapters(
+        entries,
+        totalDuration:
+            totalDuration ??
+            Duration(microseconds: samples.last.end100ns ~/ 10),
+      );
+    } finally {
+      await input.close();
+    }
   }
 
   /// Synchronous parse from raw bytes – useful for testing with synthetic headers.
   static List<ParsedChapter>? parseBytes(
     Uint8List bytes, {
     Duration? totalDuration,
-  }) =>
-      _parseBytes(bytes, totalDuration: totalDuration);
+  }) {
+    final nero = _parseBytes(bytes, totalDuration: totalDuration);
+    if (nero != null) return nero;
+    final samples = _quickTimeSamples(bytes);
+    if (samples == null) return null;
+    final entries = <_RawEntry>[];
+    for (final sample in samples) {
+      if (sample.offset < 0 || sample.offset + sample.size > bytes.length) {
+        return null;
+      }
+      final title = _sampleTitle(
+        bytes.sublist(sample.offset, sample.offset + sample.size),
+      );
+      if (title == null) return null;
+      entries.add(_RawEntry(start100ns: sample.start100ns, title: title));
+    }
+    return _toParsedChapters(
+      entries,
+      totalDuration:
+          totalDuration ?? Duration(microseconds: samples.last.end100ns ~/ 10),
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // Internal
@@ -77,7 +126,6 @@ class ChapterParser {
       return null;
     }
 
-    // TODO: QuickTime text-track chapters (stbl) – complex; fallback for now.
     return null;
   }
 
@@ -102,11 +150,13 @@ class ChapterParser {
       }
       // Guard against zero/negative durations
       if (endMs < startMs) endMs = startMs;
-      out.add(ParsedChapter(
-        title: e.title.isEmpty ? 'Chapter ${i + 1}' : e.title,
-        start: Duration(milliseconds: startMs),
-        end: Duration(milliseconds: endMs),
-      ));
+      out.add(
+        ParsedChapter(
+          title: e.title.isEmpty ? 'Chapter ${i + 1}' : e.title,
+          start: Duration(milliseconds: startMs),
+          end: Duration(milliseconds: endMs),
+        ),
+      );
     }
     return out;
   }
@@ -168,7 +218,10 @@ class ChapterParser {
   }
 
   static List<_RawEntry>? _parseChplEntries(
-      Uint8List payload, int offset, int count) {
+    Uint8List payload,
+    int offset,
+    int count,
+  ) {
     int pos = offset;
     final out = <_RawEntry>[];
     for (int i = 0; i < count; i++) {
@@ -177,15 +230,10 @@ class ChapterParser {
       final len = payload[pos + 8];
       pos += 9;
       if (pos + len > payload.length) return null;
-      String title;
-      try {
-        title = String.fromCharCodes(payload.sublist(pos, pos + len));
-        // Titles are UTF-8; fromCharCodes is Latin1-ish but for ASCII it's fine.
-        // Use utf8 decode with fallback.
-        title = _decodeUtf8(payload.sublist(pos, pos + len));
-      } catch (_) {
-        title = '';
-      }
+      final title = utf8.decode(
+        payload.sublist(pos, pos + len),
+        allowMalformed: true,
+      );
       pos += len;
       out.add(_RawEntry(start100ns: start, title: title));
     }
@@ -193,37 +241,200 @@ class ChapterParser {
     return out;
   }
 
-  static String _decodeUtf8(Uint8List bytes) {
-    // manual utf8 to avoid import dart:convert in tight loop? But we can use convert.
-    // Use String.fromCharCodes for now with fallback to dart:convert would need import.
-    // We'll try to decode as utf8 via code units – simple approach: if bytes are
-    // valid ascii, fromCharCodes works; for multibyte, we delegate.
+  // QuickTime chapters are a text track referenced by tref.chap, not any
+  // arbitrary subtitle track. See Apple's QTFF Chapter lists and TN2174.
+  static List<_ChapterSample>? _quickTimeSamples(Uint8List bytes) {
     try {
-      // Use dart:convert via manual not imported – fallback to bytes as string
-      // We'll attempt utf8 via converting each byte if <128 else keep.
-      // For robustness, just use String.fromCharCodes after utf8 decode via
-      // converting using runes – but without dart:convert, multibyte will be wrong.
-      // So import dart:convert and use utf8.decode properly.
-      // Actually we do have convert available – but to avoid import issue, we
-      // handle ascii only and rely on call site to have mostly ascii.
-      // Let's just try to construct via UTF-8 decoding manually: if any byte >=128,
-      // attempt to decode with utf8 via bytes; we can inline simple decoder.
-      // Simpler: just use String.fromCharCodes for 0-255 mapped – will not match utf8
-      // multibyte, but tests use ascii titles.
-      // We'll do best effort: if bytes are all <128, return as ascii.
-      bool ascii = true;
-      for (final b in bytes) {
-        if (b >= 128) ascii = false;
+      final moov = _findAtom(_scanAtoms(bytes, 0, bytes.length), 'moov', bytes);
+      if (moov == null) return null;
+      final tracks = _childrenOf(
+        moov,
+        bytes,
+      ).where((a) => a.type == 'trak').toList();
+      final ids = <int>{};
+      for (final track in tracks) {
+        final header = _childPayload(track, 'tkhd', bytes);
+        if (header == null || header.length < 4 || (header[3] & 1) == 0) {
+          continue;
+        }
+        final refs = _child(track, 'tref', bytes);
+        final chap = refs == null ? null : _childPayload(refs, 'chap', bytes);
+        if (chap != null) {
+          for (var i = 0; i + 4 <= chap.length; i += 4) {
+            ids.add(_u32BE(chap, i));
+          }
+        }
       }
-      if (ascii) return String.fromCharCodes(bytes);
-      // For non-ascii, use fallback: try to decode as utf8 via string built from runes
-      // Instead import dart:convert at top – we already have no import, add it.
-      // Since we cannot add import here without editing, we treat bytes as utf8
-      // via manual decode: use codeUnits approach – just fallback to ascii with replacement.
-      return String.fromCharCodes(bytes);
-    } catch (_) {
-      return String.fromCharCodes(bytes);
+      for (final track in tracks) {
+        final header = _childPayload(track, 'tkhd', bytes);
+        if (header == null) continue;
+        final idOffset = header[0] == 1 ? 20 : 12;
+        if (!ids.contains(_u32BE(header, idOffset))) continue;
+        final mdia = _child(track, 'mdia', bytes);
+        if (mdia == null) continue;
+        final mdhd = _childPayload(mdia, 'mdhd', bytes);
+        final handler = _childPayload(mdia, 'hdlr', bytes);
+        if (mdhd == null ||
+            handler == null ||
+            handler.length < 12 ||
+            !{'text', 'sbtl', 'subt'}.contains(_typeStr(handler, 8))) {
+          continue;
+        }
+        final scale = _u32BE(mdhd, mdhd[0] == 1 ? 20 : 12);
+        if (scale == 0) return null;
+        final minf = _child(mdia, 'minf', bytes);
+        final stbl = minf == null ? null : _child(minf, 'stbl', bytes);
+        if (stbl == null) return null;
+        final stsd = _childPayload(stbl, 'stsd', bytes);
+        if (stsd == null ||
+            _u32BE(stsd, 4) != 1 ||
+            !{'text', 'tx3g'}.contains(_typeStr(stsd, 12))) {
+          return null;
+        }
+        final sizes = _childPayload(stbl, 'stsz', bytes);
+        final timing = _childPayload(stbl, 'stts', bytes);
+        final mapping = _childPayload(stbl, 'stsc', bytes);
+        final co64 = _childPayload(stbl, 'co64', bytes);
+        final offsets = co64 ?? _childPayload(stbl, 'stco', bytes);
+        if (sizes == null ||
+            timing == null ||
+            mapping == null ||
+            offsets == null) {
+          return null;
+        }
+        final count = _u32BE(sizes, 8);
+        if (count == 0 || count > 10000) return null;
+        final uniformSize = _u32BE(sizes, 4);
+        final sampleSizes = [
+          for (var i = 0; i < count; i++)
+            uniformSize == 0 ? _u32BE(sizes, 12 + i * 4) : uniformSize,
+        ];
+        if (sampleSizes.any((s) => s < 2 || s > 65537) ||
+            sampleSizes.fold<int>(0, (a, b) => a + b) > 8 * 1024 * 1024) {
+          return null;
+        }
+        final durations = <int>[];
+        final timingCount = _u32BE(timing, 4);
+        if (timingCount > count) return null;
+        for (var i = 0; i < timingCount; i++) {
+          final n = _u32BE(timing, 8 + i * 8);
+          final delta = _u32BE(timing, 12 + i * 8);
+          if (n == 0 || n + durations.length > count) return null;
+          durations.addAll(List.filled(n, delta));
+        }
+        if (durations.length != count) return null;
+        final chunkCount = _u32BE(offsets, 4);
+        final mapCount = _u32BE(mapping, 4);
+        if (chunkCount == 0 ||
+            chunkCount > count ||
+            mapCount == 0 ||
+            mapCount > chunkCount) {
+          return null;
+        }
+        final maps = <(int, int)>[];
+        for (var i = 0; i < mapCount; i++) {
+          final first = _u32BE(mapping, 8 + i * 12);
+          final perChunk = _u32BE(mapping, 12 + i * 12);
+          final description = _u32BE(mapping, 16 + i * 12);
+          if (first < 1 ||
+              first > chunkCount ||
+              perChunk < 1 ||
+              perChunk > count ||
+              description != 1 ||
+              (i == 0 ? first != 1 : first <= maps.last.$1)) {
+            return null;
+          }
+          maps.add((first, perChunk));
+        }
+        // Respect the common edit-list form: an optional initial empty edit,
+        // followed by one continuous media edit at normal speed.
+        var shift100ns = 0;
+        final edts = _child(track, 'edts', bytes);
+        if (edts != null) {
+          final elst = _childPayload(edts, 'elst', bytes);
+          final mvhd = _childPayload(moov, 'mvhd', bytes);
+          if (elst == null || mvhd == null) return null;
+          final movieScale = _u32BE(mvhd, mvhd[0] == 1 ? 20 : 12);
+          final editCount = _u32BE(elst, 4);
+          if (movieScale == 0 || editCount < 1 || editCount > 2) return null;
+          final wide = elst[0] == 1;
+          final view = ByteData.sublistView(elst);
+          for (var i = 0; i < editCount; i++) {
+            final p = 8 + i * (wide ? 20 : 12);
+            final length = wide ? view.getUint64(p) : view.getUint32(p);
+            final media = wide ? view.getInt64(p + 8) : view.getInt32(p + 4);
+            final rate = view.getUint32(p + (wide ? 16 : 8));
+            if (rate != 0x10000) return null;
+            if (media == -1 && i == 0 && editCount == 2) {
+              shift100ns += length * 10000000 ~/ movieScale;
+            } else if (media >= 0 && i == editCount - 1) {
+              shift100ns -= media * 10000000 ~/ scale;
+            } else {
+              return null;
+            }
+          }
+        }
+        final out = <_ChapterSample>[];
+        var sample = 0;
+        var time = 0;
+        var map = 0;
+        for (var chunk = 1; chunk <= chunkCount; chunk++) {
+          while (map + 1 < maps.length && maps[map + 1].$1 <= chunk) {
+            map++;
+          }
+          var offset = co64 == null
+              ? _u32BE(offsets, 8 + (chunk - 1) * 4)
+              : _u64BE(offsets, 8 + (chunk - 1) * 8);
+          for (var i = 0; i < maps[map].$2; i++) {
+            if (sample >= count) return null;
+            final start = time * 10000000 ~/ scale + shift100ns;
+            time += durations[sample];
+            if (start < 0) return null;
+            out.add(
+              _ChapterSample(
+                offset,
+                sampleSizes[sample],
+                start,
+                time * 10000000 ~/ scale + shift100ns,
+              ),
+            );
+            offset += sampleSizes[sample++];
+          }
+        }
+        return sample == count ? out : null;
+      }
+    } on RangeError {
+      // Missing/truncated tables are not usable chapter metadata.
+      return null;
     }
+    return null;
+  }
+
+  static _Atom? _child(_Atom parent, String type, Uint8List bytes) =>
+      _findAtom(_childrenOf(parent, bytes), type, bytes);
+
+  static Uint8List? _childPayload(_Atom parent, String type, Uint8List bytes) {
+    final atom = _child(parent, type, bytes);
+    return atom == null ? null : _payload(atom, bytes);
+  }
+
+  static String? _sampleTitle(Uint8List sample) {
+    if (sample.length < 2) return null;
+    final length = (sample[0] << 8) | sample[1];
+    if (length + 2 > sample.length) return null;
+    final text = sample.sublist(2, 2 + length);
+    if (text.length >= 2 &&
+        ((text[0] == 0xfe && text[1] == 0xff) ||
+            (text[0] == 0xff && text[1] == 0xfe))) {
+      if (text.length.isOdd) return null;
+      final little = text[0] == 0xff;
+      final data = ByteData.sublistView(text);
+      return String.fromCharCodes([
+        for (var i = 2; i < text.length; i += 2)
+          data.getUint16(i, little ? Endian.little : Endian.big),
+      ]);
+    }
+    return utf8.decode(text, allowMalformed: true);
   }
 
   // -- Atom scanning ---------------------------------------------------------
@@ -235,13 +446,21 @@ class ChapterParser {
     return null;
   }
 
-  static _Atom? _findRecursive(_Atom root, String type, Uint8List bytes) {
+  static _Atom? _findRecursive(
+    _Atom root,
+    String type,
+    Uint8List bytes, [
+    int depth = 0,
+  ]) {
+    if (depth > 12) return null;
     if (root.type == type) return root;
     final children = _childrenOf(root, bytes);
     for (final c in children) {
       if (c.type == type) return c;
-      final deep = _findRecursive(c, type, bytes);
-      if (deep != null) return deep;
+      if ({'moov', 'udta', 'meta', 'ilst'}.contains(c.type)) {
+        final deep = _findRecursive(c, type, bytes, depth + 1);
+        if (deep != null) return deep;
+      }
     }
     return null;
   }
@@ -291,13 +510,15 @@ class ChapterParser {
 
       final dataStart = pos + headerSize;
       // For 'meta', dataStart will be adjusted in _childrenOf
-      out.add(_Atom(
-        type: type,
-        offset: pos,
-        size: atomSize,
-        headerSize: headerSize,
-        dataStart: dataStart,
-      ));
+      out.add(
+        _Atom(
+          type: type,
+          offset: pos,
+          size: atomSize,
+          headerSize: headerSize,
+          dataStart: dataStart,
+        ),
+      );
 
       pos += atomSize;
     }
@@ -343,16 +564,25 @@ class _Atom {
   final int size;
   final int headerSize;
   final int dataStart;
-  _Atom(
-      {required this.type,
-      required this.offset,
-      required this.size,
-      required this.headerSize,
-      required this.dataStart});
+  _Atom({
+    required this.type,
+    required this.offset,
+    required this.size,
+    required this.headerSize,
+    required this.dataStart,
+  });
 }
 
 class _RawEntry {
   final int start100ns;
   final String title;
   _RawEntry({required this.start100ns, required this.title});
+}
+
+class _ChapterSample {
+  final int offset;
+  final int size;
+  final int start100ns;
+  final int end100ns;
+  const _ChapterSample(this.offset, this.size, this.start100ns, this.end100ns);
 }

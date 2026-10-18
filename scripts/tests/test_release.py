@@ -44,6 +44,26 @@ class ReleaseTests(unittest.TestCase):
         with patch.object(testflight_internal, 'api', return_value=response):
             self.assertIsNone(testflight_internal.find_build('app-id', '0.1.0', '2'))
 
+    def test_internal_enrollment_is_scoped_to_group_instead_of_global_email_match(self):
+        user = {'attributes': {'username': 'member@example.com', 'firstName': 'Test', 'lastName': 'Member'}}
+        tester = {'id': 'correct-app-tester'}
+        with patch.object(testflight_internal, 'all_rows', side_effect=[[user], [tester]]) as rows, \
+                patch.object(testflight_internal, 'api', return_value={}) as api:
+            result = testflight_internal.enroll_internal_tester('this-app-group', 'member@example.com')
+        self.assertEqual(result, [tester])
+        self.assertEqual(rows.call_args_list[0].args[0], 'users?limit=200')
+        self.assertEqual(rows.call_args_list[1].args[0], 'betaGroups/this-app-group/betaTesters?limit=200')
+        self.assertEqual(api.call_args.args[:2], ('betaTesters', 'POST'))
+        self.assertEqual(api.call_args.args[2]['data']['relationships']['betaGroups']['data'],
+                         [{'type': 'betaGroups', 'id': 'this-app-group'}])
+
+    def test_internal_enrollment_rejects_email_outside_asc_team(self):
+        with patch.object(testflight_internal, 'all_rows', return_value=[]), \
+                patch.object(testflight_internal, 'api') as api:
+            with self.assertRaisesRegex(RuntimeError, 'team member'):
+                testflight_internal.enroll_internal_tester('group', 'outsider@example.com')
+        api.assert_not_called()
+
     def valid_profile(self):
         return {'Entitlements': {'application-identifier': 'TEAM.' + ios_signing.BUNDLE_ID,
             'com.apple.security.application-groups': [ios_signing.APP_GROUP], 'get-task-allow': False},

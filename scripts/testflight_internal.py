@@ -66,6 +66,21 @@ def find_build(app_id, version, number):
     return None
 
 
+def enroll_internal_tester(group_id, tester_email):
+    # Tester records are app-specific. An unscoped email search can return a
+    # record belonging to another app, which Apple refuses to assign (409).
+    # Creating with this group's relationship selects the correct app context.
+    users = all_rows('users?limit=200')
+    user = next((u for u in users if u['attributes']['username'].lower() == tester_email.lower()), None)
+    if user is None:
+        raise RuntimeError('Requested internal tester is not an App Store Connect team member')
+    api('betaTesters', 'POST', {'data': {'type': 'betaTesters',
+        'attributes': {'email': tester_email, 'firstName': user['attributes']['firstName'],
+                       'lastName': user['attributes']['lastName']},
+        'relationships': {'betaGroups': {'data': [{'type': 'betaGroups', 'id': group_id}]}}}})
+    return all_rows(f'betaGroups/{group_id}/betaTesters?limit=200')
+
+
 def distribute(app_id, build, locale, notes, tester_email=None):
     build_id = build['id']
     if build['attributes'].get('usesNonExemptEncryption') is not False:
@@ -110,21 +125,7 @@ def distribute(app_id, build, locale, notes, tester_email=None):
             raise RuntimeError('Internal group assignment was not confirmed')
         testers = all_rows(f'betaGroups/{group_id}/betaTesters?limit=200')
         if tester_email and not any(t['attributes']['email'].lower() == tester_email.lower() for t in testers):
-            # Only an existing ASC team member may be enrolled in an internal group.
-            users = all_rows('users?limit=200')
-            user = next((u for u in users if u['attributes']['username'].lower() == tester_email.lower()), None)
-            if user is None:
-                raise RuntimeError('Requested internal tester is not an App Store Connect team member')
-            matches = all_rows(query('betaTesters', **{'filter[email]': tester_email, 'limit': 200}))
-            if matches:
-                api(f'betaGroups/{group_id}/relationships/betaTesters', 'POST',
-                    {'data': [{'type': 'betaTesters', 'id': matches[0]['id']}]})
-            else:
-                api('betaTesters', 'POST', {'data': {'type': 'betaTesters',
-                    'attributes': {'email': tester_email, 'firstName': user['attributes']['firstName'],
-                                   'lastName': user['attributes']['lastName']},
-                    'relationships': {'betaGroups': {'data': [{'type': 'betaGroups', 'id': group_id}]}}}})
-            testers = all_rows(f'betaGroups/{group_id}/betaTesters?limit=200')
+            testers = enroll_internal_tester(group_id, tester_email)
         if not testers:
             raise RuntimeError('Internal group has no testers; configure an ASC team member before distribution')
         print(f"Internal group {group['attributes']['name']}: build assigned, {len(testers)} testers")

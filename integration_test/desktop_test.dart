@@ -10,6 +10,7 @@ import 'package:crisperplayer/services/history_service.dart';
 import 'package:crisperplayer/services/library_service.dart';
 import 'package:crisperplayer/services/settings_service.dart';
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,6 +97,21 @@ void main() {
         expect((player.position - paused).inMilliseconds.abs(), lessThan(100));
         await client.command('seek', {'seconds': 4});
         expect(player.position.inMilliseconds, closeTo(4000, 100));
+        await db.replaceChapters(bookId, [
+          for (var i = 0; i < 2; i++)
+            ChaptersCompanion.insert(id: 'native-chapter-$i', bookId: bookId,
+              title: 'Chapter ${i + 1}', startMs: i * 6000, endMs: (i + 1) * 6000,
+              filePath: Value(owned.path), trackIndex: const Value(0)),
+        ]);
+        await playback.loadBook(bookId);
+        await client.command('next-chapter');
+        expect(player.position.inMilliseconds, closeTo(6000, 100));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Previous chapter'));
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await tester.pumpAndSettle();
+        expect(player.position.inMilliseconds, closeTo(0, 100));
+        await client.command('seek', {'seconds': 4});
         await client.command('speed', {'value': 1.5});
         expect(player.speed, 1.5);
         await client.command('bookmark', {'title': 'Native bookmark'});

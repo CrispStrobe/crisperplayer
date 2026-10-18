@@ -15,6 +15,54 @@ void main() {
   });
   tearDown(() => h.dispose());
 
+  test(
+    'chapter transport navigates within a single file and restarts before going back',
+    () async {
+      await h.book('single', [60]);
+      await h.db.replaceChapters('single', [
+        for (var i = 0; i < 3; i++)
+          ChaptersCompanion.insert(
+            id: 'embedded-$i',
+            bookId: 'single',
+            title: 'Part $i',
+            startMs: i * 20000,
+            endMs: (i + 1) * 20000,
+            filePath: const Value('/single/0.mp3'),
+            trackIndex: const Value(0),
+          ),
+      ]);
+      await h.playback.loadBook('single');
+      await h.playback.play();
+      await h.playback.nextChapter();
+      expect(h.backend.position.inSeconds, 20);
+      expect(h.backend.currentIndex, 0);
+      expect(h.backend.playing, isTrue);
+      h.backend.move(const Duration(seconds: 25));
+      await h.playback.previousChapter();
+      expect(h.backend.position.inSeconds, 20);
+      await h.playback.previousChapter();
+      expect(h.backend.position, Duration.zero);
+      await h.playback.previousChapter();
+      expect(h.backend.position, Duration.zero);
+      await h.playback.nextChapter();
+      await h.playback.nextChapter();
+      await h.playback.nextChapter();
+      expect(h.backend.position.inSeconds, 40);
+      expect((await h.db.getBook('single'))!.lastPositionMs, 40000);
+    },
+  );
+
+  test('chapter transport crosses physical files', () async {
+    await h.playback.loadBook('a');
+    await h.playback.nextChapter();
+    expect(h.backend.currentIndex, 1);
+    expect(h.playback.bookPosition.inSeconds, 60);
+    await h.playback.nextChapter();
+    expect(h.backend.currentIndex, 2);
+    await h.playback.previousChapter();
+    expect(h.backend.currentIndex, 1);
+  });
+
   test('play returns while audio plays and opens exactly one session',
       () async {
     await h.playback.loadBook('a');

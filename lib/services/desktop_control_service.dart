@@ -246,6 +246,8 @@ class DesktopControlService {
         } finally {
           await directory.delete(recursive: true);
         }
+      case 'refresh-chapters':
+        return {'refreshed': await playback.refreshChapters(_bookId(args))};
       case 'chapters':
         final id = _bookId(args);
         return [for (final ch in await library.db.chaptersFor(id)) ch.toJson()];
@@ -255,6 +257,10 @@ class DesktopControlService {
         final index = _number(args, 'index', 1, chapters.length).toInt() - 1;
         if (playback.currentBookId != id) await playback.loadBook(id);
         await playback.seekChapter(chapters[index]);
+      case 'next-chapter':
+        await playback.nextChapter();
+      case 'previous-chapter':
+        await playback.previousChapter();
       case 'next':
         await playback.nextTrack();
       case 'previous':

@@ -257,3 +257,29 @@ a fresh checkout and CI resolve it without a sibling repository. To develop the
 package locally, use an untracked pubspec_overrides.yaml path override. Shared
 package tests run in CrispCloud CI, while CrisperPlayer retains audiobook import,
 resume, queue, GUI and native playback coverage.
+
+
+### Local macOS keychain
+
+On this Mac, use the dedicated Brickwright keychain for local signing and server
+credentials:
+
+```sh
+python3 scripts/macos_local.py build
+python3 scripts/macos_local.py run
+python3 scripts/macos_local.py test
+python3 scripts/macos_local.py test --test-file integration_test/named_keychain_test.dart
+```
+
+The helper selects the existing Apple Distribution identity from
+`~/Library/Keychains/brickwright-build.keychain-db` and passes that keychain
+explicitly to signing. It embeds `CRISPERPLAYER_MACOS_KEYCHAIN` in the local
+build, so reopening that app continues to use the selected keychain.
+`--keychain /absolute/path` selects another explicit keychain.
+
+Credential reads, writes and deletes use only CrisperPlayer's own generic
+password service in that keychain. Missing, locked or inaccessible selected
+keychains fail without searching the login keychain. Existing credentials are
+not moved automatically. The helper does not change the system keychain search
+list or default, export private keys, or create signing identities. Ordinary
+builds without this local override retain platform secure storage.

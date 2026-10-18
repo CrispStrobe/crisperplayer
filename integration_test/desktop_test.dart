@@ -115,6 +115,22 @@ void main() {
           await library.deleteBook(book.id);
         }
         await nested.delete(recursive: true);
+        await client.command('settings', {
+          'key': 'libraryView',
+          'value': 'list',
+        });
+        await tester.pumpAndSettle();
+        expect(find.byKey(ValueKey('book-list-$bookId')), findsOneWidget);
+        await client.command('settings', {
+          'key': 'libraryView',
+          'value': 'grid',
+        });
+        await tester.pumpAndSettle();
+        expect(find.byType(SliverGrid), findsOneWidget);
+        await client.command('settings', {
+          'key': 'libraryView',
+          'value': 'auto',
+        });
         await tester.pumpAndSettle();
         expect(find.textContaining('Native smoke test'), findsWidgets);
         await tester.tap(find.textContaining('Native smoke test').first);

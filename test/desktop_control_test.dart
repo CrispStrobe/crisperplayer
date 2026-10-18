@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:crisperplayer/services/settings_service.dart';
 import 'package:crisperplayer/cli/control_client.dart';
 import 'package:crisperplayer/services/desktop_control_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -198,6 +200,33 @@ void main() {
       expect(h.backend.playing, isFalse);
     },
   );
+
+  test('library view settings persist and leave live playback intact', () async {
+    await h.book('view', [120]);
+    await client.command('play', {'bookId': 'view'});
+    await client.command('seek', {'seconds': 45});
+    final before = await client.command('status') as Map;
+    expect((await client.command('settings') as Map)['libraryView'], 'auto');
+    for (final view in ['list', 'grid', 'auto']) {
+      await client.command('settings', {'key': 'libraryView', 'value': view});
+      expect(h.settings.libraryView, view);
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.reload();
+      final reloaded = SettingsService(preferences);
+      expect(reloaded.libraryView, view);
+      reloaded.dispose();
+      final after = await client.command('status') as Map;
+      expect(after['bookId'], before['bookId']);
+      expect(after['positionMs'], before['positionMs']);
+      expect(after['status'], before['status']);
+      expect(after['speed'], before['speed']);
+    }
+    final settings = await client.command('settings');
+    for (final invalid in ['invalid', 42]) {
+      await expectLater(client.command('settings', {'key': 'libraryView', 'value': invalid}), throwsStateError);
+      expect(await client.command('settings'), settings);
+    }
+  });
 
   test(
     'bookmark editing, seeking, history clearing and metadata restore',

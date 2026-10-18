@@ -26,13 +26,49 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   String _collection = '';
   String _series = '';
 
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  static const _statuses = {
+    'all': 'All',
+    'unfinished': 'Unfinished',
+    'unread': 'Unread',
+    'recent': 'Recent',
+    'finished': 'Finished',
+  };
+  static const _sorts = {
+    'recent': 'Added',
+    'lastPlayed': 'Played',
+    'title': 'Title',
+    'author': 'Author',
+    'series': 'Series',
+    'duration': 'Duration',
+  };
+
   @override
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(libraryBooksProvider);
     final svc = ref.watch(playbackProvider);
+    final settings = ref.watch(settingsProvider);
+    final scaler = MediaQuery.textScalerOf(context);
+    final list =
+        settings.libraryView == 'list' ||
+        (settings.libraryView == 'auto' && scaler.scale(14) >= 21);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CrisperPlayer'),
+        toolbarHeight: (scaler.scale(20) * 1.4 + 16)
+            .clamp(56.0, 112.0)
+            .toDouble(),
+        title: const Text(
+          'CrisperPlayer',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.queue_music),
@@ -50,217 +86,308 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onPressed: () => context.push('/settings'),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(96),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-            child: Column(
-              children: [
-                Row(
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(libraryBooksProvider),
+        child: CustomScrollView(
+          key: const PageStorageKey('library-scroll'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search),
-                          hintText: 'Search books…',
-                          isDense: true,
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (v) => setState(() => _query = v),
+                    TextField(
+                      controller: _search,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        labelText: 'Search books',
+                        hintText: 'Title, author, series or collection',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: _query.isEmpty
+                            ? null
+                            : IconButton(
+                                key: const ValueKey('clear-library-search'),
+                                tooltip: 'Clear search',
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _search.clear();
+                                  setState(() => _query = '');
+                                },
+                              ),
                       ),
+                      onChanged: (value) => setState(() => _query = value),
                     ),
-                    const SizedBox(width: 8),
-                    DropdownButton<String>(
-                      value: _filter,
-                      underline: const SizedBox.shrink(),
-                      items: const [
-                        DropdownMenuItem(value: 'all', child: Text('All')),
-                        DropdownMenuItem(
-                          value: 'unfinished',
-                          child: Text('Unfinished'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _menu(
+                          'Reading status',
+                          Icons.filter_list,
+                          _filter,
+                          _statuses,
+                          (value) => setState(() {
+                            _filter = value;
+                            if (value == 'recent') _sortBy = 'lastPlayed';
+                          }),
                         ),
-                        DropdownMenuItem(
-                          value: 'unread',
-                          child: Text('Unread'),
+                        _menu(
+                          'Sort books',
+                          Icons.sort,
+                          _sortBy,
+                          _sorts,
+                          (value) => setState(() => _sortBy = value),
+                          prefix: 'Sort: ',
                         ),
-                        DropdownMenuItem(
-                          value: 'recent',
-                          child: Text('Recent'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'finished',
-                          child: Text('Finished'),
+                        PopupMenuButton<String>(
+                          key: const ValueKey('library-layout'),
+                          tooltip: 'Library layout',
+                          initialValue: settings.libraryView,
+                          icon: Icon(
+                            list ? Icons.view_list_outlined : Icons.grid_view,
+                          ),
+                          onSelected: (value) => settings.libraryView = value,
+                          itemBuilder: (_) => [
+                            for (final entry in const {
+                              'auto': 'Automatic',
+                              'grid': 'Cover grid',
+                              'list': 'List',
+                            }.entries)
+                              CheckedPopupMenuItem(
+                                height:
+                                    16 +
+                                    MediaQuery.textScalerOf(context).scale(24) *
+                                        2,
+                                value: entry.key,
+                                checked: settings.libraryView == entry.key,
+                                child: Text(entry.value),
+                              ),
+                          ],
                         ),
                       ],
-                      onChanged: (v) => setState(() {
-                        _filter = v!;
-                        if (v == 'recent') _sortBy = 'lastPlayed';
-                      }),
                     ),
+                    if ((booksAsync.value ?? []).any(
+                      (b) => b.collection.isNotEmpty || b.series.isNotEmpty,
+                    ))
+                      LayoutBuilder(
+                        builder: (_, constraints) {
+                          final width = constraints.maxWidth < 560
+                              ? constraints.maxWidth
+                              : (constraints.maxWidth - 12) / 2;
+                          return Wrap(
+                            spacing: 12,
+                            children: [
+                              SizedBox(
+                                width: width,
+                                child: _groupFilter(
+                                  booksAsync.value ?? [],
+                                  false,
+                                ),
+                              ),
+                              SizedBox(
+                                width: width,
+                                child: _groupFilter(
+                                  booksAsync.value ?? [],
+                                  true,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.sort, size: 16),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Sort by:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SegmentedButton<String>(
-                          showSelectedIcon: false,
-                          style: ButtonStyle(
-                            visualDensity: VisualDensity.compact,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            textStyle: WidgetStateProperty.all(
-                              const TextStyle(fontSize: 12),
+              ),
+            ),
+            ...booksAsync.when(
+              data: (books) {
+                final collection = books.any((b) => b.collection == _collection)
+                    ? _collection
+                    : '';
+                final series = books.any((b) => b.series == _series)
+                    ? _series
+                    : '';
+                final query = _query.trim().toLowerCase();
+                final filtered = _sortBooks(
+                  books
+                      .where(
+                        (book) =>
+                            '${book.title} ${book.author} ${book.series} ${book.collection}'
+                                .toLowerCase()
+                                .contains(query) &&
+                            (collection.isEmpty ||
+                                book.collection == collection) &&
+                            (series.isEmpty || book.series == series) &&
+                            (_filter != 'finished' || book.isFinished) &&
+                            (_filter != 'unfinished' || !book.isFinished) &&
+                            (_filter != 'unread' ||
+                                (!book.isFinished &&
+                                    book.totalProgress == 0)) &&
+                            (_filter != 'recent' ||
+                                book.lastPlayedAtMs != null),
+                      )
+                      .toList(),
+                );
+                if (filtered.isEmpty) {
+                  return <Widget>[
+                    SliverToBoxAdapter(
+                      child: books.isEmpty
+                          ? _emptyState(context)
+                          : const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('No books match these filters.'),
                             ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 96)),
+                  ];
+                }
+                return <Widget>[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 96),
+                    sliver: list
+                        ? SliverList.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (_, index) => _BookListItem(
+                              book: filtered[index],
+                              onTap: () => _openBook(filtered[index]),
+                              onMenu: () => _bookMenu(filtered[index]),
+                            ),
+                          )
+                        : SliverLayoutBuilder(
+                            builder: (_, constraints) {
+                              final maxExtent =
+                                  240 *
+                                  (scaler.scale(14) / 14)
+                                      .clamp(1.0, 4.0)
+                                      .toDouble();
+                              final columns =
+                                  (constraints.crossAxisExtent /
+                                          (maxExtent + 8))
+                                      .ceil()
+                                      .clamp(1, 1000);
+                              final cardWidth =
+                                  (constraints.crossAxisExtent -
+                                      (columns - 1) * 8) /
+                                  columns;
+                              return SliverGrid.builder(
+                                gridDelegate:
+                                    SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: maxExtent,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                      mainAxisExtent:
+                                          cardWidth +
+                                          80 +
+                                          scaler.scale(13) * 3 +
+                                          scaler.scale(11) * 3,
+                                    ),
+                                itemCount: filtered.length,
+                                itemBuilder: (_, index) => _BookCardWithMeta(
+                                  book: filtered[index],
+                                  onTap: () => _openBook(filtered[index]),
+                                  onMenu: () => _bookMenu(filtered[index]),
+                                ),
+                              );
+                            },
                           ),
-                          segments: const [
-                            ButtonSegment(
-                              value: 'recent',
-                              label: Text('Added'),
-                            ),
-                            ButtonSegment(
-                              value: 'lastPlayed',
-                              label: Text('Played'),
-                            ),
-                            ButtonSegment(value: 'title', label: Text('Title')),
-                            ButtonSegment(
-                              value: 'author',
-                              label: Text('Author'),
-                            ),
-                            ButtonSegment(
-                              value: 'series',
-                              label: Text('Series'),
-                            ),
-                            ButtonSegment(
-                              value: 'duration',
-                              label: Text('Duration'),
-                            ),
-                          ],
-                          selected: {_sortBy},
-                          onSelectionChanged: (s) =>
-                              setState(() => _sortBy = s.first),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
+                ];
+              },
+              loading: () => <Widget>[
+                const SliverToBoxAdapter(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ],
+              error: (error, _) => <Widget>[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text('Error: $error'),
+                  ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
-      body: Column(
-        children: [
-          if ((booksAsync.value ?? []).any(
-            (b) => b.collection.isNotEmpty || b.series.isNotEmpty,
-          ))
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  Expanded(child: _groupFilter(booksAsync.value ?? [], false)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _groupFilter(booksAsync.value ?? [], true)),
-                ],
-              ),
-            ),
-          Expanded(
-            child: booksAsync.when(
-              data: (books) {
-                var filtered = books.where((b) {
-                  final query =
-                      '${b.title} ${b.author} ${b.series} ${b.collection}'
-                          .toLowerCase();
-                  return query.contains(_query.toLowerCase()) &&
-                      (_collection.isEmpty || b.collection == _collection) &&
-                      (_series.isEmpty || b.series == _series) &&
-                      (_filter != 'finished' || b.isFinished) &&
-                      (_filter != 'unfinished' || !b.isFinished) &&
-                      (_filter != 'unread' ||
-                          (!b.isFinished && b.totalProgress == 0)) &&
-                      (_filter != 'recent' || b.lastPlayedAtMs != null);
-                }).toList();
-                filtered = _sortBooks(filtered);
-                if (filtered.isEmpty) {
-                  return books.isEmpty
-                      ? _emptyState(context)
-                      : const Center(
-                          child: Text('No books match these filters.'),
-                        );
-                }
-                return RefreshIndicator(
-                  onRefresh: () async => ref.invalidate(libraryBooksProvider),
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(8),
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 240,
-                          childAspectRatio: 0.64,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                    itemCount: filtered.length,
-                    itemBuilder: (_, i) {
-                      final b = filtered[i];
-                      return _BookCardWithMeta(
-                        book: b,
-                        onTap: () async {
-                          ref.read(selectedBookIdProvider.notifier).state =
-                              b.id;
-                          if (svc.currentBookId != b.id) {
-                            try {
-                              await svc.loadBook(b.id);
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Could not open book: $e'),
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-                          }
-                          if (context.mounted) {
-                            context.push('/player/${b.id}');
-                          }
-                        },
-                        onMenu: () => _bookMenu(b),
-                      );
-                    },
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(child: Text('Error: $e')),
-            ),
-          ),
-          StreamBuilder(
-            stream: svc.stateStream,
-            initialData: svc.state,
-            builder: (_, _) => svc.currentBookId == null
-                ? const SizedBox.shrink()
-                : const MiniPlayer(),
-          ),
-        ],
+      bottomNavigationBar: StreamBuilder(
+        stream: svc.stateStream,
+        initialData: svc.state,
+        builder: (_, _) => svc.currentBookId == null
+            ? const SizedBox.shrink()
+            : const SafeArea(top: false, child: MiniPlayer()),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.add),
-        label: const Text('Import'),
-        onPressed: _chooseImport,
-      ),
+      floatingActionButton:
+          MediaQuery.sizeOf(context).width < 400 || scaler.scale(14) >= 21
+          ? FloatingActionButton(
+              tooltip: 'Import audiobooks',
+              onPressed: _chooseImport,
+              child: const Icon(Icons.add),
+            )
+          : FloatingActionButton.extended(
+              icon: const Icon(Icons.add),
+              label: const Text('Import'),
+              onPressed: _chooseImport,
+            ),
     );
+  }
+
+  Widget _menu(
+    String label,
+    IconData icon,
+    String current,
+    Map<String, String> values,
+    ValueChanged<String> onChanged, {
+    String prefix = '',
+  }) => PopupMenuButton<String>(
+    key: ValueKey(label),
+    tooltip: label,
+    initialValue: current,
+    onSelected: onChanged,
+    itemBuilder: (_) => [
+      for (final entry in values.entries)
+        CheckedPopupMenuItem(
+          height: 16 + MediaQuery.textScalerOf(context).scale(24) * 2,
+          value: entry.key,
+          checked: current == entry.key,
+          child: Text(entry.value),
+        ),
+    ],
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon),
+            const SizedBox(width: 8),
+            Flexible(child: Text('$prefix${values[current]}')),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Future<void> _openBook(Book book) async {
+    final svc = ref.read(playbackProvider);
+    ref.read(selectedBookIdProvider.notifier).state = book.id;
+    try {
+      if (svc.currentBookId != book.id) await svc.loadBook(book.id);
+      if (mounted) context.push('/player/${book.id}');
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not open book: $error')));
+      }
+    }
   }
 
   List<Book> _sortBooks(List<Book> books) {
@@ -316,11 +443,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final current = series ? _series : _collection;
     return DropdownButton<String>(
       isExpanded: true,
+      itemHeight: null,
       value: groups.contains(current) ? current : '',
       items: [
         DropdownMenuItem(
           value: '',
-          child: Text(series ? 'All series' : 'All collections'),
+          child: Text(
+            series ? 'All series' : 'All collections',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         for (final group in groups)
           DropdownMenuItem(
@@ -698,6 +830,85 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 }
 
+class _BookListItem extends StatelessWidget {
+  final Book book;
+  final VoidCallback onTap;
+  final VoidCallback onMenu;
+  const _BookListItem({
+    required this.book,
+    required this.onTap,
+    required this.onMenu,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final status = book.isFinished
+        ? 'Finished'
+        : book.totalProgress > 0
+        ? '${(book.totalProgress * 100).round()}% complete'
+        : 'Not started';
+    final duration = book.totalDurationMs > 0
+        ? formatDuration(Duration(milliseconds: book.totalDurationMs))
+        : 'Duration unavailable';
+    final spokenDuration = book.totalDurationMs > 0
+        ? formatSpokenDuration(Duration(milliseconds: book.totalDurationMs))
+        : 'Duration unavailable';
+    final series = book.series.isEmpty
+        ? ''
+        : '${book.series}${book.seriesOrder == null ? '' : ' • ${book.seriesOrder!.toString().replaceFirst(RegExp(r'\.0$'), '')}'}';
+    return Card(
+      child: ListTile(
+        key: ValueKey('book-list-${book.id}'),
+        contentPadding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+        leading: ExcludeSemantics(
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: book.coverPath.isEmpty
+                ? const Icon(Icons.menu_book)
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.file(
+                      File(book.coverPath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(Icons.menu_book),
+                    ),
+                  ),
+          ),
+        ),
+        title: Text(book.title, maxLines: 2, overflow: TextOverflow.ellipsis),
+        subtitle: Semantics(
+          label:
+              '${book.author}${series.isEmpty ? '' : ', $series'}, $spokenDuration, $status',
+          excludeSemantics: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(book.author, maxLines: 2, overflow: TextOverflow.ellipsis),
+              if (series.isNotEmpty)
+                Text(series, maxLines: 2, overflow: TextOverflow.ellipsis),
+              Wrap(
+                spacing: 8,
+                children: [
+                  Text(duration, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(status, maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ],
+          ),
+        ),
+        trailing: IconButton(
+          key: ValueKey('book-actions-${book.id}'),
+          tooltip: 'Actions for ${book.title}',
+          icon: const Icon(Icons.more_horiz),
+          onPressed: onMenu,
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
 class _BookCardWithMeta extends StatelessWidget {
   final Book book;
   final VoidCallback? onTap;
@@ -726,6 +937,7 @@ class _BookCardWithMeta extends StatelessWidget {
                     child: hasCover
                         ? Image.file(
                             File(book.coverPath),
+                            excludeFromSemantics: true,
                             fit: BoxFit.cover,
                             errorBuilder: (_, _, _) => _coverFallback(context),
                           )
@@ -868,12 +1080,8 @@ class _BookCardWithMeta extends StatelessWidget {
                     ),
                     if (onMenu != null)
                       IconButton(
-                        tooltip: 'Book actions',
-                        visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
+                        key: ValueKey('book-actions-${book.id}'),
+                        tooltip: 'Actions for ${book.title}',
                         onPressed: onMenu,
                         icon: const Icon(Icons.more_horiz, size: 18),
                       ),
@@ -885,24 +1093,23 @@ class _BookCardWithMeta extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
                 child: Row(
                   children: [
-                    Text(
-                      'Not started',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                    Expanded(
+                      child: Text(
+                        'Not started',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                        ),
                       ),
                     ),
-                    const Spacer(),
                     if (onMenu != null)
                       IconButton(
-                        tooltip: 'Book actions',
-                        visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
+                        key: ValueKey('book-actions-${book.id}'),
+                        tooltip: 'Actions for ${book.title}',
                         onPressed: onMenu,
                         icon: const Icon(Icons.more_horiz, size: 18),
                       ),
@@ -917,46 +1124,48 @@ class _BookCardWithMeta extends StatelessWidget {
 
   Widget _coverFallback(BuildContext ctx) {
     final cs = Theme.of(ctx).colorScheme;
-    final initial = book.title.isNotEmpty
-        ? book.title.trim()[0].toUpperCase()
+    final initial = book.title.trim().isNotEmpty
+        ? book.title.trim().characters.first.toUpperCase()
         : '?';
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [cs.primaryContainer, cs.primary.withValues(alpha: 0.6)],
+    return ExcludeSemantics(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [cs.primaryContainer, cs.primary.withValues(alpha: 0.6)],
+          ),
         ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: cs.primary,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: cs.primary,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Icon(
-              Icons.menu_book_rounded,
-              size: 18,
-              color: Colors.white.withValues(alpha: 0.8),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Icon(
+                Icons.menu_book_rounded,
+                size: 18,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
+            ],
+          ),
         ),
       ),
     );

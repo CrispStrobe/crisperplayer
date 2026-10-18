@@ -41,6 +41,18 @@ class SettingsService extends ChangeNotifier {
   }
 
   set themeMode(String v) => _changed(_p.setString('theme_mode', v));
+  String get libraryView {
+    final value = _p.getString('library_view') ?? 'auto';
+    return ['auto', 'grid', 'list'].contains(value) ? value : 'auto';
+  }
+
+  set libraryView(String value) {
+    if (!['auto', 'grid', 'list'].contains(value)) {
+      throw const FormatException('libraryView must be auto, grid, or list');
+    }
+    _changed(_p.setString('library_view', value));
+  }
+
   int get smartRewindSeconds =>
       (_p.getInt('smart_rewind_sec') ?? 5).clamp(0, 60);
   set smartRewindSeconds(int v) =>

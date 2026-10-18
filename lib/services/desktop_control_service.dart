@@ -652,6 +652,7 @@ class DesktopControlService {
     'autoBookmarkIntervalSeconds': s.autoBookmarkInterval.inSeconds,
     'sleepTimerDefaultMinutes': s.sleepTimerDefault.inMinutes,
     'themeMode': s.themeMode,
+    'libraryView': s.libraryView,
     'resumeOnLaunch': s.resumeOnLaunch,
     'onboardingDone': s.onboardingDone,
   };
@@ -688,6 +689,11 @@ class DesktopControlService {
           throw const FormatException('seekSeconds must be 10, 15, 30, or 60');
         }
         s.seekSeconds = value as int;
+      case 'libraryView':
+        if (value is! String) {
+          throw const FormatException('Expected a layout name');
+        }
+        s.libraryView = value;
       case 'themeMode':
         if (!['system', 'light', 'dark'].contains(value)) {
           throw const FormatException('Invalid themeMode');

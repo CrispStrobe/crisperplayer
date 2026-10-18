@@ -141,6 +141,7 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | Persistent partial downloads with pause/resume/discard, verified HTTP ranges, SFTP with pinned host keys |
 | Added | Nested library-folder imports with book selection and numbered disc grouping; CLI dry run |
 | Added | Player large-text layout, labeled touch targets, spoken seek values and reduced-motion waveform |
+| Added | Saved automatic/grid/list library layouts, responsive search/filter controls and accessible book actions |
 | Next | Wider accessibility/device audit and direct SMB |
 | Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |
@@ -172,6 +173,18 @@ In the player: Space toggles playback, arrows skip, Shift+arrows change chapter,
 and B adds a bookmark. Shortcuts leave text editing alone. Listening statistics
 show actual listening time, independent of playback speed.
 
+
+Use the library’s **Library layout** menu to choose **Automatic**, **Cover grid**,
+or **List**. The choice is saved between launches. Automatic uses a list with
+enlarged system text; a manually selected grid scales its cards and text. Library
+search, status, sort, collection and series controls scroll with the books on
+small screens. The mini player stays pinned below the browser, with the Import
+button above it. List rows include author, series, duration and reading progress.
+The CLI reads and sets the same preference:
+
+```sh
+crisperplayer settings libraryView list # auto / grid / list
+```
 
 The player and mini player support enlarged system text. Speed and sleep sheets
 scroll on short screens. Screen readers announce elapsed/total seek times in

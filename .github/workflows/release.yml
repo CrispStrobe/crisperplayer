@@ -112,7 +112,9 @@ jobs:
       matrix:
         include:
           - platform: windows-x64
-            runner: windows-latest
+            # permission_handler_windows still uses the experimental coroutine
+            # headers rejected by the VS 2026 compiler on windows-latest.
+            runner: windows-2022
             target: windows
             app: build/windows/x64/runner/Release
           - platform: linux-x64

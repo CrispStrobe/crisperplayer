@@ -94,6 +94,8 @@ of normal native playback. Waveform caches contain measured peaks, not audio cop
 Publication compares semantic versions/builds so a slower older build cannot replace
 a newer release as latest.
 
+Windows builds use the Windows 2022 / Visual Studio 2022 runner because the current
+permission handler plugin uses coroutine headers rejected by Visual Studio 2026.
 Publication uses a lightweight hosted runner; independent Flutter verification and
 platform builds use full build runners in parallel. Manual retries use the current workflow
 definition and check out the fully qualified existing tag for every build job.

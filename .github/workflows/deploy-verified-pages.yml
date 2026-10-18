@@ -1,0 +1,42 @@
+name: Deploy verified Pages source
+on:
+  workflow_dispatch:
+    inputs:
+      verified_run:
+        description: 'Pages run whose build job passed for unchanged site/test inputs'
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require successful checks for exactly the same website
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_RUN: ${{ inputs.verified_run }}
+        run: python3 scripts/verify_pages_source.py "$VERIFIED_RUN"
+      - name: Stage verified static files
+        run: |
+          mkdir -p build/pages
+          cp -R site/. build/pages/
+          touch build/pages/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/pages
+      - uses: actions/deploy-pages@v4
+        id: deploy

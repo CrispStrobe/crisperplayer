@@ -97,3 +97,9 @@ a newer release as latest.
 Release staging and publication use lightweight hosted runners; Flutter verification
 and platform builds use full build runners. Manual retries use the current workflow
 definition and check out the fully qualified existing tag for every build job.
+
+If a Pages build passed but deployment is delayed or failed, `Deploy verified Pages
+source` can retry on a lightweight runner with that run ID. It requires this
+repository's successful master Pages build and an exact Git match for the site,
+browser tests, dependency lock and test-server configuration. Any website change
+requires fresh browser checks. Normal Pages deployment remains automatic.

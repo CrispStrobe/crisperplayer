@@ -93,3 +93,7 @@ PCM WAV analysis needs no external executable. This optional dependency is indep
 of normal native playback. Waveform caches contain measured peaks, not audio copies.
 Publication compares semantic versions/builds so a slower older build cannot replace
 a newer release as latest.
+
+Release staging and publication use lightweight hosted runners; Flutter verification
+and platform builds use full build runners. Manual retries use the current workflow
+definition and check out the fully qualified existing tag for every build job.

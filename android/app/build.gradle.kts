@@ -4,6 +4,15 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val releaseStore = System.getenv("CRISPER_ANDROID_KEYSTORE")
+val releaseStorePassword = System.getenv("CRISPER_ANDROID_STORE_PASSWORD")
+val releaseKeyAlias = System.getenv("CRISPER_ANDROID_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("CRISPER_ANDROID_KEY_PASSWORD")
+val hasReleaseKey = listOf(releaseStore, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { !it.isNullOrBlank() }
+require(listOf(releaseStore, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { it.isNullOrBlank() } || hasReleaseKey) {
+    "Set all four CRISPER_ANDROID signing variables, or none for a local debug-signed build."
+}
+
 android {
     namespace = "com.crispstrobe.crisperplayer"
     compileSdk = flutter.compileSdkVersion
@@ -26,11 +35,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = file(releaseStore!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Public release CI requires the dedicated persistent release key.
+            // Local unsigned configuration retains the debug key for testing.
+            signingConfig = signingConfigs.getByName(if (hasReleaseKey) "release" else "debug")
         }
     }
 }

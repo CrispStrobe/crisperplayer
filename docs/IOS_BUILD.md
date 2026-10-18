@@ -51,3 +51,12 @@ env -u GEM_HOME -u GEM_PATH -u RUBYOPT pod install --project-directory=ios
 The local SDK/cache tools can stall on this machine. CI is the binary-build verification path; do not treat a stalled local attempt as a successful build.
 
 The host, share extension and CocoaPods deployment targets are all iOS 15.0 or newer. IPA verification rejects a lower minimum or missing document-opening configuration. `LSSupportsOpeningDocumentsInPlace` is explicitly false because imports copy audio into app-owned storage.
+
+
+## Versioned releases
+
+Tags matching the complete pubspec version/build (for example `v0.1.0+13`) trigger
+this TestFlight workflow as well as the separate public desktop/Android release.
+Do not manually upload the same build again after pushing a tag. iOS IPAs remain
+Actions artifacts for diagnostics; App Store signing does not permit arbitrary
+public sideloading. See [RELEASES.md](RELEASES.md) for the complete release procedure.

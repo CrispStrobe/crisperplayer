@@ -148,6 +148,11 @@ void main() {
         await source.writeAsBytes(
           Uint8List.fromList(List.filled(audio.length, 42)),
         );
+        // The Linux SMB fixture exposes whole-second modification times.
+        // Make this a distinct remote revision even on a fast CI runner.
+        await source.setLastModified(
+          (await source.lastModified()).add(const Duration(seconds: 2)),
+        );
         progress.clear();
         await client.download(tracks.first.path, output, onBytes: progress.add);
         expect(

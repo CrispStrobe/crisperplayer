@@ -1,0 +1,229 @@
+name: Release binaries
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag matching pubspec.yaml (for example v0.1.0+13)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+env:
+  FLUTTER_VERSION: '3.44.4'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      build: ${{ steps.version.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+      - id: version
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          git show-ref --verify "refs/tags/$RELEASE_TAG"
+          python3 scripts/release.py validate "$RELEASE_TAG"
+      - name: Prepare draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "CrisperPlayer $RELEASE_TAG" --notes-file docs/RELEASE_NOTES.md
+          fi
+
+  verify:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          python3 -m venv "$RUNNER_TEMP/checks"
+          "$RUNNER_TEMP/checks/bin/pip" install --quiet cryptography paramiko impacket
+          "$RUNNER_TEMP/checks/bin/python" -m unittest discover -s scripts/tests -v
+      - run: flutter pub get
+      - run: flutter analyze --no-pub
+      - name: Unit and isolated protocol tests
+        env:
+          CRISPER_SFTP_PYTHON: ${{ runner.temp }}/checks/bin/python
+          CRISPER_SMB_PYTHON: ${{ runner.temp }}/checks/bin/python
+        run: flutter test --no-pub
+      - name: Browser player tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm test
+
+  android:
+    needs: [prepare, verify]
+    runs-on: ubuntu-latest
+    env:
+      CRISPER_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      CRISPER_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      CRISPER_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Restore dedicated Android release key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          export CRISPER_ANDROID_KEYSTORE="$RUNNER_TEMP/crisper-release.p12"
+          echo "CRISPER_ANDROID_KEYSTORE=$CRISPER_ANDROID_KEYSTORE" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          for name in ['KEYSTORE_BASE64', 'CRISPER_ANDROID_STORE_PASSWORD', 'CRISPER_ANDROID_KEY_ALIAS', 'CRISPER_ANDROID_KEY_PASSWORD']:
+              if not os.environ.get(name): raise SystemExit('Missing signing configuration: ' + name)
+          path = Path(os.environ['CRISPER_ANDROID_KEYSTORE'])
+          path.write_bytes(base64.b64decode(os.environ['KEYSTORE_BASE64'], validate=True))
+          path.chmod(0o600)
+          PY
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - name: Verify and stage signed APK
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/CrisperPlayer-android.apk
+          python3 - <<'PY'
+          import os, subprocess
+          from pathlib import Path
+          tools = sorted((Path(os.environ['ANDROID_HOME']) / 'build-tools').iterdir(), key=lambda p: [int(x) for x in p.name.split('.') if x.isdigit()])[-1]
+          result = subprocess.check_output([str(tools / 'apksigner'), 'verify', '--print-certs', 'dist/CrisperPlayer-android.apk'], text=True)
+          if 'Android Debug' in result: raise SystemExit('Refusing to release a debug-signed APK')
+          Path('dist/ANDROID-SIGNING.txt').write_text(result)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android
+          path: dist/*
+          if-no-files-found: error
+
+  desktop:
+    needs: [prepare, verify]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-x64
+            runner: windows-latest
+            target: windows
+            app: build/windows/x64/runner/Release
+          - platform: linux-x64
+            runner: ubuntu-24.04
+            target: linux
+            app: build/linux/x64/release/bundle
+          - platform: macos-arm64
+            runner: macos-15
+            target: macos
+            app: build/macos/Build/Products/Release/crisperplayer.app
+            exclude_arch: x86_64
+          - platform: macos-x64
+            runner: macos-15-intel
+            target: macos
+            app: build/macos/Build/Products/Release/crisperplayer.app
+            exclude_arch: arm64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Linux build and runtime dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libmpv-dev libasound2-dev
+      - name: Configure unsigned Mac archive for this architecture
+        if: matrix.target == 'macos'
+        env:
+          EXCLUDE_ARCH: ${{ matrix.exclude_arch }}
+        run: |
+          cat > "$RUNNER_TEMP/Release.xcconfig" <<EOF
+          CODE_SIGNING_ALLOWED = NO
+          CODE_SIGNING_REQUIRED = NO
+          EXCLUDED_ARCHS = $EXCLUDE_ARCH
+          EOF
+          echo "XCODE_XCCONFIG_FILE=$RUNNER_TEMP/Release.xcconfig" >> "$GITHUB_ENV"
+      - run: flutter pub get
+      - run: flutter build ${{ matrix.target }} --release --dart-define=CRISPERPLAYER_CLI=true
+      - name: Ad-hoc sign complete Mac app
+        if: matrix.target == 'macos'
+        run: |
+          codesign --force --deep --sign - build/macos/Build/Products/Release/crisperplayer.app
+          codesign --verify --deep --strict build/macos/Build/Products/Release/crisperplayer.app
+      - name: Build CLI with native assets
+        run: |
+          dart build cli -o build/cli
+          python scripts/package_cli_notices.py build/cli/bundle
+          if [ -f build/cli/bundle/bin/crisperplayer.exe ]; then build/cli/bundle/bin/crisperplayer.exe --help; else build/cli/bundle/bin/crisperplayer --help; fi
+      - name: Package complete app and CLI
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: python scripts/release.py package --tag "$RELEASE_TAG" --platform '${{ matrix.platform }}' --app '${{ matrix.app }}'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    needs: [prepare, android, desktop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+      - run: python3 scripts/release.py checksums dist
+      - name: Publish only after all native builds succeed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          gh release upload "$RELEASE_TAG" dist/* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --latest --notes-file docs/RELEASE_NOTES.md

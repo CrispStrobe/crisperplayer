@@ -56,3 +56,10 @@ app.*.map.json
 *.mobileprovision
 
 __pycache__/
+
+# Browser checks and release staging
+node_modules/
+playwright-report/
+test-results/
+dist/
+pubspec_overrides.yaml

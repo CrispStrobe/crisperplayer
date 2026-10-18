@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/providers.dart';
 import '../services/db/app_database.dart';
 import '../utils/platform_utils.dart';
+import '../widgets/about_app_dialog.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -271,6 +272,12 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('About CrisperPlayer'),
+            subtitle: const Text('Version, contact, privacy and licenses'),
+            onTap: () => showAppAboutDialog(context),
+          ),
+          ListTile(
             leading: const Icon(Icons.article_outlined),
             title: const Text('Open-source licenses'),
             onTap: () => showLicensePage(
@@ -281,7 +288,7 @@ class SettingsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'CrisperPlayer v0.1.0 • Plays m4b/m4a/mp3/flac/ogg/wav/aac/opus/wma and more. Native decoders (Android/iOS) handle m4b chapters as m4a + chapter table. All data stays on device.',
+              'Your library and listening progress stay on this device. Server connections download audio from the sources you configure.',
               style: TextStyle(
                 fontSize: 11,
                 color: Theme.of(

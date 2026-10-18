@@ -1,3 +1,5 @@
+> Historical benchmark notes. Current chapter imports stream file headers; old readAsBytes/TODO observations below describe the earlier implementation. See README.md for current behavior.
+
 # Performance
 
 ## Playback
@@ -70,4 +72,4 @@ Re-run: `nice -n 10 dart run tool/bench_chapter_parse.dart`
 
 ## Tips
 - Large m4b >500 MB: stream scan via RandomAccessFile instead of readAsBytes (TODO)
-- Web: just_audio_web decodes via browser, no native m4b chapters (fallback to 1 chapter)
+- Web: GitHub Pages uses the separate local-file player in `site/`, with browser codec support and file-based tracks; the Flutter web target is an availability notice.

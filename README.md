@@ -1,6 +1,46 @@
 # CrisperPlayer
 
-A local audiobook player built with Flutter, Riverpod, Drift, just_audio and audio_service.
+A local-first audiobook player for Android, iOS, macOS, Windows and Linux.
+Keep your place, organize your books, and download from Plex or your NAS for offline listening.
+
+[**Download the native apps and CLI**](https://github.com/CrispStrobe/crisperplayer/releases/latest) · [**Listen in your browser**](https://crispstrobe.github.io/crisperplayer/) · [Installation and release automation](docs/RELEASES.md)
+
+| Platform | Distribution |
+| --- | --- |
+| Android | [Signed APK](https://github.com/CrispStrobe/crisperplayer/releases/latest/download/CrisperPlayer-android.apk) |
+| Windows x64 | [Complete ZIP bundle](https://github.com/CrispStrobe/crisperplayer/releases/latest/download/CrisperPlayer-windows-x64.zip) |
+| macOS Apple silicon | [App + CLI ZIP](https://github.com/CrispStrobe/crisperplayer/releases/latest/download/CrisperPlayer-macos-arm64.zip) |
+| macOS Intel | [App + CLI ZIP](https://github.com/CrispStrobe/crisperplayer/releases/latest/download/CrisperPlayer-macos-x64.zip) |
+| Linux x64 | [App + CLI archive](https://github.com/CrispStrobe/crisperplayer/releases/latest/download/CrisperPlayer-linux-x64.tar.gz) |
+| iOS 15+ | Internal TestFlight; team access required |
+| Browser | [GitHub Pages local-file player](https://crispstrobe.github.io/crisperplayer/) |
+
+Extract desktop archives completely before launching; keep their libraries and data together.
+Windows builds are unsigned and Mac downloads are ad-hoc signed, not notarized.
+Linux needs system libmpv, GTK and libsecret. See [installation details](docs/RELEASES.md).
+Release checksums and separate CLI bundles are attached to each versioned GitHub release.
+
+## Browser player
+
+The Pages site plays audio files selected from your device and stores audio, progress,
+speed, volume and bookmarks in IndexedDB. Select one file or all tracks of one book;
+tracks use natural filename order. It supports search, track navigation and JSON progress
+exports. Audio stays in your browser; there are no analytics or audio uploads.
+
+Browser codec support varies. Embedded M4B chapters, NAS connections, the full native
+library, metadata restore and guaranteed background playback require the installed app.
+Clearing site data removes the browser library; keep your original audio.
+This is a separate static player in `site/`, deployed by `pages.yml`; `flutter build web`
+currently builds the native app's platform-availability notice.
+
+## About and licenses
+
+Open **Settings → About CrisperPlayer** for the installed version/build, provider and
+contact information, privacy details, source/download links, and third-party licenses.
+The license screen includes Flutter package notices and native SQLite, libsmb2 and
+desktop audio notices. Native notice texts are also included in release archives and
+[assets/licenses](assets/licenses). CrisperPlayer is licensed under [GNU AGPL-3.0](LICENSE), © 2026 Christian Ströbele.
+Third-party components retain their upstream licenses.
 
 ## Current scope
 
@@ -16,10 +56,10 @@ A local audiobook player built with Flutter, Riverpod, Drift, just_audio and aud
 - Per-book speed, skip silence, skip interval and smart rewind overrides; missing overrides inherit app defaults. Configurable volume, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
 - Sleep timers can pause immediately at expiry or at the end of the chapter playing when the countdown expires. Immediate chapter mode captures the current chapter boundary.
 - Android voice boost (0–12 dB) and speech/warm/bass-reduction equalizer presets, with per-book overrides and graceful fallback when hardware effects are unavailable.
-- Plex music-library albums and WebDAV/SFTP NAS folders download as offline books; files stream to disk and credentials stay in platform secure storage. Mounted shares can be imported as folders on desktop.
+- Plex music-library albums and WebDAV/SFTP/SMB NAS folders download as offline books; files stream to disk and credentials stay in platform secure storage. Mounted shares can be imported as folders on desktop.
 - JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
 
-Plex, WebDAV and SFTP connections support browsing and offline downloads. Cross-device progress sync is not implemented. The web build displays an availability notice; browser audio import, playback and persistent library storage are not supported in this version.
+Plex, WebDAV, SFTP and SMB connections support browsing and offline downloads. Cross-device progress sync is not implemented. The Pages browser player has the smaller local-file scope described above.
 
 ## Development
 
@@ -201,7 +241,7 @@ not interrupt Android or iOS simulator builds that have already passed checks.
 
 ## Plex and NAS libraries
 
-Open **Import → Plex / WebDAV server** or **Settings → Servers & NAS**.
+Open **Import → Server / NAS** or **Settings → Servers & NAS**.
 For Plex, enter the server URL and an [X-Plex-Token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
 Audiobooks must be in a music library, one album per book. Albums download all
 tracks in disc/track order. For WebDAV, enter the NAS endpoint (including its
@@ -222,8 +262,8 @@ Keychain/OS secure storage. Disconnecting leaves offline books intact.
 
 CrispCloud’s separate provider adapters and secure credential storage informed
 this design. The shared `crisp_storage` package in CrispCloud now supplies
-Plex, WebDAV and SFTP transports, SSH trust, profiles and transfer scheduling;
-direct SMB and automatic Plex progress synchronization are still pending.
+Plex, WebDAV, SFTP and SMB transports, SSH trust, profiles and transfer scheduling.
+Automatic Plex progress synchronization remains pending.
 Mount SMB shares with Finder/Explorer/the desktop file manager and use
 **Import library folder / mounted share**. On iOS, connect a server in Files and select
 audio through the file picker. **Import folder as one book** copies all selected folder audio, including subfolders,
@@ -243,7 +283,7 @@ crisperplayer import-library "/Volumes/NAS/Audiobooks"
 
 A failed CLI batch exits with code 1 and reports completed book IDs and the failed
 folder as JSON. Already imported books remain available; review this output before
-retrying to avoid duplicates. WebDAV/SFTP folder downloads use direct audio
+retrying to avoid duplicates. WebDAV/SFTP/SMB folder downloads use direct audio
 children only, in natural filename order. Large remote files temporarily require both download and managed
 copy space. You can queue several books while browsing; downloads run one at a time.
 
@@ -290,8 +330,9 @@ Run isolated HTTP-resume and SFTP protocol tests (no NAS or OS account required)
 
 ```sh
 python3 -m venv /tmp/crisper-protocol-tests
-/tmp/crisper-protocol-tests/bin/pip install paramiko
-CRISPER_SFTP_PYTHON=/tmp/crisper-protocol-tests/bin/python flutter test
+/tmp/crisper-protocol-tests/bin/pip install paramiko impacket
+CRISPER_SFTP_PYTHON=/tmp/crisper-protocol-tests/bin/python \
+CRISPER_SMB_PYTHON=/tmp/crisper-protocol-tests/bin/python flutter test
 ```
 
 CI runs the same SFTP fixture. It verifies host-key rejection before password
@@ -346,3 +387,25 @@ To include the native SMB connection, Brickwright credential and offline-playbac
 smoke test, use `python3 scripts/macos_smb_smoke.py --python /path/to/python-with-impacket`.
 It starts a temporary loopback server and deletes its files and test credential
 entry afterwards. No OS file share or NAS configuration is changed.
+
+
+## Release and website maintenance
+
+CI runs analysis, unit/protocol checks and binary smoke builds. Tagged releases additionally
+build complete desktop app/CLI bundles on Windows, Linux and both Mac architectures,
+plus the signed Android APK. Publication waits for every required platform and produces
+`SHA256SUMS.txt`. iOS uses the separate signed internal TestFlight pipeline.
+See [the release procedure](docs/RELEASES.md) and [current release notes](docs/RELEASE_NOTES.md).
+
+The Pages workflow tests the real browser player at `/crisperplayer/` before deploying:
+
+```sh
+npm ci
+npx playwright install chromium
+npm test
+node scripts/serve_site.js # http://127.0.0.1:8765/crisperplayer/
+```
+
+Browser tests import generated WAV files, exercise native browser playback, natural track
+order, independent resume positions, bookmarks, export, deletion and a narrow viewport.
+They also check that listening does not issue uploads.

@@ -1,0 +1,28 @@
+Desktop audio components
+
+Windows uses media_kit_libs_windows_audio 1.0.9 and its libmpv/FFmpeg build.
+The plugin pins the mpv-dev-x86_64-20230924-git-652a1dd.7z binary:
+https://github.com/media-kit/libmpv-win32-audio-build/releases/tag/2023-09-24
+Plugin source and download/checksum configuration:
+https://github.com/media-kit/media-kit/tree/main/libs/windows/media_kit_libs_windows_audio
+Builder source and build configuration:
+https://github.com/media-kit/libmpv-win32-audio-build
+libmpv source: https://github.com/mpv-player/mpv
+FFmpeg source: https://ffmpeg.org/download.html
+
+The audio builder disables GPL components in mpv and FFmpeg. libmpv is used
+under LGPL-2.1-or-later; FFmpeg's enabled version-three components require
+LGPL-3.0-or-later. Their full license texts are included in this directory,
+including GPL-3.0 as incorporated by LGPL-3.0. Individual upstream components
+retain their copyrights and applicable licenses. See upstream build recipes
+and source for component-specific notices. This notice grants no new rights.
+
+Linux uses system libmpv and its codec dependencies rather than including
+those libraries in the release archive; install your distribution's packages.
+Android, iOS and macOS use their native playback backends.
+
+The app bundles its desktop libraries alongside the executable. For LGPL
+components, you may replace compatible shared libraries with modified builds;
+keep their required ABI and file names. Reverse engineering for debugging
+modifications to LGPL components is permitted under their upstream licenses.
+Dart/Flutter package notices are also available in Settings > About > Licenses.

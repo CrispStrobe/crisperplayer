@@ -1,6 +1,6 @@
 # Architecture
 
-Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex, WebDAV and SFTP for offline imports; cross-device progress synchronization is not implemented.
+Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex, WebDAV, SFTP and SMB for offline imports; cross-device progress synchronization is not implemented.
 
 ## Playback
 
@@ -84,3 +84,22 @@ allowlisted `/transfers` endpoint for pause/status only. Normal mutations remain
 serialized. Credential writes are serialized separately to prevent concurrent
 GUI/CLI sign-ins from losing stored accounts. Offline playback and listening
 progress remain independent of remote transfer state.
+
+
+## Distribution and browser player
+
+Tagged builds use `release.yml` and `scripts/release.py` to create complete app and
+native-asset CLI archives for Windows, Linux and both Mac architectures, plus a
+persistently signed Android APK. The release stays a draft until all required
+platforms succeed; an exact tag/pubspec match and checksums guard publication.
+iOS App Store delivery/internal TestFlight uses its own existing workflow.
+
+`site/` is a separate static browser player, deployed to GitHub Pages. It uses
+HTMLAudioElement, browser codecs and IndexedDB, with no Flutter/native transports,
+SQLite, server credentials or synchronization. Audio blobs and metadata are stored
+atomically, book progress is saved independently, and imported names are rendered
+as text. Browser tests use generated audio and the production Pages project path.
+
+The shared CrispCloud `crisp_storage` package now includes direct SMB2/3 in addition
+to Plex/WebDAV/SFTP. SMB3 encryption is required unless explicitly disabled for a
+signed SMB2 connection. Both apps use the same shared transport and resume checks.

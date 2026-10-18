@@ -17,3 +17,5 @@ Player accessibility: enlarged text no longer overflows the player, mini player 
 Library browser: saved Automatic/Cover grid/List layouts, an automatic list for enlarged text, scalable cover cards, scrolling search/status/sort/collection/series controls, clear search, larger book-action targets and a pinned mini player. CLI settings expose the same libraryView preference.
 
 Direct NAS access: add an SMB share with smb://host/share/. SMB3 encryption is required by default; older NAS servers can explicitly use signed SMB2. Downloads support pause/resume and changed-file detection. GUI and CLI use the same connection settings.
+
+About CrisperPlayer: dynamic installed version/build, provider/contact/privacy details, source and download links, collected dependency licenses and native storage/audio notices. Please check scrolling and license navigation with enlarged text.

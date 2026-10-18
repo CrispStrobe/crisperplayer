@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +20,16 @@ class MiniPlayer extends ConsumerWidget {
       initialData: svc.state,
       builder: (ctx, snap) {
         final st = snap.data ?? svc.state;
+        final duration = svc.bookDuration ?? st.duration;
+        final position = svc.bookDuration == null
+            ? st.position
+            : svc.bookPosition;
+        final progress = duration.inMilliseconds > 0
+            ? (position.inMilliseconds / duration.inMilliseconds).clamp(
+                0.0,
+                1.0,
+              )
+            : 0.0;
         final bookAsync = ref.watch(bookProvider(bookId));
         return bookAsync.when(
           data: (book) {
@@ -33,7 +44,7 @@ class MiniPlayer extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     LinearProgressIndicator(
-                      value: st.progress,
+                      value: progress,
                       minHeight: 3,
                       backgroundColor: cs.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation(cs.primary),
@@ -49,44 +60,71 @@ class MiniPlayer extends ConsumerWidget {
                               color: cs.primaryContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.menu_book,
-                                size: 20, color: cs.onPrimaryContainer),
+                            child: book.coverPath.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(book.coverPath),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Icon(
+                                        Icons.menu_book,
+                                        size: 20,
+                                        color: cs.onPrimaryContainer,
+                                      ),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.menu_book,
+                                    size: 20,
+                                    color: cs.onPrimaryContainer,
+                                  ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(book.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13)),
+                                Text(
+                                  book.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
-                                Row(children: [
-                                  Text(
-                                      '${formatDuration(st.position)} / ${formatDuration(st.duration)}',
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${formatDuration(position)} / ${formatDuration(duration)}',
                                       style: TextStyle(
-                                          fontSize: 11,
-                                          color: cs.onSurfaceVariant)),
-                                  const SizedBox(width: 8),
-                                  MiniWaveform(progress: st.progress),
-                                ]),
+                                        fontSize: 11,
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    MiniWaveform(progress: progress),
+                                  ],
+                                ),
                               ],
                             ),
                           ),
                           IconButton(
-                            icon: Icon(st.isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded),
+                            tooltip: st.isPlaying ? 'Pause' : 'Play',
+                            icon: Icon(
+                              st.isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                            ),
                             onPressed: () =>
                                 st.isPlaying ? svc.pause() : svc.play(),
                             visualDensity: VisualDensity.compact,
                           ),
                           IconButton(
                             icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => svc.stop(),
+                            tooltip: 'Close player',
+                            onPressed: () => svc.unload(),
                             visualDensity: VisualDensity.compact,
                           ),
                         ],

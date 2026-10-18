@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
+import '../models/book_preferences.dart';
+import 'audio/audio_metadata.dart';
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -91,7 +94,7 @@ class LibraryService {
       }
     }
     final id = const Uuid().v4();
-    final inferredTitle = title ?? _inferTitle(paths);
+    var inferredTitle = title ?? _inferTitle(paths);
     final dir = await _bookDirectory(id);
     await dir.create(recursive: true);
     try {
@@ -102,6 +105,9 @@ class LibraryService {
         await File(paths[i]).copy(dest);
         ownedPaths.add(dest);
       }
+      final metadata = await AudioMetadata.read(ownedPaths.first);
+      if (title == null && metadata.title != null) inferredTitle = metadata.title!;
+      final inferredAuthor = author ?? metadata.author ?? 'Unknown';
       final durations = await _probeDurations(ownedPaths);
       final total = _total(durations);
       var chapters = _chaptersFromTracks(id, ownedPaths, durations);
@@ -127,11 +133,19 @@ class LibraryService {
         cover = await CoverExtractor.extractCover(ownedPaths.first,
             outputDirectory: dir);
       }
+      if (metadata.artwork != null) {
+        final ext = AudioMetadata.imageExtension(metadata.artwork!);
+        if (ext != null) {
+          final image = File(p.join(dir.path, 'cover.$ext'));
+          await image.writeAsBytes(metadata.artwork!, flush: true);
+          cover = image.path;
+        }
+      }
       await db.transaction(() async {
         await db.upsertBook(BooksCompanion.insert(
             id: id,
             title: inferredTitle,
-            author: Value(author ?? 'Unknown'),
+            author: Value(inferredAuthor),
             coverPath: Value(cover ?? ''),
             filePathsJson: AppDatabase.encodePaths(ownedPaths),
             totalDurationMs: Value(total?.inMilliseconds ?? 0),
@@ -144,6 +158,69 @@ class LibraryService {
       await dir.delete(recursive: true);
       rethrow;
     }
+  }
+
+  Future<void> editBook(String id, Map<String, dynamic> changes) async {
+    if (await getBook(id) == null) throw StateError('Book not found');
+    const keys = {'title', 'author', 'series', 'seriesOrder', 'collection'};
+    if (changes.keys.any((k) => !keys.contains(k))) throw const FormatException('Unknown book detail');
+    for (final key in ['title', 'author', 'series', 'collection']) {
+      if (!changes.containsKey(key)) continue;
+      final value = changes[key];
+      if (value is! String || value.length > 1000 || (key == 'title' && value.trim().isEmpty)) throw FormatException('Invalid $key');
+    }
+    final order = changes['seriesOrder'];
+    if (order != null && (order is! num || !order.isFinite || order < 0)) throw const FormatException('Invalid seriesOrder');
+    await (db.update(db.books)..where((t) => t.id.equals(id))).write(BooksCompanion(
+      title: changes.containsKey('title') ? Value((changes['title'] as String).trim()) : const Value.absent(),
+      author: changes.containsKey('author') ? Value((changes['author'] as String).trim()) : const Value.absent(),
+      series: changes.containsKey('series') ? Value((changes['series'] as String).trim()) : const Value.absent(),
+      collection: changes.containsKey('collection') ? Value((changes['collection'] as String).trim()) : const Value.absent(),
+      seriesOrder: changes.containsKey('seriesOrder') ? Value((order as num?)?.toDouble()) : const Value.absent(),
+    ));
+  }
+
+  Future<void> setCover(String id, Uint8List image) async {
+    if (await getBook(id) == null) throw StateError('Book not found');
+    final ext = AudioMetadata.imageExtension(image);
+    if (image.length > 10 * 1024 * 1024 || ext == null) throw const FormatException('Cover must be a JPEG or PNG under 10 MB');
+    final directory = await _bookDirectory(id);
+    await directory.create(recursive: true);
+    final file = File(p.join(directory.path, 'cover-${const Uuid().v4()}.$ext'));
+    try {
+      await file.writeAsBytes(image, flush: true);
+      await (db.update(db.books)..where((t) => t.id.equals(id))).write(BooksCompanion(coverPath: Value(file.path)));
+    } catch (_) {
+      if (await file.exists()) await file.delete();
+      rethrow;
+    }
+  }
+
+  Future<bool> refreshMetadata(String id) async {
+    final book = await getBook(id);
+    if (book == null) throw StateError('Book not found');
+    final paths = AppDatabase.decodePaths(book.filePathsJson);
+    if (paths.isEmpty) return false;
+    final metadata = await AudioMetadata.read(paths.first);
+    if (metadata.title == null && metadata.author == null && metadata.artwork == null) return false;
+    await editBook(id, {if (metadata.title != null) 'title': metadata.title,
+      if (metadata.author != null) 'author': metadata.author});
+    if (metadata.artwork != null && AudioMetadata.imageExtension(metadata.artwork!) != null) await setCover(id, metadata.artwork!);
+    return true;
+  }
+
+  Future<Map<String, dynamic>> preferences(String id) async {
+    final book = await getBook(id);
+    if (book == null) throw StateError('Book not found');
+    return BookPreferences.decode(book.playbackPreferencesJson);
+  }
+  Future<void> setPreferences(String id, Map<String, dynamic> changes, {bool reset = false}) async {
+    final current = reset ? <String, dynamic>{} : await preferences(id);
+    // Validate patch keys even if the value is null (null removes an override).
+    final normalized = BookPreferences.validate({...current, ...changes});
+    if (await getBook(id) == null) throw StateError('Book not found');
+    await (db.update(db.books)..where((t) => t.id.equals(id))).write(
+      BooksCompanion(playbackPreferencesJson: Value(jsonEncode(normalized))));
   }
 
   /// Re-read embedded chapters without changing progress, bookmarks or audio.
@@ -368,17 +445,20 @@ class LibraryService {
   }
 
   Future<void> updateProgress(String id, String file, Duration pos,
-      Duration bookPos, Duration total) async {
+      Duration bookPos, Duration total, {bool isPlaying = true}) async {
     final progress = total.inMilliseconds == 0
         ? 0.0
         : (bookPos.inMilliseconds / total.inMilliseconds).clamp(0.0, 1.0);
+    final book = await getBook(id);
+    if (book == null) return;
+    final finished = book.finishedOverride ?? (progress >= 0.99);
     await (db.update(db.books)..where((t) => t.id.equals(id))).write(
         BooksCompanion(
-            lastPlayedAtMs: Value(DateTime.now().millisecondsSinceEpoch),
+            lastPlayedAtMs: isPlaying ? Value(DateTime.now().millisecondsSinceEpoch) : const Value.absent(),
             lastPositionFilePath: Value(file),
             lastPositionMs: Value(pos.inMilliseconds),
-            totalProgress: Value(progress),
-            isFinished: Value(progress >= 0.99)));
+            totalProgress: Value(finished ? 1 : progress),
+            isFinished: Value(finished)));
   }
 
   Future<List<String>> scanFolder(String folderPath) async {

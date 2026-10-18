@@ -5,3 +5,5 @@ This build rewrites playback/history coordination, uses measured per-file durati
 Chapter navigation now works within single-file audiobooks as well as across files. Added QuickTime chapter tables, Unicode chapter titles, reloading chapters for existing imports, and speed-adjusted listening time remaining.
 
 Requires iOS 15 or newer. Corrected document import configuration for App Store delivery.
+
+Library and playback improvements: editable book details and covers; MP4/MP3 embedded metadata and artwork; numbered series and collections; finished/unfinished/unread controls; per-book playback preferences; configurable smart rewind; persistent Up next queue; listening statistics; player keyboard shortcuts. CLI covers the same operations.

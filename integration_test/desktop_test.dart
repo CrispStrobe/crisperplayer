@@ -121,6 +121,47 @@ void main() {
           ),
           isTrue,
         );
+        await client.command('book-edit', {'bookId': bookId, 'changes': {
+          'title': 'Native edited book', 'series': 'Native saga', 'seriesOrder': 2,
+          'collection': 'Smoke tests'}});
+        await tester.pumpAndSettle();
+        expect(find.text('Native edited book'), findsWidgets);
+        await tester.tap(find.byType(PopupMenuButton<String>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Edit book details'));
+        await tester.pumpAndSettle();
+        final authorField = find.byWidgetPredicate((widget) => widget is TextField && widget.decoration?.labelText == 'Author');
+        await tester.enterText(authorField, 'Native edited author');
+        await tester.tap(find.text('Save'));
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await tester.pumpAndSettle();
+        expect((await db.getBook(bookId))!.author, 'Native edited author');
+        await client.command('book-settings', {'bookId': bookId, 'values': {'speed': 1.75, 'seekSeconds': 15}});
+        expect(player.speed, 1.75);
+        final second = await client.importFiles([owned], title: 'Queued native book') as Map;
+        final secondId = second['bookId'] as String;
+        await client.command('queue-add', {'bookId': secondId});
+        final queued = await client.command('queue') as List;
+        expect((queued.single as Map)['book']['id'], secondId);
+        await tester.tap(find.byType(PopupMenuButton<String>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Up next'));
+        await tester.pumpAndSettle();
+        expect(find.text('Queued native book'), findsOneWidget);
+        await tester.tap(find.byTooltip('Remove from queue'));
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await tester.pumpAndSettle();
+        expect(await db.queue(), isEmpty);
+        Navigator.of(tester.element(find.text('Up next'))).pop();
+        await tester.pumpAndSettle();
+        await client.command('load', {'bookId': secondId});
+        await tester.pumpAndSettle();
+        expect(find.text('Queued native book'), findsWidgets);
+        expect(player.speed, settings.playbackSpeed);
+        await client.command('load', {'bookId': bookId});
+        await tester.pumpAndSettle();
+        expect(find.text('Native edited book'), findsWidgets);
+        expect(player.speed, 1.75);
         await client.command('play');
         await Future<void>.delayed(const Duration(milliseconds: 300));
         await client.command('pause');

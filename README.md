@@ -11,7 +11,9 @@ A local audiobook player built with Flutter, Riverpod, Drift, just_audio and aud
 - Resume positions, bookmarks and listening history are stored locally. Bookmarks restore the book and physical track as well as the position.
 - M4B/M4A Nero and QuickTime text-track chapters and embedded covers are parsed on device, including Unicode titles. Large audio payloads are skipped rather than loaded into memory. Existing imports can reload embedded chapters from the player menu or CLI.
 - Player and system next/previous controls navigate chapters within a file and across files. Previous restarts the current chapter after three seconds. The player shows listening time remaining at the selected speed.
-- Configurable playback speed, volume, skip silence, seek interval, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
+- Editable titles/authors/covers, series with numbered order, named collections, and finished/unfinished/unread status. Imports read MP4 and ID3v2.3/v2.4 title/author/artwork tags.
+- Persistent Up next queue with reordering and automatic continuation at book completion. Sleep timers prevent automatic continuation.
+- Per-book speed, skip silence, skip interval and smart rewind overrides; missing overrides inherit app defaults. Configurable volume, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
 - Sleep timers can pause immediately at expiry or at the end of the chapter playing when the countdown expires. Immediate chapter mode captures the current chapter boundary.
 - JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
 
@@ -29,7 +31,7 @@ flutter test
 flutter run -d <device-id>
 ```
 
-The database upgrades version-one libraries in place. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
+The database upgrades version-one and version-two libraries in place; schema three adds organization, playback preferences and the queue. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
 
 The playback tests use the production coordinator and SQLite with an injected audio backend that preserves just_audio's pending `play()` future semantics. Native decoder, interruption and background behavior still require device testing:
 
@@ -129,12 +131,37 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 
 | Priority | Work remaining |
 | --- | --- |
-| Next | Embedded title/author metadata, MP3 artwork, editable book details |
-| Next | Per-book speed and playback preferences; configurable smart rewind |
-| Next | Series/collections, manual finished/unread status, and a playback queue |
-| Then | Desktop keyboard shortcuts, accessibility audit, listening statistics |
+| Added | MP4/ID3 title and author tags, MP3 artwork, editable book details/covers |
+| Added | Per-book playback preferences and configurable smart rewind |
+| Added | Series, collections, reading status and a persistent playback queue |
+| Added | Player keyboard shortcuts and listening time totals (today/7 days/all time) |
+| Next | Accessibility/device audit, FLAC/Vorbis metadata, audio effects, richer library folders |
 | Later | Audiobookshelf/Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |
 
 Every new player/library operation should be available through the desktop CLI.
 Server integrations and platform extensions require their own device validation.
+
+Book actions are available from the library's three-dot menu; player menus also
+expose book details, playback preferences and Up next. Speed changes in the player
+are remembered for that book. Application settings remain the defaults for books
+without overrides.
+
+```sh
+dart run bin/crisperplayer.dart book-edit BOOK_ID '{"title":"Title","author":"Author","series":"Saga","seriesOrder":2,"collection":"Favorites"}'
+dart run bin/crisperplayer.dart book-cover BOOK_ID /path/to/cover.jpg
+dart run bin/crisperplayer.dart book-settings BOOK_ID '{"speed":1.5,"seekSeconds":15,"smartRewindSeconds":10}'
+dart run bin/crisperplayer.dart book-settings BOOK_ID '{"speed":null}' # inherit default speed
+dart run bin/crisperplayer.dart book-settings BOOK_ID reset
+dart run bin/crisperplayer.dart mark BOOK_ID finished # or unfinished / unread
+dart run bin/crisperplayer.dart list --series Saga --collection Favorites --sort series
+dart run bin/crisperplayer.dart queue-add BOOK_ID 1 # position 1 plays next
+dart run bin/crisperplayer.dart queue
+dart run bin/crisperplayer.dart queue-remove BOOK_ID
+dart run bin/crisperplayer.dart queue-play
+dart run bin/crisperplayer.dart stats
+```
+
+In the player: Space toggles playback, arrows skip, Shift+arrows change chapter,
+and B adds a bookmark. Shortcuts leave text editing alone. Listening statistics
+show actual listening time, independent of playback speed.

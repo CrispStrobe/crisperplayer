@@ -3,6 +3,7 @@ import 'package:crisperplayer/screens/player_screen.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:crisperplayer/services/db/app_database.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'support/playback_harness.dart';
@@ -81,6 +82,11 @@ void main() {
           expect(tester.element(chip), same(element));
           expect(transport.hitTestable(), findsOneWidget);
         }
+        await tester.runAsync(h.playback.pause);
+        await tester.pump();
+        await tester.runAsync(() => tester.sendKeyEvent(LogicalKeyboardKey.space));
+        await tester.runAsync(h.flush);
+        expect(h.backend.playing, isTrue);
         await tester.runAsync(h.playback.pause);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());

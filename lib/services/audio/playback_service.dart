@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:drift/drift.dart' show Value;
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/widgets.dart';
@@ -37,6 +38,7 @@ class PlaybackService with WidgetsBindingObserver {
   String? get currentBookId => _currentBookId;
   List<BookTrack> _tracks = [];
   List<Chapter> _chapters = [];
+  Map<String, dynamic> _bookPreferences = {};
   int get _index => _backend?.currentIndex ?? 0;
   Duration get _position => _backend?.position ?? Duration.zero;
   Timer? _progressTimer;
@@ -140,8 +142,10 @@ class PlaybackService with WidgetsBindingObserver {
           await _endSession();
           if (ps.processingState == ProcessingState.completed) {
             await _persistProgress();
+            final allowNext = ps.playing && _sleepTimer == null && !_waitingForChapterEnd;
             await _backend!.pause();
             cancelSleepTimer();
+            if (allowNext) await _playNextQueued();
           }
         }
       }));
@@ -184,11 +188,11 @@ class PlaybackService with WidgetsBindingObserver {
   void _settingsChanged() => _background(_command(_applySettings));
   Future<void> _applySettings() async {
     if (settings == null || _backend == null) return;
-    final speed = settings!.playbackSpeed;
+    final speed = (_bookPreferences['speed'] as num?)?.toDouble() ?? settings!.playbackSpeed;
     if (state.speed != speed) await _endSession();
     await _backend!.setSpeed(speed);
     await _backend!.setVolume(settings!.volume);
-    await _backend!.setSkipSilence(settings!.skipSilence);
+    await _backend!.setSkipSilence(_bookPreferences['skipSilence'] as bool? ?? settings!.skipSilence);
     _emit(state.copyWith(speed: speed, volume: settings!.volume));
     if (_backend!.playing) await _startSession();
     _startAutoBookmark();
@@ -278,6 +282,7 @@ class PlaybackService with WidgetsBindingObserver {
       }
       _chapters = await db.chaptersFor(id);
       _currentBookId = id;
+      _bookPreferences = await library.preferences(id);
       await _applySettings();
       await _syncHandler();
       _emit(state.copyWith(status: m.PlaybackStatus.paused));
@@ -303,12 +308,17 @@ class PlaybackService with WidgetsBindingObserver {
     final pausedAt = _pausedAt;
     _pausedAt = null;
     if (_currentBookId == null || _backend == null) return;
+    if (bookDuration != null && bookPosition >= bookDuration!) {
+      await _seekBook(Duration.zero);
+    }
     if (pausedAt != null && shouldSmartRewind(pausedAt)) {
-      await _seekBook(bookPosition - smartRewindAmount);
+      await _seekBook(applySmartRewind(bookPosition));
     }
     if (_audioSession != null && !await _audioSession!.setActive(true)) {
       throw StateError('Audio session unavailable');
     }
+    await (db.update(db.books)..where((t) => t.id.equals(_currentBookId!))).write(
+      const BooksCompanion(finishedOverride: Value(null)));
     // just_audio's play Future lasts until pause/stop/completion.
     _background(_backend!.play().catchError((Object e) async {
       await _command(() async {
@@ -347,6 +357,7 @@ class PlaybackService with WidgetsBindingObserver {
         _currentBookId = null;
         _tracks = [];
         _chapters = [];
+        _bookPreferences = {};
         cancelSleepTimer();
         _autoBookmarkTimer?.cancel();
         await _audioHandler?.setQueueItems([]);
@@ -487,6 +498,62 @@ class PlaybackService with WidgetsBindingObserver {
         await _seekChapter(_chapters[index]);
       });
 
+  Future<void> updateBookPreferences(String id, Map<String, dynamic> values, {bool reset = false}) => _command(() async {
+    await library.setPreferences(id, values, reset: reset);
+    if (id == _currentBookId) {
+      _bookPreferences = await library.preferences(id);
+      await _applySettings();
+    }
+  });
+
+  Future<void> updateBookDetails(String id, Map<String, dynamic> values) => _command(() async {
+    await library.editBook(id, values);
+    if (id == _currentBookId) await _syncHandler();
+  });
+
+  Future<void> markBook(String id, String status) => _command(() async {
+    if (!{'finished', 'unfinished', 'unread'}.contains(status)) throw const FormatException('Invalid reading status');
+    if (await db.getBook(id) == null) throw StateError('Book not found');
+    if (id == _currentBookId) {
+      await _pause();
+      cancelSleepTimer();
+      if (status == 'unread' && _tracks.isNotEmpty) await _seekTrack(0, Duration.zero);
+    }
+    final stored = (await db.getBook(id))!;
+    final tracks = await db.tracksFor(id);
+    var position = stored.lastPositionMs;
+    final index = tracks.indexWhere((t) => t.filePath == stored.lastPositionFilePath);
+    for (var i = 0; i < index; i++) { position += tracks[i].durationMs ?? 0; }
+    final progress = stored.totalDurationMs > 0 ? (position / stored.totalDurationMs).clamp(0.0, 1.0) : 0.0;
+    await (db.update(db.books)..where((t) => t.id.equals(id))).write(BooksCompanion(
+      isFinished: Value(status == 'finished'),
+      finishedOverride: Value(status == 'finished'),
+      totalProgress: Value(status == 'finished' ? 1 : status == 'unread' ? 0 : progress),
+      lastPositionMs: status == 'unread' ? const Value(0) : const Value.absent(),
+      lastPositionFilePath: status == 'unread' ? const Value(null) : const Value.absent(),
+      lastPlayedAtMs: status == 'unread' ? const Value(null) : const Value.absent(),
+    ));
+  });
+
+  Future<void> enqueue(String id, {int? position}) => _command(() => db.transaction(() async {
+    if (await db.getBook(id) == null) throw StateError('Book not found');
+    final ids = (await db.queue()).map((e) => e.bookId).where((e) => e != id).toList();
+    ids.insert((position ?? ids.length).clamp(0, ids.length), id);
+    await db.replaceQueue(ids);
+  }));
+  Future<void> removeFromQueue(String id) => _command(() async {
+    await (db.delete(db.playbackQueue)..where((t) => t.bookId.equals(id))).go();
+  });
+  Future<void> playNextQueued() => _command(_playNextQueued);
+  Future<void> _playNextQueued() async {
+    final entries = await db.queue();
+    if (entries.isEmpty) return;
+    final id = entries.first.bookId;
+    // Keep the entry if loading fails, so a missing file never loses the queue.
+    await _loadBook(id, autoPlay: true);
+    await (db.delete(db.playbackQueue)..where((t) => t.bookId.equals(id))).go();
+  }
+
   Future<void> seekBookmark(Bookmark bookmark) => _command(() async {
         if (_currentBookId != bookmark.bookId) await _loadBook(bookmark.bookId);
         final index =
@@ -496,7 +563,7 @@ class PlaybackService with WidgetsBindingObserver {
         }
         await _seekTrack(index, Duration(milliseconds: bookmark.positionMs));
       });
-  int get seekSeconds => settings?.seekSeconds ?? 30;
+  int get seekSeconds => _bookPreferences['seekSeconds'] as int? ?? settings?.seekSeconds ?? 30;
   Future<void> skipForward([int? seconds]) => _skip(seconds ?? seekSeconds);
   Future<void> skipBack([int? seconds]) => _skip(-(seconds ?? seekSeconds));
   Future<void> _skip(int seconds) => _command(() async {
@@ -521,7 +588,12 @@ class PlaybackService with WidgetsBindingObserver {
         await _endSession();
         await _backend?.setSpeed(speed);
         _emit(state.copyWith(speed: speed));
-        settings?.playbackSpeed = speed;
+        if (_currentBookId != null) {
+          await library.setPreferences(_currentBookId!, {'speed': speed});
+          _bookPreferences = await library.preferences(_currentBookId!);
+        } else {
+          settings?.playbackSpeed = speed;
+        }
         if (_backend?.playing == true) await _startSession();
       });
   Future<void> setVolume(double volume) => _command(() async {
@@ -632,7 +704,7 @@ class PlaybackService with WidgetsBindingObserver {
       return;
     }
     await library.updateProgress(_currentBookId!, _tracks[_index].filePath,
-        _position, bookPosition, bookDuration ?? Duration.zero);
+        _position, bookPosition, bookDuration ?? Duration.zero, isPlaying: _backend?.playing == true);
     if (_activeSessionId != null) {
       await history.endSession(
           _activeSessionId!, bookPosition, _sessionClock!.elapsed,
@@ -683,10 +755,12 @@ class PlaybackService with WidgetsBindingObserver {
     await history.endSession(id, bookPosition, elapsed);
   }
 
+  Duration get rewindAmount => Duration(seconds: _bookPreferences['smartRewindSeconds'] as int? ?? settings?.smartRewindSeconds ?? 5);
+  Duration get rewindThreshold => Duration(seconds: _bookPreferences['smartRewindAfterSeconds'] as int? ?? settings?.smartRewindAfterSeconds ?? 60);
   bool shouldSmartRewind(DateTime pausedAt, {DateTime? now}) =>
-      (now ?? this.now()).difference(pausedAt) > smartRewindThreshold;
+      rewindAmount > Duration.zero && (now ?? this.now()).difference(pausedAt) > rewindThreshold;
   Duration applySmartRewind(Duration pos) =>
-      pos < smartRewindAmount ? Duration.zero : pos - smartRewindAmount;
+      pos < rewindAmount ? Duration.zero : pos - rewindAmount;
 
   /// Flush position on backgrounding; the listening session continues with audio.
   Future<void> handleAppPaused() => _command(_persistProgress);

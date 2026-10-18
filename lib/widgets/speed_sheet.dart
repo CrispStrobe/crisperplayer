@@ -39,7 +39,7 @@ class _SpeedSheetState extends State<_SpeedSheet> {
             Row(children: [
               Icon(Icons.speed, color: cs.primary),
               const SizedBox(width: 10),
-              Text('Playback speed',
+              Text('Speed for this book',
                   style: Theme.of(context).textTheme.titleLarge),
               const Spacer(),
               Container(

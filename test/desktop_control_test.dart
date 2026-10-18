@@ -31,6 +31,34 @@ void main() {
     await h.dispose();
   });
 
+  test('CLI metadata, preferences, organization, reading status and queue share GUI behavior', () async {
+    await h.book('a',[60]); await h.book('b',[90]);
+    await client.command('book-edit', {'bookId':'a','changes':{
+      'title':'Edited title','author':'Author','series':'Saga','seriesOrder':2,'collection':'Favorites'}});
+    final books = await client.command('list', {'series':'Saga','collection':'Favorites','sort':'series'}) as List;
+    expect(books,hasLength(1)); expect(books.single['title'],'Edited title');
+    await client.command('load',{'bookId':'a'});
+    await client.command('book-settings',{'bookId':'a','values':{'speed':1.75,'seekSeconds':15}});
+    expect(h.backend.speed,1.75); expect(h.settings.playbackSpeed,1);
+    await client.command('book-settings',{'bookId':'a','values':{'speed':null}});
+    expect(h.backend.speed,1);
+    await client.command('book-cover',{'bookId':'a','base64':base64Encode([137,80,78,71,13,10,26,10])});
+    expect((await h.db.getBook('a'))!.coverPath,isNotEmpty);
+    await client.command('mark',{'bookId':'a','status':'finished'});
+    expect(await client.command('list',{'filter':'finished'}),hasLength(1));
+    await client.command('mark',{'bookId':'a','status':'unread'});
+    expect((await h.db.getBook('a'))!.totalProgress,0);
+    await client.command('queue-add',{'bookId':'a'}); await client.command('queue-add',{'bookId':'b','position':1});
+    expect(((await client.command('queue') as List).first as Map)['book']['id'],'b');
+    await client.command('queue-remove',{'bookId':'a'});
+    await client.command('queue-play'); expect(h.playback.currentBookId,'b');
+    expect(await client.command('queue'),isEmpty);
+    expect((await client.command('stats') as Map).containsKey('totalMs'),isTrue);
+    await expectLater(client.command('book-settings',{'bookId':'b','values':{'speed':99}}),throwsStateError);
+    await expectLater(client.command('queue-add',{'bookId':'missing'}),throwsStateError);
+    expect((await client.command('status') as Map)['bookId'],'b');
+  });
+
   test(
     'CLI controls the production coordinator and persists bookmark/progress',
     () async {

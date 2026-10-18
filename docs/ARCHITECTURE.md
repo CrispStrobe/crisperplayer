@@ -18,15 +18,17 @@ Chapter-end sleep captures a fixed endpoint when entering chapter mode. Subseque
 
 Library imports validate source availability, naturally sort filenames, stream-copy files into `<application-support>/library/<book-id>/`, probe durations and write books, tracks and chapters in a transaction. Import failure removes the managed copies. Deletion stops the active book, removes related metadata atomically and deletes only that book's managed directory.
 
-Schema version two adds `book_tracks`; version-one rows and positions remain intact. The first load adopts legacy files into managed storage, remaps chapter/bookmark/resume paths and probes timing. Missing legacy files produce an actionable error instead of silently replacing their timing.
+Schema version two adds `book_tracks`; schema three adds series/collection fields, validated per-book playback overrides, manual reading-status overrides and `playback_queue`. Earlier rows and positions remain intact. The first load adopts legacy files into managed storage, remaps chapter/bookmark/resume paths and probes timing. Missing legacy files produce an actionable error instead of silently replacing their timing.
 
-MP4 metadata extraction seeks past audio payload atoms and reads only the `moov` atom, with a 32 MB limit. Covers live alongside their managed book files. Nero chapters are supported; QuickTime text-track chapter support remains future work.
+MP4 metadata extraction seeks past audio payload atoms and reads only the `moov` atom, with a 32 MB limit. Covers live alongside their managed book files. Nero and referenced QuickTime text-track chapters are supported. QuickTime sample tables and text reads are bounded, with stco/co64 offsets, Unicode titles and common edit-list timing. ID3v2.3/v2.4 text and artwork reads are capped at 16 MB of tag data.
 
-Metadata exports include schema version and tracks. Imports reject unsupported versions and apply updates atomically using upserts, avoiding SQLite REPLACE's delete-and-cascade behavior. Audio is not embedded in JSON.
+Metadata exports include schema version, tracks, organization, per-book preferences and queue order. Imports reject unsupported versions and apply updates atomically using upserts, avoiding SQLite REPLACE's delete-and-cascade behavior. Audio is not embedded in JSON.
 
 ## Settings and shares
 
-`SettingsService` is a ChangeNotifier backed by SharedPreferences. Riverpod observes it for theme and settings UI; playback observes it for player configuration, seek intervals and automatic bookmarks. Startup restoration loads the last played book paused when enabled.
+`SettingsService` is a ChangeNotifier backed by SharedPreferences. Riverpod observes it for theme and settings UI; playback observes it for player configuration, seek intervals and automatic bookmarks. Startup restoration loads the last played book paused when enabled. Per-book speed, skip silence, seek interval and smart rewind inherit these defaults unless explicitly overridden. Player speed changes update the current book override.
+
+The coordinator advances the persistent book queue only on playing completion and without a pending sleep timer. Failed loads retain their queue entry; successful loads remove it. The player follows CLI and queue book changes without reloading or pausing the new book.
 
 Share intake accepts cold and warm shares, supports callback rebinding and serializes imports. Identical simultaneous deliveries share one import. The native stream and reset operations are injectable for regression tests.
 

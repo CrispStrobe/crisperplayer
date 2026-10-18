@@ -6,7 +6,14 @@ const usage = '''CrisperPlayer desktop CLI
 Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
 
   status                 Show playback state
-  list [--query TEXT] [--sort FIELD] [--filter all|recent|finished]
+  book-edit BOOK_ID JSON Edit title, author, series, seriesOrder, collection
+  book-cover BOOK_ID FILE Set JPEG/PNG cover
+  book-settings BOOK_ID [JSON|reset] Set overrides; null inherits app default
+  mark BOOK_ID finished|unfinished|unread
+  refresh-metadata [BOOK_ID] Reload embedded title, author and artwork
+  queue / queue-add BOOK_ID [POSITION] / queue-remove BOOK_ID / queue-play
+  stats                  Show listening time (today, last 7 days, total)
+  list [--query TEXT] [--sort FIELD] [--filter all|recent|finished|unfinished|unread] [--series NAME] [--collection NAME]
   import FILE...         Import files or folders as one multi-track book
   chapters [BOOK_ID]      List chapters
   refresh-chapters [BOOK_ID]  Re-read embedded chapters without re-importing
@@ -109,11 +116,67 @@ Future<void> main(List<String> arguments) async {
           }
         }
         result = await client.importFiles(files, title: title, author: author);
+      case 'book-edit' || 'book-settings':
+        if (args.isEmpty ||
+            args.length > 2 ||
+            (command == 'book-edit' && args.length != 2)) {
+          throw FormatException('$command requires BOOK_ID and a JSON object');
+        }
+        final values = args.length == 2 && args[1] != 'reset'
+            ? jsonDecode(args[1])
+            : null;
+        if (values != null && values is! Map<String, dynamic>) {
+          throw const FormatException('Expected a JSON object');
+        }
+        result = await client.command(command, {
+          'bookId': args.first,
+          (command == 'book-edit' ? 'changes' : 'values'): ?values,
+          if (command == 'book-settings' &&
+              args.length == 2 &&
+              args[1] == 'reset')
+            'reset': true,
+        });
+      case 'book-cover':
+        if (args.length != 2) {
+          throw const FormatException('book-cover requires BOOK_ID FILE');
+        }
+        final file = File(args[1]);
+        if (await file.length() > 10 * 1024 * 1024) {
+          throw const FormatException('Cover exceeds 10 MB');
+        }
+        result = await client.command(command, {
+          'bookId': args[0],
+          'base64': base64Encode(await file.readAsBytes()),
+        });
+      case 'mark':
+        if (args.length != 2) {
+          throw const FormatException(
+            'mark requires BOOK_ID finished|unfinished|unread',
+          );
+        }
+        result = await client.command(command, {
+          'bookId': args[0],
+          'status': args[1],
+        });
+      case 'queue-add':
+        if (args.isEmpty || args.length > 2) {
+          throw const FormatException('queue-add requires BOOK_ID [POSITION]');
+        }
+        result = await client.command(command, {
+          'bookId': args.first,
+          if (args.length == 2) 'position': int.parse(args[1]),
+        });
       case 'list':
         final options = <String, Object?>{};
         while (args.isNotEmpty) {
           final flag = args.removeAt(0);
-          if (!['--query', '--sort', '--filter'].contains(flag) ||
+          if (![
+                '--query',
+                '--sort',
+                '--filter',
+                '--series',
+                '--collection',
+              ].contains(flag) ||
               args.isEmpty) {
             throw const FormatException(
               'list accepts --query, --sort, and --filter with values',
@@ -122,7 +185,10 @@ Future<void> main(List<String> arguments) async {
           options[flag.substring(2)] = args.removeAt(0);
         }
         result = await client.command(command, options);
-      case 'status' ||
+      case 'stats' ||
+          'queue' ||
+          'queue-play' ||
+          'status' ||
           'pause' ||
           'stop' ||
           'next' ||
@@ -133,7 +199,7 @@ Future<void> main(List<String> arguments) async {
           throw FormatException('$command takes no arguments');
         }
         result = await client.command(command);
-      case 'delete' || 'load':
+      case 'queue-remove' || 'delete' || 'load':
         if (args.length != 1) {
           throw FormatException('$command requires one book ID');
         }
@@ -142,7 +208,8 @@ Future<void> main(List<String> arguments) async {
           'bookmarks' ||
           'chapters' ||
           'history' ||
-          'refresh-chapters':
+          'refresh-chapters' ||
+          'refresh-metadata':
         if (args.length > 1) {
           throw FormatException('$command accepts one book ID');
         }

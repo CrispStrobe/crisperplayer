@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../models/book_preferences.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
@@ -7,6 +8,10 @@ part 'app_database.g.dart';
 class Books extends Table {
   TextColumn get id => text()();
   TextColumn get title => text()();
+  TextColumn get series => text().withDefault(const Constant(''))();
+  RealColumn get seriesOrder => real().nullable()();
+  TextColumn get collection => text().withDefault(const Constant(''))();
+  TextColumn get playbackPreferencesJson => text().withDefault(const Constant('{}'))();
   TextColumn get author => text().withDefault(const Constant('Unknown'))();
   TextColumn get coverPath => text().withDefault(const Constant(''))();
   TextColumn get filePathsJson => text()();
@@ -16,6 +21,7 @@ class Books extends Table {
   TextColumn get lastPositionFilePath => text().nullable()();
   IntColumn get lastPositionMs => integer().withDefault(const Constant(0))();
   RealColumn get totalProgress => real().withDefault(const Constant(0))();
+  BoolColumn get finishedOverride => boolean().nullable()();
   BoolColumn get isFinished => boolean().withDefault(const Constant(false))();
   @override
   Set<Column> get primaryKey => {id};
@@ -75,18 +81,33 @@ class ListeningHistory extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+class PlaybackQueue extends Table {
+  TextColumn get bookId => text().customConstraint('NOT NULL REFERENCES books(id) ON DELETE CASCADE')();
+  IntColumn get position => integer()();
+  @override
+  Set<Column> get primaryKey => {bookId};
+}
+
 @DriftDatabase(
-    tables: [Books, BookTracks, Chapters, Bookmarks, ListeningHistory])
+    tables: [Books, BookTracks, Chapters, Bookmarks, ListeningHistory, PlaybackQueue])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'crisperplayer'));
   AppDatabase.forTesting(super.e);
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.createTable(bookTracks);
+          if (from < 3) {
+            await m.addColumn(books, books.finishedOverride);
+            await m.addColumn(books, books.series);
+            await m.addColumn(books, books.seriesOrder);
+            await m.addColumn(books, books.collection);
+            await m.addColumn(books, books.playbackPreferencesJson);
+            await m.createTable(playbackQueue);
+          }
         },
         beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
       );
@@ -99,6 +120,15 @@ class AppDatabase extends _$AppDatabase {
         await (delete(bookTracks)..where((t) => t.bookId.equals(bookId))).go();
         await batch((b) => b.insertAll(bookTracks, tracks));
       });
+  Future<List<PlaybackQueueData>> queue() => (select(playbackQueue)
+    ..orderBy([(t) => OrderingTerm.asc(t.position)])).get();
+  Stream<List<PlaybackQueueData>> watchQueue() => (select(playbackQueue)
+    ..orderBy([(t) => OrderingTerm.asc(t.position)])).watch();
+  Future<void> replaceQueue(List<String> ids) => transaction(() async {
+    await delete(playbackQueue).go();
+    await batch((b) => b.insertAll(playbackQueue, [for (var i = 0; i < ids.length; i++)
+      PlaybackQueueCompanion.insert(bookId: ids[i], position: i)]));
+  });
   Future<void> clearAllChapters() => delete(chapters).go();
   Future<List<Book>> get allBooks => select(books).get();
   Stream<List<Book>> watchAllBooks() => select(books).watch();
@@ -183,7 +213,8 @@ class AppDatabase extends _$AppDatabase {
     final hist = await select(listeningHistory).get();
     final tracks = await select(bookTracks).get();
     return {
-      'version': 2,
+      'version': schemaVersion,
+      'queue': (await queue()).map((e) => e.toJson()).toList(),
       'tracks': tracks.map((t) => t.toJson()).toList(),
       'exportedAt': DateTime.now().toIso8601String(),
       'books': bks
@@ -191,6 +222,10 @@ class AppDatabase extends _$AppDatabase {
                 'id': e.id,
                 'title': e.title,
                 'author': e.author,
+                'series': e.series,
+                'seriesOrder': e.seriesOrder,
+                'collection': e.collection,
+                'playbackPreferencesJson': e.playbackPreferencesJson,
                 'coverPath': e.coverPath,
                 'filePathsJson': e.filePathsJson,
                 'totalDurationMs': e.totalDurationMs,
@@ -199,6 +234,7 @@ class AppDatabase extends _$AppDatabase {
                 'lastPositionFilePath': e.lastPositionFilePath,
                 'lastPositionMs': e.lastPositionMs,
                 'totalProgress': e.totalProgress,
+                'finishedOverride': e.finishedOverride,
                 'isFinished': e.isFinished
               })
           .toList(),
@@ -248,7 +284,7 @@ class AppDatabase extends _$AppDatabase {
       throw const FormatException('Unsupported library version');
     }
     // Validate structure before touching the database; all writes are atomic.
-    for (final key in ['books', 'tracks', 'chapters', 'bookmarks', 'history']) {
+    for (final key in ['books', 'tracks', 'chapters', 'bookmarks', 'history', 'queue']) {
       if (data[key] != null && data[key] is! List) {
         throw FormatException('Invalid $key');
       }
@@ -261,6 +297,10 @@ class AppDatabase extends _$AppDatabase {
             id: mm['id'] as String,
             title: mm['title'] as String,
             author: Value(mm['author'] as String? ?? 'Unknown'),
+            series: Value(mm['series'] as String? ?? ''),
+            seriesOrder: Value((mm['seriesOrder'] as num?)?.toDouble()),
+            collection: Value(mm['collection'] as String? ?? ''),
+            playbackPreferencesJson: Value(jsonEncode(BookPreferences.decode(mm['playbackPreferencesJson'] as String? ?? '{}'))),
             coverPath: Value(mm['coverPath'] as String? ?? ''),
             filePathsJson: mm['filePathsJson'] as String,
             totalDurationMs: Value(mm['totalDurationMs'] as int? ?? 0),
@@ -270,7 +310,16 @@ class AppDatabase extends _$AppDatabase {
             lastPositionMs: Value(mm['lastPositionMs'] as int? ?? 0),
             totalProgress:
                 Value((mm['totalProgress'] as num?)?.toDouble() ?? 0.0),
+            finishedOverride: Value(mm['finishedOverride'] as bool?),
             isFinished: Value(mm['isFinished'] as bool? ?? false)));
+      }
+      if (data['queue'] != null) {
+        final ids = <String>[];
+        for (final row in data['queue'] as List) {
+          final id = (row as Map)['bookId'] as String;
+          if (!ids.contains(id)) ids.add(id);
+        }
+        await replaceQueue(ids);
       }
       for (final row in (data['tracks'] as List? ?? [])) {
         final t = BookTrack.fromJson((row as Map).cast<String, dynamic>());

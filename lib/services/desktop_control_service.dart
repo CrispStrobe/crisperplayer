@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
+import 'listening_stats.dart';
 import 'package:path/path.dart' as p;
 import 'audio/playback_service.dart';
 import 'library_service.dart';
@@ -246,6 +248,69 @@ class DesktopControlService {
         } finally {
           await directory.delete(recursive: true);
         }
+      case 'book-edit':
+        final changes = args['changes'];
+        if (changes is! Map<String, dynamic>) {
+          throw const FormatException('changes must be an object');
+        }
+        await playback.updateBookDetails(_bookId(args), changes);
+        return (await library.getBook(_bookId(args)))!.toJson();
+      case 'book-cover':
+        final image = _string(args, 'base64');
+        if (image.length > 14 * 1024 * 1024) {
+          throw const FormatException('Cover is too large');
+        }
+        final id = _bookId(args);
+        await library.setCover(id, Uint8List.fromList(base64Decode(image)));
+        await playback.updateBookDetails(id, {});
+        return {'updated': true};
+      case 'book-settings':
+        final id = _bookId(args);
+        if (args.containsKey('values') || args['reset'] == true) {
+          final values = args['values'] ?? <String, dynamic>{};
+          if (values is! Map<String, dynamic>) {
+            throw const FormatException('values must be an object');
+          }
+          await playback.updateBookPreferences(
+            id,
+            values,
+            reset: args['reset'] == true,
+          );
+        }
+        return library.preferences(id);
+      case 'mark':
+        await playback.markBook(_bookId(args), _string(args, 'status'));
+      case 'refresh-metadata':
+        final id = _bookId(args);
+        final updated = await library.refreshMetadata(id);
+        await playback.updateBookDetails(id, {});
+        return {'refreshed': updated};
+      case 'queue':
+        final entries = await library.db.queue();
+        return [
+          for (var i = 0; i < entries.length; i++)
+            {
+              'position': i + 1,
+              'book': (await library.getBook(entries[i].bookId))?.toJson(),
+            },
+        ];
+      case 'queue-add':
+        final position = args['position'];
+        if (position != null && (position is! int || position < 1)) {
+          throw const FormatException('position must be a positive integer');
+        }
+        await playback.enqueue(
+          _bookId(args),
+          position: position == null ? null : (position as int) - 1,
+        );
+      case 'queue-remove':
+        await playback.removeFromQueue(_bookId(args));
+      case 'queue-play':
+        await playback.playNextQueued();
+      case 'stats':
+        return listeningStats(
+          await library.db.select(library.db.listeningHistory).get(),
+        );
       case 'refresh-chapters':
         return {'refreshed': await playback.refreshChapters(_bookId(args))};
       case 'chapters':
@@ -412,11 +477,18 @@ class DesktopControlService {
     final filter = args['filter'] ?? 'all';
     final sort = args['sort'] ?? (filter == 'recent' ? 'lastPlayed' : 'recent');
     if (query is! String ||
-        !['all', 'recent', 'finished'].contains(filter) ||
+        ![
+          'all',
+          'recent',
+          'finished',
+          'unfinished',
+          'unread',
+        ].contains(filter) ||
         ![
           'recent',
           'title',
           'author',
+          'series',
           'duration',
           'lastPlayed',
         ].contains(sort)) {
@@ -426,14 +498,27 @@ class DesktopControlService {
         .where(
           (book) =>
               (filter != 'finished' || book.isFinished) &&
-              ('${book.title} ${book.author}'.toLowerCase().contains(
-                query.toLowerCase(),
-              )),
+              (filter != 'unfinished' || !book.isFinished) &&
+              (filter != 'unread' ||
+                  (!book.isFinished && book.totalProgress == 0)) &&
+              (filter != 'recent' || book.lastPlayedAtMs != null) &&
+              (args['collection'] == null ||
+                  book.collection == args['collection']) &&
+              (args['series'] == null || book.series == args['series']) &&
+              ('${book.title} ${book.author} ${book.series} ${book.collection}'
+                  .toLowerCase()
+                  .contains(query.toLowerCase())),
         )
         .toList();
     int compare(Book a, Book b) => switch (sort) {
       'title' => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
       'author' => a.author.toLowerCase().compareTo(b.author.toLowerCase()),
+      'series' =>
+        a.series.toLowerCase() != b.series.toLowerCase()
+            ? a.series.toLowerCase().compareTo(b.series.toLowerCase())
+            : (a.seriesOrder ?? double.infinity).compareTo(
+                b.seriesOrder ?? double.infinity,
+              ),
       'duration' => b.totalDurationMs.compareTo(a.totalDurationMs),
       'lastPlayed' => (b.lastPlayedAtMs ?? 0).compareTo(a.lastPlayedAtMs ?? 0),
       _ => b.addedAtMs.compareTo(a.addedAtMs),
@@ -463,6 +548,8 @@ class DesktopControlService {
     'volume': s.volume,
     'skipSilence': s.skipSilence,
     'seekSeconds': s.seekSeconds,
+    'smartRewindSeconds': s.smartRewindSeconds,
+    'smartRewindAfterSeconds': s.smartRewindAfterSeconds,
     'autoBookmarkEnabled': s.autoBookmarkEnabled,
     'autoBookmarkIntervalSeconds': s.autoBookmarkInterval.inSeconds,
     'sleepTimerDefaultMinutes': s.sleepTimerDefault.inMinutes,
@@ -487,6 +574,10 @@ class DesktopControlService {
         s.sleepTimerDefault = Duration(
           minutes: _number(args, 'value', 0, 1440).toInt(),
         );
+      case 'smartRewindSeconds':
+        s.smartRewindSeconds = _number(args, 'value', 0, 60).toInt();
+      case 'smartRewindAfterSeconds':
+        s.smartRewindAfterSeconds = _number(args, 'value', 0, 86400).toInt();
       case 'seekSeconds':
         if (![10, 15, 30, 60].contains(value)) {
           throw const FormatException('seekSeconds must be 10, 15, 30, or 60');

@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../utils/format.dart';
+import '../utils/folder_import.dart';
 import 'audio/chapter_parser.dart';
 import 'audio/cover_extractor.dart';
 import 'db/app_database.dart';
@@ -87,12 +88,14 @@ class LibraryService {
     List<String> paths, {
     String? title,
     String? author,
+    bool preserveOrder = false,
   }) async {
     if (paths.isEmpty) return null;
     if (kIsWeb) {
       throw UnsupportedError('Audio import requires the installed app');
     }
-    paths = paths.toSet().toList()..sort(_naturalCompare);
+    paths = paths.toSet().toList();
+    if (!preserveOrder) paths.sort(_naturalCompare);
     for (final path in paths) {
       if (!await File(path).exists()) {
         throw FileSystemException('Audio file is unavailable', path);
@@ -555,20 +558,7 @@ class LibraryService {
         : titleFromPath(paths.first);
   }
 
-  static int _naturalCompare(String a, String b) {
-    final parts = RegExp(r'\d+|\D+');
-    final aa = parts.allMatches(a.toLowerCase()).map((m) => m[0]!).toList();
-    final bb = parts.allMatches(b.toLowerCase()).map((m) => m[0]!).toList();
-    for (var i = 0; i < aa.length && i < bb.length; i++) {
-      final an = int.tryParse(aa[i]);
-      final bn = int.tryParse(bb[i]);
-      final cmp = an != null && bn != null
-          ? an.compareTo(bn)
-          : aa[i].compareTo(bb[i]);
-      if (cmp != 0) return cmp;
-    }
-    return aa.length.compareTo(bb.length);
-  }
+  static int _naturalCompare(String a, String b) => naturalPathCompare(a, b);
 
   Future<void> updateProgress(
     String id,
@@ -597,30 +587,7 @@ class LibraryService {
     );
   }
 
-  Future<List<String>> scanFolder(String folderPath) async {
-    final dir = Directory(folderPath);
-    if (!await dir.exists()) return [];
-    const exts = {
-      '.m4b',
-      '.m4a',
-      '.mp3',
-      '.flac',
-      '.ogg',
-      '.wav',
-      '.aac',
-      '.opus',
-      '.wma',
-      '.aiff',
-      '.aif',
-      '.mp2',
-    };
-    final files = await dir
-        .list(recursive: true)
-        .where(
-          (e) => e is File && exts.contains(p.extension(e.path).toLowerCase()),
-        )
-        .map((e) => e.path)
-        .toList();
-    return files..sort(_naturalCompare);
-  }
+  Future<List<String>> scanFolder(String folderPath) async =>
+      [for (final book in await scanBookFolders(folderPath)) ...book.files]
+        ..sort(naturalPathCompare);
 }

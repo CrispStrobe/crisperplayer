@@ -7,3 +7,7 @@ Chapter navigation now works within single-file audiobooks as well as across fil
 Requires iOS 15 or newer. Corrected document import configuration for App Store delivery.
 
 Library and playback improvements: editable book details and covers; MP4/MP3 embedded metadata and artwork; numbered series and collections; finished/unfinished/unread controls; per-book playback preferences; configurable smart rewind; persistent Up next queue; listening statistics; player keyboard shortcuts. CLI covers the same operations.
+
+Server libraries: Plex, WebDAV and SFTP offline downloads, queued jobs, pause/resume/discard and verified SSH host keys. Progress is local to this device. Direct SMB and automatic Plex progress sync are pending.
+
+Nested library folders (desktop and Android): preview and select separate books from author/book folders or mounted NAS shares. Numbered CD/Disc/Part folders join their parent book. Existing single-book folder import remains available. CLI adds import-library with --dry-run. Stop between books; completed books remain imported.

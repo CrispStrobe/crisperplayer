@@ -77,6 +77,34 @@ void main() {
         final result = await client.importFile(source) as Map;
         final bookId = result['bookId'] as String;
         await source.delete();
+        final nested = Directory('${root.path}/nested');
+        for (final name in [
+          'Author/Book 2/CD 10/chapter1.wav',
+          'Author/Book 2/CD 2/chapter99.wav',
+          'Author/Book 10/chapter.wav',
+        ]) {
+          final file = File('${nested.path}/$name');
+          await file.parent.create(recursive: true);
+          await writeTestWav(file, seconds: name.contains('CD 2/') ? 2 : 3);
+        }
+        final planned = await client.importLibrary(nested.path, dryRun: true);
+        expect(planned['books'], hasLength(2));
+        final importedLibrary = await client.importLibrary(nested.path);
+        expect(importedLibrary['complete'], isTrue);
+        final nestedBooks = (await library.allBooks())
+            .where((book) => book.id != bookId)
+            .toList();
+        expect(nestedBooks, hasLength(2));
+        final discBook = nestedBooks.singleWhere(
+          (book) => book.title == 'Book 2',
+        );
+        final discTracks = await db.tracksFor(discBook.id);
+        expect(discTracks.map((track) => track.durationMs), [2000, 3000]);
+        expect(discBook.totalDurationMs, 5000);
+        for (final book in nestedBooks) {
+          await library.deleteBook(book.id);
+        }
+        await nested.delete(recursive: true);
         await tester.pumpAndSettle();
         expect(find.textContaining('Native smoke test'), findsWidgets);
         await tester.tap(find.textContaining('Native smoke test').first);

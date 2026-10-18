@@ -21,7 +21,7 @@ class DesktopControlService {
   final String _token = base64Url.encode(
     List<int>.generate(32, (_) => Random.secure().nextInt(256)),
   );
-  final Map<String, Directory> _batches = {};
+  final Map<String, ({Directory directory, List<String> files})> _batches = {};
   HttpServer? _server;
   StreamSubscription<HttpRequest>? _requests;
   Future<void> _commands = Future.value();
@@ -195,7 +195,7 @@ class DesktopControlService {
     }
     final temp = batch == null
         ? await Directory.systemTemp.createTemp('crisper_cli_')
-        : _batches[batch]!;
+        : _batches[batch]!.directory;
     try {
       var file = File(p.join(temp.path, name));
       var duplicate = 1;
@@ -216,7 +216,10 @@ class DesktopControlService {
       if (await file.length() == 0) {
         throw const FormatException('Audio file is empty');
       }
-      if (batch != null) return {'staged': p.basename(file.path)};
+      if (batch != null) {
+        _batches[batch]!.files.add(file.path);
+        return {'staged': p.basename(file.path)};
+      }
       final id = await library.importFiles([file.path]);
       return {'bookId': id};
     } finally {
@@ -307,21 +310,20 @@ class DesktopControlService {
         final id = base64Url.encode(
           List.generate(24, (_) => Random.secure().nextInt(256)),
         );
-        _batches[id] = await Directory.systemTemp.createTemp('crisper_batch_');
+        _batches[id] = (
+          directory: await Directory.systemTemp.createTemp('crisper_batch_'),
+          files: <String>[],
+        );
         return {'batch': id};
       case 'import-commit' || 'import-cancel':
         final batch = args['batch'];
-        final directory = _batches.remove(batch);
-        if (directory == null) {
+        final staged = _batches.remove(batch);
+        if (staged == null) {
           throw const FormatException('Unknown import batch');
         }
         try {
           if (command == 'import-cancel') return {'cancelled': true};
-          final paths = await directory
-              .list()
-              .where((entry) => entry is File)
-              .map((entry) => entry.path)
-              .toList();
+          final paths = staged.files;
           if (paths.isEmpty) {
             throw const FormatException('No audio files uploaded');
           }
@@ -336,10 +338,11 @@ class DesktopControlService {
               paths,
               title: title as String?,
               author: author as String?,
+              preserveOrder: true,
             ),
           };
         } finally {
-          await directory.delete(recursive: true);
+          await staged.directory.delete(recursive: true);
         }
       case 'book-edit':
         final changes = args['changes'];
@@ -725,8 +728,10 @@ class DesktopControlService {
     await _server?.close(force: true);
     _server = null;
     await _commands;
-    for (final directory in _batches.values) {
-      if (await directory.exists()) await directory.delete(recursive: true);
+    for (final batch in _batches.values) {
+      if (await batch.directory.exists()) {
+        await batch.directory.delete(recursive: true);
+      }
     }
     _batches.clear();
     if (await descriptor.exists()) {

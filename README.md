@@ -45,11 +45,11 @@ See [architecture](docs/ARCHITECTURE.md), [Android build](docs/ANDROID_BUILD.md)
 
 ## macOS and CLI
 
-Run the desktop app with `flutter run -d macos`. On this Mac, clear inherited
-Ruby overrides before Flutter commands that run CocoaPods:
+On this Mac, run the desktop app with the Brickwright signing and credential
+keychain helper (see the local keychain section below):
 
 ```sh
-env -u GEM_HOME -u GEM_PATH -u RUBYOPT flutter run -d macos
+python3 scripts/macos_local.py run
 ```
 
 Desktop debug builds enable an authenticated loopback CLI. For a release build,
@@ -107,7 +107,7 @@ The connection file holds a per-run token and is private to the current user.
 Run the native desktop integration test:
 
 ```sh
-env -u GEM_HOME -u GEM_PATH -u RUBYOPT flutter test integration_test/desktop_test.dart -d macos
+python3 scripts/macos_local.py test
 ```
 
 It uses an isolated on-disk library and generated WAV audio, the real native
@@ -139,7 +139,8 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | Player keyboard shortcuts and listening time totals (today/7 days/all time) |
 | Added | FLAC/Vorbis/Opus tags, MP3 chapters, Android voice boost/EQ, Plex/WebDAV offline downloads |
 | Added | Persistent partial downloads with pause/resume/discard, verified HTTP ranges, SFTP with pinned host keys |
-| Next | Accessibility/device audit, nested book folders and direct SMB |
+| Added | Nested library-folder imports with book selection and numbered disc grouping; CLI dry run |
+| Next | Accessibility/device audit and direct SMB |
 | Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |
 
@@ -197,11 +198,28 @@ this design. The shared `crisp_storage` package in CrispCloud now supplies
 Plex, WebDAV and SFTP transports, SSH trust, profiles and transfer scheduling;
 direct SMB and automatic Plex progress synchronization are still pending.
 Mount SMB shares with Finder/Explorer/the desktop file manager and use
-**Import folder / mounted share**. On iOS, connect a server in Files and select
-audio through the file picker. Folder import copies the selected folder’s audio
-(including subfolders) as one book; WebDAV/SFTP folder downloads use direct audio
+**Import library folder / mounted share**. On iOS, connect a server in Files and select
+audio through the file picker. **Import folder as one book** copies all selected folder audio, including subfolders,
+as one book. **Import library folder / mounted share** scans nested author/book
+folders and previews separate books before copying. Each directory containing
+audio becomes a book; numbered `CD 1`, `Disc-2`, `Disk 3` and `Part_1` directories
+join their parent book. Other nested audio folders remain separate books.
+Review and deselect candidates before importing. Tracks use natural filename
+order; hidden entries and symbolic links are skipped. You can stop between books;
+completed imports remain in the library. Repeating an import creates new copies.
+The CLI offers the same grouping, with a dry run that works without the app:
+
+```sh
+crisperplayer import-library "/Volumes/NAS/Audiobooks" --dry-run
+crisperplayer import-library "/Volumes/NAS/Audiobooks"
+```
+
+A failed CLI batch exits with code 1 and reports completed book IDs and the failed
+folder as JSON. Already imported books remain available; review this output before
+retrying to avoid duplicates. WebDAV/SFTP folder downloads use direct audio
 children only, in natural filename order. Large remote files temporarily require both download and managed
 copy space. You can queue several books while browsing; downloads run one at a time.
+
 Failed or paused transfers remain under **Downloads** in Servers &
 NAS. Use Resume to continue, or Discard to remove their cached files. Partial
 files survive app restarts; downloads are not automatically restarted in the

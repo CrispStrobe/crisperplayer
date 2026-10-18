@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import '../utils/folder_import.dart';
 
 /// Pure Dart client: works with `dart run`, without Flutter's runtime.
 class ControlClient {
@@ -45,6 +46,40 @@ class ControlClient {
 
   Future<Object?> importFile(File file) => _request('/import', file: file);
 
+  Future<Map<String, Object?>> importLibrary(
+    String path, {
+    bool dryRun = false,
+    void Function(int completed, int total, String title)? onProgress,
+  }) async {
+    final books = await scanBookFolders(path);
+    if (books.isEmpty) {
+      throw const FormatException('No supported audio files in this folder');
+    }
+    if (dryRun) {
+      return {'books': books.map((book) => book.toJson()).toList()};
+    }
+    final imported = <Object?>[];
+    for (final book in books) {
+      onProgress?.call(imported.length, books.length, book.title);
+      try {
+        final result = await importFiles(
+          book.files.map(File.new).toList(),
+          title: book.title,
+        );
+        imported.add({'folder': book.folder, 'result': result});
+      } catch (error) {
+        // A retry must not silently duplicate books that already succeeded.
+        return {
+          'complete': false,
+          'imported': imported,
+          'failedFolder': book.folder,
+          'error': '$error',
+        };
+      }
+    }
+    return {'complete': true, 'imported': imported};
+  }
+
   Future<Object?> importFiles(
     List<File> files, {
     String? title,
@@ -57,6 +92,7 @@ class ControlClient {
       );
       title = parts.isEmpty ? 'Imported audiobook' : parts.last;
     }
+    files = files.toList()..sort((a, b) => naturalPathCompare(a.path, b.path));
     final started = await command('import-begin') as Map;
     final batch = started['batch'] as String;
     try {

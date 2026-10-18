@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:crisperplayer/cli/control_client.dart';
+import 'package:crisperplayer/utils/folder_import.dart';
 
 const usage = '''CrisperPlayer desktop CLI
 Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
@@ -21,6 +22,7 @@ Usage: dart run bin/crisperplayer.dart [--control-file PATH] COMMAND [ARG]
   stats                  Show listening time (today, last 7 days, total)
   list [--query TEXT] [--sort FIELD] [--filter all|recent|finished|unfinished|unread] [--series NAME] [--collection NAME]
   import FILE...         Import files or folders as one multi-track book
+  import-library FOLDER [--dry-run]  Import nested folders as separate books
   chapters [BOOK_ID]      List chapters
   refresh-chapters [BOOK_ID]  Re-read embedded chapters without re-importing
   chapter INDEX [BOOK_ID] Seek to a chapter (numbered from 1)
@@ -69,6 +71,19 @@ Future<void> main(List<String> arguments) async {
     final client = ControlClient(descriptor);
     Object? result;
     switch (command) {
+      case 'import-library':
+        final dryRun = args.remove('--dry-run');
+        if (args.length != 1) {
+          throw const FormatException('import-library requires one folder');
+        }
+        final imported = await client.importLibrary(
+          args.single,
+          dryRun: dryRun,
+          onProgress: (done, total, title) =>
+              stderr.writeln('Importing ${done + 1}/$total: $title'),
+        );
+        if (imported['complete'] == false) exitCode = 1;
+        result = imported;
       case 'import':
         String? option(String name) {
           final index = args.indexOf(name);
@@ -85,38 +100,11 @@ Future<void> main(List<String> arguments) async {
           throw const FormatException('import requires files or folders');
         }
         final files = <File>[];
-        const extensions = [
-          'm4b',
-          'm4a',
-          'mp3',
-          'flac',
-          'ogg',
-          'wav',
-          'aac',
-          'opus',
-          'wma',
-          'aiff',
-          'aif',
-          'mp2',
-          'mov',
-          'webm',
-          '3gp',
-          'mkv',
-          'mka',
-        ];
         for (final path in args) {
           final directory = Directory(path);
           if (await directory.exists()) {
-            await for (final entry in directory.list(
-              recursive: true,
-              followLinks: false,
-            )) {
-              if (entry is File &&
-                  extensions.contains(
-                    entry.path.split('.').last.toLowerCase(),
-                  )) {
-                files.add(entry.absolute);
-              }
+            for (final book in await scanBookFolders(path)) {
+              files.addAll(book.files.map(File.new));
             }
           } else {
             files.add(File(path).absolute);

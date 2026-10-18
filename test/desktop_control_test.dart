@@ -280,6 +280,57 @@ void main() {
   );
 
   test(
+    'library CLI dry run and import preserve book boundaries and disc order',
+    () async {
+      final source = Directory('${h.root.path}/source');
+      for (final name in [
+        'Author/Book 2/CD 10/chapter1.wav',
+        'Author/Book 2/CD 2/chapter99.wav',
+        'Author/Book 10/chapter.wav',
+      ]) {
+        final file = File('${source.path}/$name');
+        await file.parent.create(recursive: true);
+        await file.writeAsBytes([name.contains('CD 2/') ? 2 : 10]);
+      }
+      final preview = await client.importLibrary(source.path, dryRun: true);
+      expect(preview['books'], hasLength(2));
+      expect(await h.library.allBooks(), isEmpty);
+      final result = await client.importLibrary(source.path);
+      expect(result['complete'], isTrue);
+      expect(result['imported'], hasLength(2));
+      final books = await h.library.allBooks();
+      expect(books.map((b) => b.title), containsAll(['Book 2', 'Book 10']));
+      final tracks = await h.db.tracksFor(
+        books.singleWhere((b) => b.title == 'Book 2').id,
+      );
+      expect(await File(tracks.first.filePath).readAsBytes(), [2]);
+      expect(await File(tracks.last.filePath).readAsBytes(), [10]);
+    },
+  );
+
+  test(
+    'library import reports completed books when a later source disappears',
+    () async {
+      final source = Directory('${h.root.path}/source');
+      for (final name in ['A', 'B']) {
+        final file = File('${source.path}/$name/track.wav');
+        await file.parent.create(recursive: true);
+        await file.writeAsBytes([1]);
+      }
+      final result = await client.importLibrary(
+        source.path,
+        onProgress: (done, total, title) {
+          if (title == 'B') File('${source.path}/B/track.wav').deleteSync();
+        },
+      );
+      expect(result['complete'], isFalse);
+      expect(result['imported'], hasLength(1));
+      expect(result['failedFolder'], endsWith('/B'));
+      expect((await h.library.allBooks()).single.title, 'A');
+    },
+  );
+
+  test(
     'shutdown removes its descriptor and client gives a useful offline error',
     () async {
       await server.dispose();

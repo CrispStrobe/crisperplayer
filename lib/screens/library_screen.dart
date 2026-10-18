@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import '../services/server/remote_client.dart';
+import '../utils/folder_import.dart';
+import '../widgets/folder_import_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -539,8 +540,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 Platform.isAndroid)
               ListTile(
                 leading: const Icon(Icons.folder_open),
-                title: const Text('Import folder / mounted share'),
+                title: const Text('Import folder as one book'),
                 onTap: () => Navigator.pop(context, 'folder'),
+              ),
+            if (Platform.isMacOS ||
+                Platform.isWindows ||
+                Platform.isLinux ||
+                Platform.isAndroid)
+              ListTile(
+                leading: const Icon(Icons.library_books_outlined),
+                title: const Text('Import library folder / mounted share'),
+                subtitle: const Text('Review separate books in nested folders'),
+                onTap: () => Navigator.pop(context, 'library'),
               ),
             ListTile(
               leading: const Icon(Icons.dns_outlined),
@@ -554,24 +565,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (!mounted) return;
     if (choice == 'files') await _import();
     if (choice == 'server' && mounted) context.push('/settings/sync');
-    if (choice == 'folder') {
+    if (choice == 'folder' || choice == 'library') {
       try {
         final path = await FilePicker.getDirectoryPath();
         if (path == null) return;
-        final files = <String>[];
-        await for (final entry in Directory(
-          path,
-        ).list(recursive: true, followLinks: false)) {
-          if (entry is File && RemoteClient.isAudio(entry.path)) {
-            files.add(entry.path);
-          }
-        }
-        if (files.isEmpty) {
+        final books = await scanBookFolders(path);
+        if (books.isEmpty) {
           throw const FormatException(
             'No supported audio files in this folder',
           );
         }
-        await ref.read(libraryServiceProvider).importFiles(files);
+        if (!mounted) return;
+        final library = ref.read(libraryServiceProvider);
+        if (choice == 'library') {
+          await showDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => FolderImportDialog(books: books, library: library),
+          );
+          return;
+        }
+        await library.importFiles([for (final book in books) ...book.files]);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Folder imported as one book')),
@@ -659,7 +673,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       builder: (ctx) => AlertDialog(
         title: Text('Delete "$title"?'),
         content: const Text(
-          'This removes the book from your library (files stay on disk).',
+          'This removes the book and its managed audio copies. Your original source files stay on disk.',
         ),
         actions: [
           TextButton(

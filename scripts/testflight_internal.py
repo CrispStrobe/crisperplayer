@@ -66,7 +66,7 @@ def find_build(app_id, version, number):
     return None
 
 
-def distribute(app_id, build, locale, notes):
+def distribute(app_id, build, locale, notes, tester_email=None):
     build_id = build['id']
     if build['attributes'].get('usesNonExemptEncryption') is not False:
         api('builds/' + build_id, 'PATCH', {'data': {'type': 'builds', 'id': build_id,
@@ -109,11 +109,33 @@ def distribute(app_id, build, locale, notes):
         if not any(row['id'] == build_id for row in assigned):
             raise RuntimeError('Internal group assignment was not confirmed')
         testers = all_rows(f'betaGroups/{group_id}/betaTesters?limit=200')
+        if tester_email and not any(t['attributes']['email'].lower() == tester_email.lower() for t in testers):
+            # Only an existing ASC team member may be enrolled in an internal group.
+            users = all_rows('users?limit=200')
+            user = next((u for u in users if u['attributes']['username'].lower() == tester_email.lower()), None)
+            if user is None:
+                raise RuntimeError('Requested internal tester is not an App Store Connect team member')
+            matches = all_rows(query('betaTesters', **{'filter[email]': tester_email, 'limit': 200}))
+            if matches:
+                api(f'betaGroups/{group_id}/relationships/betaTesters', 'POST',
+                    {'data': [{'type': 'betaTesters', 'id': matches[0]['id']}]})
+            else:
+                api('betaTesters', 'POST', {'data': {'type': 'betaTesters',
+                    'attributes': {'email': tester_email, 'firstName': user['attributes']['firstName'],
+                                   'lastName': user['attributes']['lastName']},
+                    'relationships': {'betaGroups': {'data': [{'type': 'betaGroups', 'id': group_id}]}}}})
+            testers = all_rows(f'betaGroups/{group_id}/betaTesters?limit=200')
+        if not testers:
+            raise RuntimeError('Internal group has no testers; configure an ASC team member before distribution')
         print(f"Internal group {group['attributes']['name']}: build assigned, {len(testers)} testers")
-    detail = api(f'builds/{build_id}/buildBetaDetail')['data']
-    state = detail['attributes']['internalBuildState']
-    print('Internal TestFlight state:', state)
-    if state != 'IN_BETA_TESTING':
+    for attempt in range(20):
+        detail = api(f'builds/{build_id}/buildBetaDetail')['data']
+        state = detail['attributes']['internalBuildState']
+        print('Internal TestFlight state:', state, flush=True)
+        if state == 'IN_BETA_TESTING':
+            break
+        time.sleep(15)
+    else:
         raise RuntimeError('Build is assigned but not yet IN_BETA_TESTING: ' + state)
     summary = f"iOS {build['attributes']['version']} ({build_id}) is VALID and IN_BETA_TESTING.\n"
     if os.environ.get('GITHUB_STEP_SUMMARY'):
@@ -129,6 +151,7 @@ def main():
     parser.add_argument('--build', required=True)
     parser.add_argument('--notes', required=True, type=Path)
     parser.add_argument('--wait-minutes', type=int, default=40)
+    parser.add_argument('--tester-email', default=os.environ.get('ASC_INTERNAL_TESTER_EMAIL'))
     args = parser.parse_args()
     app = api('apps/' + args.app_id)['data']
     if app['attributes']['bundleId'] != args.bundle_id:
@@ -139,7 +162,7 @@ def main():
         state = build['attributes']['processingState'] if build else 'NOT_VISIBLE'
         print(f'iOS {args.version} ({args.build}): {state}', flush=True)
         if state == 'VALID':
-            distribute(args.app_id, build, app['attributes']['primaryLocale'], args.notes.read_text()[:4000])
+            distribute(args.app_id, build, app['attributes']['primaryLocale'], args.notes.read_text()[:4000], args.tester_email)
             return
         if state in ('FAILED', 'INVALID'):
             raise RuntimeError('Apple rejected build processing: ' + state)

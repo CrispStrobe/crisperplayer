@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,6 +18,11 @@ jobs:
         with:
           flutter-version: '3.44.4'
           cache: true
+      - name: Check release automation
+        run: |
+          python3 -m venv "$RUNNER_TEMP/release-checks"
+          "$RUNNER_TEMP/release-checks/bin/pip" install --quiet cryptography
+          "$RUNNER_TEMP/release-checks/bin/python" -m unittest discover -s scripts/tests -v
       - run: flutter pub get
       - run: nice -n 10 dart run build_runner build --build-filter lib/services/db/app_database.g.dart
       - run: nice -n 10 flutter analyze

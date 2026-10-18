@@ -14,6 +14,10 @@ only an executable. `BUILD.json` records the version, build and exact Git revisi
   debug-signed CI artifacts require migration; see [Android signing](ANDROID_BUILD.md).
 - **Windows x64:** extract the entire ZIP and run `CrisperPlayer/crisperplayer.exe`.
   Keep the DLLs and `data` directory together. Windows downloads are unsigned.
+  Install the [Microsoft Visual C++ Redistributable (x64)](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)
+  if it is not already installed (including when Windows reports missing `VCRUNTIME140`
+  or `MSVCP140`). These system runtime prerequisites apply to the ZIP distribution;
+  the archive is not an installer. See [Flutter's Windows distribution guidance](https://docs.flutter.dev/platform-integration/windows/building#building-your-own-zip-file-for-windows).
 - **Mac:** choose arm64 for Apple silicon or x64 for Intel. Extract the ZIP and move
   `CrisperPlayer/crisperplayer.app` to Applications. Public downloads are ad-hoc signed
   but not notarized; macOS may block them. Review the source/checksum before allowing

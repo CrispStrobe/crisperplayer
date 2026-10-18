@@ -17,7 +17,7 @@ Keep your place, organize your books, and download from Plex or your NAS for off
 
 Extract desktop archives completely before launching; keep their libraries and data together.
 Windows builds are unsigned and Mac downloads are ad-hoc signed, not notarized.
-Linux needs system libmpv, GTK and libsecret. See [installation details](docs/RELEASES.md).
+Windows needs the Microsoft Visual C++ runtime (x64); Linux needs system libmpv, GTK and libsecret. See [installation details](docs/RELEASES.md).
 Release checksums and separate CLI bundles are attached to each versioned GitHub release.
 
 ## Browser player

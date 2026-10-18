@@ -59,6 +59,16 @@ void main() {
           0,
         ); // Exercise the native decoder without playing a tone aloud.
         await server.start();
+        // Command-line macOS launches can begin with the scheduler paused.
+        // These UI tests explicitly drive the app as a foreground application.
+        if (Platform.isMacOS) {
+          debugPrint(
+            'Native UI lifecycle: ${tester.binding.lifecycleState}, frames: ${tester.binding.framesEnabled}',
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        }
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
@@ -130,6 +140,18 @@ void main() {
         expect((player.position - paused).inMilliseconds.abs(), lessThan(100));
         await client.command('seek', {'seconds': 4});
         expect(player.position.inMilliseconds, closeTo(4000, 100));
+        await tester.pumpAndSettle();
+        final semantics = tester.ensureSemantics();
+        try {
+          final seek = find.semantics.byLabel('Playback position');
+          tester.semantics.decrease(seek);
+          await Future<void>.delayed(const Duration(milliseconds: 150));
+          await tester.pumpAndSettle();
+          expect(player.position.inMilliseconds, closeTo(0, 100));
+        } finally {
+          semantics.dispose();
+        }
+        await client.command('seek', {'seconds': 4});
         await db.replaceChapters(bookId, [
           for (var i = 0; i < 2; i++)
             ChaptersCompanion.insert(
@@ -305,6 +327,16 @@ void main() {
         }
       });
       try {
+        // Command-line macOS launches can begin with the scheduler paused.
+        // These UI tests explicitly drive the app as a foreground application.
+        if (Platform.isMacOS) {
+          debugPrint(
+            'Native UI lifecycle: ${tester.binding.lifecycleState}, frames: ${tester.binding.framesEnabled}',
+          );
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        }
         await tester.pumpWidget(
           ProviderScope(
             overrides: [remoteLibraryProvider.overrideWith((ref) => service)],

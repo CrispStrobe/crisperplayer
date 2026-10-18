@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/db/app_database.dart';
+import 'playback_seek_slider.dart';
 
 /// One accessible seek slider with chapter markers on its native track.
 class ChapterProgressBar extends StatelessWidget {
@@ -7,12 +8,14 @@ class ChapterProgressBar extends StatelessWidget {
   final Duration duration;
   final List<Chapter> chapters;
   final ValueChanged<Duration> onSeek;
+  final Duration step;
   const ChapterProgressBar({
     super.key,
     required this.position,
     required this.duration,
     required this.chapters,
     required this.onSeek,
+    this.step = const Duration(seconds: 30),
   });
 
   @override
@@ -22,17 +25,11 @@ class ChapterProgressBar extends StatelessWidget {
       data: SliderTheme.of(
         context,
       ).copyWith(trackHeight: 4, trackShape: _ChapterTrack(chapters, total)),
-      child: Slider(
-        min: 0,
-        max: total > 0 ? total.toDouble() : 1,
-        value: position.inMilliseconds
-            .clamp(0, total > 0 ? total : 1)
-            .toDouble(),
-        semanticFormatterCallback: (value) =>
-            '${Duration(milliseconds: value.round()).inSeconds} seconds',
-        onChanged: total > 0
-            ? (value) => onSeek(Duration(milliseconds: value.round()))
-            : null,
+      child: PlaybackSeekSlider(
+        position: position,
+        duration: duration,
+        step: step,
+        onSeek: onSeek,
       ),
     );
   }

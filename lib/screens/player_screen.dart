@@ -8,6 +8,7 @@ import '../services/db/app_database.dart';
 import '../utils/format.dart';
 import '../widgets/chapter_tile.dart';
 import '../widgets/chapter_progress.dart';
+import '../widgets/playback_seek_slider.dart';
 import '../widgets/waveform_view.dart';
 import '../widgets/sleep_timer_sheet.dart';
 import '../widgets/speed_sheet.dart';
@@ -36,7 +37,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       if (svc.currentBookId != requested) await svc.loadBook(requested);
       if (mounted && widget.bookId == requested) setState(() => _ready = true);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Load failed: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Load failed: $e')));
+      }
     }
   }
 
@@ -76,11 +81,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           initialData: svc.state,
           builder: (ctx, snap) {
             final active = svc.currentBookId;
-            if (_ready && active != null && active != widget.bookId && _pendingNavigation != active) {
+            if (_ready &&
+                active != null &&
+                active != widget.bookId &&
+                _pendingNavigation != active) {
               _pendingNavigation = active;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _pendingNavigation = null;
-                if (context.mounted && svc.currentBookId == active) context.replace('/player/$active');
+                if (context.mounted && svc.currentBookId == active) {
+                  context.replace('/player/$active');
+                }
               });
             }
             final st = snap.data ?? svc.state;
@@ -296,35 +306,37 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                               duration: displayDuration,
                               chapters: chapters,
                               onSeek: (d) => svc.seekBook(d),
+                              step: Duration(seconds: svc.seekSeconds),
                             )
                           else
-                            Slider(
-                              min: 0,
-                              max: (st.duration.inMilliseconds.toDouble() > 0
-                                  ? st.duration.inMilliseconds.toDouble()
-                                  : 1),
-                              value: st.position.inMilliseconds
-                                  .clamp(0, st.duration.inMilliseconds)
-                                  .toDouble(),
-                              onChanged: (v) =>
-                                  svc.seek(Duration(milliseconds: v.round())),
+                            PlaybackSeekSlider(
+                              position: displayPosition,
+                              duration: displayDuration,
+                              step: Duration(seconds: svc.seekSeconds),
+                              onSeek: wholeDuration == null
+                                  ? svc.seek
+                                  : svc.seekBook,
                             ),
 
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                formatDuration(displayPosition),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                          SizedBox(
+                            width: double.infinity,
+                            child: Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              spacing: 12,
+                              children: [
+                                Text(
+                                  formatDuration(displayPosition),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${(displayProgress * 100).toStringAsFixed(0)}% • ${formatDuration(remaining)} left',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ],
+                                Text(
+                                  '${(displayProgress * 100).toStringAsFixed(0)}% • ${formatDuration(remaining)} left',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 12),
 
@@ -341,7 +353,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                               IconButton(
                                 icon: const Icon(Icons.replay),
                                 iconSize: 36,
-                                tooltip: '-${svc.seekSeconds}s',
+                                tooltip: 'Skip back ${svc.seekSeconds} seconds',
                                 onPressed: () => svc.skipBack(),
                               ),
                               FilledButton(
@@ -354,14 +366,17 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                                     st.isPlaying ? svc.pause() : svc.play(),
                                 child: Icon(
                                   st.isPlaying ? Icons.pause : Icons.play_arrow,
-                                  semanticLabel: st.isPlaying ? 'Pause' : 'Play',
+                                  semanticLabel: st.isPlaying
+                                      ? 'Pause'
+                                      : 'Play',
                                   size: 36,
                                 ),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.forward),
                                 iconSize: 36,
-                                tooltip: '+${svc.seekSeconds}s',
+                                tooltip:
+                                    'Skip forward ${svc.seekSeconds} seconds',
                                 onPressed: () => svc.skipForward(),
                               ),
                               IconButton(
@@ -591,7 +606,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                             // Quick chapter jump row
                             if (chapters.isNotEmpty)
                               SizedBox(
-                                height: 36,
+                                height:
+                                    MediaQuery.textScalerOf(context).scale(14) +
+                                    32,
                                 child: ListView.separated(
                                   scrollDirection: Axis.horizontal,
                                   itemCount: chapters.length,
@@ -636,64 +653,71 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 
                             const SizedBox(height: 8),
 
-                            // Speed control row
+                            // Speed presets wrap below the current speed at large text sizes.
                             Card(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 8,
                                 ),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.speed, size: 18),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${st.speed.toStringAsFixed(2)}×',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.speed, size: 18),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            '${st.speed.toStringAsFixed(2)}×',
+                                            semanticsLabel:
+                                                'Playback speed ${st.speed.toStringAsFixed(2)} times',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.tune,
+                                            size: 18,
+                                          ),
+                                          tooltip: 'More speeds',
+                                          onPressed: () =>
+                                              showSpeedSheet(context, svc),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Wrap(
-                                        spacing: 6,
-                                        children: [0.8, 1.0, 1.25, 1.5, 2.0]
-                                            .map((s) {
-                                              final sel =
-                                                  (st.speed - s).abs() < 0.02;
-                                              return ChoiceChip(
-                                                key: ValueKey('speed-$s'),
-                                                showCheckmark: false,
-                                                label: Text(
-                                                  '$s×',
-                                                  style: const TextStyle(
-                                                    fontSize: 11,
-                                                  ),
-                                                ),
-                                                selected: sel,
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                materialTapTargetSize:
-                                                    MaterialTapTargetSize
-                                                        .shrinkWrap,
-                                                onSelected: (_) =>
-                                                    svc.setSpeed(s),
-                                              );
-                                            })
-                                            .toList(),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.tune, size: 18),
-                                      tooltip: 'More speeds',
-                                      onPressed: () =>
-                                          showSpeedSheet(context, svc),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: [
+                                        for (final speed in [
+                                          0.8,
+                                          1.0,
+                                          1.25,
+                                          1.5,
+                                          2.0,
+                                        ])
+                                          ChoiceChip(
+                                            key: ValueKey('speed-$speed'),
+                                            showCheckmark: false,
+                                            label: Text(
+                                              '$speed×',
+                                              semanticsLabel:
+                                                  '$speed times speed',
+                                            ),
+                                            selected:
+                                                (st.speed - speed).abs() < 0.02,
+                                            onSelected: (_) =>
+                                                svc.setSpeed(speed),
+                                          ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 8),
 
                             // Bookmarks preview
@@ -706,13 +730,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                                   children: [
                                     Row(
                                       children: [
-                                        const Text(
-                                          'Bookmarks',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
+                                        const Expanded(
+                                          child: Text(
+                                            'Bookmarks',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
-                                        const Spacer(),
                                         TextButton(
                                           onPressed: () => context.push(
                                             '/bookmarks/${widget.bookId}',

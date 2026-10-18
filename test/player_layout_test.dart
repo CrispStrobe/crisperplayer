@@ -72,6 +72,10 @@ void main() {
         await tester.runAsync(() => h.playback.setSpeed(2));
         await tester.pump();
         expect(find.text('0% • 30:00 left'), findsOneWidget);
+        expect(
+          tester.getRect(find.text('0% • 30:00 left')).right,
+          closeTo(size.width - 16, .1),
+        );
         await tester.runAsync(h.playback.play);
         for (var i = 1; i < 10; i++) {
           h.backend.move(Duration(seconds: i));
@@ -84,7 +88,9 @@ void main() {
         }
         await tester.runAsync(h.playback.pause);
         await tester.pump();
-        await tester.runAsync(() => tester.sendKeyEvent(LogicalKeyboardKey.space));
+        await tester.runAsync(
+          () => tester.sendKeyEvent(LogicalKeyboardKey.space),
+        );
         await tester.runAsync(h.flush);
         expect(h.backend.playing, isTrue);
         await tester.runAsync(h.playback.pause);

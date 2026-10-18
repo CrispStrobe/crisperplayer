@@ -28,23 +28,39 @@ class WaveformView extends StatefulWidget {
 class _WaveformViewState extends State<WaveformView>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
+  bool _animate = false;
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900));
-    if (widget.isPlaying) _ctrl.repeat();
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+  }
+
+  void _updateAnimation() {
+    _animate =
+        widget.isPlaying &&
+        !MediaQuery.disableAnimationsOf(context) &&
+        TickerMode.valuesOf(context).enabled;
+    if (_animate && !_ctrl.isAnimating) {
+      _ctrl.repeat();
+    } else if (!_animate && _ctrl.isAnimating) {
+      _ctrl.stop();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updateAnimation();
   }
 
   @override
   void didUpdateWidget(covariant WaveformView old) {
     super.didUpdateWidget(old);
-    if (widget.isPlaying && !_ctrl.isAnimating) {
-      _ctrl.repeat();
-    } else if (!widget.isPlaying && _ctrl.isAnimating) {
-      _ctrl.stop();
-    }
+    _updateAnimation();
   }
 
   @override
@@ -64,7 +80,7 @@ class _WaveformViewState extends State<WaveformView>
           size: Size(double.infinity, widget.height),
           painter: _WaveformPainter(
             anim: _ctrl.value,
-            isPlaying: widget.isPlaying,
+            isPlaying: _animate,
             position: widget.position,
             duration: widget.duration,
             chapterFractions: widget.chapterEndFractions,
@@ -131,8 +147,9 @@ class _WaveformPainter extends CustomPainter {
 
       final isPassed = x < progressX;
       final paint = Paint()
-        ..color = (isPassed ? color : inactiveColor)
-            .withValues(alpha: isPassed ? 0.95 : 0.9)
+        ..color = (isPassed ? color : inactiveColor).withValues(
+          alpha: isPassed ? 0.95 : 0.9,
+        )
         ..style = PaintingStyle.fill;
       final rrect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, y, bw.clamp(2, 10), h),
@@ -152,7 +169,10 @@ class _WaveformPainter extends CustomPainter {
       );
       canvas.drawCircle(Offset(progressX, centerY), 4, Paint()..color = color);
       canvas.drawCircle(
-          Offset(progressX, centerY), 2, Paint()..color = Colors.white);
+        Offset(progressX, centerY),
+        2,
+        Paint()..color = Colors.white,
+      );
     }
   }
 
@@ -161,7 +181,9 @@ class _WaveformPainter extends CustomPainter {
       old.anim != anim ||
       old.position != position ||
       old.duration != duration ||
-      old.isPlaying != isPlaying;
+      old.isPlaying != isPlaying ||
+      old.color != color ||
+      old.inactiveColor != inactiveColor;
 }
 
 /// Compact inline waveform for mini player (static, no animation)
@@ -176,9 +198,10 @@ class MiniWaveform extends StatelessWidget {
     return CustomPaint(
       size: const Size(40, 14),
       painter: _MiniPainter(
-          progress: progress,
-          color: color ?? cs.primary,
-          bg: cs.surfaceContainerHighest),
+        progress: progress,
+        color: color ?? cs.primary,
+        bg: cs.surfaceContainerHighest,
+      ),
     );
   }
 }
@@ -201,12 +224,15 @@ class _MiniPainter extends CustomPainter {
       final isActive = (i / bars) < progress;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-            Rect.fromLTWH(x, y, bw - 2, h), const Radius.circular(2)),
+          Rect.fromLTWH(x, y, bw - 2, h),
+          const Radius.circular(2),
+        ),
         Paint()..color = isActive ? color : bg,
       );
     }
   }
 
   @override
-  bool shouldRepaint(covariant _MiniPainter old) => old.progress != progress;
+  bool shouldRepaint(covariant _MiniPainter old) =>
+      old.progress != progress || old.color != color || old.bg != bg;
 }

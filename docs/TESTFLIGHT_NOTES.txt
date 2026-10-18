@@ -11,3 +11,5 @@ Library and playback improvements: editable book details and covers; MP4/MP3 emb
 Server libraries: Plex, WebDAV and SFTP offline downloads, queued jobs, pause/resume/discard and verified SSH host keys. Progress is local to this device. Direct SMB and automatic Plex progress sync are pending.
 
 Nested library folders (desktop and Android): preview and select separate books from author/book folders or mounted NAS shares. Numbered CD/Disc/Part folders join their parent book. Existing single-book folder import remains available. CLI adds import-library with --dry-run. Stop between books; completed books remain imported.
+
+Player accessibility: enlarged text no longer overflows the player, mini player or speed/sleep sheets. Seek announcements use spoken elapsed/total times; screen-reader increments follow the configured skip interval. Skip buttons have descriptive labels, touch targets are larger, and the waveform respects Reduce Motion. Sleep-sheet refresh timers are released when closed. Please check VoiceOver and large text on your iPhone.

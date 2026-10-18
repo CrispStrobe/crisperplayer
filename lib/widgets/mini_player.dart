@@ -96,15 +96,26 @@ class MiniPlayer extends ConsumerWidget {
                                 const SizedBox(height: 2),
                                 Row(
                                   children: [
-                                    Text(
-                                      '${formatDuration(position)} / ${formatDuration(duration)}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: cs.onSurfaceVariant,
+                                    Flexible(
+                                      child: Text(
+                                        '${formatDuration(position)} / ${formatDuration(duration)}',
+                                        semanticsLabel:
+                                            '${formatSpokenDuration(position)} of ${formatSpokenDuration(duration)}',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: cs.onSurfaceVariant,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    MiniWaveform(progress: progress),
+                                    if (MediaQuery.textScalerOf(
+                                          context,
+                                        ).scale(11) <=
+                                        16) ...[
+                                      const SizedBox(width: 8),
+                                      MiniWaveform(progress: progress),
+                                    ],
                                   ],
                                 ),
                               ],
@@ -119,13 +130,11 @@ class MiniPlayer extends ConsumerWidget {
                             ),
                             onPressed: () =>
                                 st.isPlaying ? svc.pause() : svc.play(),
-                            visualDensity: VisualDensity.compact,
                           ),
                           IconButton(
                             icon: const Icon(Icons.close, size: 18),
                             tooltip: 'Close player',
                             onPressed: () => svc.unload(),
-                            visualDensity: VisualDensity.compact,
                           ),
                         ],
                       ),

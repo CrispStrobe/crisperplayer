@@ -6,6 +6,19 @@ String formatDuration(Duration d) {
   return '$m:$s';
 }
 
+String formatSpokenDuration(Duration duration) {
+  final seconds = duration.isNegative ? 0 : duration.inSeconds;
+  final hours = seconds ~/ 3600;
+  final minutes = (seconds ~/ 60) % 60;
+  final rest = seconds % 60;
+  String unit(int count, String name) => '$count $name${count == 1 ? '' : 's'}';
+  return [
+    if (hours > 0) unit(hours, 'hour'),
+    if (minutes > 0) unit(minutes, 'minute'),
+    if (rest > 0 || seconds == 0) unit(rest, 'second'),
+  ].join(', ');
+}
+
 String formatDurationLong(Duration d) {
   final h = d.inHours;
   final m = d.inMinutes.remainder(60);

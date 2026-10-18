@@ -140,7 +140,8 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | FLAC/Vorbis/Opus tags, MP3 chapters, Android voice boost/EQ, Plex/WebDAV offline downloads |
 | Added | Persistent partial downloads with pause/resume/discard, verified HTTP ranges, SFTP with pinned host keys |
 | Added | Nested library-folder imports with book selection and numbered disc grouping; CLI dry run |
-| Next | Accessibility/device audit and direct SMB |
+| Added | Player large-text layout, labeled touch targets, spoken seek values and reduced-motion waveform |
+| Next | Wider accessibility/device audit and direct SMB |
 | Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |
 
@@ -171,6 +172,17 @@ In the player: Space toggles playback, arrows skip, Shift+arrows change chapter,
 and B adds a bookmark. Shortcuts leave text editing alone. Listening statistics
 show actual listening time, independent of playback speed.
 
+
+The player and mini player support enlarged system text. Speed and sleep sheets
+scroll on short screens. Screen readers announce elapsed/total seek times in
+hours, minutes and seconds; increase/decrease actions use the configured skip
+interval and stop at the book boundaries. Touch seeking stays continuous. The
+waveform respects the system reduced-motion setting. These automated checks cover
+player controls at 200% text and 320-pixel width; VoiceOver/TalkBack validation on
+physical phones and a wider screen audit are still pending.
+
+CI cancels superseded checks separately from binary jobs, so a newer push does
+not interrupt Android or iOS simulator builds that have already passed checks.
 
 ## Plex and NAS libraries
 

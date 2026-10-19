@@ -66,5 +66,6 @@ subtitle, keywords, copyright and support/privacy/website URLs. Its state remain
 **PREPARE_FOR_SUBMISSION**. No review submission or public release was performed.
 `scripts/prepare_appstore.py` verifies the app identity and editable state before
 applying that copy and reading it back. All ten real iPhone/iPad screenshots
-are attached and Apple reports them complete. Privacy-form completion, device
-acceptance checks and final build attachment remain production-preparation steps.
+are attached and Apple reports them complete. Validated build 18 is attached to
+the 0.1.0 draft, which remains PREPARE_FOR_SUBMISSION. Privacy-form completion
+and device acceptance checks remain production-preparation steps.

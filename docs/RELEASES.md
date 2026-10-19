@@ -152,3 +152,16 @@ optimization still enabled. Build 15 could
 fail before onboarding because `Continuation` was renamed even though the
 SharedPreferences registrar itself was kept. See
 [Android JNI keep-rule guidance](https://developer.android.com/topic/performance/app-optimization/keep-rules-overview).
+
+## Verified delivery on 19 October 2026
+
+Build 18 published all eleven permanent release assets and reached internal
+TestFlight with the Watch companion. The iOS widget is explicitly deferred.
+The Android release APK passed native startup, in-place reinstall and upload/import
+acceptance in GitHub CI; its persistent signing key and published digests were
+verified after download. iOS simulator startup and upload/import also passed.
+Local checks passed 198 Flutter tests, 20 browser tests and 22 release guards,
+plus live Filen/Internxt encrypted progress and conflict checks. The Mac
+crypto sandbox regression and Filen live account check passed with the same
+compatibility patch as CrispCloud. Nextcloud live account testing remains pending
+without a configured endpoint or working local Docker daemon.

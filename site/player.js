@@ -31,7 +31,9 @@ const database = new Promise((resolve, reject) => {
 });
 let books = [], selected = null, tracks = [], objectUrl = null;
 let loading = false, pendingPosition = 0, playWhenReady = false, generation = 0;
+let trackChange = 0, sourceGeneration = 0;
 let lastCheckpoint = 0, beforeMute = 1;
+let backupBusy = false, restoring = false, pendingRestore = null, editingBookmark = null;
 const safe = fn => (...args) => Promise.resolve().then(() => fn(...args)).catch(e => message(e.message || String(e)));
 
 async function saveBook(book) {
@@ -52,7 +54,9 @@ async function checkpoint() {
   await saveBook(book);
 }
 function controls() {
-  for (const id of ['play', 'rewind', 'forward', 'bookmark', 'export', 'delete', 'elapsed', 'mute']) $(id).disabled = !selected || loading;
+  for (const id of ['play', 'rewind', 'forward', 'bookmark', 'export', 'restore', 'delete', 'elapsed', 'mute']) $(id).disabled = !selected || loading;
+  for (const id of ['speed', 'volume']) $(id).disabled = !selected || loading;
+  for (const id of ['export', 'restore']) $(id).disabled ||= backupBusy;
   $('previous').disabled = !selected || loading || selected.track === 0;
   $('next').disabled = !selected || loading || selected.track >= tracks.length - 1;
   $('play').textContent = audio.paused ? 'Play' : 'Pause';
@@ -99,24 +103,67 @@ function renderBookmarks() {
     const li = document.createElement('li'), button = document.createElement('button');
     button.textContent = `${mark.label || 'Bookmark'} · Track ${mark.track + 1}, ${duration(mark.seconds)}`;
     button.onclick = safe(() => switchTrack(mark.track, mark.seconds, false));
-    li.append(button); $('bookmarks').append(li);
+    button.className = 'bookmark-go';
+    const actions = document.createElement('div'); actions.className = 'bookmark-actions';
+    const edit = document.createElement('button'), remove = document.createElement('button');
+    edit.textContent = 'Edit'; edit.setAttribute('aria-label', `Edit bookmark ${mark.label || 'Bookmark'}`);
+    edit.onclick = () => {
+      editingBookmark = {bookId: selected.id, generation, id: mark.id};
+      $('bookmark-edit-label').value = mark.label; $('bookmark-edit-error').textContent = '';
+      $('bookmark-editor').showModal(); $('bookmark-edit-label').focus();
+    };
+    remove.textContent = 'Delete'; remove.className = 'danger';
+    remove.setAttribute('aria-label', `Delete bookmark ${mark.label || 'Bookmark'}`);
+    remove.onclick = safe(() => changeBookmarks(list => list.filter(value => value.id !== mark.id)));
+    actions.append(edit, remove); li.append(button, actions); $('bookmarks').append(li);
   }
+}
+async function changeBookmarks(update) {
+  if (!selected || loading) return;
+  const book = selected, before = book.bookmarks;
+  const next = update(before); book.bookmarks = next;
+  try { await saveBook(book); }
+  catch (error) { if (book.bookmarks === next) book.bookmarks = before; renderBookmarks(); throw error; }
+  if (selected === book) renderBookmarks();
+}
+$('bookmark-edit-cancel').onclick = () => $('bookmark-editor').close();
+$('bookmark-editor').onclose = () => { editingBookmark = null; };
+$('bookmark-edit-form').addEventListener('submit', event => event.preventDefault());
+$('bookmark-edit-form').onsubmit = safe(async () => {
+  const target = editingBookmark;
+  if (!target || selected?.id !== target.bookId || generation !== target.generation) throw new Error('The selected book changed. Open the bookmark again.');
+  const label = $('bookmark-edit-label').value.trim();
+  try {
+    await changeBookmarks(list => list.map(mark => mark.id === target.id ? {...mark, label} : mark));
+    $('bookmark-editor').close(); message('Bookmark updated.');
+  } catch (error) { $('bookmark-edit-error').textContent = error.message; throw error; }
+});
+function selectSpeed(value) {
+  if (![...$('speed').options].some(option => Number(option.value) === value)) $('speed').add(new Option(`${value}×`, String(value)));
+  $('speed').value = String(value);
 }
 async function switchTrack(index, position = 0, autoplay = false) {
   if (!selected || index < 0 || index >= tracks.length) return;
-  await checkpoint();
-  loading = true;
+  const book = selected, selection = generation, change = ++trackChange;
+  const saved = checkpoint();
+  loading = true; controls(); progress();
+  try { await saved; } catch (error) {
+    if (change === trackChange && selection === generation) { loading = false; controls(); progress(); }
+    throw error;
+  }
+  if (change !== trackChange || selection !== generation || selected !== book) return;
   audio.pause();
   selected.track = index; selected.position = position;
   pendingPosition = position; playWhenReady = autoplay;
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   objectUrl = URL.createObjectURL(tracks[index].blob);
+  sourceGeneration = selection;
   audio.src = objectUrl;
   audio.defaultPlaybackRate = selected.speed || 1;
   audio.playbackRate = selected.speed || 1;
   audio.volume = selected.volume ?? 1;
   beforeMute = selected.unmutedVolume ?? (audio.volume > 0 ? audio.volume : 1);
-  $('speed').value = String(audio.playbackRate);
+  selectSpeed(audio.playbackRate);
   $('volume').value = audio.volume;
   $('mute').textContent = audio.volume === 0 ? 'Unmute' : 'Mute';
   $('title').textContent = selected.title;
@@ -124,11 +171,16 @@ async function switchTrack(index, position = 0, autoplay = false) {
   audio.load(); renderTracks(); controls(); progress();
 }
 async function selectBook(id, scroll = false) {
-  await checkpoint();
-  loading = true; audio.pause();
-  const token = ++generation;
+  if (restoring) throw new Error('Wait for the restore to finish.');
   const book = books.find(b => b.id === id);
-  if (!book) return;
+  if (!book) throw new Error('This book is no longer in the browser library.');
+  const saved = checkpoint(), token = ++generation;
+  loading = true; controls(); progress(); audio.pause();
+  try { await saved; } catch (error) {
+    if (token === generation) { loading = false; controls(); progress(); }
+    throw error;
+  }
+  if (token !== generation) return;
   const db = await database;
   const loaded = await request(db.transaction('tracks').objectStore('tracks').index('bookId').getAll(id));
   if (token !== generation) return;
@@ -206,11 +258,68 @@ $('bookmark-form').onsubmit = safe(async event => {
 // preventDefault must run synchronously, before the safe async handler yields.
 $('bookmark-form').addEventListener('submit', event => event.preventDefault());
 $('export').onclick = safe(async () => {
+  if (!selected || loading || backupBusy) return;
+  const book = selected, token = generation, files = tracks.slice();
+  backupBusy = true; controls();
+  try {
+    const fingerprints = await ProgressBackup.fingerprints(files, (index, total) => { if (selected !== book || generation !== token) throw new Error('The selected book changed. Export again.'); message(`Preparing backup: track ${index} of ${total}…`); });
+    if (selected !== book || generation !== token) throw new Error('The selected book changed. Export again.');
+    await checkpoint();
+    if (selected !== book || generation !== token) throw new Error('The selected book changed. Export again.');
+    const {id, title, names, track, position, speed, bookmarks} = book;
+    const data = {schema: 2, browserPlayer: true, id, title, names, track, position, speed, volume: book.volume ?? 1, unmutedVolume: book.unmutedVolume ?? 1, bookmarks, fingerprintAlgorithm: 'sha256-first-last-128k-v1', files: fingerprints};
+    ProgressBackup.parse(data);
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    if (blob.size > ProgressBackup.maxBytes) throw new Error('This book’s progress exceeds the 5 MB backup limit.');
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a'); link.href = url; link.download = `${title.replace(/[^\p{L}\p{N} ._-]/gu, '_')}-progress.json`; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000); message('Progress backup exported. Keep the original audio files too.');
+  } finally { backupBusy = false; controls(); }
+});
+$('restore').onclick = () => $('restore-file').click();
+$('restore-file').onchange = safe(async event => {
+  const file = event.target.files[0]; event.target.value = '';
+  if (!file || !selected || loading || backupBusy) return;
+  const book = selected, token = generation, files = tracks.slice();
+  backupBusy = true; controls();
+  try {
+    if (file.size > ProgressBackup.maxBytes) throw new Error('Progress backups must be at most 5 MB and contain no audio.');
+    let json; try { json = JSON.parse(await file.text()); } catch (_) { throw new Error('This file is not valid JSON. Choose an exported browser progress backup.'); }
+    const data = ProgressBackup.parse(json);
+    await ProgressBackup.verify(data, book.names, files, (index, total) => { if (selected !== book || generation !== token) throw new Error('The selected book changed. Select the backup again.'); message(`Checking audio: track ${index} of ${total}…`); });
+    if (selected !== book || generation !== token) throw new Error('The selected book changed. Select the backup again.');
+    const merged = ProgressBackup.mergeBookmarks(book.bookmarks, data.bookmarks);
+    pendingRestore = {book, generation: token, data};
+    $('restore-summary').textContent = `Backup “${data.title}” → current book “${book.title}”`;
+    $('restore-match').textContent = data.schema === 2 ? `${files.length} tracks match by name, size and sampled audio fingerprint.` : 'Older backup: only track names and order can be checked. Verify that you selected the original audio before restoring.';
+    $('restore-position').textContent = `Restore track ${data.track + 1} at ${duration(data.position)} · ${data.speed}× speed${data.volume === undefined ? '' : ` · ${Math.round(data.volume * 100)}% volume`}`;
+    $('restore-bookmarks').textContent = `Add ${merged.length - book.bookmarks.length} bookmarks. Keep all ${book.bookmarks.length} existing bookmarks.`;
+    $('restore-error').textContent = ''; $('restore-preview').showModal(); message('Backup checked. Review the restore preview.');
+  } finally { backupBusy = false; controls(); }
+});
+$('restore-cancel').onclick = () => $('restore-preview').close();
+$('restore-preview').onclose = () => { pendingRestore = null; };
+$('restore-preview').addEventListener('cancel', event => { if (restoring) event.preventDefault(); });
+$('restore-confirm').onclick = safe(async () => {
+  const target = pendingRestore;
+  if (!target || restoring) return;
+  if (selected !== target.book || generation !== target.generation) throw new Error('The selected book changed. Select the backup again.');
+  const book = selected, data = target.data;
   await checkpoint();
-  const {id, title, names, track, position, speed, bookmarks} = selected;
-  const url = URL.createObjectURL(new Blob([JSON.stringify({schema: 1, browserPlayer: true, id, title, names, track, position, speed, bookmarks}, null, 2)], {type: 'application/json'}));
-  const link = document.createElement('a'); link.href = url; link.download = `${title.replace(/[^\p{L}\p{N} ._-]/gu, '_')}-progress.json`; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  if (selected !== book || generation !== target.generation) throw new Error('The selected book changed. Select the backup again.');
+  const before = {track: book.track, position: book.position, speed: book.speed, volume: book.volume, unmutedVolume: book.unmutedVolume, bookmarks: book.bookmarks};
+  const wasPlaying = !audio.paused;
+  restoring = true; loading = true; audio.pause(); controls();
+  $('restore-confirm').disabled = $('restore-cancel').disabled = true;
+  try {
+    Object.assign(book, {track: data.track, position: data.position, speed: data.speed, volume: data.volume ?? book.volume, unmutedVolume: data.unmutedVolume ?? book.unmutedVolume, bookmarks: ProgressBackup.mergeBookmarks(book.bookmarks, data.bookmarks), updatedAt: Date.now()});
+    try { await saveBook(book); }
+    catch (error) { Object.assign(book, before); loading = false; if (wasPlaying) await audio.play(); throw error; }
+    await switchTrack(data.track, data.position, false);
+    renderBooks(); renderBookmarks(); $('restore-preview').close(); message('Progress restored. Existing bookmarks were kept.');
+  } catch (error) { $('restore-error').textContent = error.message; throw error; } finally {
+    restoring = false; $('restore-confirm').disabled = $('restore-cancel').disabled = false; controls();
+  }
 });
 $('delete').onclick = safe(async () => {
   if (!selected || !confirm(`Remove “${selected.title}” from this browser? Original files are unchanged.`)) return;
@@ -226,11 +335,37 @@ $('delete').onclick = safe(async () => {
   $('title').textContent = 'Choose a book'; $('track-name').textContent = 'Progress and bookmarks are saved locally.';
   renderBooks(); renderTracks(); renderBookmarks(); controls(); progress(); message('Book removed from this browser.');
 });
+async function seekLoadedTrack(target, source) {
+  // Keep checkpoints disabled until the decoder confirms the initial seek.
+  // Some decoders first report a seek to zero while the track is warming up.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await new Promise((resolve, reject) => {
+      const cleanup = () => { clearTimeout(timer); audio.removeEventListener('seeked', done); audio.removeEventListener('emptied', done); };
+      const done = () => { cleanup(); resolve(); };
+      const timer = setTimeout(() => { cleanup(); reject(new Error('The browser could not restore the track position. Try Jump to time.')); }, 10000);
+      audio.addEventListener('seeked', done); audio.addEventListener('emptied', done);
+      try {
+        audio.currentTime = target;
+        if (!audio.seeking && Math.abs(audio.currentTime - target) < .25) done();
+      } catch (error) { cleanup(); reject(error); }
+    });
+    if (objectUrl !== source) return false;
+    if (Math.abs(audio.currentTime - target) < .25) return true;
+  }
+  throw new Error('The browser could not restore the track position. Try Jump to time.');
+}
 audio.onloadedmetadata = safe(async () => {
-  if (!selected) return;
-  audio.currentTime = Math.max(0, Math.min(pendingPosition, Number.isFinite(audio.duration) ? audio.duration : pendingPosition));
-  loading = false; controls(); progress(); await checkpoint();
-  if (playWhenReady) { playWhenReady = false; await audio.play(); }
+  if (!selected || sourceGeneration !== generation) return;
+  const source = objectUrl, token = sourceGeneration;
+  try {
+    const target = Math.max(0, Math.min(pendingPosition, Number.isFinite(audio.duration) ? audio.duration : pendingPosition));
+    if (target > 0 && !await seekLoadedTrack(target, source)) return;
+    if (objectUrl !== source || token !== generation) return;
+    loading = false; controls(); progress(); await checkpoint();
+    if (objectUrl === source && token === generation && playWhenReady) { playWhenReady = false; await audio.play(); }
+  } catch (error) {
+    if (objectUrl === source && token === generation) { loading = false; controls(); throw error; }
+  }
 });
 audio.ontimeupdate = () => { progress(); if (Date.now() - lastCheckpoint > 5000) { lastCheckpoint = Date.now(); safe(checkpoint)(); } };
 audio.onplay = controls;
@@ -244,7 +379,7 @@ $('about-open').onclick = () => $('about').showModal();
 $('about-close').onclick = () => $('about').close();
 if ('mediaSession' in navigator) {
   for (const [action, handler] of Object.entries({play: () => audio.play(), pause: () => audio.pause(), seekbackward: () => { audio.currentTime = Math.max(0, audio.currentTime - 30); }, seekforward: () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 30); }, previoustrack: () => switchTrack(selected.track - 1, 0, true), nexttrack: () => switchTrack(selected.track + 1, 0, true)})) {
-    try { navigator.mediaSession.setActionHandler(action, safe(handler)); } catch (_) { /* Browser-specific support. */ }
+    try { navigator.mediaSession.setActionHandler(action, safe(() => { if (selected && !loading && !restoring) return handler(); })); } catch (_) { /* Browser-specific support. */ }
   }
 }
 $('files').disabled = true; $('add-book').disabled = true;

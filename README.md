@@ -24,12 +24,18 @@ Release checksums and separate CLI bundles are attached to each versioned GitHub
 
 The Pages site plays audio files selected from your device and stores audio, progress,
 speed, volume and bookmarks in IndexedDB. Select one file or all tracks of one book;
-tracks use natural filename order. It supports search, track navigation and JSON progress
-exports. Audio stays in your browser; there are no analytics or audio uploads.
+tracks use natural filename order. It supports search, track navigation, editable/deletable
+bookmarks, and JSON progress backup/restore. Restore checks the selected audio, shows a
+preview, and keeps existing bookmarks without duplicating restored entries. Audio stays
+in your browser; there are no analytics or audio uploads.
 
 Browser codec support varies. Embedded M4B chapters, NAS connections, the full native
-library, metadata restore and guaranteed background playback require the installed app.
+library and native-library JSON restore require the installed app. Background playback
+depends on the browser and operating system.
 Clearing site data removes the browser library; keep your original audio.
+For a browser restore, add the original audio files, select that book, and choose
+**Restore progress**. Review the matching tracks and saved position before confirming.
+See [browser backups and format details](docs/WEB_PLAYER.md).
 This is a separate static player in `site/`, deployed by `pages.yml`; `flutter build web`
 currently builds the native app's platform-availability notice.
 
@@ -223,6 +229,8 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | Player large-text layout, labeled touch targets, spoken seek values and reduced-motion waveform |
 | Added | Saved automatic/grid/list library layouts, responsive search/filter controls and accessible book actions |
 | Added | Direct SMB2/3 NAS browsing, signed connections, optional required encryption and resumable offline downloads |
+| Added | Custom sleep durations, quick timer extensions, deadline-based expiry and CLI timer parity |
+| Added | Browser progress backup/restore with audio checks, bookmark merging, editing and deletion |
 | Next | Wider accessibility/device audit |
 | Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
 | Deferred | Optional local CrispASR transcripts and full-text search |

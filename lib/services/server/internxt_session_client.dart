@@ -49,8 +49,9 @@ class InternxtSessionClient extends sdk.InternxtClient {
       await for (final chunk in response.stream.timeout(
         const Duration(seconds: 30),
       )) {
-        if (bytes.length + chunk.length > 1024 * 1024)
+        if (bytes.length + chunk.length > 1024 * 1024) {
           throw const FormatException('Invalid renewal response.');
+        }
         bytes.addAll(chunk);
       }
       final body = jsonDecode(utf8.decode(bytes)) as Map;

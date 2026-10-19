@@ -106,7 +106,7 @@ Flutter tests otherwise skip unless explicitly opted in.
 
 On 19 October 2026, both providers passed real login, generated WAV upload,
 offline import, encrypted two-library progress and explicit conflict resolution.
-Internxt also passed forced near-expiry renewal, secure-store persistence and
+Internxt also passed forced near-expiry renewal, credential-store writeback and
 subsequent download/sync with the renewed session.
 Each run owns a fresh UUID-named root folder and moves only that folder to trash
 in cleanup. Existing account files and personal Internxt credentials are unused.

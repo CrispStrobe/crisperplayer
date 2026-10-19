@@ -59,29 +59,32 @@ class LibraryService {
     if (kIsWeb) {
       throw UnsupportedError('Audio import requires the installed app');
     }
+    // Android document providers commonly label M4B/Opus files as generic
+    // binary data. MIME filters disable those rows before we can inspect them.
+    final android = defaultTargetPlatform == TargetPlatform.android;
     final files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const [
-        'm4b',
-        'm4a',
-        'mp3',
-        'flac',
-        'ogg',
-        'wav',
-        'aac',
-        'opus',
-        'wma',
-        'aiff',
-        'aif',
-        'mp2',
-        'mov',
-        'webm',
-        '3gp',
-        'mkv',
-        'mka',
-      ],
+      type: android ? FileType.any : FileType.custom,
+      allowedExtensions: android
+          ? null
+          : [for (final extension in audioExtensions) extension.substring(1)],
     );
-    return files.where((f) => f.path != null).map((f) => f.path!).toList();
+    if (files.isEmpty) return [];
+    final unsupported = files.where(
+      (file) => !audioExtensions.contains(p.extension(file.name).toLowerCase()),
+    );
+    if (unsupported.isNotEmpty) {
+      throw FormatException(
+        'Select supported audio files (for example M4B, MP3 or WAV). '
+        'Unsupported selection: ${unsupported.take(3).map((file) => file.name).join(', ')}',
+      );
+    }
+    if (files.any((file) => file.path == null)) {
+      throw const FileSystemException(
+        'The file provider did not make the selected audio available. '
+        'Download it to this device and select it again.',
+      );
+    }
+    return files.map((file) => file.path!).toList();
   }
 
   Future<String?> importFiles(

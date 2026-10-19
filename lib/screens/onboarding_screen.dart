@@ -103,6 +103,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _importBooks() async {
+    try {
+      await _importSelectedBooks();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Import failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _importSelectedBooks() async {
     final svc = ref.read(libraryServiceProvider);
     final paths = await svc.pickAudioFiles();
     if (paths.isEmpty) return;

@@ -20,6 +20,13 @@ Windows builds are unsigned and Mac downloads are ad-hoc signed, not notarized.
 Windows needs the Microsoft Visual C++ runtime (x64); Linux needs system libmpv, GTK and libsecret. See [installation details](docs/RELEASES.md).
 Release checksums and separate CLI bundles are attached to each versioned GitHub release.
 
+## Import from Android Downloads
+
+Choose **Import → Import audio files**, then select the audiobooks inside
+Downloads. Supported audio remains selectable even when the file provider labels
+it as generic binary data. To import a folder, select a book subfolder: Android
+blocks selecting the Downloads root as a whole folder.
+
 ## Send books from a computer
 
 In the installed app choose **Add books → Upload from browser**. Start sharing,

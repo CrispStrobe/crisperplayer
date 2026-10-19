@@ -658,44 +658,60 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final choice = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.audio_file_outlined),
-              title: const Text('Import audio files'),
-              onTap: () => Navigator.pop(context, 'files'),
-            ),
-            if (Platform.isMacOS ||
-                Platform.isWindows ||
-                Platform.isLinux ||
-                Platform.isAndroid)
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               ListTile(
-                leading: const Icon(Icons.folder_open),
-                title: const Text('Import folder as one book'),
-                onTap: () => Navigator.pop(context, 'folder'),
+                leading: const Icon(Icons.audio_file_outlined),
+                title: const Text('Import audio files'),
+                subtitle: Platform.isAndroid
+                    ? const Text(
+                        'Select audiobooks inside Downloads or another folder',
+                      )
+                    : null,
+                onTap: () => Navigator.pop(context, 'files'),
               ),
-            if (Platform.isMacOS ||
-                Platform.isWindows ||
-                Platform.isLinux ||
-                Platform.isAndroid)
+              if (Platform.isMacOS ||
+                  Platform.isWindows ||
+                  Platform.isLinux ||
+                  Platform.isAndroid)
+                ListTile(
+                  leading: const Icon(Icons.folder_open),
+                  title: const Text('Import folder as one book'),
+                  subtitle: Platform.isAndroid
+                      ? const Text(
+                          'Select a book subfolder. For Downloads, use Import audio files.',
+                        )
+                      : null,
+                  onTap: () => Navigator.pop(context, 'folder'),
+                ),
+              if (Platform.isMacOS ||
+                  Platform.isWindows ||
+                  Platform.isLinux ||
+                  Platform.isAndroid)
+                ListTile(
+                  leading: const Icon(Icons.library_books_outlined),
+                  title: const Text('Import library folder / mounted share'),
+                  subtitle: Text(
+                    Platform.isAndroid
+                        ? 'Select a library subfolder; Android blocks the Downloads root.'
+                        : 'Review separate books in nested folders',
+                  ),
+                  onTap: () => Navigator.pop(context, 'library'),
+                ),
               ListTile(
-                leading: const Icon(Icons.library_books_outlined),
-                title: const Text('Import library folder / mounted share'),
-                subtitle: const Text('Review separate books in nested folders'),
-                onTap: () => Navigator.pop(context, 'library'),
+                leading: const Icon(Icons.wifi),
+                title: const Text('Upload from browser'),
+                onTap: () => Navigator.pop(context, 'upload'),
               ),
-            ListTile(
-              leading: const Icon(Icons.wifi),
-              title: const Text('Upload from browser'),
-              onTap: () => Navigator.pop(context, 'upload'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dns_outlined),
-              title: const Text('Plex / WebDAV / SFTP server'),
-              onTap: () => Navigator.pop(context, 'server'),
-            ),
-          ],
+              ListTile(
+                leading: const Icon(Icons.dns_outlined),
+                title: const Text('Plex / WebDAV / SFTP server'),
+                onTap: () => Navigator.pop(context, 'server'),
+              ),
+            ],
+          ),
         ),
       ),
     );

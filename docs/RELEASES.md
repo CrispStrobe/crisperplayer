@@ -165,3 +165,23 @@ plus live Filen/Internxt encrypted progress and conflict checks. The Mac
 crypto sandbox regression and Filen live account check passed with the same
 compatibility patch as CrispCloud. Nextcloud live account testing remains pending
 without a configured endpoint or working local Docker daemon.
+
+## Android Downloads import correction (build 19)
+
+The Android audio picker now accepts all document-provider MIME types and checks
+the selected filenames against the supported audio extensions inside the app.
+This allows M4B, Opus and other supported audio labeled as generic binary data
+to remain selectable. Unsupported selections produce an explicit error before
+any book is imported; unavailable provider paths no longer disappear silently.
+Desktop and iOS keep their existing extension filters.
+
+For files in Downloads, choose **Import audio files** and select the books inside
+it. Android 11 and later block granting access to the Downloads root through
+the folder picker; the import menu now explains this distinction. Book
+subfolders can still be selected with the folder import options. See the
+[Android document access restrictions](https://developer.android.com/training/data-storage/shared/documents-files#document-tree-access-restrictions).
+
+The Android release gate now also opens the real system Downloads picker and
+imports generated M4B and WAV fixtures advertised as `application/octet-stream`.
+Screenshots, the picker hierarchy and fixture MIME metadata accompany the
+existing startup evidence. These checks run on GitHub's dedicated emulator.

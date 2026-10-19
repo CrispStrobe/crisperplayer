@@ -71,6 +71,8 @@ def main():
 
     run('install', '-r', str(apk))
     launch('cold-start')
+    from android_picker_acceptance import check_download_import
+    check_download_import(command, args.output)
     # Reinstall in place and restart without clearing app data: this exercises
     # preferences/database reopening and prevents a debug-only smoke test.
     run('install', '-r', str(apk))

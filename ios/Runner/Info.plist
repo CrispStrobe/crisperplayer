@@ -167,7 +167,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Connect to your Plex media server and NAS to download audiobooks.</string>
+	<string>Connect to your Plex media server and NAS, and receive audiobook uploads from a browser on your local network.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

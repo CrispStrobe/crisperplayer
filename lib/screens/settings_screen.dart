@@ -237,6 +237,15 @@ class SettingsScreen extends ConsumerWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
+          if (!kIsWeb)
+            ListTile(
+              leading: const Icon(Icons.wifi),
+              title: const Text('Upload from browser'),
+              subtitle: const Text(
+                'Send audiobooks over your local Wi-Fi network',
+              ),
+              onTap: () => context.push('/settings/upload'),
+            ),
           ListTile(
             leading: const Icon(Icons.dns_outlined),
             title: const Text('Servers & NAS'),

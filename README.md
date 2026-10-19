@@ -20,6 +20,15 @@ Windows builds are unsigned and Mac downloads are ad-hoc signed, not notarized.
 Windows needs the Microsoft Visual C++ runtime (x64); Linux needs system libmpv, GTK and libsecret. See [installation details](docs/RELEASES.md).
 Release checksums and separate CLI bundles are attached to each versioned GitHub release.
 
+## Send books from a computer
+
+In the installed app choose **Add books → Upload from browser**. Start sharing,
+open the displayed address on a computer on the same trusted Wi-Fi network,
+and paste the access code. Select all tracks for one book to upload and import
+with progress. Keep the app open and the device unlocked; sharing stops when
+you leave the screen or background the app. HTTP transfers are not encrypted.
+See [limits, permissions and platform behavior](docs/BROWSER_UPLOADS.md).
+
 ## Browser player
 
 The Pages site plays audio files selected from your device and stores audio, progress,

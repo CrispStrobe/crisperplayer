@@ -686,6 +686,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 onTap: () => Navigator.pop(context, 'library'),
               ),
             ListTile(
+              leading: const Icon(Icons.wifi),
+              title: const Text('Upload from browser'),
+              onTap: () => Navigator.pop(context, 'upload'),
+            ),
+            ListTile(
               leading: const Icon(Icons.dns_outlined),
               title: const Text('Plex / WebDAV / SFTP server'),
               onTap: () => Navigator.pop(context, 'server'),
@@ -696,6 +701,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
     if (!mounted) return;
     if (choice == 'files') await _import();
+    if (choice == 'upload' && mounted) context.push('/settings/upload');
     if (choice == 'server' && mounted) context.push('/settings/sync');
     if (choice == 'folder' || choice == 'library') {
       try {

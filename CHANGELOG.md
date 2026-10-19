@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
 ## 0.1.0+16
 
+- Added foreground browser-to-device audiobook uploads with per-session access codes, streaming transfers and normal library import.
+
 - Added Filen, Internxt and Nextcloud offline sources and secure SDK session refresh.
 - Added opt-in Plex progress and encrypted provider-folder progress with conflict resolution and CLI parity.
 - Added Android Auto browsing, an Android playback widget and native Apple companion integrations with explicit provisioning requirements.

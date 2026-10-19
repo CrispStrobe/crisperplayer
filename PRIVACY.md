@@ -14,7 +14,7 @@ WebDAV, SFTP or SMB for browsing and offline downloads. Those servers/providers
 receive the authentication and file requests needed for their service and can
 keep their own access logs. Their privacy policies apply to your accounts.
 Filen and Internxt downloads are decrypted on your device through their SDKs.
-CrisperPlayer does not upload your audiobooks as part of importing or sync.
+CrisperPlayer does not send your audiobooks to a cloud service as part of importing or progress sync.
 
 Optional Plex progress sync sends track identifiers and listening positions to
 your Plex server. The Plex server owner can read that information.
@@ -35,6 +35,18 @@ Temporary decrypted downloads are removed after completion or handled failure;
 an abrupt system/process termination can leave disposable staging files until
 OS cleanup. The app's persistent library and JSON metadata backups are not
 separately encrypted by CrisperPlayer and rely on device/OS protection.
+
+## Optional browser uploads
+
+When you start Upload from browser, the installed app receives audio over a
+local HTTP server protected by a new per-session access code. HTTP does not
+encrypt the code or audio in transit: use a trusted private network. The server
+exposes no library downloads or playback controls. It stops when you leave the
+transfer screen or background the app. Received files are staged locally and
+copied into the library after import; stopped/failed transfers are removed.
+Abrupt termination may leave temporary files until OS cleanup. The transfer page
+uses no analytics, external resources or persistent browser credential storage.
+See [browser uploads](docs/BROWSER_UPLOADS.md).
 
 ## Local data and exports
 

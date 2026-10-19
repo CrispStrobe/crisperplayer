@@ -1,3 +1,4 @@
+import 'screens/browser_upload_screen.dart';
 import 'services/sync/folder_progress_service.dart';
 import 'services/audio/companion_service.dart';
 import 'services/audio/media_library.dart';
@@ -246,6 +247,10 @@ class _CrisperPlayerAppState extends ConsumerState<CrisperPlayerApp>
         ),
         GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
         GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+        GoRoute(
+          path: '/settings/upload',
+          builder: (_, _) => const BrowserUploadScreen(),
+        ),
         GoRoute(
           path: '/settings/sync',
           builder: (_, _) => const SyncSettingsScreen(),

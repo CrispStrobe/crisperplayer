@@ -1,3 +1,7 @@
+// Real PBKDF2 derivation is intentionally expensive, including on shared CI CPUs.
+@Timeout(Duration(minutes: 2))
+library;
+
 import 'dart:async';
 import 'package:crisperplayer/cli/control_client.dart';
 import 'package:crisperplayer/services/desktop_control_service.dart';

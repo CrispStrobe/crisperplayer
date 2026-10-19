@@ -96,3 +96,30 @@ crisperplayer call folder-sync-configure '{}'
 The older hosted-account/backend proposal is archived as
 [an unimplemented design](design/HOSTED_SYNC_PROPOSAL.md). It describes no active
 service and should not be used as a statement of current encryption or features.
+
+## Local live-account checks
+
+`python3 scripts/live_cloud_tests.py` loads only the Filen credentials and the
+Internxt **test** account variables from `../.env` into the local test process.
+It refuses to run in CI and never uploads credentials or the `.env` file. The
+Flutter tests otherwise skip unless explicitly opted in.
+
+On 19 October 2026, both providers passed real login, generated WAV upload,
+offline import, encrypted two-library progress and explicit conflict resolution.
+Internxt also passed forced near-expiry renewal, secure-store persistence and
+subsequent download/sync with the renewed session.
+Each run owns a fresh UUID-named root folder and moves only that folder to trash
+in cleanup. Existing account files and personal Internxt credentials are unused.
+SDK config directories and app libraries are disposable and credential stores
+are memory-backed for these checks.
+
+These checks found and fixed Filen's empty root ID after login and Internxt's
+separate filename/extension fields and original-basename download behavior.
+Internxt renews near-expiry sessions and retries an authenticated request once
+after HTTP 401. Renewal uses the login hydration endpoint with its required CLI
+header; the newer CLI-specific endpoint rejects this test account with HTTP 402.
+Rotated credentials are written back to platform secure storage. A revoked
+session requires reconnecting; account passwords are not retained.
+Nextcloud endpoint handling and WebDAV transfers have fixture coverage; a live
+Nextcloud account check remains pending because the parent `.env` provides no
+Nextcloud URL/account and the former localhost:8888 test instance is offline.

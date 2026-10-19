@@ -63,6 +63,9 @@ jobs:
           dart run build_runner build --build-filter lib/services/db/app_database.g.dart
           flutter analyze --no-pub
           flutter test --no-pub
+      - name: Verify startup and upload UI on iOS Simulator
+        if: ${{ !inputs.distribute_only }}
+        run: python3 scripts/ios_simulator_acceptance.py
       - name: Import the existing distribution identity
         if: ${{ !inputs.distribute_only }}
         env:

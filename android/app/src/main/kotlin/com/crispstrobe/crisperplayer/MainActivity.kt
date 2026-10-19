@@ -1,6 +1,7 @@
 package com.crispstrobe.crisperplayer
 
 import android.content.Intent
+import android.view.WindowManager
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -14,6 +15,14 @@ class MainActivity : AudioServiceActivity() {
         super.configureFlutterEngine(flutterEngine)
         if (!flutterEngine.plugins.has(AudioEffectsPlugin::class.java)) {
             flutterEngine.plugins.add(AudioEffectsPlugin())
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.crispstrobe.crisperplayer/transfer").setMethodCallHandler { call, result ->
+            if (call.method == "keepAwake") {
+                if (call.arguments == true) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                result.success(null)
+            } else result.notImplemented()
         }
         pending = intent?.getStringExtra("companion_action")?.takeIf { it in actions }
         companion = MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
@@ -44,6 +53,10 @@ class MainActivity : AudioServiceActivity() {
                 }
             }
         }
+    }
+    override fun onStop() {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        super.onStop()
     }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

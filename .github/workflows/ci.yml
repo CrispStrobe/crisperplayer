@@ -11,7 +11,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     concurrency:
-      group: test-${{ github.ref }}
+      group: test-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'push' }}
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +89,10 @@ jobs:
           profile: pixel_7
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: python3 scripts/android_release_smoke.py build/app/outputs/flutter-apk/app-release.apk
+          script: |
+            python3 scripts/android_release_smoke.py build/app/outputs/flutter-apk/app-release.apk
+            adb uninstall com.crispstrobe.crisperplayer
+            flutter test integration_test/browser_upload_test.dart -d emulator-5554
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -118,6 +121,10 @@ jobs:
       - run: flutter pub get
       - run: flutter config --no-enable-swift-package-manager
       - run: flutter build ios --simulator --debug --no-codesign --no-pub
+      - name: Exercise startup and browser uploads on iOS Simulator
+        run: python3 scripts/ios_simulator_acceptance.py
+      - name: Restore regular simulator app after integration tests
+        run: flutter build ios --simulator --debug --no-codesign --no-pub
       - name: Package simulator app
         run: tar -czf ios-simulator.tar.gz -C build/ios/iphonesimulator Runner.app
       - uses: actions/upload-artifact@v4

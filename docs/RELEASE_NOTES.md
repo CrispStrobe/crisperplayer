@@ -1,8 +1,8 @@
 CrisperPlayer 0.1.0 build 16
 
 - Fixed Android startup crash in the release APK; release publication now requires an emulator startup and reinstall check.
-- Browser-to-device audiobook uploads over trusted Wi-Fi with access codes and progress; foreground only.
-- Filen, Internxt and Nextcloud join Plex/WebDAV/SFTP/SMB offline libraries, using the SDKs shared with CrispCloud. Cloud credentials and refreshed sessions remain in secure storage.
+- Browser-to-device audiobook uploads over trusted Wi-Fi with QR pairing, access codes, on-device progress, mobile keep-awake and resumable large-file chunks; foreground only.
+- Filen, Internxt and Nextcloud join Plex/WebDAV/SFTP/SMB offline libraries, using the SDKs shared with CrispCloud. Cloud credentials and refreshed sessions remain in secure storage. Local live-account tests verified Filen and Internxt import, encrypted progress and conflict resolution, plus Internxt session renewal. Nextcloud live-account testing remains pending.
 - Optional Plex listening-position sync with persistent offline baselines, explicit conflicts and protection for open books.
 - Encrypted progress sync through your own Nextcloud/WebDAV, Filen or Internxt folder. Content hashes match tracks across devices; vector clocks preserve concurrent edits for a choice. No audio uploads.
 - Android Auto library/queue/chapter browsing and voice search; Android home-screen playback widget.

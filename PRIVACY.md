@@ -43,7 +43,11 @@ local HTTP server protected by a new per-session access code. HTTP does not
 encrypt the code or audio in transit: use a trusted private network. The server
 exposes no library downloads or playback controls. It stops when you leave the
 transfer screen or background the app. Received files are staged locally and
-copied into the library after import; stopped/failed transfers are removed.
+copied into the library after import. Completed upload chunks stay in the
+private inbox for retry during the sharing session; stopping removes that inbox.
+Pairing QR codes/links contain the temporary access code in a URL fragment. The
+browser reads and removes it from the current history entry; it is not sent in
+the page request. Anyone given the pairing link can upload during that session.
 Abrupt termination may leave temporary files until OS cleanup. The transfer page
 uses no analytics, external resources or persistent browser credential storage.
 See [browser uploads](docs/BROWSER_UPLOADS.md).

@@ -43,9 +43,16 @@ void main() {
         final address = Uri.parse(
           displayed.firstWhere((value) => value.startsWith('http://')),
         );
-        final code = displayed.singleWhere(
-          (value) => !value.startsWith('http://'),
+        await tester.scrollUntilVisible(
+          find.text('Copy access code'),
+          160,
+          scrollable: find.byType(Scrollable).first,
         );
+        await tester.pumpAndSettle();
+        final code = tester
+            .widgetList<SelectableText>(find.byType(SelectableText))
+            .map((widget) => widget.data!)
+            .singleWhere((value) => RegExp(r'^[a-f0-9]{40}$').hasMatch(value));
         final base = Uri.parse('http://127.0.0.1:${address.port}');
         final fixture = await writeTestWav(
           File('${root.path}/source.wav'),

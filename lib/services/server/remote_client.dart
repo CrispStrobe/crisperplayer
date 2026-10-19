@@ -7,6 +7,7 @@ import 'package:internxt_client/internxt_client.dart' as internxt;
 import 'package:path/path.dart' as p;
 import 'package:crypto/crypto.dart';
 import '../../utils/folder_import.dart';
+import 'internxt_session_client.dart';
 export 'package:crisp_storage/crisp_storage.dart'
     show RemoteException, RemoteEntry;
 
@@ -130,6 +131,7 @@ class _InternxtMemoryStorage implements internxt.ConfigStorage {
 class RemoteClient {
   final RemoteConnection connection;
   final Future<void> Function(String)? onSessionChanged;
+  final DateTime Function() clock;
   shared.RemoteClient? _transport;
   filen.FilenClient? _filen;
   internxt.InternxtClient? _internxt;
@@ -140,7 +142,8 @@ class RemoteClient {
     this.connection, {
     HttpClient? httpClient,
     this.onSessionChanged,
-  }) {
+    DateTime Function()? clock,
+  }) : clock = clock ?? DateTime.now {
     if (!RemoteConnection.cloudKinds.contains(connection.kind)) {
       _transport = shared.RemoteClient(
         connection.transport,
@@ -194,7 +197,40 @@ class RemoteClient {
         storage: storage,
       );
       storage.seed(config.credentialsFile, connection.secret);
-      _internxt = internxt.InternxtClient(config: config)..setAuth(auth);
+      _internxt = InternxtSessionClient(config: config)..setAuth(auth);
+      if (internxtSessionNeedsRefresh(auth['newToken'] as String?, clock())) {
+        await _internxt!.refreshToken();
+      }
+    }
+  }
+
+  /// JWT claims only schedule renewal; the server still authenticates every call.
+  static bool internxtSessionNeedsRefresh(String? token, DateTime now) {
+    try {
+      final parts = token!.split('.');
+      if (parts.length != 3) return false;
+      final claims =
+          jsonDecode(
+                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+              )
+              as Map;
+      final expiry = claims['exp'];
+      return expiry is num &&
+          expiry * 1000 <= now.millisecondsSinceEpoch + 60000;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<T> _internxtRequest<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on internxt.ApiException catch (error) {
+      if (error.statusCode != 401) rethrow;
+      // One renewal only. A revoked/expired renewal credential requires an
+      // explicit reconnect; the app never retains the account password.
+      await _internxt!.refreshToken();
+      return action();
     }
   }
 
@@ -216,8 +252,14 @@ class RemoteClient {
         );
         auth = await client.login(email, password, twoFactorCode: code ?? '');
         client.setAuth(auth);
-        auth['baseFolderUUID'] =
-            auth['baseFolderUUID'] ?? await client.fetchBaseFolderUUID();
+        if ((auth['baseFolderUUID'] as String? ?? '').isEmpty) {
+          auth['baseFolderUUID'] = await client.fetchBaseFolderUUID();
+        }
+        if ((auth['baseFolderUUID'] as String? ?? '').isEmpty) {
+          throw const shared.RemoteException(
+            'Filen did not return a root folder.',
+          );
+        }
       } else {
         final client = internxt.InternxtClient(
           config: internxt.ConfigService(
@@ -232,6 +274,19 @@ class RemoteClient {
     } finally {
       await temp.delete(recursive: true);
     }
+  }
+
+  /// Internxt lists the stem and extension separately; Filen returns a full name.
+  static String cloudFilename(String kind, Map<String, dynamic> row) {
+    final name = row['name'] as String;
+    final type = row['fileType'] as String? ?? '';
+    if (kind == 'internxt' &&
+        type.isNotEmpty &&
+        type != 'file' &&
+        !name.toLowerCase().endsWith('.${type.toLowerCase()}')) {
+      return '$name.$type';
+    }
+    return name;
   }
 
   Future<List<shared.RemoteEntry>> browse(String path) async {
@@ -256,12 +311,17 @@ class RemoteClient {
         ),
       };
     } else {
-      rows = await _internxt!.listPath(root);
+      rows = await _internxtRequest(() => _internxt!.listPath(root));
     }
     final entries = <shared.RemoteEntry>[];
     for (final category in ['folders', 'files']) {
       for (final row in (rows[category] as List? ?? [])) {
-        final name = row['name'] as String;
+        final name = category == 'files'
+            ? cloudFilename(
+                connection.kind,
+                (row as Map).cast<String, dynamic>(),
+              )
+            : row['name'] as String;
         if (name.isEmpty ||
             name == '.' ||
             name == '..' ||
@@ -304,7 +364,7 @@ class RemoteClient {
     // output becomes visible atomically; an interrupted encrypted file restarts.
     final info = _filen != null
         ? await _filen!.resolvePath(path)
-        : await _internxt!.resolvePath(path);
+        : await _internxtRequest(() => _internxt!.resolvePath(path));
     final metadata = (info['metadata'] as Map?) ?? info;
     final size = int.tryParse('${metadata['size']}');
     if (size != null && size > limit) {
@@ -338,7 +398,11 @@ class RemoteClient {
     }
     _downloading = true;
     final stage = await _temporary!.createTemp('audio-');
-    final target = File(p.join(stage.path, 'audio'));
+    // Internxt's path facade saves the original remote basename. Its
+    // published rename helper reads a field absent from resolvePath results.
+    final target = File(
+      p.join(stage.path, _internxt != null ? p.posix.basename(path) : 'audio'),
+    );
     try {
       if (_filen != null) {
         await _filen!.downloadFile(
@@ -354,10 +418,12 @@ class RemoteClient {
           },
         );
       } else {
-        await _internxt!.downloadFileByPath(
-          path,
-          target.path,
-          onConflict: 'overwrite',
+        await _internxtRequest(
+          () => _internxt!.downloadFileByPath(
+            path,
+            target.path,
+            onConflict: 'overwrite',
+          ),
         );
       }
       if (_closed) throw const shared.RemoteException('Download paused.');
@@ -407,10 +473,12 @@ class RemoteClient {
           target['uuid'] as String,
         );
       } else {
-        await _internxt!.uploadFileBytes(
-          bytes,
-          name,
-          folder.isEmpty ? '/' : folder,
+        await _internxtRequest(
+          () => _internxt!.uploadFileBytes(
+            bytes,
+            name,
+            folder.isEmpty ? '/' : folder,
+          ),
         );
       }
     } else {
@@ -440,7 +508,7 @@ class RemoteClient {
       if (_filen != null) {
         await _filen!.trashByPath(path);
       } else {
-        await _internxt!.deletePath(path);
+        await _internxtRequest(() => _internxt!.deletePath(path));
       }
     } else {
       await _metadataRequest('DELETE', _metadataPath(folder, name));

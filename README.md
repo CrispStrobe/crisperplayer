@@ -24,8 +24,9 @@ Release checksums and separate CLI bundles are attached to each versioned GitHub
 
 In the installed app choose **Add books → Upload from browser**. Start sharing,
 open the displayed address on a computer on the same trusted Wi-Fi network,
-and paste the access code. Select all tracks for one book to upload and import
-with progress. Keep the app open and the device unlocked; sharing stops when
+and paste the access code, or use the pairing QR/link. Select all tracks for
+one book to upload and import with progress. Large files support chunked retry
+within the same session. Keep the transfer screen open; sharing stops when
 you leave the screen or background the app. HTTP transfers are not encrypted.
 See [limits, permissions and platform behavior](docs/BROWSER_UPLOADS.md).
 

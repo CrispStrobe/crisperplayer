@@ -63,6 +63,7 @@ dependencies:
   internxt_client: 0.2.3
   http: ^1.6.0
   just_waveform: ^0.0.7
+  qr_flutter: ^4.1.0
 
 dependency_overrides:
   # Same compatible crypto override used by CrispCloud for SSH 4.x.

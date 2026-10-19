@@ -3,7 +3,9 @@
 In the installed app choose **Add books → Upload from browser**, or
 **Settings → Upload from browser**. Connect the device and computer to the same
 trusted private network, start sharing, and open the displayed HTTP address in
-the computer's browser. Copy the access code from the device into the browser.
+the computer's browser. Copy the access code into the browser, or scan the
+pairing QR / copy its link to fill the code automatically. Treat the pairing
+link like the access code.
 No account, cloud service, USB cable or browser extension is needed.
 
 Select the audio files belonging to **one book** and optionally enter a title.
@@ -17,10 +19,17 @@ Limits: 4 GiB per file, 20 GiB per book and 500 files per book. Allow free space
 for both the received files and the library's owned copy. File extensions are
 checked; codec support still depends on the platform. ZIP archives are not
 extracted. Retrying a filename replaces its unfinished-batch copy. After a
-failed transfer retry the same selection, or stop/restart sharing to discard the
-batch before selecting a different book.
+failed transfer retry the same selection without closing the browser page.
+Files larger than 8 MiB resume at the last completed 8 MiB chunk. Interrupted
+chunks are rolled back, so retries never append duplicate bytes. Small files
+restart from the beginning. Resume state is scoped to the same immutable File
+selection and sharing session; selecting different files or restarting sharing
+starts a fresh upload. Stop/restart sharing to discard an unfinished batch.
+A lost final import acknowledgment is checked against its operation ID before
+retrying, preventing the same browser operation from creating a duplicate book.
 
-Keep the transfer screen open and the device unlocked. Leaving the screen,
+Keep the transfer screen open. The Android/iOS host keeps its screen awake
+while sharing and restores normal behavior when sharing stops. Leaving the screen,
 backgrounding the app or pressing Stop closes the server and deletes its inbox.
 An import already committing to the library is allowed to finish. Sharing must
 be restarted explicitly, with a fresh address/access code. An abrupt OS/process
@@ -37,13 +46,16 @@ On iOS allow Local Network access; test that permission on physical hardware.
 On desktop permit incoming connections if the OS firewall asks.
 
 A fresh 160-bit access code is required for every upload/import request. It is
-not placed in the URL, browser storage or logs. The unauthenticated page contains
+not placed in HTTP request URLs, browser storage or logs. The optional pairing
+link carries it in a URL fragment, which is not sent to the server; the page
+reads and immediately removes that fragment from its current history entry. The unauthenticated page contains
 no library information. Host and Origin validation protect against browser
 cross-origin requests and DNS rebinding. The server exposes no library download,
 delete, arbitrary path access or playback-control endpoints. Upload bytes stream
 to private, generated directories; client filenames never select directories.
 One upload/import runs at a time, with file-count/size limits and an inactivity
-timeout. Failed transfers are removed.
+timeout. Complete chunks can be resumed in this session; failed partial chunks
+are truncated to their last acknowledged offset. Stopping removes the inbox.
 
 This is **HTTP**, so the access code and audio are not encrypted on the network.
 Use only a trusted private network and stop sharing when finished. HTTPS with
@@ -65,6 +77,10 @@ credentials/audio without encryption and adds separate data-port handling.
 An authenticated WebDAV upload server could provide file-manager compatibility
 without an SSH stack in a future iteration. Existing WebDAV/SFTP/SMB client
 sources remain available to download from a NAS.
+
+The device screen shows the current file, transfer progress, import phase and
+completed book count. QR pairing also has text addresses and a copyable access
+code for keyboard and screen-reader use.
 
 Protocol and real-library import tests are in `test/browser_upload_test.dart`.
 Physical iOS/Android transfers, permission prompts and lock/background behavior

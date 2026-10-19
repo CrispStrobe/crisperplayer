@@ -31,6 +31,10 @@ jobs:
           ruby scripts/configure_apple_companions.rb --widget --watch
           ruby scripts/configure_apple_companions.rb --widget --watch
           ruby -e 'require "xcodeproj"; p = Xcodeproj::Project.open("ios/Runner.xcodeproj"); abort "Duplicate or missing companions" unless p.targets.count { |t| ["PlayerWidget", "PlayerWatch"].include?(t.name) } == 2'
+      - name: Compile the Watch target embedded in Runner
+        run: |
+          xcodebuild -project ios/Runner.xcodeproj -target PlayerWatch -sdk watchsimulator -configuration Release SYMROOT="$PWD/build/embedded-watch" OBJROOT="$RUNNER_TEMP/embedded-watch-objects" CODE_SIGNING_ALLOWED=NO build
+          test -x build/embedded-watch/Release-watchsimulator/PlayerWatch.app/PlayerWatch
       - uses: actions/upload-artifact@v4
         with:
           name: apple-companions-simulator

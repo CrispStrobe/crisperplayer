@@ -146,8 +146,9 @@ builds use the same check. Unit tests and an APK compilation alone are not a
 release startup test.
 
 The Android Pigeon JNI bridge needs original Kotlin coroutine descriptor names.
-`android/app/proguard-rules.pro` preserves the specific bridge classes and their
-descriptor types, with R8 shrinking/optimization still enabled. Build 15 could
+`android/app/proguard-rules.pro` preserves the bridge classes, descriptor types
+and coroutine runtime helpers looked up by Dart JNI, with R8 shrinking and
+optimization still enabled. Build 15 could
 fail before onboarding because `Continuation` was renamed even though the
 SharedPreferences registrar itself was kept. See
 [Android JNI keep-rule guidance](https://developer.android.com/topic/performance/app-optimization/keep-rules-overview).

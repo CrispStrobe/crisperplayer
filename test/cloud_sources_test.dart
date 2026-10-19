@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:crisperplayer/services/server/remote_client.dart';
 import 'package:filen_client/filen_client.dart' as filen;
@@ -5,6 +6,51 @@ import 'package:internxt_client/internxt_client.dart' as internxt;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+    'Internxt renews near-expiry sessions without treating JWT claims as authentication',
+    () {
+      final now = DateTime.utc(2026, 10, 19);
+      String token(int delta) =>
+          'header.${base64Url.encode(utf8.encode(jsonEncode({'exp': now.millisecondsSinceEpoch ~/ 1000 + delta}))).replaceAll('=', '')}.signature';
+      expect(RemoteClient.internxtSessionNeedsRefresh(token(30), now), isTrue);
+      expect(RemoteClient.internxtSessionNeedsRefresh(token(-30), now), isTrue);
+      expect(
+        RemoteClient.internxtSessionNeedsRefresh(token(3600), now),
+        isFalse,
+      );
+      expect(RemoteClient.internxtSessionNeedsRefresh('invalid', now), isFalse);
+    },
+  );
+  test(
+    'Internxt audio and progress listings retain their separately stored extensions',
+    () {
+      expect(
+        RemoteClient.cloudFilename('internxt', {
+          'name': 'Track 01',
+          'fileType': 'mp3',
+        }),
+        'Track 01.mp3',
+      );
+      expect(
+        RemoteClient.cloudFilename('internxt', {
+          'name': 'crisper-state-device-1',
+          'fileType': 'json',
+        }),
+        'crisper-state-device-1.json',
+      );
+      expect(
+        RemoteClient.cloudFilename('internxt', {
+          'name': 'Book.M4B',
+          'fileType': 'm4b',
+        }),
+        'Book.M4B',
+      );
+      expect(
+        RemoteClient.cloudFilename('filen', {'name': 'Book.mp3'}),
+        'Book.mp3',
+      );
+    },
+  );
   test(
     'Nextcloud builds DAV endpoint with a subdirectory and preserves explicit DAV URL',
     () {

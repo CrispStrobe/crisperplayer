@@ -227,8 +227,12 @@ class RemoteLibraryService extends ChangeNotifier {
     });
   }
 
-  RemoteClient createClient(RemoteConnection connection) => RemoteClient(
+  RemoteClient createClient(
+    RemoteConnection connection, {
+    DateTime Function()? clock,
+  }) => RemoteClient(
     connection,
+    clock: clock,
     onSessionChanged: (secret) => _saveConnections(
       (current) => [
         for (final item in current)

@@ -114,7 +114,10 @@ jobs:
           profile: pixel_7
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: python3 scripts/android_release_smoke.py dist/CrisperPlayer-android.apk
+          script: |
+            python3 scripts/android_release_smoke.py dist/CrisperPlayer-android.apk
+            adb uninstall com.crispstrobe.crisperplayer
+            flutter test integration_test/browser_upload_test.dart -d emulator-5554
       - uses: actions/upload-artifact@v4
         if: always()
         with:

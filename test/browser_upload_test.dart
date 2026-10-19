@@ -227,6 +227,88 @@ void main() {
   });
 
   test(
+    'resumable chunks honor offsets, reserve quota and import complete bytes',
+    () async {
+      final begin = await call('POST', '/upload?name=Chunked.mp3&size=10');
+      expect(begin.$1, 200);
+      final id = (jsonDecode(begin.$2) as Map)['id'];
+      expect((await call('POST', '/upload?name=TooBig.mp3&size=195')).$1, 413);
+      expect(
+        (await call('PATCH', '/upload?id=$id&offset=0', body: 'abcd')).$1,
+        200,
+      );
+      expect(jsonDecode((await call('GET', '/upload?id=$id')).$2)['offset'], 4);
+      expect(
+        (await call('PATCH', '/upload?id=$id&offset=0', body: 'bad')).$1,
+        409,
+      );
+      expect((await call('POST', '/import')).$1, 409);
+      expect(
+        (await call('PATCH', '/upload?id=$id&offset=4', body: 'efghij')).$1,
+        200,
+      );
+      expect(
+        jsonDecode((await call('GET', '/upload?id=$id')).$2)['complete'],
+        true,
+      );
+      expect((await call('POST', '/import')).$1, 200);
+      expect(imported.single, ['Chunked.mp3:abcdefghij']);
+      expect(server.importedBooks, 1);
+    },
+  );
+
+  test(
+    'a disconnected chunk rolls back to its last acknowledged offset',
+    () async {
+      final begin = await call('POST', '/upload?name=Resumed.mp3&size=10');
+      final id = (jsonDecode(begin.$2) as Map)['id'];
+      await call('PATCH', '/upload?id=$id&offset=0', body: 'abcd');
+      final socket = await Socket.connect('127.0.0.1', server.port);
+      socket.listen((_) {}, onError: (_) {});
+      socket.write(
+        'PATCH /upload?id=$id&offset=4 HTTP/1.1\r\n'
+        'Host: 127.0.0.1:${server.port}\r\n'
+        'Authorization: Bearer ${server.accessCode}\r\n'
+        'Content-Length: 6\r\n\r\nxx',
+      );
+      await socket.flush();
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      socket.destroy();
+      (int, String)? status;
+      for (var n = 0; n < 20; n++) {
+        status = await call('GET', '/upload?id=$id');
+        if (status.$1 == 200) break;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(status!.$1, 200);
+      expect(jsonDecode(status.$2)['offset'], 4);
+      expect(
+        (await call('PATCH', '/upload?id=$id&offset=4', body: 'efghij')).$1,
+        200,
+      );
+      expect((await call('POST', '/import')).$1, 200);
+      expect(imported.single, ['Resumed.mp3:abcdefghij']);
+    },
+  );
+
+  test(
+    'a lost import response can be retried without creating another book',
+    () async {
+      await call('PUT', '/upload?name=One.mp3', body: 'audio');
+      const operation = 'client-operation-123456';
+      expect((await call('POST', '/import?operation=$operation')).$1, 200);
+      expect(
+        jsonDecode(
+          (await call('GET', '/import?operation=$operation')).$2,
+        )['imported'],
+        true,
+      );
+      expect((await call('POST', '/import?operation=$operation')).$1, 200);
+      expect(imported, hasLength(1));
+    },
+  );
+
+  test(
     'real library import owns uploaded audio after inbox is stopped',
     () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());

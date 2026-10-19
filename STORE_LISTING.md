@@ -65,5 +65,6 @@ verified English copy in [docs/store/en-US](docs/store/en-US/description.txt),
 subtitle, keywords, copyright and support/privacy/website URLs. Its state remains
 **PREPARE_FOR_SUBMISSION**. No review submission or public release was performed.
 `scripts/prepare_appstore.py` verifies the app identity and editable state before
-applying that copy and reading it back. Screenshots, privacy-form completion and
-final build attachment remain separate production-preparation steps.
+applying that copy and reading it back. All ten real iPhone/iPad screenshots
+are attached and Apple reports them complete. Privacy-form completion, device
+acceptance checks and final build attachment remain production-preparation steps.

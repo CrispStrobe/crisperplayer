@@ -76,3 +76,10 @@ xcodebuild -project ios/Companions/CrisperPlayerCompanions.xcodeproj \
 Xcode must have the matching Watch platform installed. Native source can also be
 type-checked with `swiftc` against the Watch SDK when its build destination is
 unavailable. A successful type-check is not a full build or live pairing test.
+
+Provisioning preparation on 19 October 2026: both explicit companion identifiers
+are registered. The Watch App Store profile uses the existing canonical
+Distribution certificate and is installed as `IOS_PROFILE_WATCH_BASE64`. Its
+signed host archive must pass the export checks before upload. Widget App Group
+association and widget delivery are explicitly deferred at the user’s request.
+No widget profile is activated. CarPlay approval is pending.

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import '../services/transfer/transfer_screen_awake.dart';
 import '../providers/providers.dart';
 import '../services/transfer/browser_upload_server.dart';
 
@@ -41,7 +43,11 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
       _message = null;
     });
     final library = ref.read(libraryServiceProvider);
-    final server = BrowserUploadServer(
+    late final BrowserUploadServer server;
+    server = BrowserUploadServer(
+      onChanged: () {
+        if (mounted && _server == server) setState(() {});
+      },
       temporaryDirectory: getTemporaryDirectory,
       importBook: (paths, title) =>
           library.importFiles(paths, title: title, preserveOrder: true),
@@ -49,6 +55,9 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
     _server = server;
     try {
       await server.start();
+      if (mounted && _server == server && server.port != 0) {
+        await TransferScreenAwake.setEnabled(true);
+      }
       if (!mounted || _server != server) {
         await server.stop();
         return;
@@ -65,6 +74,7 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
       _message =
           'Could not start sharing. Check your local network permission and Wi-Fi connection.';
     } finally {
+      if (_server == null) await TransferScreenAwake.setEnabled(false);
       if (mounted) setState(() => _working = false);
     }
   }
@@ -78,6 +88,7 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
         _message = 'Stopping sharing…';
       });
     }
+    await TransferScreenAwake.setEnabled(false);
     var message = 'Sharing stopped. Unfinished uploads were discarded.';
     try {
       await server.stop();
@@ -98,6 +109,7 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _server?.stop().ignore();
+    TransferScreenAwake.setEnabled(false).ignore();
     super.dispose();
   }
 
@@ -121,7 +133,7 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
           ),
           const SizedBox(height: 12),
           const Text(
-            'Keep this screen open and the device unlocked during transfer. Sharing stops when the app goes into the background or you leave this screen. HTTP uploads are not encrypted; use a trusted private network.',
+            'Keep this screen open during transfer. The app keeps the mobile screen awake while sharing. Sharing stops when the app goes into the background or you leave this screen. HTTP uploads are not encrypted; use a trusted private network.',
           ),
           const SizedBox(height: 20),
           if (server != null && server.port != 0) ...[
@@ -136,6 +148,28 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
                       Clipboard.setData(ClipboardData(text: address)),
                 ),
               ),
+            for (final address in server.addresses.take(1)) ...[
+              Center(
+                child: QrImageView(
+                  data: '$address/#code=${server.accessCode}',
+                  size: 200,
+                  backgroundColor: Colors.white,
+                  semanticsLabel:
+                      'Pairing QR code containing the private upload access code',
+                ),
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.link),
+                label: const Text('Copy pairing link'),
+                onPressed: () => Clipboard.setData(
+                  ClipboardData(text: '$address/#code=${server.accessCode}'),
+                ),
+              ),
+              const Text(
+                'Scan from another device, or open the pairing link on your computer. The link grants upload access for this session.',
+              ),
+              const SizedBox(height: 16),
+            ],
             const Text('Access code — paste this into the browser'),
             const SizedBox(height: 8),
             SelectableText(server.accessCode),
@@ -145,6 +179,35 @@ class _BrowserUploadScreenState extends ConsumerState<BrowserUploadScreen>
               icon: const Icon(Icons.copy),
               label: const Text('Copy access code'),
             ),
+            const SizedBox(height: 16),
+            if (server.phase == 'receiving' || server.phase == 'importing') ...[
+              Text(
+                server.phase == 'importing'
+                    ? 'Importing audiobook…'
+                    : 'Receiving ${server.currentFilename ?? 'audio'}',
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: server.phase == 'receiving' && server.expectedBytes > 0
+                    ? (server.receivedBytes / server.expectedBytes).clamp(
+                        0.0,
+                        1.0,
+                      )
+                    : null,
+                semanticsLabel: server.phase == 'importing'
+                    ? 'Importing audiobook'
+                    : 'Audio upload progress',
+              ),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              '${server.stagedFiles} files received · ${server.importedBooks} books imported',
+            ),
+            if (server.phase == 'error')
+              const Text(
+                'The transfer was interrupted. Retry the same files in your browser, or restart sharing.',
+              ),
+            const SizedBox(height: 16),
             const Text(
               'Select all tracks for one book. They are sorted by filename and imported together. Repeat for the next book.',
             ),

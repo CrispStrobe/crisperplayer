@@ -3,6 +3,8 @@ import UIKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private var transferChannel: FlutterMethodChannel?
+  private var previousIdleTimer: Bool?
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -12,6 +14,23 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ForegroundTransfer") {
+      let channel = FlutterMethodChannel(name: "com.crispstrobe.crisperplayer/transfer",
+        binaryMessenger: registrar.messenger())
+      transferChannel = channel
+      channel.setMethodCallHandler { [weak self] call, result in
+        guard let self else { result(nil); return }
+        guard call.method == "keepAwake" else { result(FlutterMethodNotImplemented); return }
+        if call.arguments as? Bool == true {
+          if self.previousIdleTimer == nil { self.previousIdleTimer = UIApplication.shared.isIdleTimerDisabled }
+          UIApplication.shared.isIdleTimerDisabled = true
+        } else if let previous = self.previousIdleTimer {
+          UIApplication.shared.isIdleTimerDisabled = previous
+          self.previousIdleTimer = nil
+        }
+        result(nil)
+      }
+    }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "CompanionBridge") {
       CompanionBridge.shared.install(messenger: registrar.messenger())
     }

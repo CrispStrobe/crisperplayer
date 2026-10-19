@@ -32,6 +32,7 @@ selected.each do |kind|
   end
   target.build_configurations.each do |config|
     config.build_settings.merge!({
+      'PRODUCT_NAME' => name, 'EXECUTABLE_NAME' => name,
       'PRODUCT_BUNDLE_IDENTIFIER' => identifier, 'INFOPLIST_FILE' => "Companions/#{name}/Info.plist",
       'DEVELOPMENT_TEAM' => 'N9XSJ4M3GT', 'CODE_SIGN_STYLE' => 'Manual',
       'MARKETING_VERSION' => version[1], 'CURRENT_PROJECT_VERSION' => version[2],

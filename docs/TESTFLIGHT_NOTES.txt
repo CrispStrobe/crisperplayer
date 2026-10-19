@@ -1,23 +1,11 @@
-Please test the new app icon, compact player layout with pinned playback controls, stable chapter selection while playing, importing M4B and multi-file audiobooks, playback with the screen locked, headset/lock-screen controls, switching books, bookmarks on later tracks, resume after relaunch, speed and seek settings, and sleep-at-chapter-end timers.
+Build 15: custom sleep timers and reliable expiry.
 
-This build rewrites playback/history coordination, uses measured per-file durations, copies imported audio into durable app storage, migrates existing metadata, fixes share intake and connects settings to playback. Cloud sync is unavailable. JSON exports contain metadata, not audio files.
+Open the sleep-timer sheet from the player and test a custom duration: enter 1–1440 minutes and press Enter or Start custom timer. Reopen the sheet and check that the last custom duration is remembered. Invalid values must leave playback and the current timer unchanged.
 
-Chapter navigation now works within single-file audiobooks as well as across files. Added QuickTime chapter tables, Unicode chapter titles, reloading chapters for existing imports, and speed-adjusted listening time remaining.
+While a timer is active, test +5 minutes and +15 minutes. Extensions must add to the remaining time and preserve “finish the chapter” mode, including when already waiting for a chapter boundary. Cancel must prevent a later automatic pause.
 
-Requires iOS 15 or newer. Corrected document import configuration for App Store delivery.
+Test timer expiry with the screen locked and after returning from the background. A delayed callback must not restart a full countdown. Immediate expiry pauses and saves progress; chapter-end mode finishes the chapter playing when the timer expires. Timers do not survive app termination and are canceled when changing books.
 
-Library and playback improvements: editable book details and covers; MP4/MP3 embedded metadata and artwork; numbered series and collections; finished/unfinished/unread controls; per-book playback preferences; configurable smart rewind; persistent Up next queue; listening statistics; player keyboard shortcuts. CLI covers the same operations.
+Regression checks: local M4B/multi-track imports, chapter navigation, headset/lock-screen controls, bookmarks, resume, queue, speed, editable elapsed time, volume/mute restoration, and generating a measured waveform while playback continues. Check the sleep sheet and player with VoiceOver and enlarged text.
 
-Server libraries: Plex, WebDAV, SFTP and SMB offline downloads, queued jobs, pause/resume/discard and verified SSH host keys. Progress is local to this device. Automatic Plex progress sync remains pending.
-
-Nested library folders (desktop and Android): preview and select separate books from author/book folders or mounted NAS shares. Numbered CD/Disc/Part folders join their parent book. Existing single-book folder import remains available. CLI adds import-library with --dry-run. Stop between books; completed books remain imported.
-
-Player accessibility: enlarged text no longer overflows the player, mini player or speed/sleep sheets. Seek announcements use spoken elapsed/total times; screen-reader increments follow the configured skip interval. Skip buttons have descriptive labels, touch targets are larger, and the waveform respects Reduce Motion. Sleep-sheet refresh timers are released when closed. Please check VoiceOver and large text on your iPhone.
-
-Library browser: saved Automatic/Cover grid/List layouts, an automatic list for enlarged text, scalable cover cards, scrolling search/status/sort/collection/series controls, clear search, larger book-action targets and a pinned mini player. CLI settings expose the same libraryView preference.
-
-Direct NAS access: add an SMB share with smb://host/share/. SMB3 encryption is required by default; older NAS servers can explicitly use signed SMB2. Downloads support pause/resume and changed-file detection. GUI and CLI use the same connection settings.
-
-About CrisperPlayer: dynamic installed version/build, provider/contact/privacy details, source and download links, collected dependency licenses and native storage/audio notices. Please check scrolling and license navigation with enlarged text.
-
-Playback controls: tap the elapsed time to enter HH:MM:SS/MM:SS/seconds and jump. Check Enter, Cancel, invalid times and 30-second target adjustments. Volume now has a percentage slider, mute/unmute and 5% buttons. Generate a real current-track waveform locally; inspect quiet/loud passages and tap/drag to seek. Generation is explicit and cached. The waveform has no decorative animation. Check a long M4B while playback continues.
+Offline NAS libraries support Plex, WebDAV, SFTP and SMB downloads. Cloud/progress sync is unavailable. JSON metadata exports do not include audio. Requires iOS 15 or newer.

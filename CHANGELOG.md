@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 - **Library sorting** — sort library by date added, last played, title, author, or duration
 - **48 unit and widget tests** covering chapter parsing, database, format utilities, playback logic, sleep timer, and UI widgets
 
+## 0.1.0+17
+
+- Corrected companion embedding order before Flutter thinning, fixing the Watch host archive dependency cycle.
+
 ## 0.1.0+16
 
 - Added upload QR pairing, mobile keep-awake behavior, on-device progress, resumable large-file chunks and duplicate-import protection.

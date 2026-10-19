@@ -31,6 +31,9 @@ jobs:
           ruby scripts/configure_apple_companions.rb --widget --watch
           ruby scripts/configure_apple_companions.rb --widget --watch
           ruby -e 'require "xcodeproj"; p = Xcodeproj::Project.open("ios/Runner.xcodeproj"); abort "Duplicate or missing companions" unless p.targets.count { |t| ["PlayerWidget", "PlayerWatch"].include?(t.name) } == 2'
+      - name: Check companion embedding precedes Flutter thinning
+        run: |
+          ruby -e 'require "xcodeproj"; p = Xcodeproj::Project.open("ios/Runner.xcodeproj"); phases = p.targets.find { |t| t.name == "Runner" }.build_phases; thin = phases.index { |b| b.respond_to?(:name) && b.name == "Thin Binary" }; abort "Missing Thin Binary phase" unless thin; ["Embed Player Widget", "Embed Player Watch"].each { |name| index = phases.index { |b| b.respond_to?(:name) && b.name == name }; abort "Companion embedding creates an archive dependency cycle" unless index && index < thin }'
       - name: Compile the Watch target embedded in Runner
         run: |
           xcodebuild -project ios/Runner.xcodeproj -target PlayerWatch -sdk watchsimulator -configuration Release SYMROOT="$PWD/build/embedded-watch" OBJROOT="$RUNNER_TEMP/embedded-watch-objects" CODE_SIGNING_ALLOWED=NO build

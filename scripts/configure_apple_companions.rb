@@ -56,6 +56,11 @@ selected.each do |kind|
   phase.dst_path = kind == :watch ? '$(CONTENTS_FOLDER_PATH)/Watch' : ''
   build_file = phase.files.find { |f| f.file_ref == target.product_reference } || phase.add_file_reference(target.product_reference, true)
   build_file.settings = { 'ATTRIBUTES' => ['RemoveHeadersOnCopy'] }
+  # Flutter's Thin Binary phase reads the finished app/Info.plist. Embed
+  # companions before it, avoiding an archive dependency cycle in Xcode 15+.
+  host.build_phases.delete(phase)
+  thin = host.build_phases.index { |p| p.respond_to?(:name) && p.name == 'Thin Binary' }
+  host.build_phases.insert(thin || host.build_phases.length, phase)
 end
 project.save
 puts "Configured companion targets: #{selected.join(', ')}"

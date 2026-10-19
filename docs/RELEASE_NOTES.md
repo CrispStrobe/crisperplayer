@@ -1,5 +1,6 @@
-CrisperPlayer 0.1.0 build 16
+CrisperPlayer 0.1.0 build 17
 
+- Corrected Apple companion embedding order to avoid a Watch archive dependency cycle. The iOS widget remains deferred.
 - Fixed Android startup crash in the release APK; release publication now requires an emulator startup and reinstall check.
 - Browser-to-device audiobook uploads over trusted Wi-Fi with QR pairing, access codes, on-device progress, mobile keep-awake and resumable large-file chunks; foreground only.
 - Filen, Internxt and Nextcloud join Plex/WebDAV/SFTP/SMB offline libraries, using the SDKs shared with CrispCloud. Cloud credentials and refreshed sessions remain in secure storage. Local live-account tests verified Filen and Internxt import, encrypted progress and conflict resolution, plus Internxt session renewal. Nextcloud live-account testing remains pending.

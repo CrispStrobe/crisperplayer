@@ -1,7 +1,7 @@
 name: crisperplayer
 description: "CrisperPlayer — versatile cross-platform audiobook player (Flutter). Plays m4b/m4a/mp3/flac/ogg/wav/aac/opus/wma/aiff. Resume, auto/manual bookmarks, listening history. Android+iOS+Desktop."
 publish_to: 'none'
-version: 0.1.0+16
+version: 0.1.0+17
 
 environment:
   sdk: '>=3.12.0 <4.0.0'

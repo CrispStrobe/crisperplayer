@@ -452,6 +452,11 @@ class DesktopControlService {
       case 'sleep':
         if (args['cancel'] == true) {
           playback.cancelSleepTimer();
+        } else if (args.containsKey('extendSeconds')) {
+          final seconds = _number(args, 'extendSeconds', 0.001, 86400);
+          playback.extendSleepTimer(
+            Duration(milliseconds: (seconds * 1000).round()),
+          );
         } else {
           final seconds = _number(args, 'seconds', 0, 86400);
           if (playback.currentBookId == null) {

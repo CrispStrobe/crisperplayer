@@ -32,6 +32,7 @@ Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
   skip SECONDS           Skip forward or backward
   stop                   Stop playback
   sleep SECONDS [--chapter-end] / sleep cancel
+  sleep extend SECONDS   Extend an active timer (preserves chapter-end mode)
   settings [KEY VALUE]   Show settings or set a JSON value
   history [BOOK_ID]      Show listening history
   bookmark-go ID / bookmark-delete ID
@@ -262,9 +263,11 @@ Future<void> main(List<String> arguments) async {
           result = await client.command(command, {'cancel': true});
         } else {
           final end = args.remove('--chapter-end');
-          if (args.length != 1) {
+          final extend = args.isNotEmpty && args.first == 'extend';
+          if (extend) args.removeAt(0);
+          if (args.length != 1 || (extend && end)) {
             throw const FormatException(
-              'sleep requires SECONDS [--chapter-end] or cancel',
+              'sleep requires SECONDS [--chapter-end], extend SECONDS, or cancel',
             );
           }
           final seconds = double.tryParse(args.single);
@@ -272,8 +275,8 @@ Future<void> main(List<String> arguments) async {
             throw const FormatException('Invalid sleep duration');
           }
           result = await client.command(command, {
-            'seconds': seconds,
-            'endOfChapter': end,
+            if (extend) 'extendSeconds': seconds else 'seconds': seconds,
+            if (!extend) 'endOfChapter': end,
           });
         }
       case 'settings':

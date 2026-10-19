@@ -53,12 +53,16 @@ class PlaybackService with WidgetsBindingObserver {
   m.PlaybackState _state = const m.PlaybackState();
   Stream<m.PlaybackState> get stateStream => _stateCtrl.stream;
   m.PlaybackState get state => _state;
-  Duration _sleepRemaining = Duration.zero;
+  DateTime? _sleepDeadline;
   Timer? _sleepTimer;
   bool _sleepEndOfChapter = false;
   bool _waitingForChapterEnd = false;
   int? _sleepChapterEndMs;
-  Duration get sleepRemaining => _sleepRemaining;
+  Duration get sleepRemaining {
+    final remaining = _sleepDeadline?.difference(now()) ?? Duration.zero;
+    return remaining < Duration.zero ? Duration.zero : remaining;
+  }
+
   bool get sleepEndOfChapter => _sleepEndOfChapter;
   bool get isWaitingForChapterEnd => _waitingForChapterEnd;
 
@@ -714,11 +718,12 @@ class PlaybackService with WidgetsBindingObserver {
 
   void setSleepTimer(Duration duration, {bool endOfChapter = false}) {
     cancelSleepTimer();
-    _sleepRemaining = duration < Duration.zero ? Duration.zero : duration;
+    duration = duration < Duration.zero ? Duration.zero : duration;
     _sleepEndOfChapter = endOfChapter;
-    if (_sleepRemaining == Duration.zero) {
+    if (duration == Duration.zero) {
       if (endOfChapter) _armChapterEnd();
     } else {
+      _sleepDeadline = now().add(duration);
       _sleepTimer = Timer.periodic(
         const Duration(seconds: 1),
         (_) => _tickSleep(),
@@ -728,9 +733,9 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   void _tickSleep() {
-    _sleepRemaining -= const Duration(seconds: 1);
-    if (_sleepRemaining <= Duration.zero) {
-      _sleepRemaining = Duration.zero;
+    if (_sleepDeadline == null) return;
+    if (sleepRemaining == Duration.zero) {
+      _sleepDeadline = null;
       _sleepTimer?.cancel();
       _sleepTimer = null;
       if (_sleepEndOfChapter) {
@@ -740,6 +745,22 @@ class PlaybackService with WidgetsBindingObserver {
       }
     }
     _emit(state);
+  }
+
+  void extendSleepTimer(Duration extra) {
+    if (extra <= Duration.zero || extra > const Duration(hours: 24)) {
+      throw ArgumentError('Extend by more than zero and at most 24 hours.');
+    }
+    if (_sleepDeadline == null && !_waitingForChapterEnd) {
+      throw StateError('No active sleep timer');
+    }
+    final extended = sleepRemaining + extra;
+    setSleepTimer(
+      extended > const Duration(hours: 24)
+          ? const Duration(hours: 24)
+          : extended,
+      endOfChapter: _sleepEndOfChapter,
+    );
   }
 
   void _armChapterEnd() {
@@ -774,7 +795,7 @@ class PlaybackService with WidgetsBindingObserver {
   void cancelSleepTimer() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
-    _sleepRemaining = Duration.zero;
+    _sleepDeadline = null;
     _sleepEndOfChapter = false;
     _waitingForChapterEnd = false;
     _sleepChapterEndMs = null;
@@ -909,12 +930,13 @@ class PlaybackService with WidgetsBindingObserver {
   /// Flush position on backgrounding; the listening session continues with audio.
   Future<void> handleAppPaused() => _command(_persistProgress);
   Future<void> handleAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.resumed) _tickSleep();
     if (state == AppLifecycleState.paused) await handleAppPaused();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) _background(handleAppPaused());
+    _background(handleAppLifecycleState(state));
   }
 
   Future<void> dispose() async {
@@ -929,6 +951,9 @@ class PlaybackService with WidgetsBindingObserver {
       await subscription.cancel();
     }
     await _commands;
+    // A settings command already in flight can restart this timer while the
+    // command queue drains, after the initial cancellation above.
+    _autoBookmarkTimer?.cancel();
     if (_currentBookId != null) {
       await _backend?.pause();
       await _persistProgress();

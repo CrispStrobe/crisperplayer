@@ -1,19 +1,11 @@
-CrisperPlayer 0.1.0 build 14
+CrisperPlayer 0.1.0 build 15
 
-- Editable elapsed time with keyboard entry, clock formats, range validation and touch stepping.
-- Measured, cached current-track waveforms with local generation and scrubbing, replacing decorative animation.
-- Playback volume sheet with percentage slider, mute/restore, 5% steps and persisted app volume.
-- CLI clock-format seeks and waveform generation; browser time editing and mute/restore.
-- Paused book loads now immediately publish the correct track, duration and position.
-- Permanent release downloads: signed Android APK, complete Windows/Linux/Mac
-  app bundles and CLI companions, including both Apple silicon and Intel Macs.
-- New GitHub Pages local-file browser player with audio imports, multiple tracks,
-  playback speed, resume, bookmarks, title search and metadata export.
-- About dialog with installed version, provider/contact details, privacy information,
-  source/download links and third-party/native-library licenses.
-- GNU AGPL-3.0 project license, matching CrisperWeaver.
-- Dedicated Android release signing key and complete-release checksum manifest.
-- Fixed the isolated SMB source-change test on Linux's whole-second timestamps.
+- Custom sleep timers from 1 to 1440 minutes, with keyboard entry and remembered custom duration.
+- Quick +5/+15-minute extensions preserve chapter-end mode, including when already waiting for a chapter boundary.
+- Sleep timers use a deadline instead of counting callbacks and check overdue timers when returning to the foreground.
+- CLI `sleep extend SECONDS` shares the same timer and chapter behavior as the app.
+- Fixed an automatic-bookmark timer that could remain active during shutdown if a settings command was still pending.
+- Complete signed Android APK and Windows/Linux/Mac app and CLI downloads, with SHA-256 checksums; Windows builds use Visual Studio 2022 for plugin compatibility.
 
 The native player includes local chapters, bookmarks, queue, series/collections,
 per-book settings and offline Plex/WebDAV/SFTP/SMB downloads.

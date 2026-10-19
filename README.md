@@ -54,7 +54,7 @@ Third-party components retain their upstream licenses.
 - Editable titles/authors/covers, series with numbered order, named collections, and finished/unfinished/unread status. Imports read MP4, ID3v2.3/v2.4, FLAC and Ogg Vorbis/Opus title/author/artwork tags. MP3 CHAP frames and Vorbis chapter tags are supported.
 - Persistent Up next queue with reordering and automatic continuation at book completion. Sleep timers prevent automatic continuation.
 - Per-book speed, skip silence, skip interval and smart rewind overrides; missing overrides inherit app defaults. Configurable volume, automatic bookmarks, startup restoration and theme. Decoder support for codecs and skip silence varies by platform.
-- Sleep timers can pause immediately at expiry or at the end of the chapter playing when the countdown expires. Immediate chapter mode captures the current chapter boundary.
+- Sleep timers support custom 1–1440-minute durations, remembered custom duration, and +5/+15-minute extensions. They pause immediately at expiry or at the end of the chapter playing when the countdown expires. Deadline-based countdowns catch up after delayed callbacks or returning to the foreground. Immediate chapter mode captures the current chapter boundary.
 - Android voice boost (0–12 dB) and speech/warm/bass-reduction equalizer presets, with per-book overrides and graceful fallback when hardware effects are unavailable.
 - Plex music-library albums and WebDAV/SFTP/SMB NAS folders download as offline books; files stream to disk and credentials stay in platform secure storage. Mounted shares can be imported as folders on desktop.
 - JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
@@ -92,6 +92,8 @@ crisperplayer mute
 crisperplayer unmute
 crisperplayer waveform # JSON measured peaks for the current track; may take time
 crisperplayer settings showWaveform false
+crisperplayer sleep 1020 --chapter-end # 17 minutes, then finish the chapter
+crisperplayer sleep extend 300        # add five minutes, preserving chapter mode
 ```
 
 Waveform analysis runs separately from the CLI playback command queue, so another

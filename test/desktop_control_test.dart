@@ -312,6 +312,9 @@ void main() {
         (await client.command('status') as Map)['sleepRemainingMs'],
         60000,
       );
+      await client.command('sleep', {'extendSeconds': 300});
+      expect(h.playback.sleepRemaining, const Duration(minutes: 6));
+      expect(h.playback.sleepEndOfChapter, isTrue);
       await client.command('sleep', {'cancel': true});
       expect(h.playback.sleepRemaining, Duration.zero);
       await client.command('settings', {'key': 'themeMode', 'value': 'light'});

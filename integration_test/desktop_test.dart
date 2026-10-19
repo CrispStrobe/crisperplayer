@@ -154,6 +154,18 @@ void main() {
         final paused = player.position;
         await Future<void>.delayed(const Duration(milliseconds: 250));
         expect((player.position - paused).inMilliseconds.abs(), lessThan(100));
+        await client.command('sleep', {'seconds': 600, 'endOfChapter': true});
+        await client.command('sleep', {'extendSeconds': 300});
+        final extended = await client.command('status') as Map;
+        expect(extended['sleepRemainingMs'], closeTo(900000, 2000));
+        expect(extended['sleepEndOfChapter'], isTrue);
+        await client.command('sleep', {'cancel': true});
+        await client.command('sleep', {'seconds': 1});
+        await client.command('play');
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        expect(player.playing, isFalse);
+        expect(playback.sleepRemaining, Duration.zero);
+        expect((await db.getBook(bookId))!.lastPositionMs, greaterThan(0));
         await client.command('seek', {'seconds': 4});
         expect(player.position.inMilliseconds, closeTo(4000, 100));
         await tester.pumpAndSettle();

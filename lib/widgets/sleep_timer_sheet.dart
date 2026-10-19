@@ -20,6 +20,9 @@ class _SleepSheet extends StatefulWidget {
 }
 
 class _SleepSheetState extends State<_SleepSheet> {
+  final _customForm = GlobalKey<FormState>();
+  late final TextEditingController _minutes;
+  bool _customChapterEnd = false;
   late Duration _remaining = widget.svc.sleepRemaining;
   late bool _endOfChapter = widget.svc.sleepEndOfChapter;
   late bool _waiting = widget.svc.isWaitingForChapterEnd;
@@ -29,12 +32,17 @@ class _SleepSheetState extends State<_SleepSheet> {
   @override
   void dispose() {
     _refresh?.cancel();
+    _minutes.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
+    final saved = widget.svc.settings?.sleepTimerDefault.inMinutes ?? 0;
+    _minutes = TextEditingController(
+      text: '${saved > 0 ? saved.clamp(1, 1440) : 30}',
+    );
     _refresh = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
@@ -47,6 +55,15 @@ class _SleepSheetState extends State<_SleepSheet> {
 
   void _set(Duration d, {bool eoc = false}) {
     widget.svc.setSleepTimer(d, endOfChapter: eoc);
+    setState(() {
+      _remaining = widget.svc.sleepRemaining;
+      _endOfChapter = widget.svc.sleepEndOfChapter;
+      _waiting = widget.svc.isWaitingForChapterEnd;
+    });
+  }
+
+  void _extend(int minutes) {
+    widget.svc.extendSleepTimer(Duration(minutes: minutes));
     setState(() {
       _remaining = widget.svc.sleepRemaining;
       _endOfChapter = widget.svc.sleepEndOfChapter;
@@ -183,6 +200,23 @@ class _SleepSheetState extends State<_SleepSheet> {
                     ),
                   ),
                 const SizedBox(height: 16),
+                if (isActive) ...[
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => _extend(5),
+                        child: const Text('+5 minutes'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _extend(15),
+                        child: const Text('+15 minutes'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text(
                   'Presets',
                   style: Theme.of(
@@ -264,6 +298,44 @@ class _SleepSheetState extends State<_SleepSheet> {
                   ],
                 ),
                 const SizedBox(height: 16),
+                Form(
+                  key: _customForm,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        key: const ValueKey('sleep-custom-minutes'),
+                        controller: _minutes,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Custom duration in minutes',
+                          helperText: '1–1440 minutes of elapsed time',
+                        ),
+                        validator: (text) {
+                          final minutes = int.tryParse(text?.trim() ?? '');
+                          return minutes == null ||
+                                  minutes < 1 ||
+                                  minutes > 1440
+                              ? 'Enter a whole number from 1 to 1440.'
+                              : null;
+                        },
+                        onFieldSubmitted: (_) => _startCustom(),
+                      ),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Finish the chapter after the timer'),
+                        value: _customChapterEnd,
+                        onChanged: (value) =>
+                            setState(() => _customChapterEnd = value ?? false),
+                      ),
+                      OutlinedButton(
+                        onPressed: _startCustom,
+                        child: const Text('Start custom timer'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Done'),
@@ -274,6 +346,14 @@ class _SleepSheetState extends State<_SleepSheet> {
         ),
       ),
     );
+  }
+
+  void _startCustom() {
+    if (!_customForm.currentState!.validate()) return;
+    final duration = Duration(minutes: int.parse(_minutes.text.trim()));
+    widget.svc.settings?.sleepTimerDefault = duration;
+    _set(duration, eoc: _customChapterEnd);
+    FocusScope.of(context).unfocus();
   }
 }
 

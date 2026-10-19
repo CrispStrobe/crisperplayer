@@ -134,3 +134,20 @@ promise immediate SmartScreen reputation.
 [Apple companions](COMPANIONS.md) require their own optional profiles and builds.
 [Store listing preparation](../STORE_LISTING.md) is separate from internal
 TestFlight; this work does not submit an app for public review.
+
+### Android release startup gate
+
+Release APKs are installed and cold-started on an Android 35 emulator before
+publication. The check waits until SharedPreferences, app storage, database,
+audio service and companion setup complete, rejects startup/native exceptions,
+and repeats after an in-place reinstall without clearing application data.
+Logs and screenshots are uploaded as Android startup evidence. Manual CI binary
+builds use the same check. Unit tests and an APK compilation alone are not a
+release startup test.
+
+The Android Pigeon JNI bridge needs original Kotlin coroutine descriptor names.
+`android/app/proguard-rules.pro` preserves the specific bridge classes and their
+descriptor types, with R8 shrinking/optimization still enabled. Build 15 could
+fail before onboarding because `Continuation` was renamed even though the
+SharedPreferences registrar itself was kept. See
+[Android JNI keep-rule guidance](https://developer.android.com/topic/performance/app-optimization/keep-rules-overview).

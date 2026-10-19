@@ -100,6 +100,27 @@ jobs:
           if 'Android Debug' in result: raise SystemExit('Refusing to release a debug-signed APK')
           Path('dist/ANDROID-SIGNING.txt').write_text(result)
           PY
+      - name: Enable KVM for release APK startup test
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Start the signed release APK on Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: python3 scripts/android_release_smoke.py dist/CrisperPlayer-android.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-release-startup-evidence
+          path: build/android-smoke/
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: release-android

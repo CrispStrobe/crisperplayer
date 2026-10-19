@@ -172,6 +172,8 @@ Future<void> main() async {
         ),
       ),
     );
+    // A release-APK smoke test waits for this after all native services start.
+    debugPrint('CrisperPlayer startup complete');
   } catch (e, stack) {
     debugPrint('Startup failed: $e\n$stack');
     await control?.dispose();

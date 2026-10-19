@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
 ## 0.1.0+16
 
+- Fixed Android release startup failure caused by R8 renaming Kotlin coroutine types used by SharedPreferences JNI; added an emulator startup gate for the release APK.
+
 - Added foreground browser-to-device audiobook uploads with per-session access codes, streaming transfers and normal library import.
 
 - Added Filen, Internxt and Nextcloud offline sources and secure SDK session refresh.

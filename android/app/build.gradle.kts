@@ -51,6 +51,9 @@ android {
             // Public release CI requires the dedicated persistent release key.
             // Local unsigned configuration retains the debug key for testing.
             signingConfig = signingConfigs.getByName(if (hasReleaseKey) "release" else "debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

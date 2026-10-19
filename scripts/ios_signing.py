@@ -16,6 +16,8 @@ CANONICAL_CERT_SHA1 = '56D3B7D782F2CEF0BBEFEEE30D98C6BA0F31C632'
 BUNDLE_ID = 'com.crispstrobe.crisperplayer'
 EXTENSION_ID = BUNDLE_ID + '.ShareExtension'
 APP_GROUP = 'group.' + BUNDLE_ID
+WIDGET_ID = BUNDLE_ID + '.PlayerWidget'
+WATCH_ID = BUNDLE_ID + '.watchkitapp'
 
 
 def require(condition, message):
@@ -30,8 +32,9 @@ def profile_data(path):
 def validate_profile(profile, bundle_id, team):
     entitlements = profile['Entitlements']
     require(entitlements['application-identifier'] == team + '.' + bundle_id, 'Profile identity mismatch')
-    require(APP_GROUP in entitlements.get('com.apple.security.application-groups', []),
-            'Profile lacks the assigned App Group; finish Developer portal setup before creating profiles')
+    if bundle_id != WATCH_ID:
+        require(APP_GROUP in entitlements.get('com.apple.security.application-groups', []),
+                'Profile lacks the assigned App Group; finish Developer portal setup before creating profiles')
     require(not entitlements.get('get-task-allow', False), 'Development profile cannot ship to TestFlight')
     require('ProvisionedDevices' not in profile, 'An App Store profile is required')
     require(profile['ExpirationDate'] > datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
@@ -44,19 +47,39 @@ def install():
     team = os.environ['ASC_TEAM_ID']
     temp = Path(os.environ['RUNNER_TEMP'])
     names = {}
-    for secret, bundle_id, stem in [('IOS_PROFILE_APP_BASE64', BUNDLE_ID, 'host'),
-                                    ('IOS_PROFILE_EXT_BASE64', EXTENSION_ID, 'extension')]:
+    specs = [('IOS_PROFILE_APP_BASE64', BUNDLE_ID, 'host'),
+             ('IOS_PROFILE_EXT_BASE64', EXTENSION_ID, 'extension')]
+    flags = []
+    for secret, bundle_id, stem, flag in [
+        ('IOS_PROFILE_WIDGET_BASE64', WIDGET_ID, 'widget', '--widget'),
+        ('IOS_PROFILE_WATCH_BASE64', WATCH_ID, 'watch', '--watch')]:
+        if os.environ.get(secret):
+            specs.append((secret, bundle_id, stem))
+            flags.append(flag)
+    for secret, bundle_id, stem in specs:
         path = temp / (stem + '.mobileprovision')
         path.write_bytes(base64.b64decode(os.environ[secret], validate=True))
         profile = profile_data(path)
         validate_profile(profile, bundle_id, team)
         names[bundle_id] = profile['Name']
+        if bundle_id == BUNDLE_ID and profile['Entitlements'].get('com.apple.developer.carplay-audio') is True:
+            path_entitlements = Path('ios/Runner/Runner.entitlements')
+            entitlements = plistlib.loads(path_entitlements.read_bytes())
+            entitlements['com.apple.developer.carplay-audio'] = True
+            path_entitlements.write_bytes(plistlib.dumps(entitlements))
+            info_path = Path('ios/Runner/Info.plist')
+            info = plistlib.loads(info_path.read_bytes())
+            info['UIApplicationSceneManifest']['UIApplicationSupportsMultipleScenes'] = True
+            info_path.write_bytes(plistlib.dumps(info))
         for folder in ['Library/MobileDevice/Provisioning Profiles',
                        'Library/Developer/Xcode/UserData/Provisioning Profiles']:
             directory = Path.home() / folder
             directory.mkdir(parents=True, exist_ok=True)
             (directory / (profile['UUID'] + '.mobileprovision')).write_bytes(path.read_bytes())
         print('Installed validated App Store profile:', bundle_id, profile['UUID'])
+    if os.environ.get('GITHUB_ENV'):
+        with open(os.environ['GITHUB_ENV'], 'a') as output:
+            output.write('APPLE_COMPANION_FLAGS=' + ' '.join(flags) + '\n')
     options = {'method': 'app-store-connect', 'teamID': team, 'signingStyle': 'manual',
         'signingCertificate': 'Apple Distribution', 'provisioningProfiles': names,
         'destination': 'export', 'manageAppVersionAndBuildNumber': False}
@@ -94,12 +117,18 @@ def restore_groups():
         root = Path(folder) / 'contents'
         subprocess.run(['ditto', '-x', '-k', str(ipa), str(root)], check=True)
         host = root / 'Payload/Runner.app'
-        for bundle, identifier in [(host / 'PlugIns/ShareExtension.appex', EXTENSION_ID), (host, BUNDLE_ID)]:
+        grouped = [(host / 'PlugIns/ShareExtension.appex', EXTENSION_ID)]
+        if (host / 'PlugIns/PlayerWidget.appex').exists():
+            grouped.append((host / 'PlugIns/PlayerWidget.appex', WIDGET_ID))
+        grouped.append((host, BUNDLE_ID))
+        for bundle, identifier in grouped:
             profile = profile_data(bundle / 'embedded.mobileprovision')
             validate_profile(profile, identifier, profile['TeamIdentifier'][0])
             current = plistlib.loads(subprocess.check_output(
                 ['codesign', '-d', '--entitlements', ':-', str(bundle)], stderr=subprocess.DEVNULL))
             entitlements = group_entitlements(current, profile['Entitlements'])
+            if identifier == BUNDLE_ID and profile['Entitlements'].get('com.apple.developer.carplay-audio') is True:
+                entitlements['com.apple.developer.carplay-audio'] = True
             path = Path(folder) / (bundle.name + '.entitlements')
             path.write_bytes(plistlib.dumps(entitlements))
             subprocess.run(['codesign', '--force', '--sign', CANONICAL_CERT_SHA1,
@@ -131,21 +160,41 @@ def verify():
         subprocess.run(['ditto', '-x', '-k', str(ipa), folder], check=True)
         host = Path(folder) / 'Payload/Runner.app'
         require(host.is_dir(), 'IPA has no Runner.app')
-        for bundle, identifier in [(host, BUNDLE_ID), (host / 'PlugIns/ShareExtension.appex', EXTENSION_ID)]:
+        bundles = [(host, BUNDLE_ID), (host / 'PlugIns/ShareExtension.appex', EXTENSION_ID)]
+        for relative, identifier, secret in [
+            ('PlugIns/PlayerWidget.appex', WIDGET_ID, 'IOS_PROFILE_WIDGET_BASE64'),
+            ('Watch/PlayerWatch.app', WATCH_ID, 'IOS_PROFILE_WATCH_BASE64')]:
+            candidate = host / relative
+            flag = '--widget' if identifier == WIDGET_ID else '--watch'
+            if os.environ.get(secret) or flag in os.environ.get('APPLE_COMPANION_FLAGS', '').split():
+                require(candidate.is_dir(), 'Configured companion missing from exported IPA: ' + identifier)
+            if candidate.exists():
+                bundles.append((candidate, identifier))
+        for bundle, identifier in bundles:
             info = plistlib.loads((bundle / 'Info.plist').read_bytes())
             require(info['CFBundleIdentifier'] == identifier, 'Exported bundle identifier mismatch')
             require(info['CFBundleShortVersionString'] == expected, 'Exported marketing version mismatch')
             require(info['CFBundleVersion'] == number, 'Exported build number mismatch')
-            validate_app_configuration(info)
+            if identifier == WATCH_ID:
+                require(info.get('WKCompanionAppBundleIdentifier') == BUNDLE_ID, 'Watch companion points at another app')
+                require(float('.'.join(info['MinimumOSVersion'].split('.')[:2])) >= 10, 'Watch deployment target too low')
+            else:
+                validate_app_configuration(info)
             require(info.get('ITSAppUsesNonExemptEncryption') is False, 'Export compliance declaration is missing')
             subprocess.run(['codesign', '--verify', '--deep', '--strict', str(bundle)], check=True)
             entitlements = plistlib.loads(subprocess.check_output(
                 ['codesign', '-d', '--entitlements', ':-', str(bundle)], stderr=subprocess.DEVNULL))
-            require(APP_GROUP in entitlements.get('com.apple.security.application-groups', []),
-                    'Export stripped the App Group entitlement')
+            if identifier != WATCH_ID:
+                require(APP_GROUP in entitlements.get('com.apple.security.application-groups', []),
+                        'Export stripped the App Group entitlement')
             profile = profile_data(bundle / 'embedded.mobileprovision')
             validate_profile(profile, identifier, profile['TeamIdentifier'][0])
-        print('Verified IPA identity, versions, minimum iOS, signatures, both profiles and App Group entitlements.')
+            if identifier == BUNDLE_ID and profile['Entitlements'].get('com.apple.developer.carplay-audio') is True:
+                require(entitlements.get('com.apple.developer.carplay-audio') is True,
+                        'Export stripped the authorized CarPlay audio entitlement')
+                require(info.get('UIApplicationSceneManifest', {}).get('UIApplicationSupportsMultipleScenes') is True,
+                        'CarPlay requires simultaneous phone/car scenes')
+        print('Verified IPA identity, versions, deployment targets, signatures, profiles and required entitlements.')
     if os.environ.get('GITHUB_ENV'):
         with open(os.environ['GITHUB_ENV'], 'a') as output:
             output.write(f'IPA={ipa}\nBUNDLE_VERSION={expected}\nBUNDLE_BUILD={number}\n')

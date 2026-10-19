@@ -80,8 +80,8 @@ def package(platform, app, cli, output, info):
             f"CrisperPlayer {info['version']} build {info['build']} ({info['revision']})\n\n"
             'Keep this entire directory together: the executable needs its bundled libraries and data.\n'
             'The CLI is in cli/bin/ and controls the running desktop app.\n'
-            'Linux requires system libmpv, GTK, libsecret and their runtime dependencies.\n'
-            'Windows builds are unsigned. Mac builds are ad-hoc signed, not notarized.\n'
+            'Linux requires system libmpv, GTK, libsecret and their runtime dependencies.\n' +
+            (os.environ.get('DESKTOP_SIGNATURE') or ('Mac build is ad-hoc signed, not notarized.' if platform.startswith('macos') else 'Windows build is unsigned.' if platform.startswith('windows') else 'Linux build has no OS code signature.')) + '\n' +
             'Installation: https://github.com/CrispStrobe/crisperplayer/blob/master/docs/RELEASES.md\n')
         archive(stage, output / f'CrisperPlayer-{platform}{extension}', platform)
         cli_stage = Path(temporary) / 'CrisperPlayer-CLI'

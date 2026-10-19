@@ -63,3 +63,6 @@ playwright-report/
 test-results/
 dist/
 pubspec_overrides.yaml
+
+# Generated standalone Apple companion project
+/ios/Companions/CrisperPlayerCompanions.xcodeproj/

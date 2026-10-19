@@ -105,3 +105,32 @@ source` can retry on a lightweight runner with that run ID. It requires this
 repository's successful master Pages build and an exact Git match for the site,
 browser tests, dependency lock and test-server configuration. Any website change
 requires fresh browser checks. Normal Pages deployment remains automatic.
+
+## Optional trusted desktop signing
+
+The release workflow supports trusted signatures once certificates are provided.
+Absent credentials produce clearly labeled unsigned Windows/ad-hoc Mac archives;
+a partial or invalid signing configuration fails the build rather than claiming
+success. The existing Android release key remains unchanged.
+
+For notarized Mac releases configure `MAC_DEVELOPER_ID_P12_BASE64`,
+`MAC_DEVELOPER_ID_PASSWORD` and `MAC_DEVELOPER_ID_IDENTITY` (the full
+`Developer ID Application: …` identity). The workflow imports it into an ephemeral
+explicit Brickwright build keychain, signs nested Mach-O files/frameworks and the
+app with the hardened runtime, submits the app+CLI to Apple's notary service,
+requires **Accepted**, staples/validates the app ticket and runs Gatekeeper
+assessment. It uses the existing ASC API key/ID/issuer for notarization.
+Apple Distribution cannot substitute for Developer ID. Creating Developer ID is
+Account-Holder-only in Apple's portal according to `../appstore.md`; this Mac's
+Brickwright keychain currently has no Developer ID identity.
+
+For Windows configure `WINDOWS_SIGN_PFX_BASE64` and `WINDOWS_SIGN_PASSWORD` with
+a trusted code-signing certificate. SignTool signs and verifies EXE/DLL files in
+both app and CLI bundles, using SHA-256 and a trusted timestamp. No Windows
+signing certificate is configured at present. A valid signature does not
+promise immediate SmartScreen reputation.
+
+`README-START.txt` in each archive records the actual job's signature status.
+[Apple companions](COMPANIONS.md) require their own optional profiles and builds.
+[Store listing preparation](../STORE_LISTING.md) is separate from internal
+TestFlight; this work does not submit an app for public review.

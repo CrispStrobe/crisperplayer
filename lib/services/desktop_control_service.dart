@@ -1,3 +1,6 @@
+import '../cli/control_protocol.dart';
+import 'sync/folder_progress_service.dart';
+import 'sync/plex_progress_service.dart';
 import 'server/remote_library_service.dart';
 import 'audio/waveform_service.dart';
 import 'dart:async';
@@ -19,6 +22,8 @@ class DesktopControlService {
   final PlaybackService playback;
   final File descriptor;
   final RemoteLibraryService? remote;
+  final PlexProgressService? progressSync;
+  final FolderProgressService? folderSync;
   final WaveformService waveforms;
   final String _token = base64Url.encode(
     List<int>.generate(32, (_) => Random.secure().nextInt(256)),
@@ -33,6 +38,8 @@ class DesktopControlService {
     required this.playback,
     required this.descriptor,
     this.remote,
+    this.progressSync,
+    this.folderSync,
     WaveformService? waveforms,
   }) : waveforms = waveforms ?? WaveformService.shared;
 
@@ -46,7 +53,9 @@ class DesktopControlService {
     _requests = server.listen((request) {
       // Transfer pause/status must remain responsive while a download command
       // owns the normal mutation queue. Authentication is still checked below.
-      if (request.uri.path == '/transfers' || request.uri.path == '/waveform') {
+      if (request.uri.path == '/transfers' ||
+          request.uri.path == '/waveform' ||
+          request.uri.path == '/sync') {
         unawaited(_handle(request));
         return;
       }
@@ -131,7 +140,8 @@ class DesktopControlService {
         result = await _import(request);
       } else if (request.uri.path == '/command' ||
           request.uri.path == '/transfers' ||
-          request.uri.path == '/waveform') {
+          request.uri.path == '/waveform' ||
+          request.uri.path == '/sync') {
         final bytes = <int>[];
         await for (final chunk in request) {
           bytes.addAll(chunk);
@@ -147,6 +157,12 @@ class DesktopControlService {
             !{'server-cancel', 'server-downloads'}.contains(body['command'])) {
           throw const FormatException(
             'Only transfer pause/status can bypass the command queue',
+          );
+        }
+        if (request.uri.path == '/sync' &&
+            !independentSyncCommands.contains(body['command'])) {
+          throw const FormatException(
+            'Only independent sync operations can use this endpoint',
           );
         }
         if (request.uri.path == '/waveform' && body['command'] != 'waveform') {
@@ -240,6 +256,69 @@ class DesktopControlService {
     final command = args['command'];
     final bookId = args['bookId'];
     switch (command) {
+      case 'folder-sync-status' ||
+          'folder-sync-configure' ||
+          'folder-sync-now' ||
+          'folder-sync-resolve':
+        final service = folderSync;
+        if (service == null) {
+          throw const FormatException('Folder progress sync is unavailable');
+        }
+        await service.init();
+        if (command == 'folder-sync-configure') {
+          await service.configure(
+            connectionId: args['connectionId'] as String?,
+            folder: args['folder'] as String? ?? '',
+            passphrase: args['passphrase'] as String? ?? '',
+          );
+        } else if (command == 'folder-sync-now' ||
+            command == 'folder-sync-resolve') {
+          final id = command == 'folder-sync-resolve'
+              ? _string(args, 'bookId')
+              : null;
+          final choice = command == 'folder-sync-resolve'
+              ? _string(args, 'choice')
+              : null;
+          final reload =
+              choice != null &&
+              choice != 'local' &&
+              playback.currentBookId == id;
+          if (reload) await playback.unload();
+          try {
+            await service.synchronize(resolveBookId: id, choice: choice);
+          } finally {
+            if (reload) await playback.loadBook(id!);
+          }
+        }
+        return service.status();
+      case 'sync-status' || 'sync-enable' || 'sync-now' || 'sync-resolve':
+        final sync = progressSync;
+        if (sync == null) {
+          throw const FormatException('Progress sync is unavailable');
+        }
+        await sync.init();
+        if (command == 'sync-enable') {
+          if (args['enabled'] is! bool) {
+            throw const FormatException('enabled must be true or false');
+          }
+          await sync.setEnabled(
+            _string(args, 'connectionId'),
+            args['enabled'] as bool,
+          );
+        } else if (command == 'sync-now' || command == 'sync-resolve') {
+          final id = args['bookId'] as String?;
+          final choice = command == 'sync-resolve'
+              ? _string(args, 'choice')
+              : null;
+          final reload = choice == 'remote' && playback.currentBookId == id;
+          if (reload) await playback.unload();
+          try {
+            await sync.synchronize(bookId: id, choice: choice);
+          } finally {
+            if (reload) await playback.loadBook(id!);
+          }
+        }
+        return sync.status();
       case 'server-cancel':
         if (remote == null) {
           throw const FormatException('Remote libraries are unavailable');
@@ -278,12 +357,13 @@ class DesktopControlService {
             await service.connect(
               name: _string(args, 'name'),
               kind: _string(args, 'kind'),
-              url: _string(args, 'url'),
+              url: args['url'] as String? ?? '',
               secret: _string(args, 'secret'),
               username: args['username'] as String? ?? '',
               allowLocalHttp: args['allowLocalHttp'] == true,
               requireEncryption: args['requireEncryption'] != false,
               hostKey: args['hostKey'] as String?,
+              twoFactorCode: args['twoFactorCode'] as String?,
             );
           case 'server-disconnect':
             await service.disconnect(_string(args, 'connectionId'));

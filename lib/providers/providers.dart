@@ -1,3 +1,5 @@
+import '../services/sync/folder_progress_service.dart';
+import '../services/sync/plex_progress_service.dart';
 import '../services/server/remote_library_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -96,4 +98,27 @@ final remoteLibraryProvider = ChangeNotifierProvider<RemoteLibraryService>((
   ref,
 ) {
   return RemoteLibraryService(ref.watch(libraryServiceProvider));
+});
+
+final plexProgressProvider = ChangeNotifierProvider<PlexProgressService>((ref) {
+  final service = PlexProgressService(
+    ref.watch(remoteLibraryProvider).library,
+    ref.watch(remoteLibraryProvider),
+    isBookOpen: (id) => ref.read(playbackProvider).currentBookId == id,
+  );
+  ref.onDispose(() => service.shutdown());
+  return service;
+});
+
+final folderProgressProvider = ChangeNotifierProvider<FolderProgressService>((
+  ref,
+) {
+  final remote = ref.watch(remoteLibraryProvider);
+  final service = FolderProgressService(
+    remote.library,
+    remote,
+    isBookOpen: (id) => ref.read(playbackProvider).currentBookId == id,
+  );
+  ref.onDispose(() => service.shutdown());
+  return service;
 });

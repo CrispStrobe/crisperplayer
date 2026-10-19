@@ -80,17 +80,23 @@ jobs:
           security list-keychains -d user -s "$signing_keychain" $(security list-keychains -d user | tr -d '"')
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$signing_password" "$signing_keychain" > /dev/null
           security find-identity -v -p codesigning "$signing_keychain"
-      - name: Install and validate both App Store profiles
+      - name: Install and validate App Store profiles
         if: ${{ !inputs.distribute_only }}
         env:
           IOS_PROFILE_APP_BASE64: ${{ secrets.IOS_PROFILE_APP_BASE64 }}
           IOS_PROFILE_EXT_BASE64: ${{ secrets.IOS_PROFILE_EXT_BASE64 }}
+          IOS_PROFILE_WIDGET_BASE64: ${{ secrets.IOS_PROFILE_WIDGET_BASE64 }}
+          IOS_PROFILE_WATCH_BASE64: ${{ secrets.IOS_PROFILE_WATCH_BASE64 }}
           ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
         run: python3 scripts/ios_signing.py install
       - name: Archive unsigned and sign at export
         if: ${{ !inputs.distribute_only }}
         run: |
           set -euo pipefail
+          if [ -n "${APPLE_COMPANION_FLAGS:-}" ]; then
+            # Flags are generated only from validated optional profiles.
+            ruby scripts/configure_apple_companions.rb $APPLE_COMPANION_FLAGS
+          fi
           PATH="/usr/bin:$PATH" flutter build ios --release --config-only --no-codesign --no-pub
           PATH="/usr/bin:$PATH" env -u GEM_HOME -u GEM_PATH -u RUBYOPT pod install --project-directory=ios
           # No automatic provisioning: never create or revoke account certificates.

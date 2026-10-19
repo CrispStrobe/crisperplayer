@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "subtitle": "Your audiobooks, your place.",
+  "keywords": "audiobook,player,m4b,chapters,bookmarks,offline,Plex,Nextcloud,NAS,sleep timer",
+  "supportUrl": "https://github.com/CrispStrobe/crisperplayer/issues",
+  "marketingUrl": "https://crispstrobe.github.io/crisperplayer/",
+  "privacyPolicyUrl": "https://github.com/CrispStrobe/crisperplayer/blob/master/PRIVACY.md",
+  "copyright": "2026 Christian Ströbele"
+}

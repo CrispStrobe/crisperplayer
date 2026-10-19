@@ -1,3 +1,5 @@
+import '../widgets/folder_sync_panel.dart';
+import '../widgets/plex_sync_panel.dart';
 import '../widgets/server_connection_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,7 +88,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
         .firstOrNull;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Servers & NAS'),
+        title: const Text('Cloud, servers & NAS'),
         actions: [
           IconButton(
             onPressed: _loading ? null : _connect,
@@ -177,10 +179,21 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
             Expanded(
               child: ListView(
                 children: [
+                  if (remote.connections.any((c) => c.kind == 'plex'))
+                    const PlexSyncPanel(),
+                  if (remote.connections.any(
+                    (c) => {
+                      'webdav',
+                      'nextcloud',
+                      'filen',
+                      'internxt',
+                    }.contains(c.kind),
+                  ))
+                    const FolderSyncPanel(),
                   const Padding(
                     padding: EdgeInsets.all(16),
                     child: Text(
-                      'Browse Plex, WebDAV or SFTP servers and download books for offline listening. Credentials stay in secure storage. Downloads have independent progress on this device.\n\nFor SMB shares, mount the share in your operating system and use Import folder from the library, or select files through your device’s Files app.',
+                      'Browse Plex, Filen, Internxt, Nextcloud, WebDAV, SFTP or SMB and download books for offline listening. Credentials stay in secure storage. Filen and Internxt decrypt downloads on this device. An interrupted encrypted file restarts; completed tracks are retained.',
                     ),
                   ),
                   for (final c in remote.connections)

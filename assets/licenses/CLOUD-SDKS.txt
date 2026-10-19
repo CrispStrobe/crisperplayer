@@ -1,0 +1,15 @@
+Filen and Internxt native integrations use the same SDK projects as CrispCloud:
+
+filen_client 0.2.2 — Mozilla Public License 2.0
+Source: https://github.com/CrispStrobe/filen-dart
+Exact published source: https://pub.dev/api/archives/filen_client-0.2.2.tar.gz
+
+internxt_client 0.2.3 — Mozilla Public License 2.0
+Source: https://github.com/CrispStrobe/internxt-dart
+Exact published source: https://pub.dev/api/archives/internxt_client-0.2.3.tar.gz
+
+These packages are used without source modifications. Their complete original
+MPL license is included as MPL-2.0.txt. A build uses PointyCastle 4, as CrispCloud
+does, with provider encryption/decryption regressions covering compatibility.
+
+CrisperPlayer source (AGPL-3.0): https://github.com/CrispStrobe/crisperplayer

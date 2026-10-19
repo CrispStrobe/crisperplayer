@@ -1,6 +1,6 @@
 # Architecture
 
-Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex, WebDAV, SFTP and SMB for offline imports; cross-device progress synchronization is not implemented.
+Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex, Filen, Internxt, Nextcloud, WebDAV, SFTP and SMB for offline imports. Optional Plex progress and encrypted folder progress use dedicated services; see [Cloud sync](CLOUD_SYNC.md).
 
 ## Playback
 
@@ -103,3 +103,20 @@ as text. Browser tests use generated audio and the production Pages project path
 The shared CrispCloud `crisp_storage` package now includes direct SMB2/3 in addition
 to Plex/WebDAV/SFTP. SMB3 encryption is required unless explicitly disabled for a
 signed SMB2 connection. Both apps use the same shared transport and resume checks.
+
+
+## Progress and companion surfaces
+
+`PlexProgressService` uses a durable three-way baseline against original album
+track IDs. `FolderProgressService` matches ordered audio SHA-256 hashes and
+stores AES-GCM-encrypted per-device snapshots in a configured provider folder.
+`ProgressRecord` implements vector-clock comparison and explicit conflict
+resolution. Neither service applies an incoming seek to an open book. Credentials
+and folder passphrases use the same platform credential store as server profiles.
+See [sync semantics and limits](CLOUD_SYNC.md).
+
+`MediaLibrary` provides the bounded local browse tree for `CrisperAudioHandler`
+and native CarPlay. `CompanionService` routes widget/Watch commands through the
+same PlaybackService coordinator. Native companions receive playback snapshots,
+not database handles, cloud credentials or a second audio engine. See
+[companion provisioning and validation](COMPANIONS.md).

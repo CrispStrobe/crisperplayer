@@ -1,3 +1,4 @@
+import 'control_protocol.dart';
 import 'dart:convert';
 import 'dart:io';
 import '../utils/folder_import.dart';
@@ -40,6 +41,8 @@ class ControlClient {
   ]) => _request(
     {'server-cancel', 'server-downloads'}.contains(name)
         ? '/transfers'
+        : independentSyncCommands.contains(name)
+        ? '/sync'
         : name == 'waveform'
         ? '/waveform'
         : '/command',

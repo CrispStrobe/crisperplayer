@@ -51,11 +51,21 @@
 					<string>Main</string>
 				</dict>
 			</array>
+			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>CarPlay</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
+					<key>UISceneClassName</key>
+					<string>CPTemplateApplicationScene</string>
+				</dict>
+			</array>
 		</dict>
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- Imports use durable app-owned copies rather than editing provider files. -->
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<false/>
 	<key>CFBundleDocumentTypes</key>
@@ -145,6 +155,12 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>ShareMedia-com.crispstrobe.crisperplayer</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>crisperplayer</string>
 			</array>
 		</dict>
 	</array>

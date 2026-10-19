@@ -30,6 +30,7 @@ class HostKeyProbe extends RemoteLibraryService {
     bool allowLocalHttp = false,
     bool requireEncryption = true,
     String? hostKey,
+    String? twoFactorCode,
   }) async {
     attempts++;
     if (hostKey != pin) throw SftpHostKeyException(pin);
@@ -63,6 +64,7 @@ class SmbProbe extends RemoteLibraryService {
     bool allowLocalHttp = false,
     bool requireEncryption = true,
     String? hostKey,
+    String? twoFactorCode,
   }) async {
     connected = RemoteConnection(
       id: 'smb-fixture',

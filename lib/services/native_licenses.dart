@@ -11,6 +11,12 @@ void registerNativeLicenses() {
     );
     yield const LicenseEntryWithLineBreaks(['libsmb2'], smbLicense);
     yield LicenseEntryWithLineBreaks([
+      'Filen / Internxt source notices',
+    ], await rootBundle.loadString('assets/licenses/CLOUD-SDKS.txt'));
+    yield LicenseEntryWithLineBreaks([
+      'Mozilla Public License 2.0',
+    ], await rootBundle.loadString('assets/licenses/MPL-2.0.txt'));
+    yield LicenseEntryWithLineBreaks([
       'Native playback: libmpv / FFmpeg (Windows/Linux)',
     ], await rootBundle.loadString('assets/licenses/DESKTOP-AUDIO.txt'));
     for (final version in ['2.1', '3.0']) {

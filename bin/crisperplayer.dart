@@ -7,12 +7,16 @@ import 'package:crisperplayer/utils/folder_import.dart';
 const usage = '''CrisperPlayer desktop CLI
 Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
 
-  servers                List Plex / WebDAV / SFTP / SMB connections
+  servers                List Plex / Filen / Internxt / Nextcloud / NAS connections
   server-downloads       Show active and paused downloads
   server-cancel          Pause the active transfer; keep partial files
   call server-resume JSON / call server-discard JSON
   call server-connect JSON / call server-disconnect JSON
   call server-browse JSON / call server-download JSON
+  call folder-sync-status {} / call folder-sync-now {}
+  call folder-sync-configure JSON / call folder-sync-resolve JSON
+  call sync-status {} / call sync-now {}
+  call sync-enable JSON / call sync-resolve JSON
   status                 Show playback state
   book-edit BOOK_ID JSON Edit title, author, series, seriesOrder, collection
   book-cover BOOK_ID FILE Set JPEG/PNG cover

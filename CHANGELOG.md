@@ -11,3 +11,11 @@ All notable changes to this project will be documented in this file.
 - **Onboarding flow** — first-launch experience introducing core features and guiding users to import their audiobooks
 - **Library sorting** — sort library by date added, last played, title, author, or duration
 - **48 unit and widget tests** covering chapter parsing, database, format utilities, playback logic, sleep timer, and UI widgets
+
+## 0.1.0+16
+
+- Added Filen, Internxt and Nextcloud offline sources and secure SDK session refresh.
+- Added opt-in Plex progress and encrypted provider-folder progress with conflict resolution and CLI parity.
+- Added Android Auto browsing, an Android playback widget and native Apple companion integrations with explicit provisioning requirements.
+- Prepared draft App Store metadata, corrected privacy documentation and added optional trusted desktop-signing automation.
+- Included cloud SDK source/license notices in About and compiled CLI bundles.

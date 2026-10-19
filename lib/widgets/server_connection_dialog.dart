@@ -12,6 +12,8 @@ class ServerConnectionDialog extends StatefulWidget {
 class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
   final _name = TextEditingController(), _url = TextEditingController();
   final _username = TextEditingController(), _secret = TextEditingController();
+  final _twoFactor = TextEditingController();
+  bool get _cloud => {'filen', 'internxt'}.contains(_kind);
   String _kind = 'plex';
   String? _error, _hostKey;
   bool _localHttp = false, _connecting = false, _trustHostKey = false;
@@ -42,6 +44,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
         allowLocalHttp: _localHttp,
         requireEncryption: _requireEncryption,
         hostKey: _trustHostKey ? _hostKey : null,
+        twoFactorCode: _twoFactor.text.isEmpty ? null : _twoFactor.text,
       );
       if (mounted) Navigator.pop(context);
     } catch (error) {
@@ -59,6 +62,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
 
   @override
   void dispose() {
+    _twoFactor.dispose();
     _name.dispose();
     _url.dispose();
     _username.dispose();
@@ -82,6 +86,12 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                 decoration: const InputDecoration(labelText: 'Source'),
                 items: const [
                   DropdownMenuItem(value: 'plex', child: Text('Plex')),
+                  DropdownMenuItem(value: 'filen', child: Text('Filen')),
+                  DropdownMenuItem(value: 'internxt', child: Text('Internxt')),
+                  DropdownMenuItem(
+                    value: 'nextcloud',
+                    child: Text('Nextcloud'),
+                  ),
                   DropdownMenuItem(
                     value: 'webdav',
                     child: Text('WebDAV / NAS'),
@@ -101,20 +111,21 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                 enabled: !_connecting,
                 decoration: const InputDecoration(labelText: 'Connection name'),
               ),
-              TextField(
-                controller: _url,
-                enabled: !_connecting,
-                autocorrect: false,
-                onChanged: (_) => setState(_clearTrust),
-                decoration: InputDecoration(
-                  labelText: 'Server URL',
-                  hintText: _kind == 'smb'
-                      ? 'smb://nas.local/Audiobooks/'
-                      : _kind == 'sftp'
-                      ? 'sftp://nas.local/books/'
-                      : 'https://server.example.com/',
+              if (!_cloud)
+                TextField(
+                  controller: _url,
+                  enabled: !_connecting,
+                  autocorrect: false,
+                  onChanged: (_) => setState(_clearTrust),
+                  decoration: InputDecoration(
+                    labelText: 'Server URL',
+                    hintText: _kind == 'smb'
+                        ? 'smb://nas.local/Audiobooks/'
+                        : _kind == 'sftp'
+                        ? 'sftp://nas.local/books/'
+                        : 'https://server.example.com/',
+                  ),
                 ),
-              ),
               if (_kind != 'plex')
                 TextField(
                   controller: _username,
@@ -123,6 +134,8 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                   decoration: InputDecoration(
                     labelText: _kind == 'smb'
                         ? r'Username (or DOMAIN\user)'
+                        : _cloud
+                        ? 'Email'
                         : 'Username',
                   ),
                 ),
@@ -138,6 +151,19 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                       : 'Password / app password',
                 ),
               ),
+              if (_cloud)
+                TextField(
+                  controller: _twoFactor,
+                  enabled: !_connecting,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Two-factor code (if enabled)',
+                  ),
+                ),
+              if (_kind == 'nextcloud')
+                const Text(
+                  'Use your Nextcloud account URL and an app password. The WebDAV file endpoint is added automatically.',
+                ),
               if (_kind == 'smb')
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
@@ -150,7 +176,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                     'Turn off only for an older NAS on a trusted network. Connections always require signing.',
                   ),
                 ),
-              if (_kind == 'plex' || _kind == 'webdav')
+              if (_kind == 'plex' || _kind == 'webdav' || _kind == 'nextcloud')
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _localHttp,

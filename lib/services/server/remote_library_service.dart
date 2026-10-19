@@ -175,8 +175,17 @@ class RemoteLibraryService extends ChangeNotifier {
     bool allowLocalHttp = false,
     bool requireEncryption = true,
     String? hostKey,
+    String? twoFactorCode,
   }) async {
     await init();
+    if (RemoteConnection.cloudKinds.contains(kind)) {
+      secret = await RemoteClient.authenticate(
+        kind,
+        username,
+        secret,
+        twoFactorCode,
+      );
+    }
     final connection = RemoteConnection(
       id: const Uuid().v4(),
       name: name.trim(),
@@ -188,7 +197,7 @@ class RemoteLibraryService extends ChangeNotifier {
       requireEncryption: requireEncryption,
       hostKey: hostKey,
     );
-    final client = RemoteClient(connection);
+    final client = createClient(connection);
     try {
       await client.browse('');
     } finally {
@@ -218,13 +227,29 @@ class RemoteLibraryService extends ChangeNotifier {
     });
   }
 
+  RemoteClient createClient(RemoteConnection connection) => RemoteClient(
+    connection,
+    onSessionChanged: (secret) => _saveConnections(
+      (current) => [
+        for (final item in current)
+          if (item.id == connection.id)
+            RemoteConnection.fromJson({
+              ...item.toJson(credentials: true),
+              'secret': secret,
+            })
+          else
+            item,
+      ],
+    ),
+  );
+
   RemoteConnection _connection(String id) => _connections.firstWhere(
     (c) => c.id == id,
     orElse: () => throw const RemoteException('Connection was not found.'),
   );
   Future<List<RemoteEntry>> browse(String id, String path) async {
     await init();
-    final client = RemoteClient(_connection(id));
+    final client = createClient(_connection(id));
     try {
       return await client.browse(path);
     } finally {
@@ -240,7 +265,7 @@ class RemoteLibraryService extends ChangeNotifier {
     bool file = false,
   }) async {
     await init();
-    final validation = RemoteClient(_connection(connectionId));
+    final validation = createClient(_connection(connectionId));
     try {
       validation.uri(path);
     } finally {
@@ -414,7 +439,7 @@ class RemoteLibraryService extends ChangeNotifier {
     job.phase = 'downloading';
     job.error = null;
     job.bytes = 0;
-    final client = _activeClient = RemoteClient(connection);
+    final client = _activeClient = createClient(connection);
     _changed();
     final db = library.db;
     String? importedId;

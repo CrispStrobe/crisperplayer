@@ -104,6 +104,17 @@ class ReleaseTests(unittest.TestCase):
         with patch.object(ios_signing, 'CANONICAL_CERT_SHA1', fingerprint):
             ios_signing.validate_profile(self.valid_profile(), ios_signing.BUNDLE_ID, 'TEAM')
 
+    def test_widget_requires_group_while_watch_requires_only_matching_store_identity(self):
+        profile = self.valid_profile()
+        profile['Entitlements']['application-identifier'] = 'TEAM.' + ios_signing.WATCH_ID
+        profile['Entitlements'].pop('com.apple.security.application-groups')
+        fingerprint = hashlib.sha1(b'certificate').hexdigest().upper()
+        with patch.object(ios_signing, 'CANONICAL_CERT_SHA1', fingerprint):
+            ios_signing.validate_profile(profile, ios_signing.WATCH_ID, 'TEAM')
+            profile['Entitlements']['application-identifier'] = 'TEAM.' + ios_signing.WIDGET_ID
+            with self.assertRaisesRegex(RuntimeError, 'assigned App Group'):
+                ios_signing.validate_profile(profile, ios_signing.WIDGET_ID, 'TEAM')
+
 
 if __name__ == '__main__':
     unittest.main()

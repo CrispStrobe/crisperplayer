@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="12dp"
+    android:background="@drawable/widget_background">
+    <TextView android:id="@+id/widget_title" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="CrisperPlayer" android:textColor="#FFFFFF"
+        android:textSize="17sp" android:textStyle="bold" android:maxLines="2" android:ellipsize="end" />
+    <TextView android:id="@+id/widget_author" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:textColor="#DCE2F9" android:textSize="13sp" android:maxLines="1" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center" android:orientation="horizontal">
+        <Button android:id="@+id/widget_back" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="48dp" android:text="−30s" android:contentDescription="Back 30 seconds" />
+        <Button android:id="@+id/widget_toggle" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="48dp" android:text="Play" />
+        <Button android:id="@+id/widget_forward" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="48dp" android:text="+30s" android:contentDescription="Forward 30 seconds" />
+    </LinearLayout>
+</LinearLayout>

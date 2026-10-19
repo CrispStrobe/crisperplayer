@@ -60,3 +60,9 @@ this TestFlight workflow as well as the separate public desktop/Android release.
 Do not manually upload the same build again after pushing a tag. iOS IPAs remain
 Actions artifacts for diagnostics; App Store signing does not permit arbitrary
 public sideloading. See [RELEASES.md](RELEASES.md) for the complete release procedure.
+
+
+Optional CarPlay, iOS widget and Watch integration is described in
+[COMPANIONS.md](COMPANIONS.md). The workflow enables extension targets only after
+validating their optional App Store profiles. This preserves the existing host
+and share-extension delivery while portal setup is pending.

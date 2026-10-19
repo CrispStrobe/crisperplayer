@@ -1,3 +1,4 @@
+import 'media_library.dart';
 import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
@@ -6,6 +7,7 @@ import 'package:just_audio/just_audio.dart';
 class CrisperAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
   final AudioPlayer player;
+  MediaLibrary? library;
   late final StreamSubscription<PlaybackEvent> _events;
   Future<void> Function()? _play,
       _pause,
@@ -18,51 +20,60 @@ class CrisperAudioHandler extends BaseAudioHandler
   Future<void> Function(int, [Duration])? _seekIndex;
   Future<void> Function(double)? _speed;
   CrisperAudioHandler(this.player) {
-    _events = player.playbackEventStream.listen((event) {
-      playbackState.add(PlaybackState(
-        controls: [
-          MediaControl.rewind,
-          if (player.playing) MediaControl.pause else MediaControl.play,
-          MediaControl.fastForward,
-          MediaControl.stop
-        ],
-        systemActions: const {
-          MediaAction.seek,
-          MediaAction.seekForward,
-          MediaAction.seekBackward
-        },
-        androidCompactActionIndices: const [0, 1, 2],
-        processingState: const {
-          ProcessingState.idle: AudioProcessingState.idle,
-          ProcessingState.loading: AudioProcessingState.loading,
-          ProcessingState.buffering: AudioProcessingState.buffering,
-          ProcessingState.ready: AudioProcessingState.ready,
-          ProcessingState.completed: AudioProcessingState.completed,
-        }[player.processingState]!,
-        playing: player.playing,
-        updatePosition: player.position,
-        bufferedPosition: player.bufferedPosition,
-        speed: player.speed,
-        queueIndex: event.currentIndex,
-      ));
-    }, onError: (Object error) {
-      playbackState.add(playbackState.value.copyWith(
-          processingState: AudioProcessingState.error,
-          errorCode: 1,
-          errorMessage: error.toString()));
-    });
+    _events = player.playbackEventStream.listen(
+      (event) {
+        playbackState.add(
+          PlaybackState(
+            controls: [
+              MediaControl.rewind,
+              if (player.playing) MediaControl.pause else MediaControl.play,
+              MediaControl.fastForward,
+              MediaControl.stop,
+            ],
+            systemActions: const {
+              MediaAction.seek,
+              MediaAction.seekForward,
+              MediaAction.seekBackward,
+            },
+            androidCompactActionIndices: const [0, 1, 2],
+            processingState: const {
+              ProcessingState.idle: AudioProcessingState.idle,
+              ProcessingState.loading: AudioProcessingState.loading,
+              ProcessingState.buffering: AudioProcessingState.buffering,
+              ProcessingState.ready: AudioProcessingState.ready,
+              ProcessingState.completed: AudioProcessingState.completed,
+            }[player.processingState]!,
+            playing: player.playing,
+            updatePosition: player.position,
+            bufferedPosition: player.bufferedPosition,
+            speed: player.speed,
+            queueIndex: event.currentIndex,
+          ),
+        );
+      },
+      onError: (Object error) {
+        playbackState.add(
+          playbackState.value.copyWith(
+            processingState: AudioProcessingState.error,
+            errorCode: 1,
+            errorMessage: error.toString(),
+          ),
+        );
+      },
+    );
   }
-  void setDelegates(
-      {required Future<void> Function() onPlay,
-      required Future<void> Function() onPause,
-      required Future<void> Function() onStop,
-      required Future<void> Function(Duration) onSeek,
-      required Future<void> Function() onSkipNext,
-      required Future<void> Function() onSkipPrev,
-      required Future<void> Function(int, [Duration]) onSeekIndex,
-      required Future<void> Function(double) onSpeed,
-      required Future<void> Function() onForward,
-      required Future<void> Function() onBackward}) {
+  void setDelegates({
+    required Future<void> Function() onPlay,
+    required Future<void> Function() onPause,
+    required Future<void> Function() onStop,
+    required Future<void> Function(Duration) onSeek,
+    required Future<void> Function() onSkipNext,
+    required Future<void> Function() onSkipPrev,
+    required Future<void> Function(int, [Duration]) onSeekIndex,
+    required Future<void> Function(double) onSpeed,
+    required Future<void> Function() onForward,
+    required Future<void> Function() onBackward,
+  }) {
     _play = onPlay;
     _pause = onPause;
     _stop = onStop;
@@ -144,6 +155,33 @@ class CrisperAudioHandler extends BaseAudioHandler
   @override
   Future<void> setSpeed(double speed) async {
     await _speed?.call(speed);
+  }
+
+  @override
+  Future<List<MediaItem>> getChildren(
+    String parentMediaId, [
+    Map<String, dynamic>? options,
+  ]) async => await library?.children(parentMediaId) ?? [];
+  @override
+  Future<List<MediaItem>> search(
+    String query, [
+    Map<String, dynamic>? extras,
+  ]) async => await library?.search(query) ?? [];
+  @override
+  Future<void> playFromMediaId(
+    String mediaId, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    await library?.play(mediaId);
+  }
+
+  @override
+  Future<void> playFromSearch(
+    String query, [
+    Map<String, dynamic>? extras,
+  ]) async {
+    final results = await library?.search(query) ?? [];
+    if (results.isNotEmpty) await library?.play(results.first.id);
   }
 
   Future<void> dispose() async {

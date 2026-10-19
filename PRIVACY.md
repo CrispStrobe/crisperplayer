@@ -1,67 +1,83 @@
-# Privacy Policy — CrisperPlayer
+# CrisperPlayer privacy policy
 
-> Effective date: 2026-10-17 • Version 0.1.0 • Contact: https://github.com/crisperplayer/crisperplayer/issues
+Last updated: 19 October 2026.
 
-CrisperPlayer is an **offline-first audiobook player**. This policy explains what data the app accesses and what it does not.
+CrisperPlayer plays audiobooks you choose and keeps its library, bookmarks,
+listening history and settings on your device. There are no advertising,
+tracking, analytics or crash-reporting services operated by CrisperPlayer.
+There is no CrisperPlayer account or hosted sync backend.
 
-## Summary
+## Optional connections and sync
 
-- **No network access.** The production app does not make network requests, does not contact a server, and does not use analytics, crash reporting, advertising SDKs, or tracking.
-- **No data collection.** We do not collect, transmit, or share personal information. All data stays on your device.
-- **No accounts.** No sign-in, no cloud sync in v0.1.
+Network access is used when you choose Plex, Filen, Internxt, Nextcloud,
+WebDAV, SFTP or SMB for browsing and offline downloads. Those servers/providers
+receive the authentication and file requests needed for their service and can
+keep their own access logs. Their privacy policies apply to your accounts.
+Filen and Internxt downloads are decrypted on your device through their SDKs.
+CrisperPlayer does not upload your audiobooks as part of importing or sync.
 
-## Data stored on your device
+Optional Plex progress sync sends track identifiers and listening positions to
+your Plex server. The Plex server owner can read that information.
 
-When you import audiobooks via the system file picker, the app copies selected audio and cover art into its application storage and stores metadata locally (SQLite via Drift + SharedPreferences):
+Optional folder progress sync uploads encrypted listening positions, track
+content hashes/durations and synchronization counters to the folder you select
+in Nextcloud/WebDAV, Filen or Internxt. AES-256-GCM protects the snapshot using
+a shared passphrase derived with PBKDF2-HMAC-SHA256. The provider can see file
+names, sizes and access times. It cannot read the snapshot without the shared
+passphrase; anyone you give the passphrase to can read/write your progress.
+There is no passphrase recovery service. See [sync behavior](docs/CLOUD_SYNC.md).
 
-- Book metadata you import (title, author, file paths, duration, cover art cache)
-- Playback state (last position, progress)
-- Chapters parsed from m4b files (on-device)
-- Bookmarks (manual and automatic) and listening history (start/end timestamps)
-- Settings (playback speed, skip silence, theme, sleep timer preferences)
+Credentials, provider session keys and sync passphrases are stored through the
+platform's secure storage. Local builds on this Mac explicitly use the
+Brickwright keychain. SDK configurations use temporary directories and
+memory-backed credential stores rather than SDK home-directory credential files.
+Temporary decrypted downloads are removed after completion or handled failure;
+an abrupt system/process termination can leave disposable staging files until
+OS cleanup. The app's persistent library and JSON metadata backups are not
+separately encrypted by CrisperPlayer and rely on device/OS protection.
 
-This data never leaves your device except through **Export** you initiate (see below).
+## Local data and exports
 
-## Permissions
+The app copies imported audio into its own storage and records titles, authors,
+artwork, chapters, file paths, progress, bookmarks, notes, history and settings
+in a local SQLite database and preferences. Originals remain unchanged.
+Explicit exports contain metadata, not the audio; you choose where to save/share
+them. Anyone with access to an unencrypted export can read its contents.
 
-### Android
+The browser player stores selected audio and progress in that browser's
+IndexedDB. Audio is processed locally, without an upload endpoint. Its progress
+backups contain metadata and sampled file fingerprints. GitHub hosts the public
+Pages site and may log web requests; browser storage can be cleared or evicted.
 
-- **READ_MEDIA_AUDIO / READ_EXTERNAL_STORAGE (≤ Android 12):** to read audiobook files *you select* via the file picker. The app does not scan storage without user action.
-- **POST_NOTIFICATIONS:** to show playback controls in the notification shade and lock screen.
-- **FOREGROUND_SERVICE + FOREGROUND_SERVICE_MEDIA_PLAYBACK:** to continue playback with the screen off.
-- **WAKE_LOCK:** to prevent the device from sleeping during playback.
+## Platform features and permissions
 
-`INTERNET` is declared only in debug/profile builds for Flutter tooling; the release app declares no network permission.
+- File selection/import uses the operating system's picker and selected files.
+- Android requests media/file access as needed, notifications and foreground
+  media playback permissions. Internet access supports optional servers/sync.
+- iOS uses background audio and local-network access for servers you configure.
+  Share intake and the optional iOS widget use a dedicated application group.
+- Media controls expose the playing book's title/author/artwork to the operating
+  system, lock screen, connected car/headset and media session.
+- Android widgets store a small local title/author/play-state snapshot. The
+  optional Watch companion sends commands and playback snapshots between your
+  paired Apple devices using WatchConnectivity. Companions receive no cloud
+  credentials. Their distribution/provisioning status is documented separately.
+- The desktop CLI uses an authenticated loopback connection to the running app;
+  its local descriptor contains an access token and should be kept private.
 
-### iOS
+No microphone, camera, location, contacts or advertising-tracking permission
+is requested for these features.
 
-- **Background Audio (`UIBackgroundModes = audio`):** to play with the screen locked and in Control Center.
-- **Apple Music usage description:** displayed if the system requests media-library access for lock-screen metadata; no library browsing is performed.
+## Retention and deletion
 
-No photo library, microphone, camera, location, contacts, or tracking permissions are requested.
-
-## Export / Import
-
-Settings → Export creates a JSON file on your device containing your library index, bookmarks, and history. You choose where to save or share it. Import reads a JSON file you select. No data is sent to us.
-
-## Data retention and deletion
-
-- All data is retained until you delete it in-app (delete book, clear history/bookmarks, reset settings) or uninstall the app.
-- Uninstalling removes the app's database and preferences from device storage.
-
-## Children
-
-The app does not target children under 13 and does not knowingly collect data from children. It is rated Everyone (Play) / 4+ (App Store).
-
-## Third-party services
-
-None in v0.1. No analytics, crash reporters, ads, or external SDKs that collect data.
-
-## Changes
-
-Material changes will be noted in `CHANGELOG.md` and this file. Continued use after an update constitutes acceptance.
+You can delete books and managed copies, clear history/bookmarks and disconnect
+servers in the app. Uninstalling normally removes local app storage; OS secure
+storage and user-created exports can survive uninstall. Disabling sync keeps
+local progress and existing remote snapshots. Delete the dedicated sync folder
+through your provider to erase those remote files. Plex data is managed by your
+Plex server. Original audio and your exports are never deleted by book removal.
 
 ## Contact
 
-For questions or data-deletion requests, open an issue at https://github.com/crisperplayer/crisperplayer/issues or use the support e-mail listed in the store listing.
-
+Christian Ströbele — [privacy questions](mailto:postmaster@crispstro.be).
+Source and issue tracker: https://github.com/CrispStrobe/crisperplayer

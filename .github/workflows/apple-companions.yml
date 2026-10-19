@@ -1,0 +1,40 @@
+name: Apple companion builds
+on:
+  push:
+    branches: [master]
+    paths: ['ios/Companions/**', 'scripts/configure_apple_companions.rb', '.github/workflows/apple-companions.yml']
+  pull_request:
+    paths: ['ios/Companions/**', 'scripts/configure_apple_companions.rb', '.github/workflows/apple-companions.yml']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate standalone verification project
+        run: |
+          if ! command -v xcodegen >/dev/null; then brew install xcodegen; fi
+          xcodegen generate --spec ios/Companions/project.yml
+      - name: Compile iOS widget
+        run: xcodebuild -project ios/Companions/CrisperPlayerCompanions.xcodeproj -scheme PlayerWidget -sdk iphonesimulator -configuration Release -derivedDataPath build/companion-widget CODE_SIGNING_ALLOWED=NO build
+      - name: Install Watch platform if needed
+        run: |
+          if ! xcrun simctl list runtimes | rg 'watchOS.*com.apple.CoreSimulator.SimRuntime'; then
+            xcodebuild -downloadPlatform watchOS
+          fi
+      - name: Compile Watch companion
+        run: xcodebuild -project ios/Companions/CrisperPlayerCompanions.xcodeproj -scheme PlayerWatch -sdk watchsimulator -configuration Release -derivedDataPath build/companion-watch CODE_SIGNING_ALLOWED=NO build
+      - name: Validate host embedding script
+        run: |
+          ruby -e 'require "xcodeproj"' || gem install --user-install xcodeproj --no-document
+          ruby scripts/configure_apple_companions.rb --widget --watch
+          ruby scripts/configure_apple_companions.rb --widget --watch
+          ruby -e 'require "xcodeproj"; p = Xcodeproj::Project.open("ios/Runner.xcodeproj"); abort "Duplicate or missing companions" unless p.targets.count { |t| ["PlayerWidget", "PlayerWatch"].include?(t.name) } == 2'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apple-companions-simulator
+          path: |
+            build/companion-widget/Build/Products/Release-iphonesimulator/PlayerWidget.appex
+            build/companion-watch/Build/Products/Release-watchsimulator/PlayerWatch.app
+          if-no-files-found: error

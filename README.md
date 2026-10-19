@@ -1,7 +1,7 @@
 # CrisperPlayer
 
 A local-first audiobook player for Android, iOS, macOS, Windows and Linux.
-Keep your place, organize your books, and download from Plex or your NAS for offline listening.
+Keep your place, organize your books, and download from Plex, Filen, Internxt, Nextcloud or your NAS for offline listening.
 
 [**Download the native apps and CLI**](https://github.com/CrispStrobe/crisperplayer/releases/latest) · [**Listen in your browser**](https://crispstrobe.github.io/crisperplayer/) · [Installation and release automation](docs/RELEASES.md)
 
@@ -65,7 +65,7 @@ Third-party components retain their upstream licenses.
 - Plex music-library albums and WebDAV/SFTP/SMB NAS folders download as offline books; files stream to disk and credentials stay in platform secure storage. Mounted shares can be imported as folders on desktop.
 - JSON metadata export/import. Exports do not contain audio files; restoring on another device still requires accessible audio files.
 
-Plex, WebDAV, SFTP and SMB connections support browsing and offline downloads. Cross-device progress sync is not implemented. The Pages browser player has the smaller local-file scope described above.
+Plex, Filen, Internxt, Nextcloud, WebDAV, SFTP and SMB support browsing and offline downloads. Optional [progress sync](docs/CLOUD_SYNC.md) supports Plex and encrypted files in your own cloud folder. The Pages browser player has the smaller local-file scope described above.
 
 ## Playback controls
 
@@ -232,7 +232,9 @@ and [Prologue](https://prologue.audio/). These are priorities, not a claim of co
 | Added | Custom sleep durations, quick timer extensions, deadline-based expiry and CLI timer parity |
 | Added | Browser progress backup/restore with audio checks, bookmark merging, editing and deletion |
 | Next | Wider accessibility/device audit |
-| Later | Plex progress sync, CarPlay/Android Auto, widgets and Watch |
+| Added | Optional Plex progress sync and encrypted Nextcloud/WebDAV/Filen/Internxt progress files, with conflict resolution and CLI parity |
+| Added | Android Auto browse tree and Android home-screen playback widget |
+| Provisioning / device validation | CarPlay, iOS widget and Watch remote controls; [requirements and scope](docs/COMPANIONS.md) |
 | Deferred | Optional local CrispASR transcripts and full-text search |
 
 Every new player/library operation should be available through the desktop CLI.
@@ -289,6 +291,11 @@ builds that have already passed checks. Tagged releases always run their full ch
 ## Plex and NAS libraries
 
 Open **Import → Server / NAS** or **Settings → Servers & NAS**.
+Filen and Internxt use email/password and an optional two-factor code; their encrypted
+files are decrypted locally using the SDKs shared with CrispCloud. Nextcloud accepts
+your account base URL, username and app password. An interrupted encrypted file
+restarts; completed tracks are reused only after metadata/size/SHA-256 checks.
+Internxt pause takes effect after its current SDK transfer completes.
 For Plex, enter the server URL and an [X-Plex-Token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
 Audiobooks must be in a music library, one album per book. Albums download all
 tracks in disc/track order. For WebDAV, enter the NAS endpoint (including its
@@ -310,7 +317,7 @@ Keychain/OS secure storage. Disconnecting leaves offline books intact.
 CrispCloud’s separate provider adapters and secure credential storage informed
 this design. The shared `crisp_storage` package in CrispCloud now supplies
 Plex, WebDAV, SFTP and SMB transports, SSH trust, profiles and transfer scheduling.
-Automatic Plex progress synchronization remains pending.
+Optional [Plex and encrypted folder progress sync](docs/CLOUD_SYNC.md) are available. [Car interfaces and companions](docs/COMPANIONS.md) have separate provisioning/device requirements.
 Mount SMB shares with Finder/Explorer/the desktop file manager and use
 **Import library folder / mounted share**. On iOS, connect a server in Files and select
 audio through the file picker. **Import folder as one book** copies all selected folder audio, including subfolders,
@@ -423,7 +430,7 @@ SMB connects directly to `smb://host/share/` (an optional subfolder is supported
 SMB3 encryption is required by default; older NAS servers can use signed SMB2
 by explicitly turning that setting off. Domain accounts use `DOMAIN\user`.
 SMB1 and browser connections are unsupported. Files are downloaded into the local
-library before playback; server-side Plex progress sync remains pending.
+library before playback; optional Plex and encrypted folder progress sync are documented in [Cloud sync](docs/CLOUD_SYNC.md).
 
 Run the isolated signed SMB2 transport suite with
 `CRISPER_SMB_PYTHON=/path/to/python-with-impacket flutter test test/smb_live_test.dart`.
@@ -463,3 +470,9 @@ To exercise native compressed-audio waveform extraction on this Mac, run
 system encoder, writes it inside the test sandbox, checks measured/cached peaks
 while the muted native player continues, and uses Brickwright signing. It leaves
 your audiobook library untouched.
+
+
+Development Android/iOS simulator snapshots are available by manually dispatching
+**CI**. Ordinary pushes run source/tests/browser/CLI verification; immutable
+version tags run the complete permanent release and internal TestFlight pipelines.
+This avoids building duplicate development binaries alongside a tagged release.

@@ -1,3 +1,7 @@
+import 'services/sync/folder_progress_service.dart';
+import 'services/audio/companion_service.dart';
+import 'services/audio/media_library.dart';
+import 'services/sync/plex_progress_service.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:audio_service/audio_service.dart';
@@ -93,9 +97,22 @@ Future<void> main() async {
           artDownscaleHeight: 800,
         ),
       );
+      handler.library = MediaLibrary(database, service);
       service.attachAudioHandler(handler);
     }
     await service.init();
+    final progressSync = PlexProgressService(
+      library,
+      remote,
+      isBookOpen: (id) => service.currentBookId == id,
+    );
+    progressSync.start();
+    final folderSync = FolderProgressService(
+      library,
+      remote,
+      isBookOpen: (id) => service.currentBookId == id,
+    );
+    folderSync.start();
     if ((Platform.isMacOS || Platform.isLinux || Platform.isWindows) &&
         (kDebugMode || const bool.fromEnvironment('CRISPERPLAYER_CLI'))) {
       try {
@@ -105,6 +122,8 @@ Future<void> main() async {
           playback: service,
           descriptor: File('${directory.path}/cli.json'),
           remote: remote,
+          progressSync: progressSync,
+          folderSync: folderSync,
         );
         await control.start();
       } catch (error) {
@@ -117,6 +136,8 @@ Future<void> main() async {
     } catch (e) {
       restoreError = 'Could not restore your last book: $e';
     }
+    final companion = CompanionService(database, service);
+    await companion.init();
     final shareIntake = ShareIntakeService(library: library);
     runApp(
       ProviderScope(
@@ -126,6 +147,9 @@ Future<void> main() async {
               () => unawaited(() async {
                 await shareIntake.dispose();
                 await control?.dispose();
+                await companion.dispose();
+                await folderSync.shutdown();
+                await progressSync.shutdown();
                 await service.dispose();
                 await database.close();
               }()),
@@ -136,6 +160,8 @@ Future<void> main() async {
           playbackProvider.overrideWithValue(service),
           libraryServiceProvider.overrideWithValue(library),
           remoteLibraryProvider.overrideWith((ref) => remote),
+          plexProgressProvider.overrideWith((ref) => progressSync),
+          folderProgressProvider.overrideWith((ref) => folderSync),
           shareIntakeProvider.overrideWithValue(shareIntake),
         ],
         child: CrisperPlayerApp(

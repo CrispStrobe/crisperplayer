@@ -1,0 +1,22 @@
+Listen to your own audiobooks and pick up where you left off.
+
+Import audio from Files and other apps, or download books from Plex, Filen, Internxt, Nextcloud, WebDAV, SFTP and SMB for offline listening.
+
+YOUR LIBRARY
+Organize books into series and collections. Edit titles, authors and covers, mark books finished, and keep an Up next queue.
+
+YOUR PLAYER
+Navigate embedded chapters, add bookmarks and notes, change playback speed, adjust volume, or tap the timecode to jump to a precise position. Generate a measured waveform locally for supported audio.
+
+LISTEN COMFORTABLY
+Background audio and system media controls keep your book available with the screen locked. Smart rewind, configurable skips and custom sleep timers help you continue comfortably.
+
+KEEP YOUR PLACE
+Optionally sync listening positions with Plex or use encrypted progress files in a folder on your own Nextcloud/WebDAV, Filen or Internxt account. Offline progress stays local until a connection is available. Conflicting changes require a choice.
+
+LOCAL FIRST
+No CrisperPlayer account, advertising or tracking. Your imported audio stays in your library. Optional connections use your own server/provider accounts. Export library metadata for a separate backup.
+
+Supports M4B/M4A, MP3, FLAC, Ogg, Opus, WAV and other formats supported by your device. Format support depends on the platform and file encoding.
+
+CrisperPlayer is open source under AGPL-3.0. Source, support and privacy information are available through the app's About dialog.

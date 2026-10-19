@@ -413,10 +413,9 @@ packages:
   filen_client:
     dependency: "direct main"
     description:
-      name: filen_client
-      sha256: "89823f6add3a86aeafee8bc942de43544431ed21faa6cc851a4d6758a0473b05"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/filen_client"
+      relative: true
+    source: path
     version: "0.2.2"
   fixnum:
     dependency: transitive

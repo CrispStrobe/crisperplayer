@@ -123,3 +123,15 @@ session requires reconnecting; account passwords are not retained.
 Nextcloud endpoint handling and WebDAV transfers have fixture coverage; a live
 Nextcloud account check remains pending because the parent `.env` provides no
 Nextcloud URL/account and the former localhost:8888 test instance is offline.
+
+The Mac app carries the same small Filen 0.2.2 compatibility patch as CrispCloud.
+It avoids probing external Homebrew OpenSSL libraries from the sandbox and uses
+the standard cryptography backend instead. A Brickwright-signed native Mac test
+verified initialization, an AES-GCM round trip and rejection of altered ciphertext.
+Filen’s live account check also passed again with that backend: login, offline
+import, encrypted progress and conflict resolution. The patched MPL source and
+its license are in `packages/filen_client`.
+
+Re-run the native sandbox check locally with
+`python3 scripts/macos_local.py test --test-file integration_test/cloud_sdk_test.dart`,
+then restore the normal app with `python3 scripts/macos_local.py build`.

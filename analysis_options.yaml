@@ -20,5 +20,7 @@ linter:
     - use_key_in_widget_constructors
     - valid_regexps
 analyzer:
+  exclude:
+    - packages/filen_client/**
   errors:
     invalid_annotation_target: ignore

@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 - **Library sorting** — sort library by date added, last played, title, author, or duration
 - **48 unit and widget tests** covering chapter parsing, database, format utilities, playback logic, sleep timer, and UI widgets
 
+## 0.1.0+18
+
+- Reused the Filen macOS sandbox patch from CrispCloud, avoiding unsafe Homebrew OpenSSL loading; verified native AES-GCM round trips and rejection of modified ciphertext.
+
 ## 0.1.0+17
 
 - Corrected companion embedding order before Flutter thinning, fixing the Watch host archive dependency cycle.

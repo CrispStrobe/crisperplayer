@@ -1,5 +1,6 @@
-CrisperPlayer 0.1.0 build 17
+CrisperPlayer 0.1.0 build 18
 
+- Reused CrispCloud’s Filen macOS sandbox compatibility patch; native encryption/decryption and authentication rejection were verified in the Brickwright-signed Mac app.
 - Corrected Apple companion embedding order to avoid a Watch archive dependency cycle. The iOS widget remains deferred.
 - Fixed Android startup crash in the release APK; release publication now requires an emulator startup and reinstall check.
 - Browser-to-device audiobook uploads over trusted Wi-Fi with QR pairing, access codes, on-device progress, mobile keep-awake and resumable large-file chunks; foreground only.

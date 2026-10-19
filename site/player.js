@@ -32,6 +32,7 @@ const database = new Promise((resolve, reject) => {
 let books = [], selected = null, tracks = [], objectUrl = null;
 let loading = false, pendingPosition = 0, playWhenReady = false, generation = 0;
 let trackChange = 0, sourceGeneration = 0;
+let trackWasPlaying = false;
 let lastCheckpoint = 0, beforeMute = 1;
 let backupBusy = false, restoring = false, pendingRestore = null, editingBookmark = null;
 const safe = fn => (...args) => Promise.resolve().then(() => fn(...args)).catch(e => message(e.message || String(e)));
@@ -146,7 +147,7 @@ async function switchTrack(index, position = 0, autoplay = false) {
   if (!selected || index < 0 || index >= tracks.length) return;
   const book = selected, selection = generation, change = ++trackChange;
   const saved = checkpoint();
-  loading = true; controls(); progress();
+  loading = true; trackWasPlaying = false; controls(); progress();
   try { await saved; } catch (error) {
     if (change === trackChange && selection === generation) { loading = false; controls(); progress(); }
     throw error;
@@ -175,7 +176,7 @@ async function selectBook(id, scroll = false) {
   const book = books.find(b => b.id === id);
   if (!book) throw new Error('This book is no longer in the browser library.');
   const saved = checkpoint(), token = ++generation;
-  loading = true; controls(); progress(); audio.pause();
+  loading = true; trackWasPlaying = false; controls(); progress(); audio.pause();
   try { await saved; } catch (error) {
     if (token === generation) { loading = false; controls(); progress(); }
     throw error;
@@ -200,7 +201,7 @@ async function importBook(files) {
   const tx = db.transaction(['books', 'tracks'], 'readwrite'), done = finished(tx);
   tx.objectStore('books').put(book);
   files.forEach((file, index) => tx.objectStore('tracks').put({id: `${book.id}:${index}`, bookId: book.id, index, blob: file}));
-  try { await done; } catch (e) { throw new Error(`Could not save this book. Browser storage may be full or unavailable. ${e.message}`); }
+  try { await done; } catch (e) { throw new Error(`Could not save this book. Try a regular browser window and check available storage. ${e.message}`); }
   books.push(book); await selectBook(book.id, true);
   message('Book saved in this browser. Press Play to listen.');
   navigator.storage?.persist?.().catch(() => {});
@@ -309,7 +310,7 @@ $('restore-confirm').onclick = safe(async () => {
   if (selected !== book || generation !== target.generation) throw new Error('The selected book changed. Select the backup again.');
   const before = {track: book.track, position: book.position, speed: book.speed, volume: book.volume, unmutedVolume: book.unmutedVolume, bookmarks: book.bookmarks};
   const wasPlaying = !audio.paused;
-  restoring = true; loading = true; audio.pause(); controls();
+  restoring = true; loading = true; trackWasPlaying = false; audio.pause(); controls();
   $('restore-confirm').disabled = $('restore-cancel').disabled = true;
   try {
     Object.assign(book, {track: data.track, position: data.position, speed: data.speed, volume: data.volume ?? book.volume, unmutedVolume: data.unmutedVolume ?? book.unmutedVolume, bookmarks: ProgressBackup.mergeBookmarks(book.bookmarks, data.bookmarks), updatedAt: Date.now()});
@@ -337,7 +338,7 @@ $('delete').onclick = safe(async () => {
 });
 async function seekLoadedTrack(target, source) {
   // Keep checkpoints disabled until the decoder confirms the initial seek.
-  // Some decoders first report a seek to zero while the track is warming up.
+  // Retry once if the decoder settles at a different position.
   for (let attempt = 0; attempt < 2; attempt++) {
     await new Promise((resolve, reject) => {
       const cleanup = () => { clearTimeout(timer); audio.removeEventListener('seeked', done); audio.removeEventListener('emptied', done); };
@@ -368,10 +369,16 @@ audio.onloadedmetadata = safe(async () => {
   }
 });
 audio.ontimeupdate = () => { progress(); if (Date.now() - lastCheckpoint > 5000) { lastCheckpoint = Date.now(); safe(checkpoint)(); } };
-audio.onplay = controls;
-audio.onpause = () => { controls(); safe(checkpoint)(); };
+audio.onplay = () => { trackWasPlaying = true; controls(); };
+audio.onpause = () => { if (!audio.ended) trackWasPlaying = false; controls(); safe(checkpoint)(); };
 audio.onseeked = () => { progress(); safe(checkpoint)(); };
-audio.onended = safe(async () => { await checkpoint(); if (selected && selected.track + 1 < tracks.length) await switchTrack(selected.track + 1, 0, true); else controls(); });
+audio.onended = safe(async () => {
+  const advance = trackWasPlaying && !loading && !restoring;
+  trackWasPlaying = false;
+  await checkpoint();
+  if (advance && selected && selected.track + 1 < tracks.length) await switchTrack(selected.track + 1, 0, true);
+  else controls();
+});
 audio.onerror = () => { if (audio.getAttribute('src')) { loading = false; controls(); message('This browser could not decode this track. Try a supported MP3/M4A/WAV file or use the native app.'); } };
 document.addEventListener('visibilitychange', () => { if (document.hidden) safe(checkpoint)(); });
 window.addEventListener('pagehide', () => { safe(checkpoint)(); });

@@ -3,6 +3,8 @@
 The [GitHub Pages player](https://crispstrobe.github.io/crisperplayer/) stores audio
 and listening metadata locally in IndexedDB. Browser audio decoders determine codec
 support. Import one book at a time; multiple files use natural filename order.
+Use a regular browser window to save audio. WebKit private sessions cannot persist
+audio blobs in IndexedDB ([upstream report](https://github.com/microsoft/playwright/issues/42795)).
 
 ## Back up and restore
 
@@ -56,3 +58,16 @@ The browser player is deployed independently of native binary releases. Changes 
 `site/` run real-browser checks before the Pages deployment. Tests cover playback,
 backup round trips, reimports, mute restoration, invalid input, wrong audio, failed
 storage writes, interrupted restores, bookmark editing and small-screen layout.
+
+For local browser checks, use the pinned dependencies from `package-lock.json`:
+
+```sh
+npm ci
+npx playwright install chromium webkit
+npm test
+npm test -- --browser=webkit
+```
+
+WebKit tests use a new, temporary regular profile for each test so file storage
+matches normal Safari browsing. The fixture deletes its own profile after the test
+and never opens a user's Safari profile. Chromium tests use isolated contexts.

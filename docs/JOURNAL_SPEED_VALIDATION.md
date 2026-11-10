@@ -8,24 +8,31 @@ device release.
 
 | Check | Result |
 | --- | --- |
-| Combined feature and regression command below, rerun with Apple processing | **181 passed, 1 optional screenshot test skipped** |
-| Separate journal UI run with capture enabled | **10 passed**, including actual widget screenshots |
+| Combined feature and regression command below, including Android processors, passage queries and reports | **216 passed, 1 optional screenshot test skipped** |
+| Separate optional visual-review case with capture enabled | **1 passed**; passage lookup and export dialog rendered and inspected, alongside the existing journal views |
 | `flutter analyze --no-pub` | No issues found |
 | `dart build cli -o build/cli` | Compiled; executable help lists journal, map and trail commands |
 | `flutter build web --no-wasm-dry-run --no-pub` | Built the native app's platform-availability web target |
 | Actual Flutter visual inspection | Journal filters/entries and speed/processing screens at 390 × 844 with Roboto/MaterialIcons |
 | Accessibility | Journal at 320 × 568 with 200% text; existing player/speed landscape and screen-reader checks passed |
 | `git diff --check` | Clean |
+| Complete Python release/evidence suite after adding APK inspection | **89 passed**, including 22 binary-audit fixtures |
+| macOS export sandbox configuration | Both entitlement plists parse and permit writes through the user-selected file scope; native save-panel behavior remains a target-device check |
 
 The combined command was:
 
 ```sh
 flutter test --no-pub \
+  test/android_speed_processing_test.dart \
   test/apple_speed_processing_test.dart \
   test/listening_journal_service_test.dart \
+  test/listening_journal_passage_test.dart \
   test/listening_journal_playback_test.dart \
   test/listening_journal_cli_test.dart \
   test/listening_journal_ui_test.dart \
+  test/listening_journal_passage_ui_test.dart \
+  test/listening_journal_report_test.dart \
+  test/journal_export_button_test.dart \
   test/speed_controls_test.dart \
   test/database_export_snapshot_test.dart \
   test/database_migration_test.dart \
@@ -56,6 +63,24 @@ bookmark; stale/invalid positions; unknown-duration evidence; cleared records
 not revived by pending writes; date overlap; stable pagination; title snapshots;
 schema 1–6 upgrades; and validated backup merges and path remapping.
 
+Passage lookups are checked against actual played intervals at their exact
+half-open boundaries, overlapping ranges, exact books/paths, Return Trail
+replays, excluded seek/pause events, date filters, cursor identity and legacy
+cursors. Missing physical files do not prevent history inspection. A live
+snapshot captures pending observations without seeking or pausing playback.
+The UI tests exercise map-to-journal navigation, safe historical opens with a
+recovery bookmark, clearing/changing passage filters and large text. The visual
+review also exercises changing an initial passage while the view is scrolled,
+which verifies that scroll reset waits until the current build finishes.
+
+Report tests cover all matching records beyond 200 entries, original UTC/offset
+and physical-position fields, source/destination/filter path omission, explicit
+path inclusion, CSV formula protection and Unicode streaming. A later database
+write does not change a captured snapshot. Export options retain their original
+filter scope through parent updates; cancellation and retry leave recording
+preferences unchanged. These tests use real SQLite/coordinator queries with
+an injected report-delivery seam; they do not execute native share/save panels.
+
 The export regression interleaves a concurrent book/journal import between
 table reads and confirms the backup restores as one consistent snapshot.
 
@@ -83,7 +108,7 @@ for later implementation and documentation commits.
 The earlier full local suite and Chromium sandbox limits remain described in
 [Return Trail validation](RETURN_TRAIL_VALIDATION.md). The final combined suite
 above completes successfully in this environment. Counts from earlier targeted
-runs overlap and must not be added to the 181 result.
+runs overlap and must not be added to the 216 result.
 
 No native-device release build, real-decoder listening acceptance, controlled
 audio comparison or CPU/battery benchmark was performed here. Before release,

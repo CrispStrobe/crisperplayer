@@ -10,6 +10,11 @@ on:
       - 'lib/main.dart'
       - 'test/android_speed_processing_test.dart'
       - 'test/speed_controls_test.dart'
+      - 'lib/services/native_licenses.dart'
+      - 'assets/licenses/ANDROID-NDK.txt'
+      - 'scripts/audit_android_audio.py'
+      - 'scripts/tests/test_android_audio_audit.py'
+      - 'licensing/**'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - 'android/**'
@@ -29,6 +34,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Check APK, ELF, DEX and notice audit failure cases
+        run: python3 -m unittest discover -s scripts/tests -p test_android_audio_audit.py -v
       - name: Verify pinned sources and compile the actual processors
         run: python3 packages/just_audio/native/crisper_dsp/tools/build_host.py --jobs 2
       - name: Check PCM timing, pitch, short clips, backpressure and resets
@@ -45,7 +52,7 @@ jobs:
 
   android:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -62,8 +69,37 @@ jobs:
       - run: flutter pub get
       - name: Check processor settings and native configuration transport
         run: flutter test --no-pub test/android_speed_processing_test.dart test/speed_controls_test.dart
-      - name: Compile arm64 and x86-64 app integration
+      # Source evidence refers to the checked-in explanatory notice asset.
+      # Preserve it before replacing the asset with the exact installed notices.
+      - name: Record Android source and license evidence before preparing notices
+        run: >-
+          python3 scripts/check_distribution_licenses.py --report --platform android
+          --output build/android-audio-evidence/source-license-report.json
+      - name: Prepare exact installed-NDK notices for Flutter assets
+        run: >-
+          python3 scripts/audit_android_audio.py prepare-notices
+          --ndk "$ANDROID_HOME/ndk/28.2.13676358"
+          --output build/android-audio-evidence/ndk-notices.json
+      - name: Compile arm64 and x86-64 debug integration
         run: flutter build apk --debug --no-pub --target-platform android-arm64,android-x64
+      - name: Compile R8 release integration with the local debug key
+        # No release signing secrets are supplied. The app's Gradle configuration
+        # uses its local debug key while still running R8 and resource shrinking.
+        run: flutter build apk --release --no-pub --target-platform android-arm64,android-x64
+      - name: Inspect the final debug and release APK payloads
+        env:
+          AUDIT_SOURCE_REVISION: ${{ github.sha }}
+        run: |
+          audit_status=0
+          for mode in debug release; do
+            python3 scripts/audit_android_audio.py inspect \
+              "build/app/outputs/flutter-apk/app-$mode.apk" \
+              --ndk "$ANDROID_HOME/ndk/28.2.13676358" \
+              --abi arm64-v8a --abi x86_64 \
+              --source-revision "$AUDIT_SOURCE_REVISION" \
+              --output "build/android-audio-evidence/$mode-apk.json" || audit_status=1
+          done
+          exit "$audit_status"
       - name: Check the Media3 processor lifecycle
         working-directory: android
         run: ./gradlew :just_audio:testDebugUnitTest
@@ -87,7 +123,15 @@ jobs:
         with:
           name: android-audio-processor-evidence
           path: |
+            build/android-audio-evidence/
+            build/app/outputs/mapping/release/
             build/just_audio/reports/
             build/just_audio/outputs/androidTest-results/
             build/just_audio/test-results/
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-audio-inspected-apks
+          path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: warn

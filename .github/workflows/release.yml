@@ -74,6 +74,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install the pinned native toolchain
+        run: sdkmanager 'cmake;3.22.1' 'ndk;28.2.13676358'
       - name: Restore dedicated Android release key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -90,7 +93,18 @@ jobs:
           path.chmod(0o600)
           PY
       - run: flutter pub get
-      - run: flutter build apk --release
+      # Keep the source/license gate on checked-in bytes. The prepared notice
+      # asset is subsequently verified against the final signed APK itself.
+      - name: Enforce Android source policy before preparing notices
+        run: >-
+          python3 scripts/check_distribution_licenses.py --enforce --platform android
+          --output build/android-audio-evidence/source-license-report.json
+      - name: Prepare exact installed-NDK runtime notices
+        run: >-
+          python3 scripts/audit_android_audio.py prepare-notices
+          --ndk "$ANDROID_HOME/ndk/28.2.13676358"
+          --output build/android-audio-evidence/ndk-notices.json
+      - run: flutter build apk --release --no-pub --target-platform android-arm,android-arm64,android-x64
       - name: Verify and stage signed APK
         run: |
           mkdir -p dist
@@ -103,6 +117,13 @@ jobs:
           if 'Android Debug' in result: raise SystemExit('Refusing to release a debug-signed APK')
           Path('dist/ANDROID-SIGNING.txt').write_text(result)
           PY
+      - name: Verify the final signed APK audio payload
+        run: >-
+          python3 scripts/audit_android_audio.py inspect dist/CrisperPlayer-android.apk
+          --ndk "$ANDROID_HOME/ndk/28.2.13676358"
+          --abi armeabi-v7a --abi arm64-v8a --abi x86_64
+          --source-revision "$(git rev-parse HEAD)"
+          --output build/android-audio-evidence/release-apk.json
       - name: Enable KVM for release APK startup test
         run: |
           command -v ffmpeg >/dev/null || { sudo apt-get update && sudo apt-get install -y ffmpeg; }
@@ -128,6 +149,12 @@ jobs:
           name: android-release-startup-evidence
           path: build/android-smoke/
           if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-release-audio-evidence
+          path: build/android-audio-evidence/
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: release-android

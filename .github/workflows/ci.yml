@@ -80,8 +80,28 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install the pinned native toolchain
+        run: sdkmanager 'cmake;3.22.1' 'ndk;28.2.13676358'
       - run: flutter pub get
-      - run: nice -n 10 flutter build apk --release
+      - name: Record Android source evidence before preparing notices
+        run: >-
+          python3 scripts/check_distribution_licenses.py --report --platform android
+          --output build/android-audio-evidence/source-license-report.json
+      - name: Prepare exact installed-NDK runtime notices
+        run: >-
+          python3 scripts/audit_android_audio.py prepare-notices
+          --ndk "$ANDROID_HOME/ndk/28.2.13676358"
+          --output build/android-audio-evidence/ndk-notices.json
+      - run: nice -n 10 flutter build apk --release --no-pub --target-platform android-arm,android-arm64,android-x64
+      - name: Verify the packaged Android audio libraries and notices
+        run: >-
+          python3 scripts/audit_android_audio.py inspect
+          build/app/outputs/flutter-apk/app-release.apk
+          --ndk "$ANDROID_HOME/ndk/28.2.13676358"
+          --abi armeabi-v7a --abi arm64-v8a --abi x86_64
+          --source-revision "$(git rev-parse HEAD)"
+          --output build/android-audio-evidence/release-apk.json
       - name: Enable KVM for release startup test
         run: |
           command -v ffmpeg >/dev/null || { sudo apt-get update && sudo apt-get install -y ffmpeg; }
@@ -107,6 +127,12 @@ jobs:
           name: android-startup-evidence
           path: build/android-smoke/
           if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-audio-artifact-evidence
+          path: build/android-audio-evidence/
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: apk-release

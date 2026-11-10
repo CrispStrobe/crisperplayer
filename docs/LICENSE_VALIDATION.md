@@ -7,16 +7,18 @@ was performed.
 | Check | Observed result |
 | --- | --- |
 | Full `flutter analyze --no-pub`, including the maintained adapter | No issues found |
-| Combined playback/journal/map/trail/speed/accessibility regression run | 190 passed; one optional journal screenshot capture skipped |
-| All Python release, evidence and candidate-build checks | 67 passed, including 33 distribution-checker tests |
+| Combined playback/journal/map/trail/speed/accessibility regression run, including passage reports | 216 passed; one optional journal screenshot capture skipped |
+| All Python release, evidence and candidate-build checks | 89 passed, including 33 distribution-checker tests and 22 Android APK-audit tests |
 | just_audio provenance verifier | 38 retained upstream hashes, nine modified original files and 20 local adapter additions verified |
-| Compiled CLI and executable help, earlier branch checkpoint | Passed; not rerun for the Android processor addition |
-| Flutter web build, earlier branch checkpoint | Passed; this target remains the native app availability notice; not rerun for the Android processor addition |
+| Compiled CLI and executable help, rerun with passage filtering | Passed |
+| Flutter web build, rerun with passage reports | Passed; this target remains the native app availability notice |
 | Modified workflow YAML and `git diff --check` | Passed |
 | Native C++ streaming core | GCC/G++ 14.2 compile/link passed; 11 test methods passed, including 72 rate/channel/sample-rate combinations |
 | Android plugin Java and Media3 lifecycle | Complete plugin compiled against Media3 1.4.1 and the current Flutter embedding; 10 lifecycle tests passed using the real Media3 pipeline |
 | Actual JNI integration on host JVM | Four tests passed with real Bungee/Signalsmith output, including the native core in the real Media3 pipeline |
 | Native source closure | All 252 selected upstream files verified against the pinned manifest; original notices included in the app |
+| Android package inspector on synthetic fixtures | 22 checks passed for ELF/DEX/ZIP/JNI/NDK identity and failure cases; this is not an actual APK inspection |
+| Package inspector on the existing actual host JNI ELF | Eight reachable JNI exports and four 16 KB load segments verified; host ELF is not an Android APK |
 | WAV comparison renderer | Six-second synthetic input produced exact four-second output at 1.5× for all three engines; no saturated PCM samples |
 | Actual Flutter Apple processing preview | Inspected at 390 × 844; active and pending modes are distinct and the restart requirement is visible |
 | Real-checkout distribution report | 168 production packages and 12 native components inventoried; remaining external artifact evidence is reported separately from reviewed DSP source |
@@ -25,9 +27,8 @@ was performed.
 | Controlled Linux source preparation | Four pinned archives verified and safely unpacked; build plan and negative checks passed |
 
 The combined Flutter command is in
-[journal and speed validation](JOURNAL_SPEED_VALIDATION.md); this run also includes
-`test/android_speed_processing_test.dart`. The 22 focused Android/Apple/speed
-cases are included in the 190 total and must not be added to it. Python checks run with:
+[journal and speed validation](JOURNAL_SPEED_VALIDATION.md). The focused runs
+overlap with the 216 total and must not be added to it. Python checks run with:
 
 ```sh
 python3 -m unittest discover -s scripts/tests -v
@@ -41,6 +42,13 @@ cross-platform file URIs. Artifact tests cover GPL/nonfree build flags, missing
 native markers and a changed DLL even when its strings still look compatible.
 Candidate-build tests cover source-cache tampering, safe extraction, explicit
 build flags, PCM measurements and the app's actual legacy speed-filter mapping.
+
+The final source report verifies 168 production packages, 12 native components
+and 126 explicit native build/evidence inputs. No stale source hash, forbidden
+declared grant or ownership-scope finding was introduced by this slice. Pending
+artifact/provenance reviews remain visible and are not promoted based on script
+fixtures. The generated NDK notice asset is inspected inside actual APKs;
+source gates run before that build-time replacement.
 
 ## Android validation and remaining device checks
 
@@ -64,6 +72,15 @@ device checks have not been executed locally. Check the exact PR commit for
 those CI results. See [Android processor details](ANDROID_AUDIO_PROCESSORS.md).
 
 ## Other checks still required on native runners
+
+At `a8eef0650577b3a049d6a81a1b99011bcfe8fdb5`, Apple audio
+[run 7](https://github.com/CrispStrobe/crisperplayer/actions/runs/42876463275)
+successfully compiled macOS and ran all three native AVPlayerItem tests.
+Its iOS build failed because the runner selected Xcode 16.4 while the pinned
+`device_info_plus` 13.3.0 requires Xcode 26.1.1 or newer. The workflow now
+selects installed Xcode 26.2 explicitly; its selection step passed on the next
+run before that run was superseded by a newer feature-branch commit. Final iOS
+and Android build results must come from the current commit's checks.
 
 The Apple workflow compiles both the macOS and iOS AVFoundation paths, runs the
 macOS native XCTest assertions, and compiles the iOS test target. Those assertions

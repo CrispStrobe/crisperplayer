@@ -100,7 +100,19 @@ checkout, run:
 ```sh
 flutter pub get
 flutter test --no-pub test/android_speed_processing_test.dart test/speed_controls_test.dart
+python3 scripts/check_distribution_licenses.py --report --platform android \
+  --output build/android-audio-evidence/source-license-report.json
+python3 scripts/audit_android_audio.py prepare-notices \
+  --ndk "$ANDROID_HOME/ndk/28.2.13676358" \
+  --output build/android-audio-evidence/ndk-notices.json
 flutter build apk --debug --no-pub --target-platform android-arm64,android-x64
+flutter build apk --release --no-pub --target-platform android-arm64,android-x64
+python3 scripts/audit_android_audio.py inspect \
+  build/app/outputs/flutter-apk/app-release.apk \
+  --ndk "$ANDROID_HOME/ndk/28.2.13676358" \
+  --abi arm64-v8a --abi x86_64 \
+  --source-revision "$(git rev-parse HEAD)" \
+  --output build/android-audio-evidence/release-apk.json
 cd android
 ./gradlew :just_audio:testDebugUnitTest
 ./gradlew :just_audio:connectedDebugAndroidTest -Ptarget-platform=android-x64
@@ -108,9 +120,51 @@ cd android
 
 The connected task needs a running Android device or emulator. The dedicated
 [Android audio workflow](../.github/workflows/android-audio.yml) installs the
-pinned NDK/CMake versions, compiles arm64 and x86-64 app integration, runs the
-Media3 tests and executes the JNI tests on an API 35 emulator. JNI linking uses
-16 KB page alignment, and consumer R8 rules preserve the native bindings.
+pinned NDK/CMake versions, compiles arm64 and x86-64 debug and release app
+integration, runs the Media3 tests and executes the JNI tests on an API 35
+emulator. Its release build uses the local debug key with R8/resource shrinking
+enabled; it needs no store signing credentials. The general CI and signed
+release workflows also run the notice preparation and inspect their final
+three-ABI APKs, including armv7. Existing release signing and policy gates
+remain in force.
+
+## Inspect the actual Android package
+
+`scripts/audit_android_audio.py` reads APK ZIP members and ELF/DEX structures
+using the Python standard library. It records the APK hash and every packaged
+native library's hash, ABI, dynamic dependencies and load layout. Each requested
+ABI must include the DSP library and C++ shared runtime. The 64-bit libraries
+must have 16 KB ELF load alignment and uncompressed, 16 KB-aligned ZIP entries.
+Required JNI symbols must be reachable through the loader's real symbol/hash
+tables and point into executable segments. The DEX class must retain all eight
+native method names/signatures and their proper declaration kinds, so an R8
+build cannot pass merely because a class name survives as an unused string.
+
+The packaged `libc++_shared.so` must match the installed, pinned NDK's bytes,
+either directly or after that NDK's own `llvm-strip --strip-unneeded` operation
+on the trusted installed source file. The report records that transformation
+and tool hash. APK library contents are never executed or supplied to a tool.
+
+Before Flutter packages its assets, `prepare-notices` collects the exact
+installed `NOTICE`, `NOTICE.toolchain` and `source.properties` files. It writes
+their original bytes and hashes to build evidence and generates the app's
+`assets/licenses/ANDROID-NDK.txt`. Inspection then requires that exact asset
+inside the final APK. The checked-in explanatory placeholder cannot pass.
+These aggregate notices describe build tools as well as the packaged runtime;
+their inclusion does not mean those tools are shipped or linked into the app.
+
+Source evidence checks run **before** this generated asset replacement. The
+prepared asset is verified against the final artifact instead of silently
+updating the source manifest to match a generated file. CI publishes the
+original notices, asset, hashes and reports. The signed release path inspects
+the staged APK that will be published, after signing and before publication.
+
+These checks supply APK packaging evidence. They do not claim a reproducible
+source-to-binary build, validate AAB/store delivery, or approve a release. Actual
+ExoPlayer/AudioTrack behavior still needs device checks for rate changes,
+seeking, buffering, completion, audio focus and long-book source-clock accuracy.
+The existing JNI tests execute the real processors but do not replace that
+complete player/decoder/output-path test.
 
 Local validation in this Linux workspace includes the actual native core,
 Java/Media3 lifecycle and host-JVM JNI execution. It does not include an

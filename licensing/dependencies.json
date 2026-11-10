@@ -4493,6 +4493,54 @@
       "platforms": [
         "android"
       ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "scripts/audit_android_audio.py",
+      "sha256": "5b3a6f05b998d44d75cfeb330ac9e21a7c9f810581bc7ce5da7df958c77e06f9",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "assets/licenses/ANDROID-NDK.txt",
+      "sha256": "9f27804f31b74a9dde3322849b35f150c4507b60045d7abe26a5f6eb4101f362",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "lib/services/native_licenses.dart",
+      "sha256": "63de540d9deca090ebb816f8216b053c4383e8eacf0feb3ec4c72dc8996e4773",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/android-audio.yml",
+      "sha256": "0a11025d2d15c7f0c3758ce5aebe6ebc85f9f90ab3d3f47d037dae5695379f8a",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/ci.yml",
+      "sha256": "cc8b7df45101cabb2dbc2acdab565c2221724d923a605c090c4a79977696edc2",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/release.yml",
+      "sha256": "f24cdc028ee605494cc206624f1a83f431b2cb5e8525a2c98b79458af29bee15",
+      "platforms": [
+        "android"
+      ]
     }
   ],
   "ownership_authorization": {

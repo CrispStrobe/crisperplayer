@@ -23,6 +23,9 @@ void registerNativeLicenses() {
       'Android speed processing: Bungee Basic, Signalsmith Stretch, Sonic',
       'Eigen and PFFFT',
     ], await rootBundle.loadString('assets/licenses/ANDROID-DSP.txt'));
+    yield LicenseEntryWithLineBreaks([
+      'Android NDK: packaged C++ runtime notices',
+    ], await rootBundle.loadString('assets/licenses/ANDROID-NDK.txt'));
     for (final version in ['2.1', '3.0']) {
       yield LicenseEntryWithLineBreaks([
         'GNU LGPL $version',

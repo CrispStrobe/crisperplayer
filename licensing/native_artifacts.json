@@ -477,17 +477,28 @@
         },
         {
           "path": "lib/services/native_licenses.dart",
-          "sha256": "cf9021f9ba4fe47cf5202b1503202ae450605d43385b2baa701d5089e7c6d4eb",
-          "note": "Registers the Android DSP notice in the app license registry."
+          "sha256": "63de540d9deca090ebb816f8216b053c4383e8eacf0feb3ec4c72dc8996e4773",
+          "note": "Registers Android DSP notices and the prepared exact NDK notice asset in the app license registry."
         },
         {
           "path": "licensing/evidence/native_dsp_host_2026-11-10.json",
           "sha256": "c7f230c1e2c0c79d8dfea0370a633c660dc8997f5514b0fc9c3e4192152be77a",
           "note": "Actual native and Media3/JNI host evidence, explicitly release_approved: false. This does not satisfy Android package/runtime validation."
+        },
+        {
+          "path": "scripts/audit_android_audio.py",
+          "sha256": "5b3a6f05b998d44d75cfeb330ac9e21a7c9f810581bc7ce5da7df958c77e06f9",
+          "note": "Checks final APK ELF/DEX/JNI/ABI/alignment, compares the packaged C++ runtime to the pinned installed NDK, and verifies exact generated notices. A passing report is packaging evidence, not source-to-binary reproducibility or release approval."
+        },
+        {
+          "path": ".github/workflows/android-audio.yml",
+          "sha256": "0a11025d2d15c7f0c3758ce5aebe6ebc85f9f90ab3d3f47d037dae5695379f8a",
+          "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
         }
       ],
       "blockers": [
-        "No final Android APK/AAB has been inspected for per-ABI libcrisper_audio_dsp.so hashes, exact source/build correspondence, actual linked dependencies, and included source/notices. Host binaries and tests do not establish Android artifact provenance."
+        "Run the APK audit on actual Android debug and release builds and retain per-ABI hashes, linked dependencies, JNI retention/alignment and included notices. No actual APK has been inspected in this Linux workspace; synthetic fixtures and host JNI validation do not establish Android artifact provenance.",
+        "Review exact source/build correspondence and source delivery for the shipped native artifact. Packaging inspection alone does not establish a reproducible build or Android playback/device acceptance."
       ]
     },
     {
@@ -520,10 +531,41 @@
         {
           "url": "https://llvm.org/LICENSE.txt",
           "note": "Reviewed permissive Apache-2.0 WITH LLVM-exception pair. LLVM also documents separately licensed third-party files and legacy notices; the pair is not a blanket approval of every runtime object."
+        },
+        {
+          "path": "scripts/audit_android_audio.py",
+          "sha256": "5b3a6f05b998d44d75cfeb330ac9e21a7c9f810581bc7ce5da7df958c77e06f9",
+          "note": "Checks final APK ELF/DEX/JNI/ABI/alignment, compares the packaged C++ runtime to the pinned installed NDK, and verifies exact generated notices. A passing report is packaging evidence, not source-to-binary reproducibility or release approval."
+        },
+        {
+          "path": "assets/licenses/ANDROID-NDK.txt",
+          "sha256": "9f27804f31b74a9dde3322849b35f150c4507b60045d7abe26a5f6eb4101f362",
+          "note": "Checked-in explanatory placeholder. Every Android artifact workflow replaces it with exact installed NDK NOTICE and NOTICE.toolchain bytes before building; the inspector rejects this placeholder inside an APK."
+        },
+        {
+          "path": "lib/services/native_licenses.dart",
+          "sha256": "63de540d9deca090ebb816f8216b053c4383e8eacf0feb3ec4c72dc8996e4773",
+          "note": "Registers Android DSP notices and the prepared exact NDK notice asset in the app license registry."
+        },
+        {
+          "path": ".github/workflows/android-audio.yml",
+          "sha256": "0a11025d2d15c7f0c3758ce5aebe6ebc85f9f90ab3d3f47d037dae5695379f8a",
+          "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "sha256": "cc8b7df45101cabb2dbc2acdab565c2221724d923a605c090c4a79977696edc2",
+          "note": "Manual Android build prepares exact notices and audits the three-ABI release APK before artifact publication."
+        },
+        {
+          "path": ".github/workflows/release.yml",
+          "sha256": "f24cdc028ee605494cc206624f1a83f431b2cb5e8525a2c98b79458af29bee15",
+          "note": "Source policy enforcement precedes generated notices. The final staged signed three-ABI APK is audited before release artifacts are published; signing and release authority remain unchanged."
         }
       ],
       "blockers": [
-        "Capture the actual per-ABI libc++_shared.so hashes, NDK source/build provenance, included third-party notices, and final APK dependency resolution. The declared NDK version and upstream license statement do not identify the redistributed runtime bytes."
+        "Run the exact installed-NDK notice preparation and final APK inspection, retaining per-ABI libc++_shared.so hashes, original/stripped byte comparisons, llvm-strip provenance, NDK source.properties and included notices. Script and fixture validation do not identify an actual redistributed runtime.",
+        "Review the resulting runtime source/build provenance and applicable third-party notices before changing the artifact or license review status. Aggregate NDK notices also describe unshipped build tools."
       ]
     }
   ]

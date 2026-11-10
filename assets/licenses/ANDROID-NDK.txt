@@ -1,0 +1,22 @@
+Android NDK C++ runtime notices
+
+Android builds use the C++ shared runtime from Android NDK 28.2.13676358.
+This checked-in file explains the build step; it is not the notice bundle for
+an inspected APK and is deliberately rejected by the Android artifact audit.
+
+Before building an Android distribution artifact, prepare the complete NOTICE
+and NOTICE.toolchain files from the exact installed, pinned NDK:
+
+  python3 scripts/audit_android_audio.py prepare-notices \
+    --ndk "$ANDROID_HOME/ndk/28.2.13676358" \
+    --output build/android-audio-evidence/ndk-notices.json
+
+This replaces this asset with those original notice bytes and their provenance.
+The APK audit then checks that the same bytes are actually present in Flutter's
+packaged assets and compares each packaged libc++_shared.so with that NDK.
+CI publishes the original notices, prepared asset, hashes and audit reports.
+
+The NDK's aggregate notices also cover development tools and components that
+are not necessarily shipped in the application. Including those notices does
+not mean those tools are linked into the app. Artifact checks do not approve
+an app-store release or replace the separate dependency and source review.

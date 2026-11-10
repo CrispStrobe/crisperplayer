@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- Added final Android APK evidence checks for native hashes/dependencies,
+  ABI and 16 KB alignment, loader-reachable JNI exports, retained DEX native
+  declarations, exact pinned-NDK C++ runtime bytes and packaged notices.
+  Debug, R8 release and actual signed release build paths prepare and verify
+  the notices; the reports remain separate from release/license approval.
 - Connected **Listening map → Playback dates** to the dated journal for an
   exact physical point or range. Real play-throughs and Return Trail replays
   remain separate; seeks and pauses are excluded. Lookup leaves playback

@@ -1,0 +1,143 @@
+--- a/analysis_options.yaml
++++ b/analysis_options.yaml
+@@ -10,3 +10,5 @@
+   rules:
+     prefer_single_quotes: false
+     unawaited_futures: false
++    # Keep upstream constructors unchanged in this small compatibility patch.
++    use_super_parameters: false
+--- a/darwin/just_audio/Sources/just_audio/AudioPlayer.m
++++ b/darwin/just_audio/Sources/just_audio/AudioPlayer.m
+@@ -99,6 +99,8 @@
+             _loadControl.preferredForwardBufferDuration = (NSNumber *)map[@"preferredForwardBufferDuration"];
+             _loadControl.canUseNetworkResourcesForLiveStreamingWhilePaused = (BOOL)[map[@"canUseNetworkResourcesForLiveStreamingWhilePaused"] boolValue];
+             _loadControl.preferredPeakBitRate = (NSNumber *)map[@"preferredPeakBitRate"];
++            // Unknown/absent values preserve the upstream Time Domain default.
++            _loadControl.useSpectralTimePitchAlgorithm = [@"spectral" isEqual:map[@"audioTimePitchAlgorithm"]];
+             _automaticallyWaitsToMinimizeStalling = (BOOL)[map[@"automaticallyWaitsToMinimizeStalling"] boolValue];
+         }
+     }
+--- a/darwin/just_audio/Sources/just_audio/LoadControl.m
++++ b/darwin/just_audio/Sources/just_audio/LoadControl.m
+@@ -4,4 +4,5 @@
+ @synthesize preferredForwardBufferDuration;
+ @synthesize canUseNetworkResourcesForLiveStreamingWhilePaused;
+ @synthesize preferredPeakBitRate;
++@synthesize useSpectralTimePitchAlgorithm;
+ @end
+--- a/darwin/just_audio/Sources/just_audio/UriAudioSource.m
++++ b/darwin/just_audio/Sources/just_audio/UriAudioSource.m
+@@ -73,8 +73,12 @@
+         item = [[IndexedPlayerItem alloc] initWithAsset:asset];
+     }
+     if (@available(macOS 10.13, iOS 11.0, *)) {
+-        // This does the best at reducing distortion on voice with speeds below 1.0
+-        item.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain;
++        // CrisperPlayer addition: the immutable player configuration also
++        // reaches playlist items and loop copies created by this method.
++        // Time Domain preserves the upstream voice-oriented default.
++        item.audioTimePitchAlgorithm = _loadControl.useSpectralTimePitchAlgorithm
++            ? AVAudioTimePitchAlgorithmSpectral
++            : AVAudioTimePitchAlgorithmTimeDomain;
+     }
+     if (@available(macOS 10.12, iOS 10.0, *)) {
+         if (_loadControl.preferredForwardBufferDuration != (id)[NSNull null]) {
+--- a/darwin/just_audio/Sources/just_audio/include/just_audio/LoadControl.h
++++ b/darwin/just_audio/Sources/just_audio/include/just_audio/LoadControl.h
+@@ -5,5 +5,7 @@
+ @property (readwrite, nonatomic) NSNumber *preferredForwardBufferDuration;
+ @property (readwrite, nonatomic) BOOL canUseNetworkResourcesForLiveStreamingWhilePaused;
+ @property (readwrite, nonatomic) NSNumber *preferredPeakBitRate;
++// CrisperPlayer addition: defaults to NO, preserving upstream Time Domain.
++@property (readwrite, nonatomic) BOOL useSpectralTimePitchAlgorithm;
+ 
+ @end
+--- a/lib/just_audio.dart
++++ b/lib/just_audio.dart
+@@ -2228,7 +2228,21 @@
+       );
+ }
+ 
+-/// Buffering and loading options for iOS/macOS.
++/// Pitch-preserving speed processing provided by AVFoundation on iOS/macOS.
++///
++/// This is a CrisperPlayer addition to just_audio 0.10.6. It applies when the
++/// player is created, including to every playlist item and loop copy. It does
++/// not change pitch, and is ignored by other platform implementations.
++enum DarwinTimePitchAlgorithm {
++  /// Apple's voice-oriented processor; preserves the upstream default.
++  timeDomain,
++
++  /// Apple's spectral processor, suitable for music and mixed audio.
++  /// This is an alternative, not a guarantee of better quality for every voice.
++  spectral,
++}
++
++/// Buffering, loading and speed-processing options for iOS/macOS.
+ class DarwinLoadControl {
+   /// (iOS/macOS) Whether the player will wait for sufficient data to be
+   /// buffered before starting playback to avoid the likelihood of stalling.
+@@ -2246,22 +2260,51 @@
+   /// (iOS/macOS) If specified, limits the download bandwidth in bits per
+   /// second.
+   final double? preferredPeakBitRate;
++
++  /// (iOS/macOS) Pitch-preserving processing for playback speed changes.
++  ///
++  /// Immutable for this player. Changing an application preference requires
++  /// creating a new player. The default preserves just_audio's Time Domain
++  /// behavior. Only public AVFoundation algorithms are used.
++  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
+ 
+   const DarwinLoadControl({
+     this.automaticallyWaitsToMinimizeStalling = true,
+     this.preferredForwardBufferDuration,
+     this.canUseNetworkResourcesForLiveStreamingWhilePaused = false,
+     this.preferredPeakBitRate,
++    this.audioTimePitchAlgorithm = DarwinTimePitchAlgorithm.timeDomain,
+   });
+ 
+-  DarwinLoadControlMessage _toMessage() => DarwinLoadControlMessage(
++  DarwinLoadControlMessage _toMessage() => _DarwinSpeedLoadControlMessage(
+         automaticallyWaitsToMinimizeStalling:
+             automaticallyWaitsToMinimizeStalling,
+         preferredForwardBufferDuration: preferredForwardBufferDuration,
+         canUseNetworkResourcesForLiveStreamingWhilePaused:
+             canUseNetworkResourcesForLiveStreamingWhilePaused,
+         preferredPeakBitRate: preferredPeakBitRate,
++        audioTimePitchAlgorithm: audioTimePitchAlgorithm,
+       );
++}
++
++/// Extend the public message serialization without a second platform-interface
++/// fork. Other backends ignore this extra Darwin-only configuration key.
++class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
++  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
++
++  _DarwinSpeedLoadControlMessage({
++    required super.automaticallyWaitsToMinimizeStalling,
++    required super.preferredForwardBufferDuration,
++    required super.canUseNetworkResourcesForLiveStreamingWhilePaused,
++    required super.preferredPeakBitRate,
++    required this.audioTimePitchAlgorithm,
++  });
++
++  @override
++  Map<dynamic, dynamic> toMap() => {
++        ...super.toMap(),
++        'audioTimePitchAlgorithm': audioTimePitchAlgorithm.name,
++      };
+ }
+ 
+ /// Buffering and loading options for Android.
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -1,6 +1,7 @@
+ name: just_audio
+ description: A feature-rich audio player for Flutter. Loop, clip and sequence any sound from any source (asset/file/URL/stream) in gapless playlists.
+-version: 0.10.6
++version: 0.10.6+crisper.1
++publish_to: none
+ repository: https://github.com/ryanheise/just_audio/tree/minor/just_audio
+ issue_tracker: https://github.com/ryanheise/just_audio/issues
+ topics:

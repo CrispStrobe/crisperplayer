@@ -69,12 +69,16 @@ Future<void> main() async {
       await prefs.remove(key);
     }
     final settings = SettingsService(prefs);
+    SpeedProcessing.configureAppleForStartup(settings.appleSpeedProcessing);
     if (Platform.isWindows || Platform.isLinux) {
       SpeedProcessing.configureForStartup(settings.desktopSpeedProcessing);
       JustAudioMediaKit.ensureInitialized();
     }
     final database = db = AppDatabase();
-    player = AudioPlayer(handleInterruptions: false);
+    player = AudioPlayer(
+      handleInterruptions: false,
+      audioLoadConfiguration: SpeedProcessing.appleLoadConfiguration,
+    );
     final library = LibraryService(database);
     final remote = RemoteLibraryService(library);
     final service = playback = PlaybackService(

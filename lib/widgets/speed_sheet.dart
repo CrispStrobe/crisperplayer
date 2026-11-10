@@ -316,11 +316,16 @@ class _SpeedProcessingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canChoose = SpeedProcessing.supportsChoice();
+    final canChooseDesktop = SpeedProcessing.supportsDesktopChoice();
+    final canChooseApple = SpeedProcessing.supportsAppleChoice();
     final selected = DesktopSpeedProcessing.parse(
       svc.settings?.desktopSpeedProcessing ?? 'automatic',
     );
     final current = SpeedProcessing.activeDesktopMode;
+    final appleSelected = AppleSpeedProcessing.parse(
+      svc.settings?.appleSpeedProcessing ?? 'timeDomain',
+    );
+    final appleCurrent = SpeedProcessing.activeAppleMode;
     return ExpansionTile(
       key: const ValueKey('speed-processing-panel'),
       tilePadding: EdgeInsets.zero,
@@ -329,7 +334,7 @@ class _SpeedProcessingPanel extends StatelessWidget {
       subtitle: Text(SpeedProcessing.processorLabel()),
       children: [
         Text(SpeedProcessing.description()),
-        if (canChoose && svc.settings != null) ...[
+        if (canChooseDesktop && svc.settings != null) ...[
           const SizedBox(height: 8),
           RadioGroup<DesktopSpeedProcessing>(
             groupValue: selected,
@@ -361,6 +366,40 @@ class _SpeedProcessingPanel extends StatelessWidget {
                 ? 'In use: ${current.label}. Changes apply after restarting CrisperPlayer and affect all books.'
                 : 'Saved for next launch: ${selected.label}. Restart CrisperPlayer to apply. Currently using ${current.label}.',
             key: const ValueKey('speed-processing-restart'),
+          ),
+        ],
+        if (canChooseApple && svc.settings != null) ...[
+          const SizedBox(height: 8),
+          RadioGroup<AppleSpeedProcessing>(
+            groupValue: appleSelected,
+            onChanged: (value) {
+              if (value != null) {
+                svc.settings!.appleSpeedProcessing = value.id;
+              }
+            },
+            child: Column(
+              children: [
+                for (final mode in AppleSpeedProcessing.values)
+                  RadioListTile<AppleSpeedProcessing>(
+                    key: ValueKey('speed-processing-apple-${mode.id}'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(mode.label),
+                    subtitle: Text(
+                      mode == AppleSpeedProcessing.timeDomain
+                          ? 'Voice processing · current app default.'
+                          : 'Music and mixed audio · more processing power.',
+                    ),
+                    value: mode,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            appleSelected == appleCurrent
+                ? 'In use: ${appleCurrent.label}. Changes apply after restarting CrisperPlayer and affect all books.'
+                : 'Saved for next launch: ${appleSelected.label}. Restart CrisperPlayer to apply. Currently using ${appleCurrent.label}.',
+            key: const ValueKey('speed-processing-apple-restart'),
           ),
         ],
       ],

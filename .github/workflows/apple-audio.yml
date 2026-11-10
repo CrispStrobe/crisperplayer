@@ -1,0 +1,49 @@
+name: Apple audio backend
+
+on:
+  pull_request:
+    paths:
+      - 'packages/just_audio/**'
+      - 'lib/services/audio/speed_processing.dart'
+      - 'lib/main.dart'
+      - 'macos/RunnerTests/**'
+      - 'ios/RunnerTests/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/apple-audio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: macos-15
+    timeout-minutes: 45
+    concurrency:
+      group: apple-audio-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          cache: true
+      - run: flutter pub get
+      - name: Check audio configuration transport and controls
+        run: flutter test --no-pub test/apple_speed_processing_test.dart test/speed_controls_test.dart
+      - name: Compile the macOS AVFoundation backend
+        run: flutter build macos --debug --no-pub
+      - name: Check native player and loop-copy algorithms
+        run: >-
+          xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner
+          -configuration Debug -destination 'platform=macOS'
+          -only-testing:RunnerTests test CODE_SIGNING_ALLOWED=NO
+      - name: Compile the iOS AVFoundation backend
+        run: flutter build ios --simulator --debug --no-codesign --no-pub
+      - name: Compile the iOS native algorithm tests
+        run: >-
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner
+          -configuration Debug -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -only-testing:RunnerTests build-for-testing CODE_SIGNING_ALLOWED=NO

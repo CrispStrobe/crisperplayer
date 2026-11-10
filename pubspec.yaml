@@ -20,7 +20,10 @@ dependencies:
   material_color_utilities: ">=0.8.0 <0.14.0"
 
   # Audio — proven in CrisperWeaver, extended for background
-  just_audio: ^0.10.5
+  # MIT upstream 0.10.6 with a maintained Apple time-pitch selection patch.
+  # Provenance and the patch surface are recorded in packages/just_audio.
+  just_audio:
+    path: packages/just_audio
   audio_session: ^0.2.3
   just_audio_media_kit: ^2.1.0
   media_kit_libs_windows_audio: any

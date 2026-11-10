@@ -9,12 +9,14 @@ failed changes, and stops controlling a book when another one becomes active.
 ## What the installed app uses
 
 This assessment is based on the dependency versions in `pubspec.lock`:
-`just_audio 0.10.6`, `just_audio_media_kit 2.1.0`, and `media_kit 1.2.6`.
+`just_audio 0.10.6+crisper.1` (a small, MIT-licensed local patch to 0.10.6),
+`just_audio_media_kit 2.1.0`, and `media_kit 1.2.6`.
 
 | Platform | Current speed processing | Choice available in this app |
 | --- | --- | --- |
 | Android | Media3/ExoPlayer's Sonic processor on the normal decoded PCM path. The packaged just_audio Android plugin uses Media3 1.4.1, the default renderer/audio sink, and disables audio offload. | Fixed by the current native backend. |
-| iOS and macOS | AVFoundation `AVAudioTimePitchAlgorithmTimeDomain`, explicitly selected by just_audio for each audio source. | Fixed by the current native backend. |
+| iOS and macOS, Time Domain | AVFoundation `AVAudioTimePitchAlgorithmTimeDomain`, the upstream voice-oriented default. | Default; selectable. |
+| iOS and macOS, Spectral | AVFoundation `AVAudioTimePitchAlgorithmSpectral`, Apple's music-oriented alternative with higher computational cost. | Optional; selectable. |
 | Windows and Linux, Automatic | mpv's default pitch-preserving speed path, through media_kit. Current mpv documentation specifies `scaletempo2`; the exact implementation depends on the bundled or installed mpv version. | Default for new launches; selectable. |
 | Windows and Linux, Legacy scaletempo | media_kit's independent pitch-control path, with pitch left at 1.0. It installs `scaletempo:scale=...` and turns off mpv's separate automatic pitch-correction filter. | Compatibility alternative; selectable. |
 
@@ -41,6 +43,29 @@ legacy route on Windows and Linux. The app now makes this behavior explicit and
 offers the normal engine-default path, while retaining the previous path for
 recordings where the listener prefers it.
 
+## Apple choice
+
+On iOS and macOS, open **Speed → Speed processing** and choose **Time Domain**
+or **Spectral**. Time Domain remains the default. Apple documents it as suitable
+for voice and less computationally intensive than Spectral. Spectral is intended
+for music and is useful to compare on music-backed or mixed recordings; no
+CrisperPlayer listening benchmark establishes that it is better for every voice.
+
+The choice applies to all books **after restarting CrisperPlayer**. The UI shows
+the currently applied processor and the saved selection separately. Startup
+constructs an immutable `DarwinLoadControl.audioTimePitchAlgorithm` configuration
+for the shared player. The patched native source sets the public
+`AVPlayerItem.audioTimePitchAlgorithm` on each source and loop copy; it does not
+swap the active audio processor during playback. The choice is also transported
+again if just_audio recreates its native player.
+
+The complete seven-file upstream diff, original source hashes, license and
+update procedure are documented in
+[the vendored package provenance](../packages/just_audio/UPSTREAM.md).
+The patch uses public AVFoundation APIs and adds no GPL or AGPL library.
+The broader app/distribution license review is tracked separately in
+[LICENSE_POLICY.md](LICENSE_POLICY.md).
+
 ## Other algorithms and tradeoffs
 
 - **Sonic** is already present on Android. It adjusts speed while preserving
@@ -51,17 +76,33 @@ recordings where the listener prefers it.
   changes. The mpv manual describes improved quality relative to older
   scaletempo and Rubber Band's R2 engine; this is an upstream characterization,
   not a CrisperPlayer listening benchmark.
-- **Rubber Band** is an alternative when an mpv build includes it. Its R3/Finer
-  engine uses more CPU than R2/Faster and targets higher-quality output. The
-  current just_audio adapter does not expose arbitrary mpv audio filters, and
-  CrisperPlayer does not guarantee that the library is present in all platform
-  builds. It is therefore not advertised as an available switch. Its vendor
-  offers GPL-2.0-or-later and commercial licensing; distribution terms would
-  need to be resolved before adding it to further app packages.
-- **Apple Spectral** is documented as suitable for music; **Time Domain** is
-  intended for voice. Spectral could be evaluated in a maintained native
-  backend extension. It is not exposed by the pinned just_audio API, so no
-  inactive or misleading switch is shown.
+- **Signalsmith Stretch** and its current **Signalsmith Linear** dependency use
+  MIT licenses. This is a useful candidate for a future custom native DSP path.
+  The author says time stretching sounds best for modest changes around
+  0.75×–1.5×, so it should not be assumed to improve 2×–3× audiobook speech.
+  Its API exposes input/output latency, seek priming and flush behavior. Those
+  need explicit handling to preserve track boundaries and the original
+  timestamps used by Return Trail and the listening journal.
+- **Bungee** provides a C++ streaming/granular stretcher under MPL 2.0. MPL is
+  file-level copyleft, with source/notice obligations, rather than an
+  unrestricted permissive license. Its dependencies and exact build need review
+  before adoption. The separately marketed proprietary Bungee Pro is not the
+  open-source implementation and is not part of this plan.
+- **SoundTouch** uses LGPL 2.1 and supplies a native streaming processing API.
+  It is another candidate for a measured comparison, not an established upgrade
+  over the app's existing Sonic speech processing. LGPL obligations for source,
+  replacement/relinking and distribution terms still need to be satisfied;
+  "LGPL" alone is not a blanket App Store clearance. Prefer the existing
+  AVFoundation processor choices on Apple platforms while this is unresolved.
+- **Rubber Band** is available under GPL-2.0-or-later or a separate commercial
+  license. Its normal open-source license fails this project's no-GPL/AGPL
+  dependency policy, so it is excluded from the open-source processor options.
+
+Signalsmith, Bungee and SoundTouch consume decoded audio samples. They are not
+drop-in Dart options for the current just_audio backends. A supported integration
+would need a native PCM processing stage, reset/drain/latency handling, correct
+source-time mapping, and real device tests. The current adapter does not expose
+arbitrary mpv filters. No unavailable processor is shown as a functioning switch.
 
 No algorithm is claimed to sound best for every narrator, recording, speed,
 device or listener. A future native processor comparison should use the same
@@ -80,6 +121,11 @@ audible superiority.
 - [mpv manual: audio-pitch-correction and audio filters](https://mpv.io/manual/stable/)
 - [Apple: Time Domain](https://developer.apple.com/documentation/avfoundation/avaudiotimepitchalgorithm/timedomain)
 - [Apple: Spectral](https://developer.apple.com/documentation/avfoundation/avaudiotimepitchalgorithm/spectral)
+- [Signalsmith Stretch: implementation, latency and license](https://github.com/Signalsmith-Audio/signalsmith-stretch)
+- [Signalsmith Linear: MIT license](https://github.com/Signalsmith-Audio/linear/blob/main/LICENSE.txt)
+- [Bungee: streaming API and MPL license](https://github.com/bungee-audio-stretch/bungee)
+- [Mozilla: MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
+- [SoundTouch: LGPL 2.1 license](https://surina.net/soundtouch/license.html)
 - [Rubber Band licensing](https://breakfastquay.com/rubberband/license.html)
 
 References reviewed 10 November 2026. Local package sources were inspected in

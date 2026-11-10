@@ -2,11 +2,14 @@ import 'package:crisperplayer/services/audio/playback_service.dart';
 import 'package:crisperplayer/services/audio/speed_processing.dart';
 import 'package:crisperplayer/services/bookmark_service.dart';
 import 'package:crisperplayer/services/history_service.dart';
+import 'package:crisperplayer/services/settings_service.dart';
 import 'package:crisperplayer/widgets/speed_sheet.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/playback_harness.dart';
 
@@ -153,6 +156,10 @@ void main() {
       );
       expect(
         SpeedProcessing.supportsChoice(platform: TargetPlatform.macOS),
+        isTrue,
+      );
+      expect(
+        SpeedProcessing.supportsDesktopChoice(platform: TargetPlatform.macOS),
         isFalse,
       );
       expect(
@@ -162,6 +169,80 @@ void main() {
       expect(
         SpeedProcessing.processorLabel(platform: TargetPlatform.macOS),
         contains('Time Domain'),
+      );
+    },
+  );
+
+  test(
+    'Apple preferences retain safe defaults and reject invalid updates',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      var settings = SettingsService(await SharedPreferences.getInstance());
+      expect(settings.appleSpeedProcessing, 'timeDomain');
+      settings.dispose();
+      SharedPreferences.setMockInitialValues({
+        'apple_speed_processing': 'unknown',
+      });
+      settings = SettingsService(await SharedPreferences.getInstance());
+      expect(settings.appleSpeedProcessing, 'timeDomain');
+      expect(
+        () => settings.appleSpeedProcessing = 'rubberband',
+        throwsFormatException,
+      );
+      expect(settings.appleSpeedProcessing, 'timeDomain');
+      settings.appleSpeedProcessing = 'spectral';
+      expect(settings.appleSpeedProcessing, 'spectral');
+      settings.dispose();
+      expect(
+        AppleSpeedProcessing.parse('unknown'),
+        AppleSpeedProcessing.timeDomain,
+      );
+    },
+  );
+
+  test(
+    'Apple startup configuration is explicit and isolated from other engines',
+    () {
+      final previous = SpeedProcessing.activeAppleMode;
+      final desktopPitch = JustAudioMediaKit.pitch;
+      addTearDown(
+        () => SpeedProcessing.configureAppleForStartup(
+          previous.id,
+          platform: TargetPlatform.iOS,
+        ),
+      );
+      SpeedProcessing.configureAppleForStartup(
+        'spectral',
+        platform: TargetPlatform.iOS,
+      );
+      expect(SpeedProcessing.activeAppleMode, AppleSpeedProcessing.spectral);
+      expect(
+        SpeedProcessing.activeAppleMode.algorithm,
+        DarwinTimePitchAlgorithm.spectral,
+      );
+      expect(
+        SpeedProcessing.processorLabel(platform: TargetPlatform.macOS),
+        'Apple · Spectral',
+      );
+      SpeedProcessing.configureAppleForStartup(
+        'timeDomain',
+        platform: TargetPlatform.android,
+      );
+      SpeedProcessing.configureAppleForStartup(
+        'timeDomain',
+        platform: TargetPlatform.iOS,
+        isWeb: true,
+      );
+      expect(SpeedProcessing.activeAppleMode, AppleSpeedProcessing.spectral);
+      expect(JustAudioMediaKit.pitch, desktopPitch);
+      SpeedProcessing.configureAppleForStartup(
+        'corrupt',
+        platform: TargetPlatform.macOS,
+      );
+      expect(SpeedProcessing.activeAppleMode, AppleSpeedProcessing.timeDomain);
+      expect(
+        SpeedProcessing.supportsAppleChoice(platform: TargetPlatform.linux),
+        isFalse,
       );
     },
   );
@@ -293,10 +374,10 @@ void main() {
     },
   );
 
-  testWidgets('native-only processor information hides unavailable choices', (
+  testWidgets('Android processor information hides unavailable choices', (
     tester,
   ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final h = PlaybackHarness();
     await tester.runAsync(h.init);
@@ -306,8 +387,9 @@ void main() {
       await tester.ensureVisible(panel);
       await tester.tap(panel);
       await tester.pumpAndSettle();
-      expect(find.text('Apple · Time Domain'), findsOneWidget);
+      expect(find.text('Android · Sonic'), findsOneWidget);
       expect(find.byType(RadioListTile<DesktopSpeedProcessing>), findsNothing);
+      expect(find.byType(RadioListTile<AppleSpeedProcessing>), findsNothing);
       expect(
         find.textContaining('does not expose a choice of algorithm'),
         findsOneWidget,
@@ -321,6 +403,73 @@ void main() {
       }
     }
   });
+
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.macOS]) {
+    testWidgets('Apple selection is restart-only on $platform', (tester) async {
+      debugDefaultTargetPlatformOverride = platform;
+      final previous = SpeedProcessing.activeAppleMode;
+      final h = PlaybackHarness();
+      await tester.runAsync(h.init);
+      SpeedProcessing.configureAppleForStartup('timeDomain');
+      try {
+        final initialConfiguration = SpeedProcessing.appleLoadConfiguration!;
+        expect(
+          initialConfiguration.darwinLoadControl!.audioTimePitchAlgorithm,
+          DarwinTimePitchAlgorithm.timeDomain,
+        );
+        await _show(tester, h.playback);
+        final panel = find.byKey(const ValueKey('speed-processing-panel'));
+        await tester.ensureVisible(panel);
+        await tester.tap(panel);
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(RadioListTile<DesktopSpeedProcessing>),
+          findsNothing,
+        );
+        final spectral = find.byKey(
+          const ValueKey('speed-processing-apple-spectral'),
+        );
+        await tester.ensureVisible(spectral);
+        await tester.tap(spectral);
+        await tester.pumpAndSettle();
+        expect(h.settings.appleSpeedProcessing, 'spectral');
+        expect(
+          SpeedProcessing.activeAppleMode,
+          AppleSpeedProcessing.timeDomain,
+        );
+        expect(find.text('Apple · Time Domain'), findsOneWidget);
+        expect(
+          find.text(
+            'Saved for next launch: Spectral. Restart CrisperPlayer to apply. Currently using Time Domain.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          initialConfiguration.darwinLoadControl!.audioTimePitchAlgorithm,
+          DarwinTimePitchAlgorithm.timeDomain,
+        );
+        // A new launch builds a different immutable player configuration.
+        SpeedProcessing.configureAppleForStartup(
+          h.settings.appleSpeedProcessing,
+        );
+        expect(
+          SpeedProcessing
+              .appleLoadConfiguration!
+              .darwinLoadControl!
+              .audioTimePitchAlgorithm,
+          DarwinTimePitchAlgorithm.spectral,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        try {
+          await _close(tester, h.dispose);
+        } finally {
+          SpeedProcessing.configureAppleForStartup(previous.id);
+          debugDefaultTargetPlatformOverride = null;
+        }
+      }
+    });
+  }
 
   testWidgets(
     'decoder errors stay visible and a stale sheet cannot change another book',

@@ -679,11 +679,10 @@ packages:
   just_audio:
     dependency: "direct main"
     description:
-      name: just_audio
-      sha256: e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.6"
+      path: "packages/just_audio"
+      relative: true
+    source: path
+    version: "0.10.6+crisper.1"
   just_audio_media_kit:
     dependency: "direct main"
     description:

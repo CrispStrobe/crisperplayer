@@ -31,6 +31,18 @@ class SettingsService extends ChangeNotifier {
     _changed(_p.setString('desktop_speed_processing', value));
   }
 
+  String get appleSpeedProcessing {
+    final value = _p.getString('apple_speed_processing') ?? 'timeDomain';
+    return ['timeDomain', 'spectral'].contains(value) ? value : 'timeDomain';
+  }
+
+  set appleSpeedProcessing(String value) {
+    if (!['timeDomain', 'spectral'].contains(value)) {
+      throw const FormatException('Unknown Apple speed processing mode');
+    }
+    _changed(_p.setString('apple_speed_processing', value));
+  }
+
   bool get showWaveform => _p.getBool('show_waveform') ?? true;
   set showWaveform(bool value) => _changed(_p.setBool('show_waveform', value));
   double get volume => (_p.getDouble('volume') ?? 1.0).clamp(0.0, 1.0);

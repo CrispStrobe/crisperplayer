@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+- Added **Return Trail** in the native player and desktop CLI: inspect and replay
+  short passages previously played on the device while protecting the normal
+  resume point, then return paused or explicitly continue from the reviewed place.
+- Added bounded local passage recording, schema-five migration and backup/restore
+  support. Clearing listening history also clears recorded passages.
+- Added regression coverage for protected progress, decoder failures, transition
+  races, sleep timers, unknown durations, source gaps and accessible player controls.
+- See [feature behavior](docs/RETURN_TRAIL.md),
+  [validation and screenshots](docs/RETURN_TRAIL_VALIDATION.md), and the
+  [product rationale](docs/design/RETURN_TRAIL.md).
+
 ## [0.1.0]
 
 ### Added

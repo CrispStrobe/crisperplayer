@@ -9,8 +9,9 @@ import 'support/playback_harness.dart';
 Future<void> _waitFor(WidgetTester tester, bool Function() ready) async {
   final deadline = Stopwatch()..start();
   bool interfaceReady() {
-    if (find.byType(LinearProgressIndicator).evaluate().isNotEmpty)
+    if (find.byType(LinearProgressIndicator).evaluate().isNotEmpty) {
       return false;
+    }
     final pause = find.byKey(const ValueKey('return-trail-pause'));
     if (pause.evaluate().isNotEmpty &&
         tester.widget<OutlinedButton>(pause).onPressed == null) {
@@ -220,7 +221,8 @@ void main() {
         expect(
           find.text('Catching up · passage 2 of 3'),
           findsOneWidget,
-          reason: 'playing=${harness.backend.playing}, state=${harness.playback.state.status}, index=${harness.playback.returnTrailClipIndex}; text=${tester.widgetList<Text>(find.byType(Text)).map((text) => text.data).join(' | ')}',
+          reason:
+              'playing=${harness.backend.playing}, state=${harness.playback.state.status}, index=${harness.playback.returnTrailClipIndex}; text=${tester.widgetList<Text>(find.byType(Text)).map((text) => text.data).join(' | ')}',
         );
         expect(
           find.text('Your place is saved · open trail to return'),
@@ -313,7 +315,10 @@ void main() {
         expect(
           find.text('Continuing from this passage.'),
           findsOneWidget,
-          reason: tester.widgetList<Text>(find.byType(Text)).map((text) => text.data).join(' | '),
+          reason: tester
+              .widgetList<Text>(find.byType(Text))
+              .map((text) => text.data)
+              .join(' | '),
         );
 
         await tester.runAsync(() => harness.playback.loadBook('other'));

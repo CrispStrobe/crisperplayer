@@ -184,6 +184,7 @@ class PlaybackService with WidgetsBindingObserver {
           final eventBookId = _currentBookId;
           final eventTrail = _returnTrailPlan;
           final eventGeneration = _trailGeneration;
+          final eventTrailTransitioning = _trailTransitioning;
           _background(
             _command(() async {
               if (eventBookId != _currentBookId) return;
@@ -194,7 +195,9 @@ class PlaybackService with WidgetsBindingObserver {
                     eventGeneration == _trailGeneration &&
                     isReturnTrailActive) {
                   if (ps.processingState == ProcessingState.completed) {
-                    if (_trailResumeRequested) await _advanceReturnTrail();
+                    if (_trailResumeRequested && !eventTrailTransitioning) {
+                      await _advanceReturnTrail();
+                    }
                   } else if (ps.playing && _backendReady) {
                     _scheduleReturnTrailEnd();
                   }

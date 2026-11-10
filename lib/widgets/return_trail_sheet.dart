@@ -35,7 +35,7 @@ class ReturnTrailCard extends StatelessWidget {
   Widget build(BuildContext context) => StreamBuilder<PlaybackState>(
     stream: playback.stateStream,
     initialData: playback.state,
-    builder: (context, snapshot) {
+    builder: (context, _) {
       final plan = playback.returnTrailPlan;
       final active =
           playback.isReturnTrailActive &&
@@ -75,7 +75,7 @@ class ReturnTrailCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         active
-                            ? '${snapshot.data?.isPlaying == true ? 'Catching up' : 'Trail paused'} · passage ${playback.returnTrailClipIndex + 1} of ${plan.clips.length}'
+                            ? '${playback.state.isPlaying ? 'Catching up' : 'Trail paused'} · passage ${playback.returnTrailClipIndex + 1} of ${plan.clips.length}'
                             : 'Get back into the story without losing your place.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
@@ -146,7 +146,7 @@ class _ReturnTrailSheetState extends State<ReturnTrailSheet> {
       _lastSpeed = state.speed;
       _wasActive = active;
       setState(() {
-        if (ended && !_busy) {
+        if (ended && !_busy && _completion == null) {
           _completion = 'Return Trail finished.';
         }
       });

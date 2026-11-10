@@ -11,6 +11,7 @@ import 'support/playback_harness.dart';
 
 class _FailingSeekBackend extends FakeAudioBackend {
   bool failSeek = false;
+  bool completeDuringSeek = false;
   Completer<void>? seekGate;
   Completer<void>? seekEntered;
 
@@ -21,6 +22,7 @@ class _FailingSeekBackend extends FakeAudioBackend {
       seekEntered?.complete();
       await seekGate!.future;
     }
+    if (completeDuringSeek) complete();
     await super.seek(position, index: index);
   }
 }
@@ -310,6 +312,56 @@ void main() {
     },
   );
 
+  test(
+    'marking the active book unread exits review before resetting its place',
+    () async {
+      await _seedTrail(h);
+      await h.playback.startReturnTrail();
+      await h.playback.markBook('a', 'unread');
+      await h.flush();
+      expect(h.playback.isReturnTrailActive, isFalse);
+      expect(h.backend.currentIndex, 0);
+      expect(h.backend.position, Duration.zero);
+      expect(h.backend.playing, isFalse);
+      final book = (await h.db.getBook('a'))!;
+      expect(book.lastPositionMs, 0);
+      expect(book.totalProgress, 0);
+      expect(book.isFinished, isFalse);
+      expect(
+        (await h.db.bookmarksFor(
+          'a',
+        )).where((b) => b.kind == 'return-trail').single.positionMs,
+        90000,
+      );
+    },
+  );
+
+  test(
+    'an explicit bookmark navigation leaves review and adopts the chosen file',
+    () async {
+      await _seedTrail(h);
+      await h.db.insertBookmark(
+        BookmarksCompanion.insert(
+          id: 'chosen',
+          bookId: 'a',
+          title: 'Chosen passage',
+          filePath: '/a/1.mp3',
+          positionMs: 70000,
+          bookPositionMs: 190000,
+          createdAtMs: 1,
+        ),
+      );
+      final chosen = (await h.db.bookmarksFor('a')).single;
+      await h.playback.startReturnTrail();
+      await h.playback.seekBookmark(chosen);
+      await h.flush();
+      expect(h.playback.isReturnTrailActive, isFalse);
+      expect(h.backend.currentIndex, 1);
+      expect(h.backend.position.inMilliseconds, 70000);
+      expect((await h.db.getBook('a'))!.lastPositionMs, 70000);
+    },
+  );
+
   test('a failed excerpt seek retains a retryable protected anchor', () async {
     await h.dispose();
     final failing = _FailingSeekHarness();
@@ -348,6 +400,35 @@ void main() {
       await h.playback.play();
       expect(h.backend.currentIndex, 0);
       expect(h.backend.position.inMilliseconds, 20000);
+      expect(h.backend.playing, isTrue);
+      expect((await h.db.getBook('a'))!.lastPositionMs, 90000);
+    },
+  );
+
+  test(
+    'completion emitted during an excerpt seek cannot skip the new excerpt',
+    () async {
+      await h.dispose();
+      final transitioning = _FailingSeekHarness();
+      h = transitioning;
+      await h.init();
+      await h.book('a', [120, 180]);
+      await _seedTrail(h);
+      transitioning.backend.completeDuringSeek = true;
+      await h.playback.startReturnTrail();
+      await h.flush();
+      expect(h.playback.isReturnTrailActive, isTrue);
+      expect(h.playback.returnTrailClipIndex, 0);
+      expect(h.backend.currentIndex, 0);
+      expect(h.backend.position.inMilliseconds, 20000);
+      expect(h.backend.playing, isTrue);
+
+      await h.playback.nextReturnTrailClip();
+      await h.flush();
+      expect(h.playback.isReturnTrailActive, isTrue);
+      expect(h.playback.returnTrailClipIndex, 1);
+      expect(h.backend.currentIndex, 1);
+      expect(h.backend.position.inMilliseconds, 10000);
       expect(h.backend.playing, isTrue);
       expect((await h.db.getBook('a'))!.lastPositionMs, 90000);
     },

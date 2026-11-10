@@ -118,8 +118,17 @@ def distribute(app_id, build, locale, notes, tester_email=None):
         group_id = group['id']
         assigned = all_rows(f'betaGroups/{group_id}/builds?limit=200')
         if not any(row['id'] == build_id for row in assigned):
-            api(f'betaGroups/{group_id}/relationships/builds', 'POST',
-                {'data': [{'type': 'builds', 'id': build_id}]})
+            if group['attributes'].get('hasAccessToAllBuilds'):
+                # Apple refuses manual assignment (422 "Cannot add internal group to
+                # a build") for all-builds groups; the build joins automatically.
+                for _ in range(20):
+                    time.sleep(15)
+                    assigned = all_rows(f'betaGroups/{group_id}/builds?limit=200')
+                    if any(row['id'] == build_id for row in assigned):
+                        break
+            else:
+                api(f'betaGroups/{group_id}/relationships/builds', 'POST',
+                    {'data': [{'type': 'builds', 'id': build_id}]})
         assigned = all_rows(f'betaGroups/{group_id}/builds?limit=200')
         if not any(row['id'] == build_id for row in assigned):
             raise RuntimeError('Internal group assignment was not confirmed')

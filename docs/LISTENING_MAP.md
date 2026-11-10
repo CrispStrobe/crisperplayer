@@ -17,6 +17,10 @@ even though the playhead is at 1:20.
   Its track bars distinguish coverage, the playhead and a selected position.
 - Select a position to inspect it, then choose **Jump here** to open that point
   paused. Selecting alone does not seek or start playback.
+- **Playback dates** opens the dated journal for the selected point or gap
+  range. It includes actual recorded plays and Return Trail replays, while
+  excluding seeks and pauses. You can inspect dates even if another book has
+  become active; jumping from this map still requires the original book.
 - **Next gap** selects the next section with no playback recorded. When there
   are no later gaps, it explicitly offers an earlier gap. Press **Jump here**
   to navigate to the selection.
@@ -62,6 +66,9 @@ this feature. The separate Pages browser player does not yet have this map.
 To retain **when** each passage played, enable the separate optional
 [Listening journal](LISTENING_JOURNAL.md). It preserves dated replays and
 explicit pauses/jumps; the map remains a cumulative union counted once.
+Selecting a recorded area does not guarantee dated entries exist: the journal
+may have been off when that coverage was captured. The date lookup explains
+this instead of inventing a historical timestamp.
 
 ## Desktop CLI
 

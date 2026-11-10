@@ -7,6 +7,7 @@ on:
       - 'lib/services/audio/speed_processing.dart'
       - 'lib/main.dart'
       - 'macos/RunnerTests/**'
+      - 'macos/Runner/*.entitlements'
       - 'ios/RunnerTests/**'
       - 'pubspec.yaml'
       - 'pubspec.lock'

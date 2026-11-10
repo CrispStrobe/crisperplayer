@@ -1,6 +1,13 @@
 # iOS builds and internal TestFlight
 
-Use Flutter 3.44.4, Dart 3.12 and iOS 15+. The project uses CocoaPods only; Swift Package Manager is disabled in pubspec and CI to avoid duplicate plugin linkage. The host and share extension both use App Group `group.com.crispstrobe.crisperplayer`.
+Use Flutter 3.44.4, Dart 3.12, Xcode 26.1.1 or newer and iOS 15+. The pinned
+`device_info_plus` 13.3.0 requires the newer SDK to compile its guarded iOS 26.1
+API calls; this does not raise the app's minimum supported iOS version. The
+Apple audio workflow selects the installed Xcode 26.2 explicitly because the
+macOS 15 runner's default Xcode 16.4 cannot compile those declarations.
+The project uses CocoaPods only; Swift Package Manager is disabled in pubspec
+and CI to avoid duplicate plugin linkage. The host and share extension both
+use App Group `group.com.crispstrobe.crisperplayer`.
 
 ## GitHub Actions
 

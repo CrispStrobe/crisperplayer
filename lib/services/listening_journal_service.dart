@@ -195,7 +195,7 @@ class ListeningJournalService {
                   'book': effectiveBookId,
                   'from': fromUtcMs,
                   'before': beforeUtcMs,
-                  if (passageKey != null) 'passage': passageKey,
+                  'passage': ?passageKey,
                   'time': last.startedAtMs,
                   'id': last.id,
                 }),

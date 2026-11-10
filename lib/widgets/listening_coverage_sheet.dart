@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/listening_coverage.dart';
+import '../models/listening_journal.dart';
 import '../models/playback_state.dart';
 import '../services/audio/playback_service.dart';
 import '../services/listening_coverage_service.dart';
 import '../utils/format.dart';
+import 'listening_journal_view.dart';
 
 Future<void> showListeningCoverageSheet(
   BuildContext context,
@@ -261,10 +263,14 @@ class _ListeningCoverageSheetState extends State<ListeningCoverageSheet> {
     super.dispose();
   }
 
-  void _select(TrackListeningCoverage track, int positionMs) {
+  void _select(TrackListeningCoverage track, int positionMs, {int? gapEndMs}) {
     if (_busy) return;
     setState(() {
-      _selection = _CoverageSelection(track: track, positionMs: positionMs);
+      _selection = _CoverageSelection(
+        track: track,
+        positionMs: positionMs,
+        gapEndMs: gapEndMs,
+      );
       _actionError = null;
       _confirmation = null;
     });
@@ -402,13 +408,13 @@ class _ListeningCoverageSheetState extends State<ListeningCoverageSheet> {
           const _CoverageLegend(),
           const SizedBox(height: 12),
           Text(
-            'Select a point on a track, then choose Jump here to open it paused.',
+            'Select a point to see its Playback dates, or choose Jump here to open it paused.',
             style: text.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
           if (!_sameBook) ...[
             const SizedBox(height: 12),
             const Text(
-              'The playing book changed. Open this book in the player to jump within its map.',
+              'The playing book changed. You can still inspect its playback dates. Open this book in the player to jump within its map.',
             ),
           ],
           if (hasGaps) ...[
@@ -500,7 +506,7 @@ class _ListeningCoverageSheetState extends State<ListeningCoverageSheet> {
             selectedMs: selection?.positionMs,
             label: 'Track ${track.trackIndex + 1} listening map',
             stepMs: widget.playback.seekSeconds * 1000,
-            onSelected: _busy || !_sameBook || extent <= 0
+            onSelected: _busy || extent <= 0
                 ? null
                 : (milliseconds) => _select(track, milliseconds),
           ),
@@ -559,9 +565,13 @@ class _ListeningCoverageSheetState extends State<ListeningCoverageSheet> {
                       subtitle: Text(
                         '${_preciseSpokenDuration(gap.lengthMs)} without recorded playback',
                       ),
-                      onTap: _busy || !_sameBook
+                      onTap: _busy
                           ? null
-                          : () => _select(track, gap.startMs),
+                          : () => _select(
+                              track,
+                              gap.startMs,
+                              gapEndMs: gap.endMs,
+                            ),
                     ),
                 ],
               ),
@@ -591,7 +601,7 @@ class _ListeningCoverageSheetState extends State<ListeningCoverageSheet> {
             key: ValueKey('listening-coverage-wrapped'),
           ),
         Text(
-          'Selected: track ${selection.track.trackIndex + 1} · ${_mapTime(selection.positionMs)}',
+          'Selected: track ${selection.track.trackIndex + 1} · ${_mapTime(selection.positionMs)}${selection.gapEndMs == null ? '' : '–${_mapTime(selection.gapEndMs!)}'}',
           key: ValueKey(
             'listening-coverage-selected-${header ? 'header' : selection.track.trackIndex}',
           ),
@@ -605,16 +615,47 @@ class _ListeningCoverageSheetState extends State<ListeningCoverageSheet> {
           ),
           const SizedBox(height: 8),
         ],
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            key: ValueKey(
-              'listening-coverage-jump-${header ? 'header' : selection.track.trackIndex}',
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            FilledButton.icon(
+              key: ValueKey(
+                'listening-coverage-jump-${header ? 'header' : selection.track.trackIndex}',
+              ),
+              onPressed: _busy || !_sameBook ? null : () => _jump(selection),
+              icon: const Icon(Icons.near_me_outlined),
+              label: const Text('Jump here'),
             ),
-            onPressed: _busy || !_sameBook ? null : () => _jump(selection),
-            icon: const Icon(Icons.near_me_outlined),
-            label: const Text('Jump here'),
-          ),
+            if (widget.playback.settings != null)
+              OutlinedButton.icon(
+                key: ValueKey(
+                  'listening-coverage-dates-${header ? 'header' : selection.track.trackIndex}',
+                ),
+                onPressed: _busy
+                    ? null
+                    : () => showPassageListeningJournal(
+                        context,
+                        playback: widget.playback,
+                        settings: widget.playback.settings!,
+                        passage: selection.gapEndMs == null
+                            ? JournalPassageFilter.point(
+                                bookId: widget.bookId,
+                                filePath: selection.track.filePath,
+                                positionMs: selection.positionMs,
+                              )
+                            : JournalPassageFilter.range(
+                                bookId: widget.bookId,
+                                filePath: selection.track.filePath,
+                                startMs: selection.positionMs,
+                                endMs: selection.gapEndMs!,
+                              ),
+                        trackLabel: 'Track ${selection.track.trackIndex + 1}',
+                      ),
+                icon: const Icon(Icons.history),
+                label: const Text('Playback dates'),
+              ),
+          ],
         ),
         if (_confirmation != null) ...[
           const SizedBox(height: 6),

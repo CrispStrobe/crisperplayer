@@ -233,12 +233,12 @@ void main() {
           find.byKey(const ValueKey('listening-coverage-selected-header')),
           findsOneWidget,
         );
-        expect(find.text('Selected: track 1 · 01:50'), findsWidgets);
+        expect(find.text('Selected: track 1 · 01:50–02:00'), findsWidgets);
         expect(h.backend.position, const Duration(seconds: 110));
         await tester.tap(next);
         await tester.pump();
         expect(find.text('Wrapped to an earlier gap.'), findsWidgets);
-        expect(find.text('Selected: track 1 · 00:20'), findsWidgets);
+        expect(find.text('Selected: track 1 · 00:20–00:40'), findsWidgets);
         expect(h.backend.position, const Duration(seconds: 110));
         await tester.runAsync(
           () => h.playback.startReturnTrail(expectedBookId: 'map'),

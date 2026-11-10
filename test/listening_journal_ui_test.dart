@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:crisperplayer/models/listening_journal.dart';
 import 'package:crisperplayer/providers/providers.dart';
 import 'package:crisperplayer/screens/history_screen.dart';
 import 'package:crisperplayer/screens/settings_screen.dart';
@@ -162,6 +163,7 @@ Future<void> _show(
   double textScale = 1,
   GlobalKey? captureKey,
   ThemeData? theme,
+  JournalPassageFilter? passage,
 }) async {
   Widget app = MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -178,6 +180,8 @@ Future<void> _show(
         playback: h.playback,
         settings: h.settings,
         now: () => now ?? DateTime(2026, 11, 10, 15),
+        initialPassage: passage,
+        initialPassageLabel: 'Track 1',
       ),
     ),
   );
@@ -667,6 +671,26 @@ void main() {
         await capture('journal-filters');
         await _reveal(tester, find.byKey(ValueKey('journal-entry-${_id(3)}')));
         await capture('journal-entries');
+        final tracks = await tester.runAsync(() => h.db.tracksFor('a'));
+        await _show(
+          tester,
+          h,
+          captureKey: key,
+          theme: theme,
+          passage: JournalPassageFilter.point(
+            bookId: 'a',
+            filePath: tracks!.first.filePath,
+            positionMs: 25000,
+          ),
+        );
+        await capture('journal-passage');
+        final export = find.byKey(const ValueKey('journal-export-button'));
+        await _reveal(tester, export);
+        await tester.tap(export);
+        await tester.pumpAndSettle();
+        await capture('journal-export');
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       } finally {
         await _close(tester, h);

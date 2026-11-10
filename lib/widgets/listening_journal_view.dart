@@ -9,6 +9,29 @@ import '../services/audio/playback_service.dart';
 import '../services/db/app_database.dart';
 import '../services/settings_service.dart';
 import '../utils/format.dart';
+import 'journal_export_button.dart';
+
+/// Opens a read-only passage lookup. Playback changes only when someone chooses
+/// one of the journal's explicit paused-position actions.
+Future<void> showPassageListeningJournal(
+  BuildContext context, {
+  required PlaybackService playback,
+  required SettingsService settings,
+  required JournalPassageFilter passage,
+  required String trackLabel,
+}) => Navigator.of(context).push<void>(
+  MaterialPageRoute(
+    builder: (context) => Scaffold(
+      appBar: AppBar(title: const Text('Playback dates')),
+      body: ListeningJournalView(
+        playback: playback,
+        settings: settings,
+        initialPassage: passage,
+        initialPassageLabel: trackLabel,
+      ),
+    ),
+  ),
+);
 
 /// The optional dated journal has its own recording control. Turning recording
 /// off never deletes entries; deletion is a separate explicit action.
@@ -94,6 +117,9 @@ class ListeningJournalView extends StatefulWidget {
   final SettingsService settings;
   final DateTime Function()? now;
   final ValueChanged<String>? onOpenPlayer;
+  final String? initialBookId;
+  final JournalPassageFilter? initialPassage;
+  final String? initialPassageLabel;
 
   const ListeningJournalView({
     super.key,
@@ -101,6 +127,9 @@ class ListeningJournalView extends StatefulWidget {
     required this.settings,
     this.now,
     this.onOpenPlayer,
+    this.initialBookId,
+    this.initialPassage,
+    this.initialPassageLabel,
   });
 
   @override
@@ -116,6 +145,7 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
   _JournalDates _dates = _JournalDates.all;
   DateTimeRange? _range;
   String? _bookId;
+  JournalPassageFilter? _passage;
   String? _nextCursor;
   String? _error;
   String? _openingId;
@@ -140,6 +170,8 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
   @override
   void initState() {
     super.initState();
+    _passage = widget.initialPassage;
+    _bookId = _passage?.bookId ?? widget.initialBookId;
     _booksSubscription = widget.playback.db.watchAllBooks().listen(
       (books) {
         if (mounted) setState(() => _books = books);
@@ -150,6 +182,25 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
       },
     );
     unawaited(_load(reset: true));
+  }
+
+  @override
+  void didUpdateWidget(covariant ListeningJournalView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialBookId != widget.initialBookId ||
+        oldWidget.initialPassage != widget.initialPassage) {
+      _passage = widget.initialPassage;
+      _bookId = _passage?.bookId ?? widget.initialBookId;
+      // Resetting a scrolled list dispatches notifications to the Scaffold's
+      // AppBar. Defer that until the current build finishes, while invalidating
+      // older queries immediately so they cannot append stale results.
+      final generation = ++_generation;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && generation == _generation) {
+          unawaited(_load(reset: true));
+        }
+      });
+    }
   }
 
   @override
@@ -178,6 +229,7 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
         bookId: _bookId,
         fromUtcMs: _fromUtcMs,
         beforeUtcMs: _beforeUtcMs,
+        passage: _passage,
         limit: 50,
         cursor: cursor,
       );
@@ -386,14 +438,62 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
         : DateUtils.isSameDay(_range!.start, _range!.end)
         ? DateFormat.yMMMd().format(_range!.start)
         : '${DateFormat.yMMMd().format(_range!.start)} – ${DateFormat.yMMMd().format(_range!.end)}';
+    final passage = _passage;
+    final passageLabel = passage == null
+        ? null
+        : '${widget.initialPassageLabel ?? 'Selected track'} · ${_timecode(passage.startMs)}'
+              '${passage.isPoint ? '' : '–${_timecode(passage.endMs!)}'}';
+    final bookLabel = _bookId == null
+        ? 'All books'
+        : books.where((book) => book.id == _bookId).firstOrNull?.title ??
+              'Selected book';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Your listening, in time', style: text.headlineSmall),
+        Text(
+          passage == null
+              ? 'Your listening, in time'
+              : 'When you played this passage',
+          style: text.headlineSmall,
+        ),
         const SizedBox(height: 8),
         const Text(
           'Find a past listening day, see where you stopped or jumped, and open that exact position paused.',
         ),
+        if (passage != null) ...[
+          const SizedBox(height: 12),
+          Card.filled(
+            key: const ValueKey('journal-passage-filter'),
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(passageLabel!, style: text.titleSmall),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Recorded play-throughs and replays that ${passage.isPoint ? 'include this point' : 'overlap this range'}. '
+                    'Entries keep their full recorded intervals; times are not estimated for the exact point. Seeks and pauses are excluded.',
+                    style: text.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      key: const ValueKey('journal-clear-passage'),
+                      onPressed: () {
+                        setState(() => _passage = null);
+                        unawaited(_load(reset: true));
+                      },
+                      child: const Text('Show whole book journal'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         Card.outlined(
           margin: EdgeInsets.zero,
@@ -465,9 +565,10 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
               ),
           ],
           onChanged: (value) {
-            setState(
-              () => _bookId = value == null || value.isEmpty ? null : value,
-            );
+            setState(() {
+              _bookId = value == null || value.isEmpty ? null : value;
+              if (_passage?.bookId != _bookId) _passage = null;
+            });
             unawaited(_load(reset: true));
           },
         ),
@@ -483,6 +584,16 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
                   : () => _load(reset: true),
               icon: const Icon(Icons.refresh),
               label: const Text('Refresh'),
+            ),
+            JournalExportButton(
+              playback: widget.playback,
+              bookId: _bookId,
+              fromUtcMs: _fromUtcMs,
+              beforeUtcMs: _beforeUtcMs,
+              passage: _passage,
+              filterDescription:
+                  '$bookLabel · $rangeLabel${passageLabel == null ? '' : ' · $passageLabel'}',
+              enabled: !_clearing && _openingId == null,
             ),
             TextButton.icon(
               key: const ValueKey('journal-clear'),
@@ -681,7 +792,9 @@ class _ListeningJournalViewState extends State<ListeningJournalView> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 24),
           child: Text(
-            'No journal entries for these dates and this book. Choose another range, or turn on recording for future listening.',
+            _passage == null
+                ? 'No journal entries for these dates and this book. Choose another range, or turn on recording for future listening.'
+                : 'No dated playback was recorded for this passage in these dates. The listening map may include playback from before journal recording was enabled. A missing entry does not prove the passage was never played.',
             key: const ValueKey('journal-empty'),
             style: Theme.of(context).textTheme.bodyLarge,
           ),

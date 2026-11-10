@@ -827,7 +827,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       builder: (ctx) => AlertDialog(
         title: Text('Delete "$title"?'),
         content: const Text(
-          'This removes the book and its managed audio copies. Your original source files stay on disk.',
+          'This removes the book, its managed audio copies, bookmarks, session '
+          'history, listening map, and dated listening journal. Your original '
+          'source files stay on disk.',
         ),
         actions: [
           TextButton(

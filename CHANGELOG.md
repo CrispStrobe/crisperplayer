@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- Connected **Listening map → Playback dates** to the dated journal for an
+  exact physical point or range. Real play-throughs and Return Trail replays
+  remain separate; seeks and pauses are excluded. Lookup leaves playback
+  unchanged, composes with date filters and preserves safe paused navigation.
+- Added complete filtered **CSV and JSON journal reports**, with source and
+  destination paths omitted by default, exact UTC/offset/position records,
+  streamed encoding and spreadsheet formula protection. Reports are separate
+  from restorable library backups. Book deletion now explicitly discloses the
+  bookmarks and listening memory it removes.
+- Selected Xcode 26.2 in Apple audio CI to satisfy the existing
+  `device_info_plus` SDK requirement; macOS native algorithm tests already
+  passed on the preceding checkpoint.
 - Added experimental **Bungee Basic** and **Signalsmith Stretch** Android speed
   processors through a real Media3/JNI PCM pipeline. Sonic remains the default;
   processor changes apply after restart. Native modes preserve source timing,

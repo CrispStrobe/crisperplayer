@@ -62,11 +62,15 @@ them. Anyone with access to an unencrypted export can read its contents.
 
 Return Trail records physical audio-file ranges demonstrated by normal playback,
 with local timestamps, to offer short replays of previously played passages. It
-retains at most 200 recent ranges per book. These ranges and saved return
-bookmarks are included in explicit metadata exports. Clearing listening history
-also clears the ranges; deleting a book removes its ranges and bookmarks.
+retains at most 200 recent ranges per book. The Listening map separately keeps a
+cumulative union of played ranges, without timestamps, until history is cleared
+or the book is deleted. Replaying an interval does not duplicate its coverage.
+These ranges and saved return bookmarks are included in explicit metadata
+exports. Clearing listening history also clears both kinds of range data;
+deleting a book removes its ranges and bookmarks.
 Return Trail does not detect attention, transcribe audio, call an AI service or
-upload audio or played passages. Optional progress sync continues to use the
+upload audio or played passages. The map also operates locally; other-device
+resume positions are not inferred as cumulative coverage. Optional progress sync continues to use the
 saved normal resume point while a trail is playing.
 
 The browser player stores selected audio and progress in that browser's

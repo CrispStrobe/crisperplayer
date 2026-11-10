@@ -621,6 +621,24 @@ class DesktopControlService {
         };
       case 'status':
         return _status();
+      case 'coverage':
+        final requestedBook = args['bookId'];
+        if (requestedBook != null && requestedBook is! String) {
+          throw const FormatException('bookId must be a string');
+        }
+        return (await playback.listeningCoverage(
+          bookId: requestedBook as String?,
+        )).toJson();
+      case 'coverage-seek':
+        final positionMs = args['positionMs'];
+        if (positionMs is! int) {
+          throw const FormatException('positionMs must be an integer');
+        }
+        await playback.seekCoverage(
+          bookId: _string(args, 'bookId'),
+          filePath: _string(args, 'filePath'),
+          positionMs: positionMs,
+        );
       case 'trail-plan' || 'trail-start':
         final seconds = args.containsKey('seconds')
             ? _number(args, 'seconds', 15, 300)

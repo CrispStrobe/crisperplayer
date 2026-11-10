@@ -54,6 +54,8 @@ Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
   volume NUMBER          Set volume (0–1)
   mute / unmute          Mute or restore the last audible level
   waveform               Generate/read measured peaks for the current track
+  coverage [BOOK_ID]      Show recorded played intervals and gaps (JSON)
+  call coverage-seek JSON Jump to a map position, paused (bookId,filePath,positionMs)
   trail-plan [SECONDS]   Inspect Return Trail (15–300 listening seconds; default 60)
   trail-start [SECONDS]  Revisit played passages while protecting your place
   trail-next             Move to the next Return Trail passage
@@ -238,6 +240,7 @@ Future<void> main(List<String> arguments) async {
         }
         result = await client.command(command, {'bookId': args.single});
       case 'play' ||
+          'coverage' ||
           'bookmarks' ||
           'chapters' ||
           'history' ||

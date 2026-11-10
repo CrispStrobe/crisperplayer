@@ -50,6 +50,10 @@ and removed when you clear listening history or delete the book. They are not
 uploaded by progress sync. No transcription, account, model or network request
 is needed to create or play a trail.
 
+The [Listening map](LISTENING_MAP.md) keeps a separate cumulative union of these
+recorded intervals. Earlier coverage stays visible after the recent 200-passage
+buffer rolls over; clearing history or deleting the book clears that union too.
+
 Before reviewing, the app saves normal progress and adds a **Return Trail ·
 saved place** bookmark. Up to five such bookmarks are retained per book. If the
 app closes during review, the regular resume point still opens at that saved

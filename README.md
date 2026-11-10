@@ -32,6 +32,19 @@ Trails work locally with your audiobook files, without transcription, a model or
 an account. New playback builds the trail; old history endpoints do not imply
 that skipped audio was played. See [Return Trail behavior and commands](docs/RETURN_TRAIL.md).
 
+## Listening map: played sections and gaps
+
+Open **Listening map** in the native player to see recorded playback across
+the book and each physical track. Solid areas show played audio; hatched areas
+mean **No playback recorded**. The playhead is separate, so jumping forward does
+not make the skipped section look played. Overlapping replays count once, and
+the cumulative map preserves early chapters beyond Return Trail's recent buffer.
+
+Inspect exact ranges, select the next gap, or choose a point and **Jump here**
+to open it paused. Unknown durations remain unknown, and older or other-device
+listening is not reconstructed from a saved position. See
+[map behavior, privacy and CLI](docs/LISTENING_MAP.md).
+
 ## Import from Android Downloads
 
 Choose **Import → Import audio files**, then select the audiobooks inside
@@ -147,7 +160,7 @@ flutter test
 flutter run -d <device-id>
 ```
 
-The database upgrades existing libraries in place; schema three adds organization, playback preferences and the queue; schema four adds remote download identities without credentials; schema five adds bounded played passages for Return Trail. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
+The database upgrades existing libraries in place; schema three adds organization, playback preferences and the queue; schema four adds remote download identities without credentials; schema five adds bounded played passages for Return Trail; schema six adds cumulative listening coverage. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
 
 The playback tests use the production coordinator and SQLite with an injected audio backend that preserves just_audio's pending `play()` future semantics. Native decoder, interruption and background behavior still require device testing:
 

@@ -13,7 +13,7 @@ even though the playhead is at 1:20.
 
 - The player card summarizes unique recorded playback, with a whole-book strip
   and percentage when all track durations are known.
-- The sheet shows source tracks, played time, exact played intervals and gaps.
+- The sheet shows source tracks, played time, visual coverage and exact gap ranges.
   Its track bars distinguish coverage, the playhead and a selected position.
 - Select a position to inspect it, then choose **Jump here** to open that point
   paused. Selecting alone does not seek or start playback.
@@ -74,3 +74,15 @@ ranges, `[startMs, endMs)`. Known-duration gaps are the exact complement of the
 recorded union. Unknown-duration tracks do not expose invented gap endpoints.
 Map jumps validate the current book and track before changing playback; they
 stay within the known duration or the observed extent of an unknown track.
+
+## Screenshots and validation
+
+These are actual native Flutter renders at 390 × 844, using fictional test-book
+metadata. The map, playhead and selection remain separate.
+
+| Player overview | Played sections and gaps | Selecting a gap |
+| --- | --- | --- |
+| ![Player listening map](images/listening-map-player.png) | ![Listening map](images/listening-map.png) | ![Selected gap](images/listening-map-selection.png) |
+
+See [Listening map validation](LISTENING_MAP_VALIDATION.md) for the checks and
+remaining device acceptance work.

@@ -28,6 +28,25 @@ pause. Completion restores the exact physical anchor paused; only explicit
 adoption changes the resume point to the reviewed passage. See
 [Return Trail](RETURN_TRAIL.md) for user-visible behavior and limitations.
 
+Schema six separates cumulative `playback_coverage` from the bounded recent
+passage list. Recording merges exactly overlapping or touching intervals per
+book and file in the same transaction as the recent evidence. Old coverage is
+not pruned when the recent list rolls over. Migration and older metadata restores
+seed only retained physical evidence; whole-book history endpoints remain
+insufficient. `ListeningCoverageService` reads a coherent snapshot of current
+tracks, interval unions and chapter labels, with nullable unknown totals and
+known-duration complements. Its watcher subscribes to Drift table changes before
+the first read and closes its subscription with the widget. The map shows unique
+source time independently of playback speed or the current position.
+
+`PlaybackService.listeningCoverage` flushes pending samples without moving audio.
+`seekCoverage` validates the expected open book, physical file and extent before
+ending review and opening the selected position paused. Decoder completion and
+natural adjacent-file boundaries preserve plausible final samples, while explicit
+seeks and buffering reset capture so skipped tails do not become coverage.
+History deletion, metadata backups and managed-file adoption include both stores.
+See [Listening map](LISTENING_MAP.md).
+
 ## Storage and imports
 
 Library imports validate source availability, naturally sort filenames, stream-copy files into `<application-support>/library/<book-id>/`, probe durations and write books, tracks and chapters in a transaction. Import failure removes the managed copies. Deletion stops the active book, removes related metadata atomically and deletes only that book's managed directory.

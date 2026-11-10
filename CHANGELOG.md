@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- Added **Listening map** with cumulative played sections, visible gaps, unique
+  coverage percentages, per-track timelines and deliberate paused navigation.
+  Schema six preserves coverage beyond the recent replay buffer and includes it
+  in migration, history deletion, managed-file adoption and metadata backups.
 - Added **Return Trail** in the native player and desktop CLI: inspect and replay
   short passages previously played on the device while protecting the normal
   resume point, then return paused or explicitly continue from the reviewed place.

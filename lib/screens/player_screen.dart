@@ -19,6 +19,7 @@ import '../widgets/book_details_sheet.dart';
 import '../widgets/book_preferences_sheet.dart';
 import '../widgets/queue_sheet.dart';
 import '../widgets/return_trail_sheet.dart';
+import '../widgets/listening_coverage_sheet.dart';
 
 class PlayerScreen extends ConsumerStatefulWidget {
   final String bookId;
@@ -448,6 +449,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                         child: Column(
                           children: [
                             ReturnTrailCard(
+                              playback: svc,
+                              bookId: widget.bookId,
+                            ),
+                            const SizedBox(height: 8),
+                            ListeningCoverageCard(
                               playback: svc,
                               bookId: widget.bookId,
                             ),

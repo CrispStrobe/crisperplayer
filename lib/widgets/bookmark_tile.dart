@@ -7,33 +7,54 @@ class BookmarkTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
-  const BookmarkTile(
-      {super.key,
-      required this.bookmark,
-      required this.onTap,
-      required this.onDelete,
-      required this.onEdit});
+  const BookmarkTile({
+    super.key,
+    required this.bookmark,
+    required this.onTap,
+    required this.onDelete,
+    required this.onEdit,
+  });
   @override
   Widget build(BuildContext context) {
     final isAuto = bookmark.kind == 'auto';
+    final isReturnTrail = bookmark.kind == 'return-trail';
     return ListTile(
-      leading: Icon(isAuto ? Icons.bookmark_border : Icons.bookmark,
-          color: isAuto ? Colors.grey : Theme.of(context).colorScheme.primary),
+      leading: Icon(
+        isReturnTrail
+            ? Icons.restore
+            : isAuto
+            ? Icons.bookmark_border
+            : Icons.bookmark,
+        color: isAuto ? Colors.grey : Theme.of(context).colorScheme.primary,
+      ),
       title: Text(bookmark.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(formatDuration(Duration(milliseconds: bookmark.positionMs)),
-            style: const TextStyle(fontSize: 11)),
-        if (bookmark.note != null)
-          Text(bookmark.note!,
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isReturnTrail)
+            const Text(
+              'Return Trail saved place',
+              style: TextStyle(fontSize: 11),
+            ),
+          Text(
+            formatDuration(Duration(milliseconds: bookmark.positionMs)),
+            style: const TextStyle(fontSize: 11),
+          ),
+          if (bookmark.note != null)
+            Text(
+              bookmark.note!,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style:
-                  const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
-        Text(
+              style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+            ),
+          Text(
             formatDateTime(
-                DateTime.fromMillisecondsSinceEpoch(bookmark.createdAtMs)),
-            style: const TextStyle(fontSize: 10, color: Colors.grey)),
-      ]),
+              DateTime.fromMillisecondsSinceEpoch(bookmark.createdAtMs),
+            ),
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
+          ),
+        ],
+      ),
       trailing: PopupMenuButton<String>(
         onSelected: (v) {
           if (v == 'edit') onEdit();
@@ -41,7 +62,7 @@ class BookmarkTile extends StatelessWidget {
         },
         itemBuilder: (_) => [
           const PopupMenuItem(value: 'edit', child: Text('Edit')),
-          const PopupMenuItem(value: 'delete', child: Text('Delete'))
+          const PopupMenuItem(value: 'delete', child: Text('Delete')),
         ],
       ),
       onTap: onTap,

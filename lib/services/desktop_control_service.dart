@@ -115,6 +115,13 @@ class DesktopControlService {
       'waitingForChapterEnd': playback.isWaitingForChapterEnd,
       'audioEffectsSupported': playback.supportsAudioEffects,
       'audioEffectsError': playback.audioEffectsError,
+      'returnTrail': playback.isReturnTrailActive
+          ? {
+              'active': true,
+              'clipIndex': playback.returnTrailClipIndex,
+              'plan': playback.returnTrailPlan!.toJson(),
+            }
+          : {'active': false},
     };
   }
 
@@ -614,6 +621,31 @@ class DesktopControlService {
         };
       case 'status':
         return _status();
+      case 'trail-plan' || 'trail-start':
+        final seconds = args.containsKey('seconds')
+            ? _number(args, 'seconds', 15, 300)
+            : 60.0;
+        final expectedBookId = args['bookId'];
+        if (expectedBookId != null && expectedBookId is! String) {
+          throw const FormatException('bookId must be a string');
+        }
+        final budget = Duration(milliseconds: (seconds * 1000).round());
+        if (command == 'trail-plan') {
+          return (await playback.previewReturnTrail(
+            budget: budget,
+            expectedBookId: expectedBookId as String?,
+          )).toJson();
+        }
+        await playback.startReturnTrail(
+          budget: budget,
+          expectedBookId: expectedBookId as String?,
+        );
+      case 'trail-next':
+        await playback.nextReturnTrailClip();
+      case 'trail-return':
+        await playback.finishReturnTrail();
+      case 'trail-continue':
+        await playback.finishReturnTrail(continueHere: true);
       case 'list':
         return _listBooks(args);
       case 'load' || 'play':

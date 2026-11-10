@@ -14,6 +14,20 @@ A physical track and an embedded chapter are distinct concepts. `book_tracks` st
 
 Chapter-end sleep captures a fixed endpoint when entering chapter mode. Subsequent position and index events compare against that endpoint, including ticks that cross directly into the next chapter. The countdown and production pause path are shared with tests.
 
+Return Trail records demonstrated physical-track ranges through
+`PlayedRangeRecorder`, resetting capture around seeks, pause, buffering and
+source changes. `ReturnTrailService` stores at most 200 ranges per book and
+builds a deterministic, speed-aware plan of up to three recent excerpts bounded
+by the saved anchor. Schema five adds `played_passages`; history clearing,
+managed-path adoption and explicit metadata backup/restore include these rows.
+The coordinator saves progress and a return bookmark before entering review.
+During review, ordinary progress, automatic bookmarks, new passage capture and
+listening-session accounting are suppressed. Excerpt transitions use generation
+checks so queued native events cannot consume Up next or undo an explicit
+pause. Completion restores the exact physical anchor paused; only explicit
+adoption changes the resume point to the reviewed passage. See
+[Return Trail](RETURN_TRAIL.md) for user-visible behavior and limitations.
+
 ## Storage and imports
 
 Library imports validate source availability, naturally sort filenames, stream-copy files into `<application-support>/library/<book-id>/`, probe durations and write books, tracks and chapters in a transaction. Import failure removes the managed copies. Deletion stops the active book, removes related metadata atomically and deletes only that book's managed directory.
@@ -34,7 +48,7 @@ Share intake accepts cold and warm shares, supports callback rebinding and seria
 
 ## Platform scope
 
-Installed Android, iOS and desktop apps use local filesystem storage. The browser build displays an explicit availability notice before initializing native storage or playback. It is not a browser player. Cloud sync is unavailable; `CLOUD_SYNC.md` records design requirements for a future authenticated implementation.
+Installed Android, iOS and desktop apps use local filesystem storage. The Flutter browser build displays an explicit availability notice before initializing native storage or playback. The separate Pages browser player is described below. Native optional progress sync is documented in `CLOUD_SYNC.md`.
 
 
 ## Remote libraries and effects

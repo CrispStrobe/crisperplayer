@@ -1,6 +1,6 @@
 # CrisperPlayer privacy policy
 
-Last updated: 19 October 2026.
+Last updated: 10 November 2026.
 
 CrisperPlayer plays audiobooks you choose and keeps its library, bookmarks,
 listening history and settings on your device. There are no advertising,
@@ -59,6 +59,15 @@ artwork, chapters, file paths, progress, bookmarks, notes, history and settings
 in a local SQLite database and preferences. Originals remain unchanged.
 Explicit exports contain metadata, not the audio; you choose where to save/share
 them. Anyone with access to an unencrypted export can read its contents.
+
+Return Trail records physical audio-file ranges demonstrated by normal playback,
+with local timestamps, to offer short replays of previously played passages. It
+retains at most 200 recent ranges per book. These ranges and saved return
+bookmarks are included in explicit metadata exports. Clearing listening history
+also clears the ranges; deleting a book removes its ranges and bookmarks.
+Return Trail does not detect attention, transcribe audio, call an AI service or
+upload audio or played passages. Optional progress sync continues to use the
+saved normal resume point while a trail is playing.
 
 The browser player stores selected audio and progress in that browser's
 IndexedDB. Audio is processed locally, without an upload endpoint. Its progress

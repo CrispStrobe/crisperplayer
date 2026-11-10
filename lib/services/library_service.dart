@@ -416,6 +416,10 @@ class LibraryService {
                 (t) => t.bookId.equals(book.id) & t.filePath.equals(entry.key),
               ))
               .write(ChaptersCompanion(filePath: Value(entry.value)));
+          await (db.update(db.playedPassages)..where(
+                (t) => t.bookId.equals(book.id) & t.filePath.equals(entry.key),
+              ))
+              .write(PlayedPassagesCompanion(filePath: Value(entry.value)));
         }
       });
     }

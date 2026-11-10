@@ -4,15 +4,19 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:uuid/uuid.dart';
 import '../../models/playback_state.dart' as m;
+import '../../models/return_trail.dart';
 import '../db/app_database.dart';
 import '../history_service.dart';
 import '../library_service.dart';
 import '../bookmark_service.dart';
 import '../settings_service.dart';
+import '../return_trail_service.dart';
 import 'audio_backend.dart';
 import 'android_audio_effects.dart';
 import 'audio_handler.dart';
+import 'played_range_recorder.dart';
 
 /// Owns playback commands, persistence and listening sessions. UI and remote
 /// controls both enter through this coordinator. Commands execute in order.
@@ -33,6 +37,19 @@ class PlaybackService with WidgetsBindingObserver {
   Future<void>? _initializing;
   bool _disposed = false;
   bool _loading = false;
+  bool _seeking = false;
+  bool _backendReady = false;
+  final _playedRanges = PlayedRangeRecorder();
+  ReturnTrailPlan? _returnTrailPlan;
+  ReturnTrailPlan? get returnTrailPlan => _returnTrailPlan;
+  bool get isReturnTrailActive => _returnTrailPlan != null;
+  int _returnTrailClipIndex = 0;
+  int get returnTrailClipIndex => _returnTrailClipIndex;
+  int _trailGeneration = 0;
+  bool _trailTransitioning = false;
+  bool _trailAdvancePending = false;
+  bool _trailResumeRequested = false;
+  Timer? _returnTrailTimer;
   bool _wasPlayingBeforeInterruption = false;
   bool _observing = false;
   String? _currentBookId;
@@ -110,7 +127,9 @@ class PlaybackService with WidgetsBindingObserver {
     );
     _subscriptions.add(
       _backend!.positions.listen((_) {
+        _capturePlayedPosition();
         _publishPosition();
+        _checkReturnTrailEnd();
         _checkChapterEnd();
       }),
     );
@@ -120,6 +139,7 @@ class PlaybackService with WidgetsBindingObserver {
         _publishPosition();
         _background(_audioHandler?.setCurrentIndex(i) ?? Future.value());
         _checkChapterEnd();
+        _checkReturnTrailEnd();
       }),
     );
     _subscriptions.add(
@@ -153,11 +173,34 @@ class PlaybackService with WidgetsBindingObserver {
       _backend!.states.listen(
         (ps) {
           if (_loading) return;
+          _backendReady = ps.processingState == ProcessingState.ready;
+          if (ps.playing && _backendReady) {
+            _capturePlayedPosition();
+          } else {
+            _playedRanges.reset();
+            _returnTrailTimer?.cancel();
+          }
           _emit(state.copyWith(status: ps.toStatus()));
           final eventBookId = _currentBookId;
+          final eventTrail = _returnTrailPlan;
+          final eventGeneration = _trailGeneration;
           _background(
             _command(() async {
               if (eventBookId != _currentBookId) return;
+              // Events emitted by an old excerpt must never complete a book
+              // after a return action has restored ordinary playback.
+              if (eventTrail != null || isReturnTrailActive) {
+                if (eventTrail == _returnTrailPlan &&
+                    eventGeneration == _trailGeneration &&
+                    isReturnTrailActive) {
+                  if (ps.processingState == ProcessingState.completed) {
+                    if (_trailResumeRequested) await _advanceReturnTrail();
+                  } else if (ps.playing && _backendReady) {
+                    _scheduleReturnTrailEnd();
+                  }
+                }
+                return;
+              }
               if (_backend!.playing &&
                   ps.playing &&
                   ps.processingState == ProcessingState.ready) {
@@ -179,6 +222,10 @@ class PlaybackService with WidgetsBindingObserver {
           );
         },
         onError: (Object e) {
+          _backendReady = false;
+          _playedRanges.reset();
+          _returnTrailTimer?.cancel();
+          _trailResumeRequested = false;
           _emit(
             state.copyWith(status: m.PlaybackStatus.error, error: e.toString()),
           );
@@ -194,6 +241,8 @@ class PlaybackService with WidgetsBindingObserver {
         session.interruptionEventStream.listen((event) {
           if (event.begin) {
             _wasPlayingBeforeInterruption = _backend!.playing;
+            _trailResumeRequested = false;
+            _returnTrailTimer?.cancel();
             if (_wasPlayingBeforeInterruption) _background(_command(_pause));
           } else {
             if (_wasPlayingBeforeInterruption &&
@@ -226,7 +275,11 @@ class PlaybackService with WidgetsBindingObserver {
     final speed =
         (_bookPreferences['speed'] as num?)?.toDouble() ??
         settings!.playbackSpeed;
-    if (state.speed != speed) await _endSession();
+    if (state.speed != speed) {
+      _capturePlayedPosition();
+      _playedRanges.reset();
+      await _endSession();
+    }
     await _backend!.setSpeed(speed);
     await _backend!.setVolume(settings!.volume);
     await _backend!.setSkipSilence(
@@ -243,6 +296,8 @@ class PlaybackService with WidgetsBindingObserver {
     }
     _emit(state.copyWith(speed: speed, volume: settings!.volume));
     if (_backend!.playing) await _startSession();
+    _capturePlayedPosition();
+    _scheduleReturnTrailEnd();
     _startAutoBookmark();
   }
 
@@ -312,12 +367,16 @@ class PlaybackService with WidgetsBindingObserver {
     final tracks = await library.ensureTracks(storedBook);
     final book = (await db.getBook(id))!;
     if (tracks.isEmpty) throw StateError('Book has no files');
+    if (isReturnTrailActive) await _finishReturnTrail();
+    _capturePlayedPosition();
     await _backend!.pause();
     await _persistProgress();
     await _endSession();
     cancelSleepTimer();
     _pausedAt = null;
     _loading = true;
+    _backendReady = false;
+    _playedRanges.reset();
     // Suppress intermediate source/index events while replacing the queue.
     try {
       _currentBookId = null;
@@ -377,6 +436,11 @@ class PlaybackService with WidgetsBindingObserver {
 
   Future<void> play() => _command(_play);
   Future<void> _play() async {
+    if (isReturnTrailActive) {
+      _trailResumeRequested = true;
+      await _playReturnTrailAudio();
+      return;
+    }
     final pausedAt = _pausedAt;
     _pausedAt = null;
     if (_currentBookId == null || _backend == null) return;
@@ -407,10 +471,16 @@ class PlaybackService with WidgetsBindingObserver {
 
   Future<void> pause() {
     _wasPlayingBeforeInterruption = false;
+    _trailResumeRequested = false;
+    _returnTrailTimer?.cancel();
     return _command(_pause);
   }
 
   Future<void> _pause() async {
+    _trailResumeRequested = false;
+    _returnTrailTimer?.cancel();
+    _capturePlayedPosition();
+    _playedRanges.reset();
     _pausedAt = now();
     await _backend?.pause();
     await _persistProgress();
@@ -420,6 +490,7 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> stop() => _command(() async {
+    if (isReturnTrailActive) await _finishReturnTrail();
     await _pause();
     await _backend?.stop();
     cancelSleepTimer();
@@ -427,6 +498,7 @@ class PlaybackService with WidgetsBindingObserver {
     _emit(state.copyWith(status: m.PlaybackStatus.idle));
   });
   Future<void> unload() => _command(() async {
+    if (isReturnTrailActive) await _finishReturnTrail();
     await _pause();
     await _backend?.stop();
     _currentBookId = null;
@@ -466,9 +538,7 @@ class PlaybackService with WidgetsBindingObserver {
 
   Future<void> seek(Duration pos) => _command(() async {
     if (_tracks.isEmpty) return;
-    await _backend!.seek(_clamp(pos, _tracks[_index].durationMs));
-    _publishPosition();
-    await _persistProgress();
+    await _seekTrack(_index, pos);
   });
   Future<void> seekTrack(int index, [Duration position = Duration.zero]) =>
       _command(() => _seekTrack(index, position));
@@ -476,10 +546,30 @@ class PlaybackService with WidgetsBindingObserver {
     if (index < 0 || index >= _tracks.length) {
       throw RangeError.index(index, _tracks);
     }
-    await _backend!.seek(
-      _clamp(position, _tracks[index].durationMs),
-      index: index,
-    );
+    if (isReturnTrailActive) {
+      final clip = _returnTrailPlan!.clips[_returnTrailClipIndex];
+      // Ordinary scrubbing remains inside the reviewed passage. The dedicated
+      // Continue action is the only way to adopt a new permanent place.
+      await _seekReturnTrailClip(
+        _returnTrailClipIndex,
+        position: index == clip.trackIndex ? position : null,
+        play: _trailResumeRequested && _backend!.playing,
+      );
+      return;
+    }
+    _capturePlayedPosition();
+    _playedRanges.reset();
+    _seeking = true;
+    try {
+      await _backend!.seek(
+        _clamp(position, _tracks[index].durationMs),
+        index: index,
+      );
+    } finally {
+      _seeking = false;
+      _playedRanges.reset();
+    }
+    _capturePlayedPosition();
     _publishPosition();
     await _persistProgress();
   }
@@ -553,6 +643,7 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> nextChapter() => _command(() async {
+    if (isReturnTrailActive) return _advanceReturnTrail();
     if (_chapters.isEmpty) {
       if (_index + 1 < _tracks.length) {
         await _seekTrack(_index + 1, Duration.zero);
@@ -565,6 +656,15 @@ class PlaybackService with WidgetsBindingObserver {
 
   /// Restart the current chapter after three seconds; otherwise go back one.
   Future<void> previousChapter() => _command(() async {
+    if (isReturnTrailActive) {
+      return _seekReturnTrailClip(
+        (_returnTrailClipIndex - 1).clamp(
+          0,
+          _returnTrailPlan!.clips.length - 1,
+        ),
+        play: _trailResumeRequested && _backend!.playing,
+      );
+    }
     if (_chapters.isEmpty) {
       if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
       return;
@@ -601,6 +701,7 @@ class PlaybackService with WidgetsBindingObserver {
     }
     if (await db.getBook(id) == null) throw StateError('Book not found');
     if (id == _currentBookId) {
+      if (isReturnTrailActive) await _finishReturnTrail();
       await _pause();
       cancelSleepTimer();
       if (status == 'unread' && _tracks.isNotEmpty) {
@@ -668,6 +769,7 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> seekBookmark(Bookmark bookmark) => _command(() async {
+    if (isReturnTrailActive) await _finishReturnTrail();
     if (_currentBookId != bookmark.bookId) await _loadBook(bookmark.bookId);
     final index = _tracks.indexWhere((t) => t.filePath == bookmark.filePath);
     if (index < 0) {
@@ -682,6 +784,10 @@ class PlaybackService with WidgetsBindingObserver {
   Future<void> _skip(int seconds) => _command(() async {
     if (_tracks.isEmpty) return;
     final delta = Duration(seconds: seconds);
+    if (isReturnTrailActive) {
+      await _seekTrack(_index, _position + delta);
+      return;
+    }
     if (bookDuration == null) {
       await _seekTrack(_index, _position + delta);
     } else {
@@ -689,14 +795,26 @@ class PlaybackService with WidgetsBindingObserver {
     }
   });
   Future<void> nextTrack() => _command(() async {
+    if (isReturnTrailActive) return _advanceReturnTrail();
     if (_index + 1 < _tracks.length) {
       await _seekTrack(_index + 1, Duration.zero);
     }
   });
   Future<void> previousTrack() => _command(() async {
+    if (isReturnTrailActive) {
+      return _seekReturnTrailClip(
+        (_returnTrailClipIndex - 1).clamp(
+          0,
+          _returnTrailPlan!.clips.length - 1,
+        ),
+        play: _trailResumeRequested && _backend!.playing,
+      );
+    }
     if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
   });
   Future<void> setSpeed(double speed) => _command(() async {
+    _capturePlayedPosition();
+    _playedRanges.reset();
     speed = speed.clamp(0.5, 3.0);
     await _endSession();
     await _backend?.setSpeed(speed);
@@ -708,6 +826,8 @@ class PlaybackService with WidgetsBindingObserver {
       settings?.playbackSpeed = speed;
     }
     if (_backend?.playing == true) await _startSession();
+    _capturePlayedPosition();
+    _scheduleReturnTrailEnd();
   });
   Future<void> setVolume(double volume) => _command(() async {
     volume = volume.clamp(0.0, 1.0);
@@ -817,6 +937,335 @@ class PlaybackService with WidgetsBindingObserver {
     );
   }
 
+  void _capturePlayedPosition() {
+    if (_loading ||
+        _seeking ||
+        isReturnTrailActive ||
+        !_backendReady ||
+        _backend?.playing != true ||
+        _currentBookId == null ||
+        _index < 0 ||
+        _index >= _tracks.length) {
+      return;
+    }
+    _playedRanges.sample(
+      bookId: _currentBookId!,
+      filePath: _tracks[_index].filePath,
+      positionMs: _position.inMilliseconds,
+      observedAtMs: now().millisecondsSinceEpoch,
+      speed: state.speed,
+    );
+  }
+
+  Future<void> _flushPlayedRanges() async {
+    final store = ReturnTrailService(db);
+    for (final range in _playedRanges.pending) {
+      await store.record(
+        bookId: range.bookId,
+        filePath: range.filePath,
+        startMs: range.startMs,
+        endMs: range.endMs,
+        heardAtMs: range.heardAtMs,
+      );
+      _playedRanges.acknowledge(range);
+    }
+  }
+
+  TrailAnchor _trailAnchor(String? expectedBookId) {
+    if (_currentBookId == null ||
+        _tracks.isEmpty ||
+        (expectedBookId != null && expectedBookId != _currentBookId)) {
+      throw StateError('The selected book is no longer open.');
+    }
+    return TrailAnchor(
+      bookId: _currentBookId!,
+      filePath: _tracks[_index].filePath,
+      positionMs: _position.inMilliseconds,
+    );
+  }
+
+  Future<ReturnTrailPlan> previewReturnTrail({
+    Duration budget = const Duration(seconds: 60),
+    String? expectedBookId,
+  }) async {
+    late ReturnTrailPlan plan;
+    await _command(() async {
+      final anchor = _trailAnchor(expectedBookId);
+      if (isReturnTrailActive) {
+        plan = _returnTrailPlan!;
+        return;
+      }
+      _capturePlayedPosition();
+      await _flushPlayedRanges();
+      plan = await ReturnTrailService(
+        db,
+      ).plan(anchor: anchor, budget: budget, speed: state.speed);
+    });
+    return plan;
+  }
+
+  Future<void> startReturnTrail({
+    Duration budget = const Duration(seconds: 60),
+    String? expectedBookId,
+  }) => _command(() async {
+    _trailAnchor(expectedBookId);
+    if (isReturnTrailActive) return;
+    // Validate the budget before changing playback or creating a bookmark.
+    if (budget < const Duration(seconds: 15) ||
+        budget > const Duration(minutes: 5)) {
+      throw ArgumentError('Choose 15 to 300 seconds of listening time.');
+    }
+    final wasPlaying = _backend!.playing;
+    _capturePlayedPosition();
+    await _backend!.pause();
+    _playedRanges.reset();
+    await _persistProgress();
+    await _endSession();
+    final anchor = _trailAnchor(expectedBookId);
+    final plan = await ReturnTrailService(
+      db,
+    ).plan(anchor: anchor, budget: budget, speed: state.speed);
+    if (plan.clips.isEmpty) {
+      if (wasPlaying) await _play();
+      throw StateError('Listen to this book first to build a Return Trail.');
+    }
+    // The normal database resume point is already saved. This extra bookmark
+    // remains useful even if a decoder fails or the application is terminated.
+    await db.transaction(() async {
+      await db.insertBookmark(
+        BookmarksCompanion.insert(
+          id: const Uuid().v4(),
+          bookId: anchor.bookId,
+          title: 'Return Trail · saved place',
+          note: const Value(
+            'Your place before revisiting previously played audio.',
+          ),
+          kind: const Value('return-trail'),
+          filePath: anchor.filePath,
+          positionMs: anchor.positionMs,
+          bookPositionMs: bookPosition.inMilliseconds,
+          createdAtMs: now().millisecondsSinceEpoch,
+        ),
+      );
+      final saved = (await db.bookmarksFor(
+        anchor.bookId,
+      )).where((b) => b.kind == 'return-trail').toList();
+      for (final old in saved.skip(5)) {
+        await db.deleteBookmark(old.id);
+      }
+    });
+    _returnTrailPlan = plan;
+    _returnTrailClipIndex = 0;
+    _trailGeneration++;
+    _trailAdvancePending = false;
+    _trailResumeRequested = true;
+    _pausedAt = null;
+    _playedRanges.reset();
+    _emit(state);
+    try {
+      await _seekReturnTrailClip(0, play: true);
+    } catch (_) {
+      _trailResumeRequested = false;
+      _returnTrailTimer?.cancel();
+      await _backend!.pause();
+      // Leave the protected plan available for an explicit retry/return.
+      rethrow;
+    }
+  });
+
+  Future<void> nextReturnTrailClip() => _command(_advanceReturnTrail);
+
+  Future<void> _advanceReturnTrail() async {
+    final plan = _returnTrailPlan;
+    if (plan == null || _trailTransitioning) return;
+    final next = _returnTrailClipIndex + 1;
+    if (next >= plan.clips.length) {
+      await _finishReturnTrail();
+    } else {
+      await _seekReturnTrailClip(
+        next,
+        play: _trailResumeRequested && _backend!.playing,
+      );
+    }
+  }
+
+  Future<void> _seekReturnTrailClip(
+    int index, {
+    Duration? position,
+    required bool play,
+  }) async {
+    final plan = _returnTrailPlan;
+    if (plan == null) return;
+    final clip = plan.clips[index];
+    _returnTrailTimer?.cancel();
+    _trailGeneration++;
+    _trailAdvancePending = false;
+    _trailTransitioning = true;
+    try {
+      await _backend!.pause();
+      _returnTrailClipIndex = index;
+      await _backend!.seek(
+        Duration(
+          milliseconds: (position?.inMilliseconds ?? clip.startMs).clamp(
+            clip.startMs,
+            clip.endMs,
+          ),
+        ),
+        index: clip.trackIndex,
+      );
+    } finally {
+      _trailTransitioning = false;
+      _publishPosition();
+    }
+    if (play && _trailResumeRequested) {
+      await _playReturnTrailAudio();
+    } else {
+      _emit(state.copyWith(status: m.PlaybackStatus.paused));
+    }
+  }
+
+  Future<void> _playReturnTrailAudio() async {
+    if (!isReturnTrailActive || !_trailResumeRequested) return;
+    final clip = _returnTrailPlan!.clips[_returnTrailClipIndex];
+    if (_index != clip.trackIndex ||
+        _position.inMilliseconds < clip.startMs ||
+        _position.inMilliseconds >= clip.endMs) {
+      // A failed seek may leave the decoder at the original anchor. Retrying
+      // Play must re-establish the selected excerpt before it can emit audio.
+      await _seekReturnTrailClip(_returnTrailClipIndex, play: false);
+    }
+    if (_audioSession != null && !await _audioSession!.setActive(true)) {
+      throw StateError('Audio session unavailable');
+    }
+    // A pause, interruption or sleep expiry may arrive during activation.
+    if (!_trailResumeRequested || !isReturnTrailActive) return;
+    _background(
+      _backend!.play().catchError((Object error) async {
+        _trailResumeRequested = false;
+        _returnTrailTimer?.cancel();
+        _emit(
+          state.copyWith(
+            status: m.PlaybackStatus.error,
+            error: error.toString(),
+          ),
+        );
+      }),
+    );
+    _scheduleReturnTrailEnd();
+  }
+
+  void _scheduleReturnTrailEnd() {
+    _returnTrailTimer?.cancel();
+    if (!isReturnTrailActive ||
+        _trailTransitioning ||
+        !_trailResumeRequested ||
+        _backend?.playing != true ||
+        !_backendReady) {
+      return;
+    }
+    final clip = _returnTrailPlan!.clips[_returnTrailClipIndex];
+    final remaining = clip.endMs - _position.inMilliseconds;
+    final generation = _trailGeneration;
+    _returnTrailTimer = Timer(
+      Duration(
+        milliseconds: (remaining / state.speed).ceil().clamp(0, 3600000),
+      ),
+      () {
+        if (generation != _trailGeneration) return;
+        _checkReturnTrailEnd();
+        if (!_trailAdvancePending && isReturnTrailActive) {
+          _scheduleReturnTrailEnd();
+        }
+      },
+    );
+  }
+
+  void _checkReturnTrailEnd() {
+    if (!isReturnTrailActive ||
+        _trailTransitioning ||
+        _backend?.playing != true ||
+        !_trailResumeRequested) {
+      return;
+    }
+    final clip = _returnTrailPlan!.clips[_returnTrailClipIndex];
+    if (_index != clip.trackIndex || _position.inMilliseconds >= clip.endMs) {
+      _queueReturnTrailAdvance(_trailGeneration);
+    }
+  }
+
+  void _queueReturnTrailAdvance(int generation) {
+    if (!isReturnTrailActive ||
+        generation != _trailGeneration ||
+        _trailAdvancePending ||
+        !_trailResumeRequested) {
+      return;
+    }
+    _trailAdvancePending = true;
+    _returnTrailTimer?.cancel();
+    _background(
+      _command(() async {
+        try {
+          if (generation != _trailGeneration ||
+              !isReturnTrailActive ||
+              !_trailResumeRequested ||
+              _backend?.playing != true) {
+            return;
+          }
+          await _advanceReturnTrail();
+        } finally {
+          if (generation == _trailGeneration) _trailAdvancePending = false;
+        }
+      }),
+    );
+  }
+
+  Future<void> finishReturnTrail({bool continueHere = false}) {
+    // Invalidate automatic transitions immediately, before entering the queue.
+    _trailResumeRequested = false;
+    _returnTrailTimer?.cancel();
+    return _command(() => _finishReturnTrail(continueHere: continueHere));
+  }
+
+  Future<void> _finishReturnTrail({bool continueHere = false}) async {
+    final plan = _returnTrailPlan;
+    if (plan == null) return;
+    _trailGeneration++;
+    _trailResumeRequested = false;
+    _trailAdvancePending = false;
+    _returnTrailTimer?.cancel();
+    await _backend!.pause();
+    if (!continueHere) {
+      final index = _tracks.indexWhere(
+        (t) => t.filePath == plan.anchor.filePath,
+      );
+      if (index < 0) throw StateError('The saved return file is unavailable.');
+      await _backend!.seek(
+        Duration(milliseconds: plan.anchor.positionMs),
+        index: index,
+      );
+    } else {
+      final clip = plan.clips[_returnTrailClipIndex];
+      // A delayed native callback can have crossed a file boundary. Explicit
+      // adoption still stays within the passage the listener was reviewing.
+      await _backend!.seek(
+        Duration(
+          milliseconds: _index == clip.trackIndex
+              ? _position.inMilliseconds.clamp(clip.startMs, clip.endMs)
+              : clip.endMs,
+        ),
+        index: clip.trackIndex,
+      );
+    }
+    _returnTrailPlan = null;
+    _returnTrailClipIndex = 0;
+    _pausedAt = null;
+    _playedRanges.reset();
+    _publishPosition();
+    await _persistProgress();
+    _emit(state.copyWith(status: m.PlaybackStatus.paused));
+    if (continueHere) await _play();
+  }
+
   void _publishPosition() {
     if (_loading || _tracks.isEmpty || _index >= _tracks.length) return;
     _emit(
@@ -837,6 +1286,9 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> _persistProgress() async {
+    _capturePlayedPosition();
+    await _flushPlayedRanges();
+    if (isReturnTrailActive) return;
     if (_currentBookId == null || _tracks.isEmpty || _index >= _tracks.length) {
       return;
     }
@@ -874,7 +1326,8 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> _maybeAutoBookmark() async {
-    if (settings?.autoBookmarkEnabled == false ||
+    if (isReturnTrailActive ||
+        settings?.autoBookmarkEnabled == false ||
         _currentBookId == null ||
         _tracks.isEmpty ||
         _position == Duration.zero) {
@@ -890,7 +1343,11 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> _startSession() async {
-    if (_activeSessionId != null || _currentBookId == null) return;
+    if (isReturnTrailActive ||
+        _activeSessionId != null ||
+        _currentBookId == null) {
+      return;
+    }
     _sessionClock = Stopwatch()..start();
     _activeSessionId = await history.startSession(
       bookId: _currentBookId!,
@@ -900,6 +1357,7 @@ class PlaybackService with WidgetsBindingObserver {
   }
 
   Future<void> _endSession() async {
+    await _flushPlayedRanges();
     if (_activeSessionId == null) return;
     final id = _activeSessionId!;
     final elapsed = _sessionClock!.elapsed;
@@ -947,6 +1405,8 @@ class PlaybackService with WidgetsBindingObserver {
     _progressTimer?.cancel();
     _autoBookmarkTimer?.cancel();
     _sleepTimer?.cancel();
+    _returnTrailTimer?.cancel();
+    _trailResumeRequested = false;
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }
@@ -954,6 +1414,7 @@ class PlaybackService with WidgetsBindingObserver {
     // A settings command already in flight can restart this timer while the
     // command queue drains, after the initial cancellation above.
     _autoBookmarkTimer?.cancel();
+    _returnTrailTimer?.cancel();
     if (_currentBookId != null) {
       await _backend?.pause();
       await _persistProgress();

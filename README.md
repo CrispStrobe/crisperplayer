@@ -20,6 +20,18 @@ Windows builds are unsigned and Mac downloads are ad-hoc signed, not notarized.
 Windows needs the Microsoft Visual C++ runtime (x64); Linux needs system libmpv, GTK and libsecret. See [installation details](docs/RELEASES.md).
 Release checksums and separate CLI bundles are attached to each versioned GitHub release.
 
+## Return Trail: get back into the story
+
+Open **Return Trail** in the native player to revisit 30 seconds, one minute or
+two minutes of original narration from passages previously played on this device.
+Inspect the source chapters and time ranges before starting. Your normal resume
+point stays protected throughout; return to it paused, or explicitly choose
+**Continue from here**. The same workflow is available through the desktop CLI.
+
+Trails work locally with your audiobook files, without transcription, a model or
+an account. New playback builds the trail; old history endpoints do not imply
+that skipped audio was played. See [Return Trail behavior and commands](docs/RETURN_TRAIL.md).
+
 ## Import from Android Downloads
 
 Choose **Import → Import audio files**, then select the audiobooks inside
@@ -135,7 +147,7 @@ flutter test
 flutter run -d <device-id>
 ```
 
-The database upgrades version-one and version-two libraries in place; schema three adds organization, playback preferences and the queue; schema four adds remote download identities without credentials. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
+The database upgrades existing libraries in place; schema three adds organization, playback preferences and the queue; schema four adds remote download identities without credentials; schema five adds bounded played passages for Return Trail. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
 
 The playback tests use the production coordinator and SQLite with an injected audio backend that preserves just_audio's pending `play()` future semantics. Native decoder, interruption and background behavior still require device testing:
 

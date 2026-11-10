@@ -18,6 +18,7 @@ import '../widgets/chapter_list_sheet.dart';
 import '../widgets/book_details_sheet.dart';
 import '../widgets/book_preferences_sheet.dart';
 import '../widgets/queue_sheet.dart';
+import '../widgets/return_trail_sheet.dart';
 
 class PlayerScreen extends ConsumerStatefulWidget {
   final String bookId;
@@ -446,6 +447,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
+                            ReturnTrailCard(
+                              playback: svc,
+                              bookId: widget.bookId,
+                            ),
+                            const SizedBox(height: 16),
                             // Cover with waveform overlay
                             SizedBox(
                               width: coverSize,
@@ -802,18 +808,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                                           (bm) => ListTile(
                                             dense: true,
                                             leading: Icon(
-                                              bm.kind == 'auto'
+                                              bm.kind == 'return-trail'
+                                                  ? Icons.restore
+                                                  : bm.kind == 'auto'
                                                   ? Icons.bookmark_border
                                                   : Icons.bookmark,
                                               size: 18,
                                             ),
                                             title: Text(bm.title, maxLines: 1),
                                             subtitle: Text(
-                                              formatDuration(
-                                                Duration(
-                                                  milliseconds: bm.positionMs,
-                                                ),
-                                              ),
+                                              '${bm.kind == 'return-trail' ? 'Return Trail saved place · ' : ''}${formatDuration(Duration(milliseconds: bm.positionMs))}',
                                             ),
                                             onTap: () async =>
                                                 svc.seekBookmark(bm),

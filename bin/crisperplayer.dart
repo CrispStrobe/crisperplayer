@@ -54,6 +54,11 @@ Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
   volume NUMBER          Set volume (0–1)
   mute / unmute          Mute or restore the last audible level
   waveform               Generate/read measured peaks for the current track
+  trail-plan [SECONDS]   Inspect Return Trail (15–300 listening seconds; default 60)
+  trail-start [SECONDS]  Revisit played passages while protecting your place
+  trail-next             Move to the next Return Trail passage
+  trail-return           Return to your saved place, paused
+  trail-continue         Keep the reviewed position and continue playing
   bookmark [TITLE]       Bookmark the current position
   bookmarks [BOOK_ID]    List bookmarks
 
@@ -193,6 +198,9 @@ Future<void> main(List<String> arguments) async {
         }
         result = await client.command(command, options);
       case 'mute' ||
+          'trail-next' ||
+          'trail-return' ||
+          'trail-continue' ||
           'unmute' ||
           'waveform' ||
           'server-cancel' ||
@@ -212,6 +220,18 @@ Future<void> main(List<String> arguments) async {
           throw FormatException('$command takes no arguments');
         }
         result = await client.command(command);
+      case 'trail-plan' || 'trail-start':
+        if (args.length > 1) {
+          throw FormatException('$command accepts optional listening seconds');
+        }
+        final seconds = args.isEmpty ? 60.0 : double.tryParse(args.single);
+        if (seconds == null ||
+            !seconds.isFinite ||
+            seconds < 15 ||
+            seconds > 300) {
+          throw const FormatException('Choose 15 to 300 listening seconds');
+        }
+        result = await client.command(command, {'seconds': seconds});
       case 'queue-remove' || 'delete' || 'load':
         if (args.length != 1) {
           throw FormatException('$command requires one book ID');

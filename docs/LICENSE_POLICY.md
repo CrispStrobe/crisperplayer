@@ -61,6 +61,7 @@ permissive DSP on Apple platforms to avoid adding this burden to audio.
 | Sonic | Apache-2.0 implementation in AndroidX Media3. | Keep the existing Android default. |
 | mpv scaletempo2 / scaletempo | Available in an appropriately built LGPL libmpv. | Retain the existing choices subject to native artifact verification; processor choice does not waive packaging obligations. |
 | Signalsmith Stretch | MIT; its selected FFT dependencies must also be reviewed. | Preferred candidate for a future common quality mode. Integrate at the decoded PCM stage and test timing, latency, seeking and resource use before exposing it. |
+| Bungee Basic | MPL-2.0, with separately licensed Eigen/PFFFT dependencies. | Another candidate for comparative testing. The proprietary Bungee Pro edition is outside this open dependency plan. |
 | SoundTouch | LGPL-2.1. | A possible alternative with the same source/relinking review needed for LGPL components. It is not assumed better for every voice. |
 | Rubber Band | GPL-2.0-or-later or a separately purchased commercial license. | Excluded from the openly reproducible default dependency set under this policy. A commercial license for one publisher does not give all open-source recipients the same commercial redistribution rights. |
 
@@ -68,6 +69,18 @@ The word “quality” describes an available processing choice, not a measured
 claim that one algorithm beats every other algorithm. Compare the same speech
 and speech-with-music passages at matched level and several speeds, and measure
 CPU/battery use, seek latency and interruption behavior on target devices.
+
+## Enforced checks and current evidence
+
+The [recorded inventory](../licensing/README.md) identifies exact dependency
+versions, source/license hashes and native build inputs. Routine CI writes a
+nonblocking report; binary-release and TestFlight workflows enforce it before
+signing or uploading. Current AGPL declarations and unresolved native evidence
+are explicit blockers. The Windows build additionally checks the DLL actually
+placed in the application against its reviewed SHA-256 and native markers.
+
+See [desktop artifact findings and the Linux candidate recipe](DESKTOP_AUDIO_BUILD.md)
+and [verification results and remaining limits](LICENSE_VALIDATION.md).
 
 ## Primary sources
 
@@ -78,5 +91,6 @@ CPU/battery use, seek latency and interruption behavior on target devices.
 - [Apple Developer Program License Agreement](https://developer.apple.com/support/terms/apple-developer-program-license-agreement/)
 - [Apple time-pitch algorithms](https://developer.apple.com/documentation/avfoundation/time-pitch-algorithm-settings)
 - [Signalsmith Stretch and its MIT license](https://github.com/Signalsmith-Audio/signalsmith-stretch)
+- [Bungee Basic, dependencies and license](https://github.com/bungee-audio-stretch/bungee)
 - [SoundTouch licensing](https://www.surina.net/soundtouch/license.html)
 - [Rubber Band licensing](https://breakfastquay.com/rubberband/license.html)

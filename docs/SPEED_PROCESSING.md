@@ -141,3 +141,8 @@ Actual Flutter renders at 390 × 844 with fictional book metadata:
 | ![Speed controls](images/speed-controls-preview.png) | ![Speed processing](images/speed-processing-preview.png) |
 
 See [journal and speed validation](JOURNAL_SPEED_VALIDATION.md).
+
+Apple processing selection, rendered from the real Flutter widget with fictional
+book metadata. Time Domain remains active while Spectral is saved for restart:
+
+![Apple processing choice](images/apple-speed-processing-preview.png)

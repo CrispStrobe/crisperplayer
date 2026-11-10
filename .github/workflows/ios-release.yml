@@ -33,6 +33,19 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+      - name: Require auditable source for this upload
+        if: ${{ inputs.distribute_only }}
+        run: |
+          echo '::error::Distribution-only retries are disabled until license evidence can be tied to the already uploaded IPA. Build and audit a new upload from this checkout instead.'
+          exit 1
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Enforce distribution license policy before signing
+        run: |
+          flutter pub get
+          python3 scripts/check_distribution_licenses.py --enforce --platform ios
       - name: Check signing configuration
         env:
           ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
@@ -49,11 +62,6 @@ jobs:
           for name in ASC_APP_ID ASC_KEY_ID ASC_ISSUER_ID ASC_TEAM_ID ASC_API_KEY_P8_BASE64 DIST_CERT_P12_BASE64 DIST_CERT_PASSWORD IOS_PROFILE_APP_BASE64 IOS_PROFILE_EXT_BASE64; do
             if [ -z "${!name}" ]; then echo "::error::Missing repository secret: $name"; exit 1; fi
           done
-      - uses: subosito/flutter-action@v2
-        if: ${{ !inputs.distribute_only }}
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
       - name: Resolve and verify code
         if: ${{ !inputs.distribute_only }}
         run: |

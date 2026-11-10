@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "reviewed_at_utc": "2026-11-10",
+  "note": "Native evidence is separate from Dart package licenses. needs_review is not a finding that a component is GPL; it means release evidence or distribution obligations remain unresolved.",
+  "components": [
+    {
+      "id": "windows-libmpv-audio-2023-09-24",
+      "platforms": [
+        "windows"
+      ],
+      "version": "media_kit_libs_windows_audio 1.0.9 / mpv v0.36.0-403-g652a1dd907",
+      "license_expression": "LGPL-3.0-or-later",
+      "review_status": "needs_review",
+      "artifact": {
+        "url": "https://github.com/media-kit/libmpv-win32-audio-build/releases/download/2023-09-24/mpv-dev-x86_64-20230924-git-652a1dd.7z",
+        "sha256": "583af5a291fc99ae2641794ede1955c368eb4c19dc05f4f0a9c7f9456edeb6a8",
+        "md5": "cd738e16e2a19626d7cfa48801524f8c",
+        "binary_filename": "libmpv-2.dll",
+        "binary_sha256": "0a5a0b476866c91a639a4e511e8153968f8fa23564461b0aa09acdba816164a4"
+      },
+      "source": {
+        "repository": "https://github.com/media-kit/libmpv-win32-audio-build",
+        "revision": "2023-09-24",
+        "release_tree": "f0f6ac7483396f345820660176cc84e2dd6ba220",
+        "mpv_revision": "652a1dd90711839acdccc08004056d25514ef2d8"
+      },
+      "evidence": [
+        {
+          "path": "licensing/evidence/windows_audio_2023-09-24.json",
+          "sha256": "99a5c3602e920ef29bfce058ec3a524944b2a1bc677201a88890659125f1685a",
+          "note": "Inspected actual DLL from the pinned archive: mpv -Dgpl=false; all six FFmpeg license markers LGPL version 3 or later; --disable-gpl --disable-nonfree --enable-version3. These markers support an LGPL candidate, not complete distribution approval."
+        },
+        {
+          "url": "https://api.github.com/repos/media-kit/libmpv-win32-audio-build/git/trees/2023-09-24?recursive=1",
+          "note": "The release tag tree contains only a version marker; it is not the complete corresponding source/build manifest."
+        }
+      ],
+      "blockers": [
+        "Establish and retain complete matching source revisions, modifications, build settings and dependency/relink materials for the static native code inside this exact DLL; a default-branch recipe is insufficient.",
+        "Review actual target packaging, notices, source delivery and library replacement/relink obligations before distribution."
+      ]
+    },
+    {
+      "id": "linux-libmpv-controlled",
+      "platforms": [
+        "linux"
+      ],
+      "version": "Candidate mpv 0.42.0 / FFmpeg 9.0.2; current app otherwise loads system libmpv",
+      "license_expression": null,
+      "review_status": "needs_review",
+      "source": {
+        "repository": "https://github.com/mpv-player/mpv",
+        "revision": "v0.42.0"
+      },
+      "evidence": [
+        {
+          "path": "licensing/linux_audio_sources.json",
+          "sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
+          "note": "Hash-pinned candidate sources. Default distro libmpv is not covered by this recipe."
+        },
+        {
+          "path": "scripts/build_linux_audio.py",
+          "note": "Builds an isolated shared-library candidate with GPL/nonfree/autodetection disabled and no Meson fallback downloads; records native hashes, build configurations, host dependency inventory and PCM smoke evidence.",
+          "sha256": "b5198a1d3c31d057ad2da9ba1f4d80211ee4585f401cb90fdc9d1bec4e29d287"
+        }
+      ],
+      "blockers": [
+        "No controlled Linux candidate has been compiled and validated in this workspace. Source preparation and script tests do not prove native build success.",
+        "Review and pin the complete toolchain/system dependency closure, inspect the final ELF runtime resolution, provide source/notices, and demonstrate replaceable shared-library packaging before approving a release.",
+        "System libmpv discovered by name may be a GPL build; its presence cannot satisfy this component."
+      ]
+    },
+    {
+      "id": "desktop-ffmpeg-external",
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "version": "Optional waveform helper resolved from PATH",
+      "license_expression": null,
+      "review_status": "needs_review",
+      "source": {
+        "repository": "https://ffmpeg.org"
+      },
+      "evidence": [
+        {
+          "path": "lib/services/audio/waveform_service.dart",
+          "note": "The waveform helper executes ffmpeg from PATH; it is not the separately verified FFmpeg code inside libmpv.",
+          "sha256": "5be1f3a560f5cde143764c6869bd4419b21d35f1050e107721782a4e2d20b037"
+        },
+        {
+          "path": "scripts/build_linux_audio.py",
+          "note": "Candidate recipe includes a controlled LGPL FFmpeg CLI for local audio decoding and PCM output; it has not been built here.",
+          "sha256": "b5198a1d3c31d057ad2da9ba1f4d80211ee4585f401cb90fdc9d1bec4e29d287"
+        }
+      ],
+      "blockers": [
+        "For a controlled release, supply and select an audited helper or explicitly exclude optional external ffmpeg from the distribution. A system ffmpeg can be GPL even when libmpv is LGPL.",
+        "Record the exact helper hash, FFmpeg license/configuration and linked dependency closure for any shipped helper; do not bundle CI media-fixture tools automatically."
+      ]
+    },
+    {
+      "id": "linux-mimalloc-2.1.2",
+      "platforms": [
+        "linux"
+      ],
+      "version": "2.1.2",
+      "license_expression": "MIT",
+      "review_status": "needs_review",
+      "artifact": {
+        "url": "https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz",
+        "sha256": "2b1bff6f717f9725c70bf8d79e4786da13de8a270059e4ba0bdd262ae7be46eb",
+        "md5": "5179c8f5cf1237d2300e2d8559a7bc55"
+      },
+      "source": {
+        "repository": "https://github.com/microsoft/mimalloc",
+        "revision": "v2.1.2"
+      },
+      "evidence": [
+        {
+          "url": "https://pub.dev/packages/media_kit_libs_linux/versions/1.2.1",
+          "note": "Installed CMake downloads this source and links mimalloc.o by default. The Linux plugin itself bundles no libmpv."
+        }
+      ],
+      "blockers": [
+        "Include the exact MIT notice and record the actual linked object/source provenance in the final Linux build. A source archive hash does not identify the compiled release object."
+      ]
+    },
+    {
+      "id": "libsmb2-r9",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ],
+      "version": "7.0.0-dev+git20261011.e94eee9",
+      "license_expression": "LGPL-2.1-or-later",
+      "review_status": "needs_review",
+      "artifacts": [
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_android-arm64-v8a.so",
+          "sha256": "d9af2446788f5eb298065312fcb21b11ebd7af83510bbfb0c09d8a6075bb2cf2"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_android-armeabi-v7a.so",
+          "sha256": "54d3e5c85fe824f426da21028500a825d1ee4ae7dd46a2cfc8e74f2e4e603d36"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_android-x86_64.so",
+          "sha256": "e740406fb7e97c2b6aa1eb65864b348a9b720b07c1ff90b75e6e5be12beee205"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_ios.xcframework.zip",
+          "sha256": "a1f0b15bf0f173165e36abcfcea3b944f469fc2c7e3bd2b6d3d16df7a6c38f63"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_linux-aarch64.so",
+          "sha256": "def2a4a9e74f7c5722007e4ef65a2be1f7ff84e49ff13932a344182c9a67718b"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_linux-x86_64.so",
+          "sha256": "b4df2a237b72f50630deade0f3937cdceba4f34efca98126268242fc4c1e99dc"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_macos.xcframework.zip",
+          "sha256": "922defa3509e550d32d66d7e8f84ef95ddf53fb9bb96a8ff85e01537765129e6"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_windows-arm64.dll",
+          "sha256": "48805c5d5af757cb8feb975d21cf3c7388727a0607872504d983aaac940b8a84"
+        },
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_windows-x86_64.dll",
+          "sha256": "62fa825bfb67354c66af9a6be0055506f8c10c16ba97c333d64cdffbec2e046f"
+        }
+      ],
+      "source": {
+        "repository": "https://github.com/ales-drnz/libsmb2-scripts",
+        "revision": "f2695f24c0db8984cd0593738b72004ab48cfe1b",
+        "upstream_revision": "e94eee9465d55ed094ace2c038a8705b4822dada",
+        "upstream_tarball_sha256": "7f347c08c8cb66a94e42d1cac4686e71a093a7022e7e77cb5cc9325b8369b0ce"
+      },
+      "evidence": [
+        {
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/manifest.json",
+          "sha256": "602f58babb062c32adc3a99f2d254cf70625027fbaae000384b7816d54345d2d",
+          "note": "Release manifest pins upstream source, build-script commit, patch list, all nine binaries and LGPL notice hashes. Matches dart_smb2 0.2.1 build-hook SHA-256 pins."
+        },
+        {
+          "url": "https://github.com/ales-drnz/libsmb2-scripts/blob/f2695f24c0db8984cd0593738b72004ab48cfe1b/scripts/build_libsmb2_ios.sh",
+          "note": "Exact r9 recipe builds dynamic Apple frameworks; the newer default branch has different sources/dependencies and is not evidence for r9."
+        },
+        {
+          "url": "https://github.com/ales-drnz/libsmb2-scripts/blob/f2695f24c0db8984cd0593738b72004ab48cfe1b/scripts/shared/_versions.sh",
+          "note": "Exact revision uses e94eee9 upstream; r9 recipe does not include the OpenSSL dependency introduced by later releases."
+        }
+      ],
+      "blockers": [
+        "Finish target-specific LGPL distribution materials and demonstrate the applicable modification/replacement route for the signed Apple artifacts. A dynamic framework and source URL alone do not establish this.",
+        "No final app artifact has been inspected to verify its embedded libsmb2 binary hashes, linkage, and included notices."
+      ]
+    },
+    {
+      "id": "flutter-engine-runtime",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ],
+      "version": "Flutter 3.44.4 / engine a10d8ac38de835021c8d2f920dbf50a920ccc030",
+      "license_expression": null,
+      "review_status": "needs_review",
+      "source": {
+        "repository": "https://github.com/flutter/flutter",
+        "revision": "ad70ec4617166f1c38e5d2bfd388af71fda14f06",
+        "engine_revision": "a10d8ac38de835021c8d2f920dbf50a920ccc030",
+        "engine_content_hash": "700aebeca4c0e610f109a3979ee3e71b69d666bc"
+      },
+      "evidence": [
+        {
+          "url": "https://github.com/flutter/flutter/tree/ad70ec4617166f1c38e5d2bfd388af71fda14f06",
+          "note": "Framework is BSD-3-Clause. The actual engine includes separate third-party components; the resolved sky_engine LICENSE is an aggregate notice, not one BSD grant for every payload."
+        }
+      ],
+      "blockers": [
+        "Review target engine artifacts and their third-party notices; record the actual redistributed binary hashes and license closure. Build tools mentioned in an aggregate notice must not be mistaken for shipped GPL components."
+      ]
+    },
+    {
+      "id": "sqlite3-native-3.52.0",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ],
+      "version": "3.52.0",
+      "license_expression": "blessing",
+      "review_status": "needs_review",
+      "source": {
+        "repository": "https://www.sqlite.org",
+        "revision": "sqlite-3.52.0"
+      },
+      "evidence": [
+        {
+          "url": "https://www.sqlite.org/copyright.html",
+          "note": "SQLite deliverable code is dedicated to the public domain; build-tool licenses do not automatically apply to the compiled library."
+        },
+        {
+          "url": "https://pub.dev/packages/sqlite3_flutter_libs/versions/0.5.42",
+          "note": "Desktop CMake fetches sqlite-autoconf-3520000.tar.gz without URL_HASH; Android uses eu.simonbinder:sqlite3-native-library:3.52.0; Apple Podfile.lock pins sqlite3 3.52.0 and spec checksum a51c07cf16e023d6c48abd5e5791a61a47354921."
+        }
+      ],
+      "blockers": [
+        "Record hashes and build provenance for the actual SQLite sources/binaries on each release target; the package MIT license alone covers the wrapper."
+      ]
+    },
+    {
+      "id": "android-maven-runtime",
+      "platforms": [
+        "android"
+      ],
+      "version": "Media3 1.4.1 plus resolved Gradle runtime closure",
+      "license_expression": null,
+      "review_status": "needs_review",
+      "source": {
+        "repository": "https://github.com/androidx/media",
+        "revision": "1.4.1"
+      },
+      "evidence": [
+        {
+          "url": "https://github.com/androidx/media/tree/1.4.1",
+          "note": "just_audio 0.10.6 declares Media3 ExoPlayer/DASH/HLS/SmoothStreaming 1.4.1. Media3 and its Sonic implementation are Apache-2.0; no FFmpeg extension is declared by the plugin."
+        }
+      ],
+      "blockers": [
+        "The complete Gradle release runtime dependency graph, Maven artifact hashes and transitive licenses have not been captured. Do not treat reviewed Flutter package licenses as certification of native Android dependencies."
+      ]
+    },
+    {
+      "id": "linux-system-libraries",
+      "platforms": [
+        "linux"
+      ],
+      "version": "Host-resolved GTK/GLib/libsecret and compiler runtime",
+      "license_expression": null,
+      "review_status": "needs_review",
+      "evidence": [
+        {
+          "url": "https://docs.gtk.org/gtk3/",
+          "note": "Release workflow installs libgtk-3-dev, libsecret-1-dev and other host dependencies; final transitive ELF linkage has not been inventoried."
+        }
+      ],
+      "blockers": [
+        "Capture exact final ELF dependencies, their versions/licenses and redistribution policy; system libmpv is covered by the separate desktop component."
+      ]
+    },
+    {
+      "id": "filen-system-crypto",
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "version": "Host OpenSSL 3.x or 1.1; Windows bcrypt fallback",
+      "license_expression": null,
+      "review_status": "needs_review",
+      "evidence": [
+        {
+          "path": "packages/filen_client/lib/openssl_aesgcm.dart",
+          "sha256": "48376daf3b1cfc8034f6140b6cd754426b7cba2a395bf3eb19dbe377a4e8f9ae",
+          "note": "Probes system libcrypto names on Windows/Linux. macOS and iOS have no candidates. No OpenSSL binary is vendored by the package."
+        },
+        {
+          "path": "packages/filen_client/lib/aes_gcm_backend.dart",
+          "sha256": "11f5ed015cd38fa288e7886f7ed8a9f3cf8ec27adc82e6f528a804596ac586ff",
+          "note": "Fallback uses Windows system bcrypt or Dart cryptography; Internxt has no corresponding native SDK loader."
+        }
+      ],
+      "blockers": [
+        "The optional externally loaded libcrypto build is not pinned or inspected. Distinguish this host runtime from distributed files, and require reviewed provenance before ever bundling it. For a completely controlled runtime, disable probing and use the reviewed fallback or an approved library build."
+      ]
+    }
+  ]
+}

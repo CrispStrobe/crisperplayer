@@ -8,7 +8,7 @@ device release.
 
 | Check | Result |
 | --- | --- |
-| Combined feature and regression command below | **174 passed, 1 optional screenshot test skipped** |
+| Combined feature and regression command below, rerun with Apple processing | **181 passed, 1 optional screenshot test skipped** |
 | Separate journal UI run with capture enabled | **10 passed**, including actual widget screenshots |
 | `flutter analyze --no-pub` | No issues found |
 | `dart build cli -o build/cli` | Compiled; executable help lists journal, map and trail commands |
@@ -21,6 +21,7 @@ The combined command was:
 
 ```sh
 flutter test --no-pub \
+  test/apple_speed_processing_test.dart \
   test/listening_journal_service_test.dart \
   test/listening_journal_playback_test.dart \
   test/listening_journal_cli_test.dart \
@@ -63,6 +64,12 @@ entry, decimal commas, 0.05× increments, per-book persistence, external control
 updates, failed backend requests, stale-book controls and the pending-restart
 selection. Pinned native package sources were inspected to identify Android,
 Apple and desktop routes; see [speed processing](SPEED_PROCESSING.md).
+The Apple tests exercise actual Dart player initialization and method-channel
+serialization, immutable mode selection after native-player recreation,
+unchanged buffering fields, and the unaffected Android configuration path.
+UI tests cover both Apple platforms, active versus pending mode, corrupted
+preferences and invalid values. Native AVPlayerItem XCTest results are a
+separate Apple CI gate, not part of the Linux Flutter test count.
 
 ## CI and practical limits
 
@@ -76,7 +83,7 @@ for later implementation and documentation commits.
 The earlier full local suite and Chromium sandbox limits remain described in
 [Return Trail validation](RETURN_TRAIL_VALIDATION.md). The final combined suite
 above completes successfully in this environment. Counts from earlier targeted
-runs overlap and must not be added to the 174 result.
+runs overlap and must not be added to the 181 result.
 
 No native-device release build, real-decoder listening acceptance, controlled
 audio comparison or CPU/battery benchmark was performed here. Before release,

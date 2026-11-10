@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "unverified_build_candidate",
+  "note": "Sources are hash-pinned. Host toolchain and system dependency closure are not yet release-reviewed; this file does not approve distribution.",
+  "sources": [
+    {
+      "id": "ffmpeg",
+      "version": "9.0.2",
+      "url": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz",
+      "sha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e",
+      "archive": "ffmpeg-9.0.2.tar.xz",
+      "repository": "https://git.ffmpeg.org/ffmpeg.git",
+      "revision": "n9.0.2",
+      "license_expression": "LGPL-2.1-or-later",
+      "size_bytes": 12040788
+    },
+    {
+      "id": "mpv",
+      "version": "0.42.0",
+      "url": "https://api.github.com/repos/mpv-player/mpv/tarball/v0.42.0",
+      "sha256": "8e5f930836acbc702c0057cbe0674d821ad0bc9bedb31b05eb034c4e4af13cdc",
+      "archive": "mpv-0.42.0.tar.gz",
+      "repository": "https://github.com/mpv-player/mpv",
+      "revision": "v0.42.0",
+      "license_expression": "LGPL-2.1-or-later",
+      "size_bytes": 7515781
+    },
+    {
+      "id": "libplacebo",
+      "version": "7.387.0",
+      "url": "https://api.github.com/repos/haasn/libplacebo/tarball/v7.387.0",
+      "sha256": "ac20b4897e231358da9a19d7136eb9f375cda820b29ee4a58875e1f6abe79ef4",
+      "archive": "libplacebo-7.387.0.tar.gz",
+      "repository": "https://github.com/haasn/libplacebo",
+      "revision": "v7.387.0",
+      "license_expression": "LGPL-2.1-or-later",
+      "size_bytes": 972939
+    },
+    {
+      "id": "libass",
+      "version": "0.17.5",
+      "url": "https://api.github.com/repos/libass/libass/tarball/0.17.5",
+      "sha256": "960ce5c828c202b406ed06fcef6130e3a5f4c3a12639cdac5f34507ed526a89a",
+      "archive": "libass-0.17.5.tar.gz",
+      "repository": "https://github.com/libass/libass",
+      "revision": "0.17.5",
+      "license_expression": "ISC",
+      "size_bytes": 351566
+    }
+  ]
+}

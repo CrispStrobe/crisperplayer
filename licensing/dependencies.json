@@ -1,0 +1,4273 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-11-10",
+  "root_package": "crisperplayer",
+  "root_pubspec_sha256": "7d4f854488a6698f557d9315730ebb9e597911d8ebd375693f683c40d835baa6",
+  "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test.",
+  "sdk": {
+    "flutter_version": "3.44.4",
+    "dart_version": "3.12.2",
+    "frameworkRevision": "ad70ec4617166f1c38e5d2bfd388af71fda14f06",
+    "engineRevision": "a10d8ac38de835021c8d2f920dbf50a920ccc030",
+    "engineContentHash": "700aebeca4c0e610f109a3979ee3e71b69d666bc"
+  },
+  "packages": [
+    {
+      "name": "android_file_picker",
+      "version": "1.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "android_file_picker",
+        "url": "https://pub.dev",
+        "sha256": "014c74ab48d452c3252465682375a7fe6ddf56abb908ec361f207a3c4ffb2444"
+      },
+      "pubspec_sha256": "d41419e92f00a511fd24a03fa7a320c5e63866b464e8178ee7a83408032339ce",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "android_file_picker",
+          "path": "LICENSE",
+          "sha256": "12f7222de745bab3710ba88b59f33484ca423aa5e1deac9e56ed946706d5abab"
+        }
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "4.5.2",
+      "source": {
+        "type": "hosted",
+        "name": "archive",
+        "url": "https://pub.dev",
+        "sha256": "0d58d1fa1fddf6588251ccf2819f3fb3b6d0452c1b2813ac7413a05592bfbefe"
+      },
+      "pubspec_sha256": "41d3e0ab3b8e8e07d913a2e3a179348e44f149bd46a84f44194e4ff164a75980",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "archive",
+          "path": "LICENSE",
+          "sha256": "32f97d332eae7453ec4079858e6f1d74be85beeb6d3881068b47d02a379cccea"
+        }
+      ]
+    },
+    {
+      "name": "args",
+      "version": "2.7.0",
+      "source": {
+        "type": "hosted",
+        "name": "args",
+        "url": "https://pub.dev",
+        "sha256": "d0481093c50b1da8910eb0bb301626d4d8eb7284aa739614d2b394ee09e3ea04"
+      },
+      "pubspec_sha256": "2b4cd847855bfce84a3dabae75c216974804e068c1ed0a5d663abb7d63006303",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "args",
+          "path": "LICENSE",
+          "sha256": "dfb09c74e29386cd3e2719f32d4995d59526179753931d31840757c77fbf2791"
+        }
+      ]
+    },
+    {
+      "name": "asn1lib",
+      "version": "1.6.5",
+      "source": {
+        "type": "hosted",
+        "name": "asn1lib",
+        "url": "https://pub.dev",
+        "sha256": "9a8f69025044eb466b9b60ef3bc3ac99b4dc6c158ae9c56d25eeccf5bc56d024"
+      },
+      "pubspec_sha256": "9d68fc4f47a567aa7d4084cb0157515dfc0e10260af563303eaaa274aff09649",
+      "license_expression": "BSD-2-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "asn1lib",
+          "path": "LICENSE",
+          "sha256": "b0db8d3a93ea33f852d2b6dfa9c38fc57d33a51c31b47ca528df6d02700f2a42"
+        }
+      ],
+      "notes": [
+        "The operative LICENSE body contains the two BSD redistribution conditions, while its opening URL names BSD-3-Clause. Both are allowed by policy; retain the exact file and do not infer additional rights from the URL."
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.1",
+      "source": {
+        "type": "hosted",
+        "name": "async",
+        "url": "https://pub.dev",
+        "sha256": "e2eb0491ba5ddb6177742d2da23904574082139b07c1e33b8503b9f46f3e1a37"
+      },
+      "pubspec_sha256": "e3e95b194e5b58db0e6a2649c4ad4957a92027d64a38cfa0de53a225601c030c",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "async",
+          "path": "LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+        }
+      ]
+    },
+    {
+      "name": "audio_service",
+      "version": "0.18.19",
+      "source": {
+        "type": "hosted",
+        "name": "audio_service",
+        "url": "https://pub.dev",
+        "sha256": "95f3267f3449eb5cf71c8fcf1d556f57af1e898e2dc5815fb168d1843653edb7"
+      },
+      "pubspec_sha256": "9a4d230fb2e0ab22bd0a887056b3896831897a45d4ffc22e5f48bca5c52a60ed",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "audio_service",
+          "path": "LICENSE",
+          "sha256": "9cad5d44e82dccb45ceb822e16932e3a127db1960dc68b0e49a33ba7ab62477f"
+        }
+      ]
+    },
+    {
+      "name": "audio_service_platform_interface",
+      "version": "0.1.3",
+      "source": {
+        "type": "hosted",
+        "name": "audio_service_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "6283782851f6c8b501b60904a32fc7199dc631172da0629d7301e66f672ab777"
+      },
+      "pubspec_sha256": "123c136b4608d5ec0369005908a290d9041eacf02bb5efb1de65b6588dc42158",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "audio_service_platform_interface",
+          "path": "LICENSE",
+          "sha256": "160f8768e3bbab986314ac5cc28043bd49c131809c63b34ddc1c4511500aac84"
+        }
+      ]
+    },
+    {
+      "name": "audio_service_web",
+      "version": "0.1.4",
+      "source": {
+        "type": "hosted",
+        "name": "audio_service_web",
+        "url": "https://pub.dev",
+        "sha256": "b8ea9243201ee53383157fbccf13d5d2a866b5dda922ec19d866d1d5d70424df"
+      },
+      "pubspec_sha256": "1e33dbe1ca4a120e6c87db848f0a836991a618a6371c699f779c0c16763aaa8f",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "audio_service_web",
+          "path": "LICENSE",
+          "sha256": "ec9b14bdd5e74617c4c51770cb9df4cea156a82e05867df7ae36049f252f31a9"
+        }
+      ]
+    },
+    {
+      "name": "audio_session",
+      "version": "0.2.4",
+      "source": {
+        "type": "hosted",
+        "name": "audio_session",
+        "url": "https://pub.dev",
+        "sha256": "f9e7711a0e24ca8b40f5d7ac374c3c6e55016f3157912badd18199cdbbca5c4d"
+      },
+      "pubspec_sha256": "79903e1bbc0beb2437661debdea2f84d8e9cf6e3a6977d7220e4074caee94366",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "audio_session",
+          "path": "LICENSE",
+          "sha256": "2568490c678ba27cc8a405238637c4ba76adc632232f05dc1c36cbf59381dba4"
+        }
+      ]
+    },
+    {
+      "name": "bip39",
+      "version": "1.0.6",
+      "source": {
+        "type": "hosted",
+        "name": "bip39",
+        "url": "https://pub.dev",
+        "sha256": "de1ee27ebe7d96b84bb3a04a4132a0a3007dcdd5ad27dd14aa87a29d97c45edc"
+      },
+      "pubspec_sha256": "8b650816a035955d99d80a97ababd23c210f38e8ea2f1787f40e8808615f9ab0",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "bip39",
+          "path": "LICENSE",
+          "sha256": "0d8c04b9c4cbf1763213fdc448a5c69b943f110c3f7bfa2459799d142b3670d5"
+        }
+      ]
+    },
+    {
+      "name": "boolean_selector",
+      "version": "2.1.2",
+      "source": {
+        "type": "hosted",
+        "name": "boolean_selector",
+        "url": "https://pub.dev",
+        "sha256": "8aab1771e1243a5063b8b0ff68042d67334e3feab9e95b9490f9a6ebf73b42ea"
+      },
+      "pubspec_sha256": "694e93a3e5cb9bea0868a4873f8ea9dd3856e00e3629ee7488cbbec42c41bc5c",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "boolean_selector",
+          "path": "LICENSE",
+          "sha256": "b71519245009a3b8f126196a5408ec031e216e8e0d985085958c6543f82a8a2a"
+        }
+      ]
+    },
+    {
+      "name": "characters",
+      "version": "1.4.1",
+      "source": {
+        "type": "hosted",
+        "name": "characters",
+        "url": "https://pub.dev",
+        "sha256": "faf38497bda5ead2a8c7615f4f7939df04333478bf32e4173fcb06d428b5716b"
+      },
+      "pubspec_sha256": "5cca9e9296ee6f219922c5e9049b71559b46ac45095b10de9afc57da2c12f951",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "characters",
+          "path": "LICENSE",
+          "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744"
+        }
+      ]
+    },
+    {
+      "name": "clock",
+      "version": "1.1.2",
+      "source": {
+        "type": "hosted",
+        "name": "clock",
+        "url": "https://pub.dev",
+        "sha256": "fddb70d9b5277016c77a80201021d40a2247104d9f4aa7bab7157b7e3f05b84b"
+      },
+      "pubspec_sha256": "0089e7447cd2f74865403d69b5fab16fefa54fa3a04b9453a3c23c114752e35e",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "clock",
+          "path": "LICENSE",
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+        }
+      ]
+    },
+    {
+      "name": "code_assets",
+      "version": "2.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "code_assets",
+        "url": "https://pub.dev",
+        "sha256": "828110d598123b5ea96c00c9f3c72105bf79f8ee36c20a39b26209ade421ec57"
+      },
+      "pubspec_sha256": "5f78cf7b46d6fcc5d523479f33fcbada0b613be76b7dc87746a0ed5fafcc4599",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "code_assets",
+          "path": "LICENSE",
+          "sha256": "21ae23b0b9ff67a2dc75ab085d1e8db8ac548c5faf370af17f28dd2ef3b52b7b"
+        }
+      ]
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "source": {
+        "type": "hosted",
+        "name": "collection",
+        "url": "https://pub.dev",
+        "sha256": "2f5709ae4d3d59dd8f7cd309b4e023046b57d8a6c82130785d2b0e5868084e76"
+      },
+      "pubspec_sha256": "0558412e31aacf6a97e6b226e0f9f6b10ab5ae95c57a8a562ff579ee1609f913",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "collection",
+          "path": "LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+        }
+      ]
+    },
+    {
+      "name": "convert",
+      "version": "3.1.2",
+      "source": {
+        "type": "hosted",
+        "name": "convert",
+        "url": "https://pub.dev",
+        "sha256": "b30acd5944035672bc15c6b7a8b47d773e41e2f17de064350988c5d02adb1c68"
+      },
+      "pubspec_sha256": "2970044ca804d99db9fa9b5bdf785a2c95e229d7b919d4bb9f4428f857bc60d2",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "convert",
+          "path": "LICENSE",
+          "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+        }
+      ]
+    },
+    {
+      "name": "crisp_storage",
+      "version": "0.1.0",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/CrispStrobe/CrispCloud",
+        "path": "packages/crisp_storage",
+        "resolved-ref": "ac90899f8110dcb266d122208b3b3a879a257eee"
+      },
+      "pubspec_sha256": "1cbcf54b572f78e8523ca52d2f34ce6a0a0c96a16d3a2b3a850261856a573f30",
+      "license_expression": "AGPL-3.0-only",
+      "review_status": "blocked",
+      "license_files": [
+        {
+          "package": "crisp_storage",
+          "path": "LICENSE",
+          "sha256": "8c6b08692c14d86683090e86598393e7ee8e10284a784be842764eea83d25d3d"
+        }
+      ],
+      "notes": [
+        "Current declared AGPL v3 conflicts with the requested distribution policy. No relicensing authority is assumed."
+      ]
+    },
+    {
+      "name": "crisperplayer",
+      "version": "0.1.0+19",
+      "source": {
+        "type": "root"
+      },
+      "pubspec_sha256": "7d4f854488a6698f557d9315730ebb9e597911d8ebd375693f683c40d835baa6",
+      "license_expression": "AGPL-3.0-only",
+      "review_status": "blocked",
+      "license_files": [
+        {
+          "package": "crisperplayer",
+          "path": "LICENSE",
+          "sha256": "372e65ffd4756f00b2092d7ce5716e3bae2c691009a76eeebb3557375a9702d1"
+        }
+      ],
+      "notes": [
+        "Current declared AGPL v3 conflicts with the requested distribution policy. No relicensing authority is assumed."
+      ]
+    },
+    {
+      "name": "cross_file",
+      "version": "0.3.5+5",
+      "source": {
+        "type": "hosted",
+        "name": "cross_file",
+        "url": "https://pub.dev",
+        "sha256": "f141ea4f277af142a0356955707f6556f37b03947d39d55585981a06ca437bd6"
+      },
+      "pubspec_sha256": "61cc00bcb8abb3172b541ca572c2ace70f65552c7ee1659e67723c6d0022a29b",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "cross_file",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.7",
+      "source": {
+        "type": "hosted",
+        "name": "crypto",
+        "url": "https://pub.dev",
+        "sha256": "c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf"
+      },
+      "pubspec_sha256": "7e80694c991709360b161f4af801646902127f120b864286dbc413e4f667f712",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "crypto",
+          "path": "LICENSE",
+          "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+        }
+      ]
+    },
+    {
+      "name": "cryptography",
+      "version": "2.9.0",
+      "source": {
+        "type": "hosted",
+        "name": "cryptography",
+        "url": "https://pub.dev",
+        "sha256": "3eda3029d34ec9095a27a198ac9785630fe525c0eb6a49f3d575272f8e792ef0"
+      },
+      "pubspec_sha256": "2769e6bb12719e2f3f5b36b9adf4efebd7a6c9da6856f6eaf2b19bacc77821a0",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "cryptography",
+          "path": "LICENSE",
+          "sha256": "59899c6091b540582ed617e8eeaac4919dc985ccfc35459ee9752b699be5205b"
+        }
+      ]
+    },
+    {
+      "name": "cupertino_icons",
+      "version": "1.0.9",
+      "source": {
+        "type": "hosted",
+        "name": "cupertino_icons",
+        "url": "https://pub.dev",
+        "sha256": "41e005c33bd814be4d3096aff55b1908d419fde52ca656c8c47719ec745873cd"
+      },
+      "pubspec_sha256": "fb4f0e2c9ed9510cb9f1e85c6eca81f09a75fc53993ea26d1f8c37f2b7e746db",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "cupertino_icons",
+          "path": "LICENSE",
+          "sha256": "310d6ab6483280280c9db122bded0a63c09558bc5743720f61dbcbb494db370a"
+        }
+      ]
+    },
+    {
+      "name": "dart_pg",
+      "version": "2.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "dart_pg",
+        "url": "https://pub.dev",
+        "sha256": "9f4f5a41c8282ac5f6a32e816a1fe4a5f2d54ec6527b57ce11d1f328140eda0c"
+      },
+      "pubspec_sha256": "897c2e22f0974aeae4db3319667478be38a0cf9037d3bbc12161d9e6aaa1c3d7",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "dart_pg",
+          "path": "LICENSE",
+          "sha256": "c7eee2d195eb4e195ae0c8c7ea6a8fae6822f7f30e0d58770026fcbb030111c7"
+        }
+      ]
+    },
+    {
+      "name": "dart_smb2",
+      "version": "0.2.1",
+      "source": {
+        "type": "hosted",
+        "name": "dart_smb2",
+        "url": "https://pub.dev",
+        "sha256": "ba54193d234f49a92e54222e5300bc4c901063457e8af2abfb4ac3153ac923eb"
+      },
+      "pubspec_sha256": "ab47437c2936a804c0337026e3c59483e82238ebc56eb0c7b2197bcdae388c21",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "dart_smb2",
+          "path": "LICENSE",
+          "sha256": "3d980201ca4f6c78fb1a79e85485cd956151b4fdc1275ef196370d97f1b61e6e"
+        }
+      ],
+      "notes": [
+        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
+      ]
+    },
+    {
+      "name": "dartssh2",
+      "version": "4.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "dartssh2",
+        "url": "https://pub.dev",
+        "sha256": "39359aceafcf5940b868249e3c9c6d86e4e0f989eec7417d033c943157c84c51"
+      },
+      "pubspec_sha256": "0697bd3a1182365cc971878538e805e5a2ce4f7aa5a92c819fc9ff3f5b97c6c1",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "dartssh2",
+          "path": "LICENSE",
+          "sha256": "465afc358e3c3520109a7fd728d333e3101c71ad32d143181313bf406232808b"
+        }
+      ]
+    },
+    {
+      "name": "dbus",
+      "version": "0.7.15",
+      "source": {
+        "type": "hosted",
+        "name": "dbus",
+        "url": "https://pub.dev",
+        "sha256": "a48d5da28e89bd02196e80d81ed8d7954923d00a0f4a68cc20b575038f023383"
+      },
+      "pubspec_sha256": "5279ec60a7f3c367b2897081e2b14118975fe3715480cd528480ff58138e3f1e",
+      "license_expression": "MPL-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "dbus",
+          "path": "LICENSE",
+          "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+        }
+      ],
+      "notes": [
+        "File-level source and notice obligations remain; this package-level review does not approve separate native binaries."
+      ]
+    },
+    {
+      "name": "device_info_plus",
+      "version": "13.3.0",
+      "source": {
+        "type": "hosted",
+        "name": "device_info_plus",
+        "url": "https://pub.dev",
+        "sha256": "ade1c36f8355d6284c98e4a47992ea263887ed3d1acb281e37635dd45f04c4aa"
+      },
+      "pubspec_sha256": "7105d548bcb5a05f96511602de74151ae9542838337df77b7dba7a3dfff6a00e",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "device_info_plus",
+          "path": "LICENSE",
+          "sha256": "3b38d48befd0af70b892e13d10c9e34679416c24a9277f962629951c64d71f4c"
+        }
+      ]
+    },
+    {
+      "name": "device_info_plus_platform_interface",
+      "version": "8.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "device_info_plus_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "04b173a92e2d9161dfead145667037c8d834db725ce2e7b942bfe18fd2f45a46"
+      },
+      "pubspec_sha256": "1d5dac542187a949c35ac2f6edc59d6cd8540251ba5d6822f2678a4052a4b10a",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "device_info_plus_platform_interface",
+          "path": "LICENSE",
+          "sha256": "3b38d48befd0af70b892e13d10c9e34679416c24a9277f962629951c64d71f4c"
+        }
+      ]
+    },
+    {
+      "name": "drift",
+      "version": "2.31.0",
+      "source": {
+        "type": "hosted",
+        "name": "drift",
+        "url": "https://pub.dev",
+        "sha256": "970cd188fddb111b26ea6a9b07a62bf5c2432d74147b8122c67044ae3b97e99e"
+      },
+      "pubspec_sha256": "827ea4515fa5759df1cd6a3c0a09453b1e7d96f0e46d2c98966e9e2c14496c7d",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "drift",
+          "path": "LICENSE",
+          "sha256": "31f84e4edff98f0238a5bef1c2ce754e401fbab149782f0ff4dc9b68fd086f75"
+        }
+      ]
+    },
+    {
+      "name": "drift_flutter",
+      "version": "0.2.8",
+      "source": {
+        "type": "hosted",
+        "name": "drift_flutter",
+        "url": "https://pub.dev",
+        "sha256": "c07120854742a0cae2f7501a0da02493addde550db6641d284983c08762e60a7"
+      },
+      "pubspec_sha256": "9abfe25c7a6b792f2ef75f7a50a0d112c5f98e9f2abc67ef7536276133b1caa5",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "drift_flutter",
+          "path": "LICENSE",
+          "sha256": "7cf86321e740e4ff631ab6d00962c2d65fa85e4163bdd89334f1d22354ab0306"
+        }
+      ]
+    },
+    {
+      "name": "fake_async",
+      "version": "1.3.3",
+      "source": {
+        "type": "hosted",
+        "name": "fake_async",
+        "url": "https://pub.dev",
+        "sha256": "5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44"
+      },
+      "pubspec_sha256": "e327702810254b2950d552c0cc5d0174fcd287a9b70ff4aa55d9fb5dd477e655",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "fake_async",
+          "path": "LICENSE",
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+        }
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "ffi",
+        "url": "https://pub.dev",
+        "sha256": "6d7fd89431262d8f3125e81b50d3847a091d846eafcd4fdb88dd06f36d705a45"
+      },
+      "pubspec_sha256": "00eb29c9e0d66e1696dd41772e157c8ec4bcc6454ee7ab426128ec270722587b",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "ffi",
+          "path": "LICENSE",
+          "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744"
+        }
+      ]
+    },
+    {
+      "name": "ffi_leak_tracker",
+      "version": "0.1.2",
+      "source": {
+        "type": "hosted",
+        "name": "ffi_leak_tracker",
+        "url": "https://pub.dev",
+        "sha256": "4093d4ef9ca06ffe2786e73bfb25e22aa92112b9bb4ec941f11e3e6b61489a97"
+      },
+      "pubspec_sha256": "e8e6a0bfda685ebcb5547464889a8b0b735718be5d5a72b9bc7bda731f106839",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "ffi_leak_tracker",
+          "path": "LICENSE",
+          "sha256": "332f290333e64ed007b4f59aeeebd8fd3ceaadfbfa226a6cf2a3ab1583281624"
+        }
+      ]
+    },
+    {
+      "name": "file",
+      "version": "7.0.1",
+      "source": {
+        "type": "hosted",
+        "name": "file",
+        "url": "https://pub.dev",
+        "sha256": "a3b4f84adafef897088c160faf7dfffb7696046cb13ae90b508c2cbc95d3b8d4"
+      },
+      "pubspec_sha256": "2431ce26b72e9f4000cda857183316cf98fcdc5f1c6143ef97ca54a333500d82",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "file",
+          "path": "LICENSE",
+          "sha256": "f6df86b1412172537273e8e80ee2fb8a66aa7307ce0b39ea5ddab47ca41b8c49"
+        }
+      ]
+    },
+    {
+      "name": "file_picker",
+      "version": "12.3.0",
+      "source": {
+        "type": "hosted",
+        "name": "file_picker",
+        "url": "https://pub.dev",
+        "sha256": "9be6aac79508dbcf8dac80a4fb20f27ce6f910837ca27e3670b9295995cc0110"
+      },
+      "pubspec_sha256": "d9c0c92c773403084559d43a5dcb89a6a6bba9a437a059aa6b0f44ca3dda97a2",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "file_picker",
+          "path": "LICENSE",
+          "sha256": "6278994817bd65fa32404e53c3a62a09d824d3f9a71f7fadcaca3e4f02641d66"
+        }
+      ]
+    },
+    {
+      "name": "file_picker_darwin",
+      "version": "1.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "file_picker_darwin",
+        "url": "https://pub.dev",
+        "sha256": "59fa5394cfa5b6dc8bf491630cb17077b77b844adbb840df371e7be5355d6cf6"
+      },
+      "pubspec_sha256": "1819c77ebd5719319b8622411be87c86daa3fc6bba56fee5444dd388367a25c8",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "file_picker_darwin",
+          "path": "LICENSE",
+          "sha256": "12f7222de745bab3710ba88b59f33484ca423aa5e1deac9e56ed946706d5abab"
+        }
+      ]
+    },
+    {
+      "name": "file_picker_linux",
+      "version": "1.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "file_picker_linux",
+        "url": "https://pub.dev",
+        "sha256": "bd52ff1e0048f29df95f913c55ad2991c72791d93e6c42241912c4bdee946cb9"
+      },
+      "pubspec_sha256": "76b395df655790af65e1b17442fd21cec1261aefd07b14beeae309defbe2b3b1",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "file_picker_linux",
+          "path": "LICENSE",
+          "sha256": "12f7222de745bab3710ba88b59f33484ca423aa5e1deac9e56ed946706d5abab"
+        }
+      ]
+    },
+    {
+      "name": "file_picker_platform_interface",
+      "version": "3.4.0",
+      "source": {
+        "type": "hosted",
+        "name": "file_picker_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "0355558fd9af6da499d18e333d6b3beb44b0bf19e00933fccd15d18eb8d0e9ca"
+      },
+      "pubspec_sha256": "c6d42fd0a7694d2ccd4b77f5738491f189339ef1d0b7ecbfbf5876da4dc8ae1b",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "file_picker_platform_interface",
+          "path": "LICENSE",
+          "sha256": "12f7222de745bab3710ba88b59f33484ca423aa5e1deac9e56ed946706d5abab"
+        }
+      ]
+    },
+    {
+      "name": "file_picker_web",
+      "version": "3.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "file_picker_web",
+        "url": "https://pub.dev",
+        "sha256": "935560a9d29fa6f006f2855addebb88e88d438e13627d4cc24187033c106f227"
+      },
+      "pubspec_sha256": "a1dea82e63884a2b02e37017db229a6fde4f2da4b582e7d7d9dea5d6ce1ce070",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "file_picker_web",
+          "path": "LICENSE",
+          "sha256": "12f7222de745bab3710ba88b59f33484ca423aa5e1deac9e56ed946706d5abab"
+        }
+      ]
+    },
+    {
+      "name": "filen_client",
+      "version": "0.2.2",
+      "source": {
+        "type": "path",
+        "path": "packages/filen_client",
+        "relative": true
+      },
+      "pubspec_sha256": "8c4db6d3a66c83ef51a0e4d9dd99e6d9061c6869d7e3cc25eb021517b1bac31f",
+      "license_expression": "MPL-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "filen_client",
+          "path": "LICENSE",
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04"
+        }
+      ],
+      "source_tree_sha256": "b71e6d11f8040111ea754c2b45a552800762e774a303b5d99cf1530a1cbb64b7",
+      "notes": [
+        "File-level source and notice obligations remain; this package-level review does not approve separate native binaries.",
+        "Local macOS loader patch retained under MPL-2.0. Linux/Windows optionally load OS OpenSSL; Windows can use system bcrypt. Apple uses the Dart cryptography fallback. No crypto native binary is vendored by this package."
+      ]
+    },
+    {
+      "name": "fixnum",
+      "version": "1.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "fixnum",
+        "url": "https://pub.dev",
+        "sha256": "b6dc7065e46c974bc7c5f143080a6764ec7a4be6da1285ececdc37be96de53be"
+      },
+      "pubspec_sha256": "0e4778875281ea0265bb1b00aa809ff5ac9fbd089e2fa2a0f23750c304d4ee3c",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "fixnum",
+          "path": "LICENSE",
+          "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+        }
+      ]
+    },
+    {
+      "name": "flutter",
+      "version": "0.0.0",
+      "source": {
+        "type": "sdk",
+        "sdk": "flutter"
+      },
+      "pubspec_sha256": "c0e57dc9aee87273c1ff2cd3778959cb57eb5daa7a89f5f8568ab9e8ccd1cd4d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter",
+          "path": "LICENSE",
+          "sha256": "a598db94b6290ffbe10b5ecf911057b6a943351c727fdda9e5f2891d68700a20"
+        }
+      ]
+    },
+    {
+      "name": "flutter_cache_manager",
+      "version": "3.4.5",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_cache_manager",
+        "url": "https://pub.dev",
+        "sha256": "f94fc6f5480977e3eb7b622ed488f671ba96c971bd0e274e6bd0f0ba9b044816"
+      },
+      "pubspec_sha256": "8826eae2089d004b7693d76adaff370d6c8cf4a311b72d01fe799a80cfabbcf8",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_cache_manager",
+          "path": "LICENSE",
+          "sha256": "c18c2b23af83fdb3dc1c857b1df7561f7807fc3667a01d9475878733258d840e"
+        }
+      ]
+    },
+    {
+      "name": "flutter_localizations",
+      "version": "0.0.0",
+      "source": {
+        "type": "sdk",
+        "sdk": "flutter"
+      },
+      "pubspec_sha256": "33020ffcf129cbcdcb98ea0e206b82dd495880980dc6652e3397cfdf872829c2",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter",
+          "path": "LICENSE",
+          "sha256": "a598db94b6290ffbe10b5ecf911057b6a943351c727fdda9e5f2891d68700a20"
+        }
+      ],
+      "notes": [
+        "Flutter SDK package inherits the reviewed Flutter framework BSD license; engine binaries are separately unreviewed."
+      ]
+    },
+    {
+      "name": "flutter_riverpod",
+      "version": "3.4.3",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_riverpod",
+        "url": "https://pub.dev",
+        "sha256": "2b7f9d2a3c730ac1a98221b420cef966b990fca7ab546ede324642ca57a533e3"
+      },
+      "pubspec_sha256": "82e873f4099c6103065d648eb05b04d362427ca9db2bfb5b9383d5a8aba05488",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_riverpod",
+          "path": "LICENSE",
+          "sha256": "757d9c09a9a2a701144328c0fd596234ea287ff62952b39cd22f9ad4caed1171"
+        }
+      ]
+    },
+    {
+      "name": "flutter_secure_storage",
+      "version": "11.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_secure_storage",
+        "url": "https://pub.dev",
+        "sha256": "d4e1fb6b2cb524868929e78dc0282fa000554b22060fb53789dc481c9fc95bb8"
+      },
+      "pubspec_sha256": "c759dcbd1c4ccd4cde81f6548b2f395a418896bb52c6ddd3494970a147645912",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_secure_storage",
+          "path": "LICENSE",
+          "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+        }
+      ]
+    },
+    {
+      "name": "flutter_secure_storage_darwin",
+      "version": "0.4.3",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_secure_storage_darwin",
+        "url": "https://pub.dev",
+        "sha256": "a031ceac9b070e62ef183cd7f7d1a8798ebde402d5049f0fe6eb3a51bd797a21"
+      },
+      "pubspec_sha256": "66b8912928ba3a6219d39628942f1dbb676ca26a4452e57b46b1cfe4eb72ce83",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_secure_storage_darwin",
+          "path": "LICENSE",
+          "sha256": "3754c516086c62307896512b68024837bee5d2bea42a55cfd03f7448b92b06c8"
+        }
+      ]
+    },
+    {
+      "name": "flutter_secure_storage_linux",
+      "version": "3.0.3",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_secure_storage_linux",
+        "url": "https://pub.dev",
+        "sha256": "caa75bd78f017422912e3a904933113b2428eb79f981ac37acd2dd2a700458ea"
+      },
+      "pubspec_sha256": "6d69e18bebc245729537b15346d8ed18e2a8770015c88c776ba3e83d3da69d5d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_secure_storage_linux",
+          "path": "LICENSE",
+          "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+        }
+      ]
+    },
+    {
+      "name": "flutter_secure_storage_platform_interface",
+      "version": "2.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_secure_storage_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "64951127f001f546891c86f414972bf49ef2c4c8a4c92c65f5790cc0c9100045"
+      },
+      "pubspec_sha256": "c9dfbcf2381ce140db24adf8173c903e683afb641e407757e57eb5be60336152",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_secure_storage_platform_interface",
+          "path": "LICENSE",
+          "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+        }
+      ]
+    },
+    {
+      "name": "flutter_secure_storage_web",
+      "version": "2.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_secure_storage_web",
+        "url": "https://pub.dev",
+        "sha256": "073a62b3aeb866ab4ce795f960413948e51e5a42a9b0c8333b6daf5bb3208a1c"
+      },
+      "pubspec_sha256": "8d5c9f7ea65f4fe6d29384e89b269f2f9dbe7fd38d6eabcd94ed481ebd17481a",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_secure_storage_web",
+          "path": "LICENSE",
+          "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+        }
+      ]
+    },
+    {
+      "name": "flutter_secure_storage_windows",
+      "version": "4.2.2",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_secure_storage_windows",
+        "url": "https://pub.dev",
+        "sha256": "471951813a97006d899db4948acc654a4f28c440083ea08178935ce20b173ec1"
+      },
+      "pubspec_sha256": "1952cbb0d75442f28fee1706fbac2b272157b2670284043eec7fc5a6b12f0ece",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_secure_storage_windows",
+          "path": "LICENSE",
+          "sha256": "55dafb084270616f95b9bea53654adda8bdcad95c022a83c4cf8769073f829fa"
+        }
+      ]
+    },
+    {
+      "name": "flutter_test",
+      "version": "0.0.0",
+      "source": {
+        "type": "sdk",
+        "sdk": "flutter"
+      },
+      "pubspec_sha256": "53938ed63f88cd504289e12c326e989fe6dbe127204965f35e340be3618f5543",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter",
+          "path": "LICENSE",
+          "sha256": "a598db94b6290ffbe10b5ecf911057b6a943351c727fdda9e5f2891d68700a20"
+        }
+      ],
+      "notes": [
+        "Flutter SDK package inherits the reviewed Flutter framework BSD license; engine binaries are separately unreviewed."
+      ]
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "source": {
+        "type": "sdk",
+        "sdk": "flutter"
+      },
+      "pubspec_sha256": "075ecb771049de4c89a3a02734f9c95041d2dc3a03c7ecc91325b738914d0bff",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter",
+          "path": "LICENSE",
+          "sha256": "a598db94b6290ffbe10b5ecf911057b6a943351c727fdda9e5f2891d68700a20"
+        }
+      ],
+      "notes": [
+        "Flutter SDK package inherits the reviewed Flutter framework BSD license; engine binaries are separately unreviewed."
+      ]
+    },
+    {
+      "name": "glob",
+      "version": "2.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "glob",
+        "url": "https://pub.dev",
+        "sha256": "218aeb56050c714f62a3182775320dfa04602b55074873e24e31bbd39bda96fb"
+      },
+      "pubspec_sha256": "2500027a5a72ef32e877538c2656be680df534c0cc1a25122a80c14118dca72c",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "glob",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "go_router",
+      "version": "17.5.0",
+      "source": {
+        "type": "hosted",
+        "name": "go_router",
+        "url": "https://pub.dev",
+        "sha256": "d7a3576cb312649eaa51f2356450aed686085fb58fcdebda5b359aa951eef7ea"
+      },
+      "pubspec_sha256": "3f822bb7d95a4e7c636aa8ef02386ff4475a95c7e7eb51bba18a8b205d639410",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "go_router",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "hex",
+      "version": "0.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "hex",
+        "url": "https://pub.dev",
+        "sha256": "4e7cd54e4b59ba026432a6be2dd9d96e4c5205725194997193bf871703b82c4a"
+      },
+      "pubspec_sha256": "719de7d41f8a84c9dbb5ef92b0edaf170aefefff4a3cb639299de82f15951c1f",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "hex",
+          "path": "LICENSE",
+          "sha256": "ed04661fe23e1e57ace1ab9ed97edc5508414b7464ee81deda55b178ba30bed7"
+        }
+      ],
+      "notes": [
+        "MIT LICENSE is the selected package grant. COPYING also references an absent UNLICENSE; no additional rights are inferred from that reference."
+      ]
+    },
+    {
+      "name": "hooks",
+      "version": "2.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "hooks",
+        "url": "https://pub.dev",
+        "sha256": "eaac480a35ec0814146c2c48d96aaa829e0e44a7662c88ae84c9edf4bc35651f"
+      },
+      "pubspec_sha256": "869df373ae443ec2dd52ba6f9d6b71fd360d29d606ea5e5debaf3c4fcac498c4",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "hooks",
+          "path": "LICENSE",
+          "sha256": "21ae23b0b9ff67a2dc75ab085d1e8db8ac548c5faf370af17f28dd2ef3b52b7b"
+        }
+      ]
+    },
+    {
+      "name": "http",
+      "version": "1.6.0",
+      "source": {
+        "type": "hosted",
+        "name": "http",
+        "url": "https://pub.dev",
+        "sha256": "87721a4a50b19c7f1d49001e51409bddc46303966ce89a65af4f4e6004896412"
+      },
+      "pubspec_sha256": "ab9b20099e285fcabbdb52188d8a9205adee7eeb9b51f00727206edeb1e72420",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "http",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "http_methods",
+      "version": "1.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "http_methods",
+        "url": "https://pub.dev",
+        "sha256": "6bccce8f1ec7b5d701e7921dca35e202d425b57e317ba1a37f2638590e29e566"
+      },
+      "pubspec_sha256": "44abef98c039ed25ec12b3e72519dbf0a8b4508473705063dabf883522f6ecbb",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "http_methods",
+          "path": "LICENSE",
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+        }
+      ]
+    },
+    {
+      "name": "http_parser",
+      "version": "4.1.2",
+      "source": {
+        "type": "hosted",
+        "name": "http_parser",
+        "url": "https://pub.dev",
+        "sha256": "178d74305e7866013777bab2c3d8726205dc5a4dd935297175b19a23a2e66571"
+      },
+      "pubspec_sha256": "88a08953bcff87d5b003d46d689a87d4149d4abca5200f7d6534dd2e2aba4751",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "http_parser",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "image",
+      "version": "4.12.0",
+      "source": {
+        "type": "hosted",
+        "name": "image",
+        "url": "https://pub.dev",
+        "sha256": "89ed75b2f8231fe676808c5564f9590d728024ded7ac782a7ed8474f1c95b72a"
+      },
+      "pubspec_sha256": "412a2497b09fe9f41a50953fa7c63ffba30d6f093986a5c10facbe94769c7753",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "image",
+          "path": "LICENSE",
+          "sha256": "f3c17da84e0780e1c334325c73098257c32221d62498ed55ef3c1361904925aa"
+        }
+      ]
+    },
+    {
+      "name": "internxt_client",
+      "version": "0.2.3",
+      "source": {
+        "type": "hosted",
+        "name": "internxt_client",
+        "url": "https://pub.dev",
+        "sha256": "c730aeb1779104bd42b27c6215bcf1b62b73c2979e9d570a5e61ed187b760469"
+      },
+      "pubspec_sha256": "1e79ba7b51e1e9997d9c3fc90cb72706e7230e574513259107427bb777a88c8e",
+      "license_expression": "MPL-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "internxt_client",
+          "path": "LICENSE",
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04"
+        }
+      ],
+      "notes": [
+        "File-level source and notice obligations remain; this package-level review does not approve separate native binaries.",
+        "Dart implementation using dart_pg and PointyCastle; no bundled native provider SDK/build hook was found in this exact package."
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.20.2",
+      "source": {
+        "type": "hosted",
+        "name": "intl",
+        "url": "https://pub.dev",
+        "sha256": "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      },
+      "pubspec_sha256": "b48bd7b5eb665b23bf1a0e507b1440a75ee7014a4aff80f477419a72caef3f91",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "intl",
+          "path": "LICENSE",
+          "sha256": "7e124af6a556f045cb3a20cafbdaa31602ac2c82cbcb3c3b15faaaf514b06028"
+        }
+      ]
+    },
+    {
+      "name": "jni",
+      "version": "1.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "jni",
+        "url": "https://pub.dev",
+        "sha256": "6b9ca0602fef0230e83149afbe3f9f8227e94f2bbe84a1da4f14d699742f402d"
+      },
+      "pubspec_sha256": "342f9952fc0d947c217ead90512ceedb8dca4a5673acde4fe3c0502a6c1b82e3",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "jni",
+          "path": "LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+        }
+      ]
+    },
+    {
+      "name": "jni_flutter",
+      "version": "1.0.4+1",
+      "source": {
+        "type": "hosted",
+        "name": "jni_flutter",
+        "url": "https://pub.dev",
+        "sha256": "0dd33d67797560f66e961a6053882d4df54bd345bf063b8fe7ea133f7ad8b191"
+      },
+      "pubspec_sha256": "68630d116a3193cbc473c2e39b86c4ffbabe10972ebbbaac6d519cbc942a187c",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "jni_flutter",
+          "path": "LICENSE",
+          "sha256": "b1fcb475d67817411f335ac92872507011e574c4cb29cfdaaf7707b75641932c"
+        }
+      ]
+    },
+    {
+      "name": "jni_util",
+      "version": "1.0.0",
+      "source": {
+        "type": "hosted",
+        "name": "jni_util",
+        "url": "https://pub.dev",
+        "sha256": "1ba86da04a5f2bf18fde2edb235587e70c5b0fc5bd4ba955f46b00942c3fc35f"
+      },
+      "pubspec_sha256": "9a8c912206ea5ba52fa9ccfd4d95312200db31ae780fbdb24e7ce4ff1bee73e4",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "jni_util",
+          "path": "LICENSE",
+          "sha256": "b1fcb475d67817411f335ac92872507011e574c4cb29cfdaaf7707b75641932c"
+        }
+      ]
+    },
+    {
+      "name": "js",
+      "version": "0.7.2",
+      "source": {
+        "type": "hosted",
+        "name": "js",
+        "url": "https://pub.dev",
+        "sha256": "53385261521cc4a0c4658fd0ad07a7d14591cf8fc33abbceae306ddb974888dc"
+      },
+      "pubspec_sha256": "ec0321320247b3fe397a8ad13d202435bdc7e18c6d8e8be516ef0aeba1714c22",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "js",
+          "path": "LICENSE",
+          "sha256": "efa4eaf6fdec22a36a61395ea70843db9ae815760bf663e068012c92b93c0184"
+        }
+      ]
+    },
+    {
+      "name": "just_audio",
+      "version": "0.10.6+crisper.1",
+      "source": {
+        "type": "path",
+        "path": "packages/just_audio",
+        "relative": true
+      },
+      "pubspec_sha256": "0ec0b0ade0aabf8c6b721cf1cb9014ee07ed34f62d1f0cf8a7de40d2c0f9cd86",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "just_audio",
+          "path": "LICENSE",
+          "sha256": "63ce4443e916b27424700d7fe970003add9f54944daf732f2dbcc1d8caf1bbad"
+        }
+      ],
+      "source_tree_sha256": "3144301426b37dfaadc2eb09318121356010aa969f612eb93dfb4e47127f16a6",
+      "notes": [
+        "Local MIT Apple time-pitch patch. Original 0.10.6 archive SHA-256 e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6; UPSTREAM.md, UPSTREAM_SHA256.json and UPSTREAM.patch retain provenance. Native Apple uses AVFoundation; Android Media3 closure is reviewed separately."
+      ]
+    },
+    {
+      "name": "just_audio_media_kit",
+      "version": "2.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "just_audio_media_kit",
+        "url": "https://pub.dev",
+        "sha256": "f3cf04c3a50339709e87e90b4e841eef4364ab4be2bdbac0c54cc48679f84d23"
+      },
+      "pubspec_sha256": "817f5ac602682d7c6de1f15fcfae46ca7c75652261b4dcf6c2c7165716770896",
+      "license_expression": "Unlicense",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "just_audio_media_kit",
+          "path": "LICENSE",
+          "sha256": "6b0382b16279f26ff69014300541967a356a666eb0b91b422f6862f6b7dad17e"
+        }
+      ],
+      "notes": [
+        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
+      ]
+    },
+    {
+      "name": "just_audio_platform_interface",
+      "version": "4.6.0",
+      "source": {
+        "type": "hosted",
+        "name": "just_audio_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "2532c8d6702528824445921c5ff10548b518b13f808c2e34c2fd54793b999a6a"
+      },
+      "pubspec_sha256": "5329b6c4cf3151087631c31304d96f93f92a38d104fdad579499eb78dd98993e",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "just_audio_platform_interface",
+          "path": "LICENSE",
+          "sha256": "2568490c678ba27cc8a405238637c4ba76adc632232f05dc1c36cbf59381dba4"
+        }
+      ]
+    },
+    {
+      "name": "just_audio_web",
+      "version": "0.4.16",
+      "source": {
+        "type": "hosted",
+        "name": "just_audio_web",
+        "url": "https://pub.dev",
+        "sha256": "6ba8a2a7e87d57d32f0f7b42856ade3d6a9fbe0f1a11fabae0a4f00bb73f0663"
+      },
+      "pubspec_sha256": "8280be0a5a462c48983c054d5c22b53400f7cd82b4c6bf7c14116f9db27ffb8d",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "just_audio_web",
+          "path": "LICENSE",
+          "sha256": "2568490c678ba27cc8a405238637c4ba76adc632232f05dc1c36cbf59381dba4"
+        }
+      ]
+    },
+    {
+      "name": "just_waveform",
+      "version": "0.0.7",
+      "source": {
+        "type": "hosted",
+        "name": "just_waveform",
+        "url": "https://pub.dev",
+        "sha256": "8c65acd24f13b866e3377f07f8869e823f3f2d8b734938f4e6688075af40b4f2"
+      },
+      "pubspec_sha256": "8798df75028161128198bd94039953845c20e63da1b37c54070e8cc14eaedf4c",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "just_waveform",
+          "path": "LICENSE",
+          "sha256": "160f8768e3bbab986314ac5cc28043bd49c131809c63b34ddc1c4511500aac84"
+        }
+      ]
+    },
+    {
+      "name": "leak_tracker",
+      "version": "11.0.2",
+      "source": {
+        "type": "hosted",
+        "name": "leak_tracker",
+        "url": "https://pub.dev",
+        "sha256": "33e2e26bdd85a0112ec15400c8cbffea70d0f9c3407491f672a2fad47915e2de"
+      },
+      "pubspec_sha256": "baa761e9bf38ebeff3ccf67d4ea542ede08e7286695df569f91be867134b03a5",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "leak_tracker",
+          "path": "LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+        }
+      ]
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "version": "3.0.10",
+      "source": {
+        "type": "hosted",
+        "name": "leak_tracker_flutter_testing",
+        "url": "https://pub.dev",
+        "sha256": "1dbc140bb5a23c75ea9c4811222756104fbcd1a27173f0c34ca01e16bea473c1"
+      },
+      "pubspec_sha256": "230b28feb29c520794eb49924bad2c19073080d4cdf94240d222a73250877abb",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "leak_tracker_flutter_testing",
+          "path": "LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+        }
+      ]
+    },
+    {
+      "name": "leak_tracker_testing",
+      "version": "3.0.2",
+      "source": {
+        "type": "hosted",
+        "name": "leak_tracker_testing",
+        "url": "https://pub.dev",
+        "sha256": "8d5a2d49f4a66b49744b23b018848400d23e54caf9463f4eb20df3eb8acb2eb1"
+      },
+      "pubspec_sha256": "bda15ec4370d21476ed0eca93f25e86f2dfe3887c19720335821348c390f0b21",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "leak_tracker_testing",
+          "path": "LICENSE",
+          "sha256": "08a004aa8956c3cf3b24f7f69c966247233953e18e6afaa61191ea47b7eb70f6"
+        }
+      ]
+    },
+    {
+      "name": "libdbm",
+      "version": "0.2.1",
+      "source": {
+        "type": "hosted",
+        "name": "libdbm",
+        "url": "https://pub.dev",
+        "sha256": "f3e038d4138ff95839525094aefb72aa1dd34b18c14e9322b1135ebe6ae1f1ea"
+      },
+      "pubspec_sha256": "32619ee2d0bc462c4c25bc798d8c7bdd3e84f3dae9300f14431b9c30e017ea5d",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "libdbm",
+          "path": "LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "listen",
+      "version": "1.0.1",
+      "source": {
+        "type": "hosted",
+        "name": "listen",
+        "url": "https://pub.dev",
+        "sha256": "47501a08016a43fcad79252439d723f50f14f88fa7bfd8a177e0a417e5c9e1f2"
+      },
+      "pubspec_sha256": "f81a25f4be8ff0ca03effb7b62d280519ad08a49cafc63e8d0c5d2a0176158e3",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "listen",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "logging",
+      "version": "1.3.0",
+      "source": {
+        "type": "hosted",
+        "name": "logging",
+        "url": "https://pub.dev",
+        "sha256": "c8245ada5f1717ed44271ed1c26b8ce85ca3228fd2ffdb75468ab01979309d61"
+      },
+      "pubspec_sha256": "c2880dbeafc99cd7b16c5b4da088c06d111498107476544d3cdb60f9735f05fa",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "logging",
+          "path": "LICENSE",
+          "sha256": "dfb09c74e29386cd3e2719f32d4995d59526179753931d31840757c77fbf2791"
+        }
+      ]
+    },
+    {
+      "name": "matcher",
+      "version": "0.12.19",
+      "source": {
+        "type": "hosted",
+        "name": "matcher",
+        "url": "https://pub.dev",
+        "sha256": "dc0b7dc7651697ea4ff3e69ef44b0407ea32c487a39fff6a4004fa585e901861"
+      },
+      "pubspec_sha256": "d8b48bd29b1457783ad1cf4309ad512f37a12b75887b60627ad5f359b378f321",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "matcher",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "material_color_utilities",
+      "version": "0.13.0",
+      "source": {
+        "type": "hosted",
+        "name": "material_color_utilities",
+        "url": "https://pub.dev",
+        "sha256": "9c337007e82b1889149c82ed242ed1cb24a66044e30979c44912381e9be4c48b"
+      },
+      "pubspec_sha256": "4c32df8a37a2548d4ccc5ad892b9f3780236ad655685273d366ca34aee39fa1d",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "material_color_utilities",
+          "path": "LICENSE",
+          "sha256": "d103f246ef4c18dab8af0c1dcf6a8af884e5cff554da7261a48ac43c17d98f2e"
+        }
+      ]
+    },
+    {
+      "name": "media_kit",
+      "version": "1.2.6",
+      "source": {
+        "type": "hosted",
+        "name": "media_kit",
+        "url": "https://pub.dev",
+        "sha256": "ae9e79597500c7ad6083a3c7b7b7544ddabfceacce7ae5c9709b0ec16a5d6643"
+      },
+      "pubspec_sha256": "baede349813578fd5c7f63b9883d520c09d66572ec93aaadafeb05f00ef0fbe3",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "media_kit",
+          "path": "LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331"
+        }
+      ],
+      "notes": [
+        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
+      ]
+    },
+    {
+      "name": "media_kit_libs_linux",
+      "version": "1.2.1",
+      "source": {
+        "type": "hosted",
+        "name": "media_kit_libs_linux",
+        "url": "https://pub.dev",
+        "sha256": "2b473399a49ec94452c4d4ae51cfc0f6585074398d74216092bf3d54aac37ecf"
+      },
+      "pubspec_sha256": "ae38a9d08616b149a45153edf47ed7fb829d6123bb1c907e6d21a05f4024b0e9",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "media_kit_libs_linux",
+          "path": "LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331"
+        }
+      ],
+      "notes": [
+        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
+      ]
+    },
+    {
+      "name": "media_kit_libs_windows_audio",
+      "version": "1.0.9",
+      "source": {
+        "type": "hosted",
+        "name": "media_kit_libs_windows_audio",
+        "url": "https://pub.dev",
+        "sha256": "c2fd558cc87b9d89a801141fcdffe02e338a3b21a41a18fbd63d5b221a1b8e53"
+      },
+      "pubspec_sha256": "c08aa6211e404eea12a727d6eaef9fe2c607ffa09b77251a0525cd85c41712dc",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "media_kit_libs_windows_audio",
+          "path": "LICENSE",
+          "sha256": "a78baa721ad6f5c0b2d8fb0c6cfff835ad8ed90393cac0087a90e8813490f2bd"
+        }
+      ],
+      "notes": [
+        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
+      ]
+    },
+    {
+      "name": "meta",
+      "version": "1.19.0",
+      "source": {
+        "type": "hosted",
+        "name": "meta",
+        "url": "https://pub.dev",
+        "sha256": "307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9"
+      },
+      "pubspec_sha256": "a003fe612d160e22c942289e654b50e6563f67c61847603485cf1eac6686e995",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "meta",
+          "path": "LICENSE",
+          "sha256": "b71519245009a3b8f126196a5408ec031e216e8e0d985085958c6543f82a8a2a"
+        }
+      ]
+    },
+    {
+      "name": "mime",
+      "version": "2.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "mime",
+        "url": "https://pub.dev",
+        "sha256": "bd47de35f07e27267e69c8c8b22edf9473bfee170a60d60fcc93730c5144b7f6"
+      },
+      "pubspec_sha256": "476ebb13bb41cdb28e6ddf63e3cbfee9214083a50b9f5974dcfda19ca10c92bf",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "mime",
+          "path": "LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+        }
+      ]
+    },
+    {
+      "name": "mime_type",
+      "version": "1.0.1",
+      "source": {
+        "type": "hosted",
+        "name": "mime_type",
+        "url": "https://pub.dev",
+        "sha256": "d652b613e84dac1af28030a9fba82c0999be05b98163f9e18a0849c6e63838bb"
+      },
+      "pubspec_sha256": "b0316dea31e1211ae2d02f9568ede784ee7d43ca850f6234ac4ff94910ee2bc0",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "mime_type",
+          "path": "LICENSE",
+          "sha256": "0d2c57651155f5244a9d81157ac727f5197f9881ddb8dcce467525e0da571cdf"
+        }
+      ]
+    },
+    {
+      "name": "objective_c",
+      "version": "9.6.2",
+      "source": {
+        "type": "hosted",
+        "name": "objective_c",
+        "url": "https://pub.dev",
+        "sha256": "5c80c2ad6e2c0397de5db38c6d653e69616a3397e13aa7633bf39eb668f2041b"
+      },
+      "pubspec_sha256": "f76ae526e42a2eb9a27aec87d77d0dda270bd948f3cd01b77d1ac5877f356069",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "objective_c",
+          "path": "LICENSE",
+          "sha256": "1cda25a8de6880c5338de0b4a06ee89e8537c213eb1379c16a4c035bfd198b5c"
+        }
+      ]
+    },
+    {
+      "name": "package_config",
+      "version": "2.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "package_config",
+        "url": "https://pub.dev",
+        "sha256": "f096c55ebb7deb7e384101542bfba8c52696c1b56fca2eb62827989ef2353bbc"
+      },
+      "pubspec_sha256": "7c5033e163a22d6b19269f717983ae6eaa43db91f97ee2a34568a0e353f225f6",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "package_config",
+          "path": "LICENSE",
+          "sha256": "0371d1da6a57fb791db29d29b95333429205f51f3cb2eb3a0c12d91838a38744"
+        }
+      ]
+    },
+    {
+      "name": "package_info_plus",
+      "version": "10.2.2",
+      "source": {
+        "type": "hosted",
+        "name": "package_info_plus",
+        "url": "https://pub.dev",
+        "sha256": "73ef2cd5c11a7548f9b7f6fc2a4f6113de2e64aa2a70de63feede95548822908"
+      },
+      "pubspec_sha256": "c3f37637e97bc646e885d1323a6d8518652902473e0219b4bccafdf18a5f45da",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "package_info_plus",
+          "path": "LICENSE",
+          "sha256": "3b38d48befd0af70b892e13d10c9e34679416c24a9277f962629951c64d71f4c"
+        }
+      ]
+    },
+    {
+      "name": "package_info_plus_platform_interface",
+      "version": "4.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "package_info_plus_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "db762cb2f4f25ee60fb6359773861b0f199e00b90d237bd85a76a1e806b46ef4"
+      },
+      "pubspec_sha256": "8891af43b1fa1c0f5fc352ccefddca55ca6f2d50ece323bfa0202b04993761ca",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "package_info_plus_platform_interface",
+          "path": "LICENSE",
+          "sha256": "3b38d48befd0af70b892e13d10c9e34679416c24a9277f962629951c64d71f4c"
+        }
+      ]
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "source": {
+        "type": "hosted",
+        "name": "path",
+        "url": "https://pub.dev",
+        "sha256": "75cca69d1490965be98c73ceaea117e8a04dd21217b37b292c9ddbec0d955bc5"
+      },
+      "pubspec_sha256": "94bc2793c42741c611722b22b0bc0f1a000ae4914f5ab52810d91e18ce4b1f6d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "path",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "path_provider",
+      "version": "2.1.6",
+      "source": {
+        "type": "hosted",
+        "name": "path_provider",
+        "url": "https://pub.dev",
+        "sha256": "a7f4874f987173da295a61c181b8ee71dab59b332a486b391babf26a1b884825"
+      },
+      "pubspec_sha256": "653f8baad631cd8819b024f08b016bfb16820b460812460655d195a9b5d56a7d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "path_provider",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "path_provider_android",
+      "version": "2.3.1",
+      "source": {
+        "type": "hosted",
+        "name": "path_provider_android",
+        "url": "https://pub.dev",
+        "sha256": "69cbd515a62b94d32a7944f086b2f82b4ac40a1d45bebfc00813a430ab2dabcd"
+      },
+      "pubspec_sha256": "b80824aedcb8e0ea192403de0dc01c501b22dc2f627588dffb78093f5064dc89",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "path_provider_android",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "path_provider_foundation",
+      "version": "2.6.0",
+      "source": {
+        "type": "hosted",
+        "name": "path_provider_foundation",
+        "url": "https://pub.dev",
+        "sha256": "2a376b7d6392d80cd3705782d2caa734ca4727776db0b6ec36ef3f1855197699"
+      },
+      "pubspec_sha256": "2453954d9201ce4a90a5d26705c4b089c3997a9b943e1c7dc7a95893c262c75d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "path_provider_foundation",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "path_provider_linux",
+      "version": "2.2.2",
+      "source": {
+        "type": "hosted",
+        "name": "path_provider_linux",
+        "url": "https://pub.dev",
+        "sha256": "58c2005f147315b11e9b4a7bc889cd5203e250cba8e3f012dae259b4972b5c16"
+      },
+      "pubspec_sha256": "a08c2fedbf2d91706abd2896a7aff8336bce698cc5ef77486f257e12e6ff38dd",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "path_provider_linux",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "version": "2.1.3",
+      "source": {
+        "type": "hosted",
+        "name": "path_provider_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "484838772624c3a4b94f1e44a3e19897fee738f2d5c4ce448443b0417f7c9dda"
+      },
+      "pubspec_sha256": "899b0dd432a48fd35b93c6b2e21729507c7cb24b615c9edeb769ec368b30ac49",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "path_provider_platform_interface",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "path_provider_windows",
+      "version": "2.3.0",
+      "source": {
+        "type": "hosted",
+        "name": "path_provider_windows",
+        "url": "https://pub.dev",
+        "sha256": "bd6f00dbd873bfb70d0761682da2b3a2c2fccc2b9e84c495821639601d81afe7"
+      },
+      "pubspec_sha256": "df8b451e532d00b0d4930523d60bede9ae04e0c2356291c38b7c7c30404a6296",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "path_provider_windows",
+          "path": "LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+        }
+      ]
+    },
+    {
+      "name": "permission_handler",
+      "version": "12.0.3",
+      "source": {
+        "type": "hosted",
+        "name": "permission_handler",
+        "url": "https://pub.dev",
+        "sha256": "fe54465bcc62a4564c6e4db337bbaded6c0c0fa6e10487414436d163114784f6"
+      },
+      "pubspec_sha256": "a593ecaeed8115d43d6c79482fb9c0904ceb1164f24620477994a2ebe297c764",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "permission_handler",
+          "path": "LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3"
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_android",
+      "version": "13.0.1",
+      "source": {
+        "type": "hosted",
+        "name": "permission_handler_android",
+        "url": "https://pub.dev",
+        "sha256": "1e3bc410ca1bf84662104b100eb126e066cb55791b7451307f9708d4007350e6"
+      },
+      "pubspec_sha256": "df859673aa22aa16bae95eb7b62defc0a2806ca030525a9693c1cec9ee358b92",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "permission_handler_android",
+          "path": "LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3"
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_apple",
+      "version": "9.6.2",
+      "source": {
+        "type": "hosted",
+        "name": "permission_handler_apple",
+        "url": "https://pub.dev",
+        "sha256": "066bbbc60031b63b916a3871e7bb4b6a8c5e7cec8146dafec53d1da304eff0a5"
+      },
+      "pubspec_sha256": "171b90c68fc57ef19afc569259912bc77b21340fd5e12d7acdbbf32ffaac2659",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "permission_handler_apple",
+          "path": "LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3"
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_html",
+      "version": "0.1.4+1",
+      "source": {
+        "type": "hosted",
+        "name": "permission_handler_html",
+        "url": "https://pub.dev",
+        "sha256": "6ea98b3f17f60d3b527f2647ed2ab4dc0f6bfe25b22cb1c363f5d8f62252f6ac"
+      },
+      "pubspec_sha256": "16b1a69f568f47a702943342768e443991467e11edfc7e80312f4f77167434f1",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "permission_handler_html",
+          "path": "LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3"
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_platform_interface",
+      "version": "4.4.1",
+      "source": {
+        "type": "hosted",
+        "name": "permission_handler_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "ed86a61c190258fdd65de395ea0632822e3415c1faec38eae0c31b479c28a531"
+      },
+      "pubspec_sha256": "a8be90ad6c5566af43fc618e5bc3580751c794c0b77156bde3cfb11ba47521c7",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "permission_handler_platform_interface",
+          "path": "LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3"
+        }
+      ]
+    },
+    {
+      "name": "permission_handler_windows",
+      "version": "0.2.2",
+      "source": {
+        "type": "hosted",
+        "name": "permission_handler_windows",
+        "url": "https://pub.dev",
+        "sha256": "caeae01858a0a7d2df67a445ac98e1ad95e55a0e77c73044f4e9b1c8c2289cbd"
+      },
+      "pubspec_sha256": "fc8c43398d94282f95aa7ef97668be1be0ac820667efdadd29d9984cf161de1d",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "permission_handler_windows",
+          "path": "LICENSE",
+          "sha256": "65a603f544989f5cff639d5c55f56e781796e5e1b2f8546a7cb4cb26763133f3"
+        }
+      ]
+    },
+    {
+      "name": "petitparser",
+      "version": "7.0.2",
+      "source": {
+        "type": "hosted",
+        "name": "petitparser",
+        "url": "https://pub.dev",
+        "sha256": "91bd59303e9f769f108f8df05e371341b15d59e995e6806aefab827b58336675"
+      },
+      "pubspec_sha256": "852ea6753432f6f3d5fa1a35f3b2343fe848c8a9b6c2d4e3ad2015221ff0f3d0",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "petitparser",
+          "path": "LICENSE",
+          "sha256": "d2e8ffdbe89acbc10d5d1f2b03e7dbddf0a9f1742e809176682b62ef3d573b3e"
+        }
+      ]
+    },
+    {
+      "name": "pinenacl",
+      "version": "0.6.0",
+      "source": {
+        "type": "hosted",
+        "name": "pinenacl",
+        "url": "https://pub.dev",
+        "sha256": "57e907beaacbc3c024a098910b6240758e899674de07d6949a67b52fd984cbdf"
+      },
+      "pubspec_sha256": "4712726fdbd69652af97504b007eade9a347b979fcbb3b93f5c7a4493b5108f3",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "pinenacl",
+          "path": "LICENSE",
+          "sha256": "14cd126a80ee0e99ebd6e46ac5b8c7f929fecdcb1a01b8a0542552ea1f96589e"
+        }
+      ]
+    },
+    {
+      "name": "platform",
+      "version": "3.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "platform",
+        "url": "https://pub.dev",
+        "sha256": "a36d119c13416516a7b5913fbe8af8531e11633d784c550b2125f76c758524ec"
+      },
+      "pubspec_sha256": "e120e64b439cab12ec40c115763daa633f05400c553dda40be909a7e0f0aef6b",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "platform",
+          "path": "LICENSE",
+          "sha256": "143839f62c9b7f88143ea9f688361c27050888acde7696b34e04414bd254fafc"
+        }
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "source": {
+        "type": "hosted",
+        "name": "plugin_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "4820fbfdb9478b1ebae27888254d445073732dae3d6ea81f0b7e06d5dedc3f02"
+      },
+      "pubspec_sha256": "f43e701a2009e7a535d2ef393f9375a0c131c0719243347a266827eea4c36c08",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "plugin_platform_interface",
+          "path": "LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+        }
+      ]
+    },
+    {
+      "name": "pointycastle",
+      "version": "4.0.0",
+      "source": {
+        "type": "hosted",
+        "name": "pointycastle",
+        "url": "https://pub.dev",
+        "sha256": "92aa3841d083cc4b0f4709b5c74fd6409a3e6ba833ffc7dc6a8fee096366acf5"
+      },
+      "pubspec_sha256": "ff6f459dc10fc283731ea753b3957c7cf5f97af3751c14d24b8aea64f5dc9f6e",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "pointycastle",
+          "path": "LICENSE",
+          "sha256": "3a7bb295473da049a1c6edd2f8c41b9e526a4e80f200c0200cc5600b2634df3f"
+        }
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.5.2",
+      "source": {
+        "type": "hosted",
+        "name": "posix",
+        "url": "https://pub.dev",
+        "sha256": "bc1bad54ad2b735816e31f8d4600cfde6c7839975085ddfbca48b6c9f7c4044e"
+      },
+      "pubspec_sha256": "19e8d01661b6247af96b194674fb6202258389be7cce9886cdbd50612d99fd0e",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "posix",
+          "path": "LICENSE",
+          "sha256": "aaf6271abd048deb3125828613f1797b7556472de6c7acd7103bd43e9cb6a84b"
+        }
+      ]
+    },
+    {
+      "name": "pub_semver",
+      "version": "2.2.1",
+      "source": {
+        "type": "hosted",
+        "name": "pub_semver",
+        "url": "https://pub.dev",
+        "sha256": "261236774e8b1d69cfc6b9eabbc96c40f25e7a2d6b171f3385d4f65d5734fb24"
+      },
+      "pubspec_sha256": "2563b0824a9e5d1196cd438b9e161f803a5fe64027b4d337b049b3e237fc9704",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "pub_semver",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "qr",
+      "version": "3.0.2",
+      "source": {
+        "type": "hosted",
+        "name": "qr",
+        "url": "https://pub.dev",
+        "sha256": "5a1d2586170e172b8a8c8470bbbffd5eb0cd38a66c0d77155ea138d3af3a4445"
+      },
+      "pubspec_sha256": "bd20bc5a828df927edff2c0f8a28cee03711f63699240a5d23ee219fb144ed88",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "qr",
+          "path": "LICENSE",
+          "sha256": "1d6c0bc8208cd835577eeb9195dc646f092728b62803abd60c404d984524abf7"
+        }
+      ]
+    },
+    {
+      "name": "qr_flutter",
+      "version": "4.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "qr_flutter",
+        "url": "https://pub.dev",
+        "sha256": "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
+      },
+      "pubspec_sha256": "e354758701a9fee39397053354d9d6783b7c310c1d8c1802faa3f7aca5a21211",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "qr_flutter",
+          "path": "LICENSE",
+          "sha256": "1bc86cb2619634e54a97f88dd9c11fd99afcacd52c25bdf6f84c2700b4174203"
+        }
+      ]
+    },
+    {
+      "name": "receive_sharing_intent",
+      "version": "1.8.1",
+      "source": {
+        "type": "hosted",
+        "name": "receive_sharing_intent",
+        "url": "https://pub.dev",
+        "sha256": "ec76056e4d258ad708e76d85591d933678625318e411564dcb9059048ca3a593"
+      },
+      "pubspec_sha256": "2643d15488c2b3810d5663802c13f6bbf6ec11b7f84b7a1336b68552acd51def",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "receive_sharing_intent",
+          "path": "LICENSE",
+          "sha256": "af6a9f2bc255d76ec881c6d282ca62b7dcde3e74ab1d204ab49d73564d5d7040"
+        }
+      ]
+    },
+    {
+      "name": "record_use",
+      "version": "1.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "record_use",
+        "url": "https://pub.dev",
+        "sha256": "1cb8564af8d43b464294411db9217f5ec04891c6f22ee2c32d73ae05e88a6bd2"
+      },
+      "pubspec_sha256": "e90ea879de705b4f740356223ce1a3858b0e32e3327c48ff920266cee6879bfa",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "record_use",
+          "path": "LICENSE",
+          "sha256": "1cda25a8de6880c5338de0b4a06ee89e8537c213eb1379c16a4c035bfd198b5c"
+        }
+      ]
+    },
+    {
+      "name": "riverpod",
+      "version": "3.4.3",
+      "source": {
+        "type": "hosted",
+        "name": "riverpod",
+        "url": "https://pub.dev",
+        "sha256": "484dfc873ea4c4f4240e5635444fa066f87b07862b7279ebd004a2b71fba4b7a"
+      },
+      "pubspec_sha256": "6ebf1e74d4a56643ceae95250041fbe246873424d8dcc02039023c817b063d36",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "riverpod",
+          "path": "LICENSE",
+          "sha256": "757d9c09a9a2a701144328c0fd596234ea287ff62952b39cd22f9ad4caed1171"
+        }
+      ]
+    },
+    {
+      "name": "rxdart",
+      "version": "0.28.0",
+      "source": {
+        "type": "hosted",
+        "name": "rxdart",
+        "url": "https://pub.dev",
+        "sha256": "5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962"
+      },
+      "pubspec_sha256": "71560cf716b107de5184ddc0cc398423ec96a96f036e25ab49908654d2bb6cf7",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "rxdart",
+          "path": "LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "safe_local_storage",
+      "version": "2.0.6",
+      "source": {
+        "type": "hosted",
+        "name": "safe_local_storage",
+        "url": "https://pub.dev",
+        "sha256": "494b982d5edb71030650ea463d939670e91b232b588323dc75229d2c5f23e7b7"
+      },
+      "pubspec_sha256": "9c830238e345c674e9f3bea56386b9bc8a7a86cdc94f19cab2af2ca181ed6409",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "safe_local_storage",
+          "path": "LICENSE",
+          "sha256": "d4cfdb498601b2872c7a09d06c62f92f5c751261bdb6fc4ce436940c7ccac78a"
+        }
+      ]
+    },
+    {
+      "name": "sha3",
+      "version": "0.2.1",
+      "source": {
+        "type": "hosted",
+        "name": "sha3",
+        "url": "https://pub.dev",
+        "sha256": "6f78c8c1d873b0eef9c0fbc92da6470c46e84e1e3473ff6a2723fb93074119e5"
+      },
+      "pubspec_sha256": "4ade9dfb384da4365baec8683423f8f8a8c6d5e88dceff9a79465ab7046168c6",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sha3",
+          "path": "LICENSE",
+          "sha256": "c535af2e9cd3576e42ebc87664931a635c6a4cdb8c4cca6d4738e0570d413097"
+        }
+      ]
+    },
+    {
+      "name": "share_plus",
+      "version": "13.3.1",
+      "source": {
+        "type": "hosted",
+        "name": "share_plus",
+        "url": "https://pub.dev",
+        "sha256": "db40767f130189d53f3ae8a6393c217ff4a492da1baff718a9873679c0c00224"
+      },
+      "pubspec_sha256": "a32443edc091a9a1c17a74f7c566a3f34e80b7e8143b225f3474b4205e3e7fea",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "share_plus",
+          "path": "LICENSE",
+          "sha256": "eb9741a672906ebd01fd9b3bef38f6c82eff250e91149cf404539ee7981079fd"
+        }
+      ]
+    },
+    {
+      "name": "share_plus_platform_interface",
+      "version": "7.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "share_plus_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "365ef7379fc22507256adda3385152942ffce08935452bc972c2e52a0bebae41"
+      },
+      "pubspec_sha256": "e242012251ac4f16af03fbe5a2c53cd4505192ffe64b328a693755bba02ee2ea",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "share_plus_platform_interface",
+          "path": "LICENSE",
+          "sha256": "3b38d48befd0af70b892e13d10c9e34679416c24a9277f962629951c64d71f4c"
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences",
+      "version": "2.5.6",
+      "source": {
+        "type": "hosted",
+        "name": "shared_preferences",
+        "url": "https://pub.dev",
+        "sha256": "1e85e0dccf5b4a016077fea7dfbb4a7cb39c759ac1596fcf60c06deadb7da91f"
+      },
+      "pubspec_sha256": "9526b0854e164a4dc042f8238939def76185cf95f45cc624ebaa3391e8fad793",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shared_preferences",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_android",
+      "version": "2.5.0",
+      "source": {
+        "type": "hosted",
+        "name": "shared_preferences_android",
+        "url": "https://pub.dev",
+        "sha256": "b90caa27669d5f3ef9918d55343b44000f088ee9d4685ed822310848004c793e"
+      },
+      "pubspec_sha256": "b25f769452a7ba2e4489d25f88c76fad3226df506df8457b8215a427353dcc8d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shared_preferences_android",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "version": "2.5.7",
+      "source": {
+        "type": "hosted",
+        "name": "shared_preferences_foundation",
+        "url": "https://pub.dev",
+        "sha256": "2ec3934efa51e46117f23031cc141b8fc878e8525b94ec1ea4f7f586cf1b47ea"
+      },
+      "pubspec_sha256": "ae45b62e97ed90fff75e3e38a893bb267b0c82707734c4cdbf667966d826bc47",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shared_preferences_foundation",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_linux",
+      "version": "2.4.1",
+      "source": {
+        "type": "hosted",
+        "name": "shared_preferences_linux",
+        "url": "https://pub.dev",
+        "sha256": "580abfd40f415611503cae30adf626e6656dfb2f0cee8f465ece7b6defb40f2f"
+      },
+      "pubspec_sha256": "40b9f7c760097e8e6b284755641fff514af265cbe50eca5d335f68fd79b74c50",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shared_preferences_linux",
+          "path": "LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "version": "2.4.2",
+      "source": {
+        "type": "hosted",
+        "name": "shared_preferences_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "649dc798a33931919ea356c4305c2d1f81619ea6e92244070b520187b5140ef9"
+      },
+      "pubspec_sha256": "1931a717969640de5c6f3c52b6b25cd8df03739a0b5e7aa5b8f46da41097e59d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shared_preferences_platform_interface",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_web",
+      "version": "2.4.3",
+      "source": {
+        "type": "hosted",
+        "name": "shared_preferences_web",
+        "url": "https://pub.dev",
+        "sha256": "c49bd060261c9a3f0ff445892695d6212ff603ef3115edbb448509d407600019"
+      },
+      "pubspec_sha256": "2cafb88cb05a4debe328c441e82ed11d550237054b694f68842773943f38530e",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shared_preferences_web",
+          "path": "LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+        }
+      ]
+    },
+    {
+      "name": "shared_preferences_windows",
+      "version": "2.4.1",
+      "source": {
+        "type": "hosted",
+        "name": "shared_preferences_windows",
+        "url": "https://pub.dev",
+        "sha256": "94ef0f72b2d71bc3e700e025db3710911bd51a71cefb65cc609dd0d9a982e3c1"
+      },
+      "pubspec_sha256": "bfac6c030216a487e6212b2a74cc58c8e29ef628640989015d9b9abf8a92162b",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shared_preferences_windows",
+          "path": "LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+        }
+      ]
+    },
+    {
+      "name": "shelf",
+      "version": "1.4.3",
+      "source": {
+        "type": "hosted",
+        "name": "shelf",
+        "url": "https://pub.dev",
+        "sha256": "e75e9cf311d7fd712048038cc17c25199c38536c20330d53e7db058b543d5a48"
+      },
+      "pubspec_sha256": "f9f4aaa408bfbb20c8014985d5156dd38dc79f49ad3baab91804461fc509e3d8",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shelf",
+          "path": "LICENSE",
+          "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+        }
+      ]
+    },
+    {
+      "name": "shelf_dav",
+      "version": "1.0.0",
+      "source": {
+        "type": "hosted",
+        "name": "shelf_dav",
+        "url": "https://pub.dev",
+        "sha256": "3864921fe8b17e5c66385a4cd3f55902c5107eac352af6650fc9e0f9d04f19bb"
+      },
+      "pubspec_sha256": "d623ddbac2b148f45429a6738bedca6bbab379142e6ed30094e100aab0255e3b",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shelf_dav",
+          "path": "LICENSE",
+          "sha256": "bc6a17ebb1d5356a62a73c7f3334c6a216ce3b9418dd31a7ca025c270aa88324"
+        }
+      ]
+    },
+    {
+      "name": "shelf_router",
+      "version": "1.1.5",
+      "source": {
+        "type": "hosted",
+        "name": "shelf_router",
+        "url": "https://pub.dev",
+        "sha256": "2b3eb66f2e7651c9f0af28538e0de53bc02dc102d965d55b13e6ffceafad10e3"
+      },
+      "pubspec_sha256": "d326bdcae848959a465b0147f7603c690d9bc7f8b0169663bbdd1d11304509c3",
+      "license_expression": "Apache-2.0",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "shelf_router",
+          "path": "LICENSE",
+          "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+        }
+      ]
+    },
+    {
+      "name": "sign_dart",
+      "version": "1.0.0",
+      "source": {
+        "type": "hosted",
+        "name": "sign_dart",
+        "url": "https://pub.dev",
+        "sha256": "ac9303a03c7cca834568f6502b11031e2a5b92141d764c9314d7b4b455780721"
+      },
+      "pubspec_sha256": "5d81db9346b5cf12c70819929169871b3e618b06c67b3ea60c42c68e413a5338",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sign_dart",
+          "path": "LICENSE",
+          "sha256": "1993ab84703599b1ab5d0e1c63b7f4eccd932a98d2f6ef4ed1e22b0d97c5b6fb"
+        }
+      ]
+    },
+    {
+      "name": "sky_engine",
+      "version": "0.0.0",
+      "source": {
+        "type": "sdk",
+        "sdk": "flutter"
+      },
+      "pubspec_sha256": "f08241742a8286a35aacc231780fdae568a6d0927a7d7b2f080dfd60f56b11b6",
+      "license_expression": null,
+      "review_status": "needs_review",
+      "license_files": [
+        {
+          "package": "sky_engine",
+          "path": "LICENSE",
+          "sha256": "82a5f93f918f99ff82af18c8be176c709dc812cb3f5e1e1cd93847bdeb0f9369"
+        }
+      ],
+      "notes": [
+        "Generated aggregate engine notice contains multiple third-party grants. References to GPL in BSD compatibility language or MPL definitions are not evidence of a shipped GPL component. Target engine binaries and full license closure still require review."
+      ]
+    },
+    {
+      "name": "source_span",
+      "version": "1.10.2",
+      "source": {
+        "type": "hosted",
+        "name": "source_span",
+        "url": "https://pub.dev",
+        "sha256": "56a02f1f4cd1a2d96303c0144c93bd6d909eea6bee6bf5a0e0b685edbd4c47ab"
+      },
+      "pubspec_sha256": "ef70b95ff6588bbe25c695f6fdd7f3eed6525b70955bf429fd08e676a6fc6d02",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "source_span",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "sqflite",
+      "version": "2.4.4+2",
+      "source": {
+        "type": "hosted",
+        "name": "sqflite",
+        "url": "https://pub.dev",
+        "sha256": "273218a1678360a3127fcf15e543381d9b813d413d783bc6e9a53eed4d2eb8fe"
+      },
+      "pubspec_sha256": "1ad8872f6f75252e39ccc7a9c50790af9196fdc99e77952692b4ee98b17bd376",
+      "license_expression": "BSD-2-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sqflite",
+          "path": "LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da"
+        }
+      ]
+    },
+    {
+      "name": "sqflite_android",
+      "version": "2.4.4+1",
+      "source": {
+        "type": "hosted",
+        "name": "sqflite_android",
+        "url": "https://pub.dev",
+        "sha256": "e4f659c14bdd14464127fcd234a7a96f61fe0f539b8568e5a38f99f5a568a835"
+      },
+      "pubspec_sha256": "c8faa1b5f430ead582cdaec8600317497cbbbd652a92b46ac21a3a450d1227c5",
+      "license_expression": "BSD-2-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sqflite_android",
+          "path": "LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da"
+        }
+      ]
+    },
+    {
+      "name": "sqflite_common",
+      "version": "2.5.14",
+      "source": {
+        "type": "hosted",
+        "name": "sqflite_common",
+        "url": "https://pub.dev",
+        "sha256": "b80e94ff0d551d5f1f8c7d14348d29b576cca3ae30f6e195a7c380552c32b1e0"
+      },
+      "pubspec_sha256": "c33c50dbf626a34a9b164b42a4c8eeba6f3101de0e8bba749f54eccb5c0a3010",
+      "license_expression": "BSD-2-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sqflite_common",
+          "path": "LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da"
+        }
+      ]
+    },
+    {
+      "name": "sqflite_darwin",
+      "version": "2.4.4+1",
+      "source": {
+        "type": "hosted",
+        "name": "sqflite_darwin",
+        "url": "https://pub.dev",
+        "sha256": "8de68fc306040f992aaf378750c16f95e4298c4bb150dd45091d75e42b1f08ee"
+      },
+      "pubspec_sha256": "158a3756919d52f0f3a1ccfc05b339793b9e940e8a13d5f992575f344a106f9e",
+      "license_expression": "BSD-2-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sqflite_darwin",
+          "path": "LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da"
+        }
+      ]
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "version": "2.4.2",
+      "source": {
+        "type": "hosted",
+        "name": "sqflite_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "c9177b2f3150ed0647b90a94307c28452fe0a5401863044216aed83addd6c7c5"
+      },
+      "pubspec_sha256": "15b9fcb5401c0b55a310abf3b5ed2866f552dd107458f1635080a4a7eaa4fd80",
+      "license_expression": "BSD-2-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sqflite_platform_interface",
+          "path": "LICENSE",
+          "sha256": "c81f9454cf3107c116bc3c1fd22b7d751523a2b11e17cf90c0db3327d3c9e0da"
+        }
+      ]
+    },
+    {
+      "name": "sqlite3",
+      "version": "2.9.4",
+      "source": {
+        "type": "hosted",
+        "name": "sqlite3",
+        "url": "https://pub.dev",
+        "sha256": "3145bd74dcdb4fd6f5c6dda4d4e4490a8087d7f286a14dee5d37087290f0f8a2"
+      },
+      "pubspec_sha256": "fb9263bc6807b3f2deae45a5395fef0c47cd6ed56db170ebc26b108fbd85ddf1",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sqlite3",
+          "path": "LICENSE",
+          "sha256": "67e5d73a3a0c6e41f33d688a672b1161bf7f16e04da9ae48a7a14f1ba7436a4d"
+        }
+      ]
+    },
+    {
+      "name": "sqlite3_flutter_libs",
+      "version": "0.5.42",
+      "source": {
+        "type": "hosted",
+        "name": "sqlite3_flutter_libs",
+        "url": "https://pub.dev",
+        "sha256": "eeb9e3a45207649076b808f8a5a74d68770d0b7f26ccef6d5f43106eee5375ad"
+      },
+      "pubspec_sha256": "d523f838b1539e165b82c21211998747cf645f1650e6eb43577d2d59ffdc5026",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "sqlite3_flutter_libs",
+          "path": "LICENSE",
+          "sha256": "67e5d73a3a0c6e41f33d688a672b1161bf7f16e04da9ae48a7a14f1ba7436a4d"
+        }
+      ],
+      "notes": [
+        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
+      ]
+    },
+    {
+      "name": "stack_trace",
+      "version": "1.12.1",
+      "source": {
+        "type": "hosted",
+        "name": "stack_trace",
+        "url": "https://pub.dev",
+        "sha256": "8b27215b45d22309b5cddda1aa2b19bdfec9df0e765f2de506401c071d38d1b1"
+      },
+      "pubspec_sha256": "4a268375024e12885ed4d195dbb5a9fc168b43e867932efcf80bebb87ca75520",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "stack_trace",
+          "path": "LICENSE",
+          "sha256": "ff0b91d4f3c32b25cb6ec84985e8da89b0ba2a2b2f7eef353cda5e5423a20390"
+        }
+      ]
+    },
+    {
+      "name": "state_notifier",
+      "version": "1.0.0",
+      "source": {
+        "type": "hosted",
+        "name": "state_notifier",
+        "url": "https://pub.dev",
+        "sha256": "b8677376aa54f2d7c58280d5a007f9e8774f1968d1fb1c096adcb4792fba29bb"
+      },
+      "pubspec_sha256": "1e9f4d517e55de26a3b2a50884d3ef12972b1b536d819ecb8481ef4f61dde820",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "state_notifier",
+          "path": "LICENSE",
+          "sha256": "757d9c09a9a2a701144328c0fd596234ea287ff62952b39cd22f9ad4caed1171"
+        }
+      ]
+    },
+    {
+      "name": "stream_channel",
+      "version": "2.1.4",
+      "source": {
+        "type": "hosted",
+        "name": "stream_channel",
+        "url": "https://pub.dev",
+        "sha256": "969e04c80b8bcdf826f8f16579c7b14d780458bd97f56d107d3950fdbeef059d"
+      },
+      "pubspec_sha256": "bb9e840e71b1b060c6e32c4c33b73c845f1b9f9dfddd7a2f01c1d8ebb5ac5cae",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "stream_channel",
+          "path": "LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+        }
+      ]
+    },
+    {
+      "name": "string_scanner",
+      "version": "1.4.1",
+      "source": {
+        "type": "hosted",
+        "name": "string_scanner",
+        "url": "https://pub.dev",
+        "sha256": "921cd31725b72fe181906c6a94d987c78e3b98c2e205b397ea399d4054872b43"
+      },
+      "pubspec_sha256": "e2e5e7815773dd7525a75cb446f05bfa6525457c3310ff9a676119b432296106",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "string_scanner",
+          "path": "LICENSE",
+          "sha256": "3c32b53167c7dae9190c38dab5dd9fe1789c53623ebc7d1babcb29914c5b3f16"
+        }
+      ]
+    },
+    {
+      "name": "synchronized",
+      "version": "3.5.0",
+      "source": {
+        "type": "hosted",
+        "name": "synchronized",
+        "url": "https://pub.dev",
+        "sha256": "b3d516dbd3757ff2a458735e4f6cbac9ff261f576f6e87bcb17feabb39e657c5"
+      },
+      "pubspec_sha256": "44e152bbba30587a053a13fadca5acf63193f329fa09310723a6fe356203e3e3",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "synchronized",
+          "path": "LICENSE",
+          "sha256": "6d07c6bb60afb906049d507e19fcc4c6b59e35c0dd0f8a7302e87b3fb0576900"
+        }
+      ]
+    },
+    {
+      "name": "term_glyph",
+      "version": "1.2.2",
+      "source": {
+        "type": "hosted",
+        "name": "term_glyph",
+        "url": "https://pub.dev",
+        "sha256": "7f554798625ea768a7518313e58f83891c7f5024f88e46e7182a4558850a4b8e"
+      },
+      "pubspec_sha256": "8cc3f20df49edba351049c9a4080ac6f629da8c073fc7c63c5acc2de1230317a",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "term_glyph",
+          "path": "LICENSE",
+          "sha256": "ea97a7558a7bd7cee4e2355f7529e3cbebb0dcbb546ddb9a90f10c9eb6b08da5"
+        }
+      ]
+    },
+    {
+      "name": "test_api",
+      "version": "0.7.11",
+      "source": {
+        "type": "hosted",
+        "name": "test_api",
+        "url": "https://pub.dev",
+        "sha256": "949a932224383300f01be9221c39180316445ecb8e7547f70a41a35bf421fb9e"
+      },
+      "pubspec_sha256": "df6df3bd3f65db3836c5d738ce350d76f5c9eb953ec79d4b766b2a7a17f4b2d2",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "test_api",
+          "path": "LICENSE",
+          "sha256": "ff1b9f0df9036c04be424b1e3ce12789bea880ad5ffc3a48e069ae2d40a087a4"
+        }
+      ]
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "source": {
+        "type": "hosted",
+        "name": "typed_data",
+        "url": "https://pub.dev",
+        "sha256": "f9049c039ebfeb4cf7a7104a675823cd72dba8297f264b6637062516699fa006"
+      },
+      "pubspec_sha256": "a9f411c96b3904fdb471b2c34b5c88569b899bc5b6bcb74fd08d1abfcdc1c79f",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "typed_data",
+          "path": "LICENSE",
+          "sha256": "ff15faa32a2e638107b7789592b14426162a75ba620044ee2340a20ec6ce5e73"
+        }
+      ]
+    },
+    {
+      "name": "universal_platform",
+      "version": "1.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "universal_platform",
+        "url": "https://pub.dev",
+        "sha256": "64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec"
+      },
+      "pubspec_sha256": "40e2f1fc8b1440c683caebfd220721f569f698420ecd012fb6ba5fcfb1759c87",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "universal_platform",
+          "path": "LICENSE",
+          "sha256": "8a135e09d6288f03171b04f07f00eb5ee04e54f2f5e9c9b952f6adbd1de48c3f"
+        }
+      ]
+    },
+    {
+      "name": "uri_parser",
+      "version": "3.0.2",
+      "source": {
+        "type": "hosted",
+        "name": "uri_parser",
+        "url": "https://pub.dev",
+        "sha256": "051c62e5f693de98ca9f130ee707f8916e2266945565926be3ff20659f7853ce"
+      },
+      "pubspec_sha256": "cb2d81f30821bbb9c6fc396584c6d79897c807bf8b23ee2a3a7990c84df3536d",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "uri_parser",
+          "path": "LICENSE",
+          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher",
+      "version": "6.3.3",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher",
+        "url": "https://pub.dev",
+        "sha256": "e8cc955c97e06df9879140a1fe301f3d493f01b7c62dec7f46834be31d7e9fda"
+      },
+      "pubspec_sha256": "6375a44b5ff5f06fa306dc0894ba89f82bd5490b55ac838d776502465edcdec1",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_android",
+      "version": "6.3.33",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher_android",
+        "url": "https://pub.dev",
+        "sha256": "611e87fb320b70d1dd721dc46af89c98aceccea9b31fde49e084591414e0c610"
+      },
+      "pubspec_sha256": "af329fc2e395455e6a37f81e972b0a821d7eeb36762f18450d7bdd4649e6adf3",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher_android",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_ios",
+      "version": "6.4.2",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher_ios",
+        "url": "https://pub.dev",
+        "sha256": "8faa1aab294f1ab4040b43660c887b0418d5fa4f0cffef76a484e6aa1092eb4a"
+      },
+      "pubspec_sha256": "62f0267d5a52a0243ca829b1735a4fe7758c6cbb2ac7e40f958c6fd975f6c6db",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher_ios",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_linux",
+      "version": "3.2.3",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher_linux",
+        "url": "https://pub.dev",
+        "sha256": "10f86fef4c2c43563fa6c211ff9cf757adf4d3ab762c56bd430664a947d70cd0"
+      },
+      "pubspec_sha256": "62b850b546a75e0c883a46474a521694c8f69740107f8c770e74390f1fb7814e",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher_linux",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_macos",
+      "version": "3.2.6",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher_macos",
+        "url": "https://pub.dev",
+        "sha256": "5e835a3b869c2d70325349c81c5a45c28e20791265b67b2669da6b08c5cd5201"
+      },
+      "pubspec_sha256": "ca7e1078bfc7d56bdfe7e9ceb3ca0d553fef5880360d841b8f6a7498165d68f3",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher_macos",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_platform_interface",
+      "version": "2.3.2",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher_platform_interface",
+        "url": "https://pub.dev",
+        "sha256": "552f8a1e663569be95a8190206a38187b531910283c3e982193e4f2733f01029"
+      },
+      "pubspec_sha256": "75acac1c733016373eb5d1ac709c3834e450d352d99131bf7ad4230b7030c9a6",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher_platform_interface",
+          "path": "LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_web",
+      "version": "2.4.3",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher_web",
+        "url": "https://pub.dev",
+        "sha256": "85c81589622fbc87c1c683aaea164d3604a7777495a79d91e39ffcdec39ddb34"
+      },
+      "pubspec_sha256": "2ea3837b05bcc98c02e1738d7afe0f7cd75fda98b8e525b6ba8375812aa23afe",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher_web",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "url_launcher_windows",
+      "version": "3.1.6",
+      "source": {
+        "type": "hosted",
+        "name": "url_launcher_windows",
+        "url": "https://pub.dev",
+        "sha256": "6c5ad3f22cd4c38e089b81963b3cd7bb83b111b2df5dce008bb066162f42e429"
+      },
+      "pubspec_sha256": "5c122cea28da2719d73f101a688672e3a3d15b259c4aba025ea0d0d66836405d",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "url_launcher_windows",
+          "path": "LICENSE",
+          "sha256": "420f7739f169097f0aad1242045169cd643c8f1d94e62866fad265ae4c369b7d"
+        }
+      ]
+    },
+    {
+      "name": "uuid",
+      "version": "4.6.0",
+      "source": {
+        "type": "hosted",
+        "name": "uuid",
+        "url": "https://pub.dev",
+        "sha256": "9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd"
+      },
+      "pubspec_sha256": "f22a82dceacc2f885ed9879652c815bbd7ee03ba1666615005b5d1508aa6d4ec",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "uuid",
+          "path": "LICENSE",
+          "sha256": "ad3e5523e51004e94ba9ce728805b1b4242dbccdb65e62b523800e35a8a7cfdc"
+        }
+      ]
+    },
+    {
+      "name": "vector_math",
+      "version": "2.2.0",
+      "source": {
+        "type": "hosted",
+        "name": "vector_math",
+        "url": "https://pub.dev",
+        "sha256": "d530bd74fea330e6e364cda7a85019c434070188383e1cd8d9777ee586914c5b"
+      },
+      "pubspec_sha256": "c4d77861f9dbe286b5ef7495661afab686b47239d61fcbcd9f6b069c73792023",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "vector_math",
+          "path": "LICENSE",
+          "sha256": "b5d856a1e27e9ebea4957fc3526f1c65782a04894b113c6b3b0fb1321dbdec55"
+        }
+      ]
+    },
+    {
+      "name": "vm_service",
+      "version": "15.4.0",
+      "source": {
+        "type": "hosted",
+        "name": "vm_service",
+        "url": "https://pub.dev",
+        "sha256": "89b11d62e1040ee681af3b4f1c97a803ecbf010c6e8b9c5896ee5b08c3bf7b78"
+      },
+      "pubspec_sha256": "e5f3e30ec4d7f1d5475a3f616eb32551f2a0be5f4f2ff6ac06c312360c201119",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "vm_service",
+          "path": "LICENSE",
+          "sha256": "ad6a71997da90924b2cfb1fb47ec46537f70faf469efe016168794ae45ed6888"
+        }
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "web",
+        "url": "https://pub.dev",
+        "sha256": "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"
+      },
+      "pubspec_sha256": "229e6d6763aa2095d73390e7f94af0aad306e7a8d31e97c7b75a47bc896ccfc5",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "web",
+          "path": "LICENSE",
+          "sha256": "aa913ff50d7542eb8cc35b9f48a80928ac6819ba9057f85d424655e3e8dc271c"
+        }
+      ]
+    },
+    {
+      "name": "win32",
+      "version": "6.4.0",
+      "source": {
+        "type": "hosted",
+        "name": "win32",
+        "url": "https://pub.dev",
+        "sha256": "a0b93865d5644f11cf6a8c3f6db909f1ec168958b5805f6cc684adea957cd63d"
+      },
+      "pubspec_sha256": "71a9e5997201797d70257ad9cde8cddcb3be5d2c7a8636a38ec88fdfacdfb555",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "win32",
+          "path": "LICENSE",
+          "sha256": "87ef8bccdd619f2345ba5b9026cf1d6cccb305e36ab83849a8a3af9293abde7e"
+        }
+      ]
+    },
+    {
+      "name": "win32_registry",
+      "version": "3.0.3",
+      "source": {
+        "type": "hosted",
+        "name": "win32_registry",
+        "url": "https://pub.dev",
+        "sha256": "73b1d78920a9d6e03f8b4e43e612b87bf3152a0e5c5e5150267762b7c4116904"
+      },
+      "pubspec_sha256": "c64b6d83e18bf143419d5302fe60377e637f128e49dd5c9980dc396171f13142",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "win32_registry",
+          "path": "LICENSE",
+          "sha256": "8564d1c5caab56132f0e6bc39cea532c723956e8c389d9be867388ee0b2fcb06"
+        }
+      ]
+    },
+    {
+      "name": "windows_file_picker",
+      "version": "1.3.0",
+      "source": {
+        "type": "hosted",
+        "name": "windows_file_picker",
+        "url": "https://pub.dev",
+        "sha256": "62e6e6e115231d1d1d71c7b5883b4091ce3e0190e49548dfb0ff8cba8d91ad96"
+      },
+      "pubspec_sha256": "a4afd3d58e0116ec0a6eefd22852ff5296c5c378ea17316fd29ad79b5ecf17bc",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "windows_file_picker",
+          "path": "LICENSE",
+          "sha256": "12f7222de745bab3710ba88b59f33484ca423aa5e1deac9e56ed946706d5abab"
+        }
+      ]
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
+      "source": {
+        "type": "hosted",
+        "name": "xdg_directories",
+        "url": "https://pub.dev",
+        "sha256": "7a3f37b05d989967cdddcbb571f1ea834867ae2faa29725fd085180e0883aa15"
+      },
+      "pubspec_sha256": "496acd920fa2de8cf62b9b57b35b9b97c59d197d1c02aaf865507ab0fc963c67",
+      "license_expression": "BSD-3-Clause",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "xdg_directories",
+          "path": "LICENSE",
+          "sha256": "89519eca6f7b9529b35bdddd623a58c3af06a88c458dbd6531ddb4675acf75a9"
+        }
+      ]
+    },
+    {
+      "name": "xml",
+      "version": "6.6.1",
+      "source": {
+        "type": "hosted",
+        "name": "xml",
+        "url": "https://pub.dev",
+        "sha256": "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
+      },
+      "pubspec_sha256": "2f024688c78e7f5870b261e2d543772ad1783f0de0dbfd6511741392983fe2d5",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "xml",
+          "path": "LICENSE",
+          "sha256": "1f18a2e5a5c57381d93efa92df86477eb1205689b345417c90fcfdc09fa4fa1f"
+        }
+      ]
+    },
+    {
+      "name": "yaml",
+      "version": "3.1.4",
+      "source": {
+        "type": "hosted",
+        "name": "yaml",
+        "url": "https://pub.dev",
+        "sha256": "f67cdd8e07d3c6329146aaef1ba043542b3134c12489f553ca9a7435d1068aea"
+      },
+      "pubspec_sha256": "49ceea90c889720a87eb828a20aa1d44ec8170c416be08afb082f25bd160a7fb",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "yaml",
+          "path": "LICENSE",
+          "sha256": "d47b93335401b052d79a2f5a3710e4cf7b5aed782faedf84d40fbdd6eb934ec7"
+        }
+      ]
+    }
+  ],
+  "required_native_components": [
+    {
+      "id": "windows-libmpv-audio-2023-09-24",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "id": "linux-libmpv-controlled",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "id": "desktop-ffmpeg-external",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "id": "linux-mimalloc-2.1.2",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "id": "libsmb2-r9",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "id": "flutter-engine-runtime",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "id": "sqlite3-native-3.52.0",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "id": "android-maven-runtime",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "id": "linux-system-libraries",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "id": "filen-system-crypto",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    }
+  ],
+  "native_build_inputs": [
+    {
+      "package": "android_file_picker",
+      "path": "android/build.gradle.kts",
+      "sha256": "8b4684f1490e8637de59378d31676bfe9b2c71d50ffceffc4276a8702f724a3f",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "audio_service",
+      "path": "android/build.gradle.kts",
+      "sha256": "6dbea445b85a3bed8a241823461cb23a6acaca2eeedd5bb5e98d1a9b8d3f1cdc",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "audio_service",
+      "path": "android/settings.gradle.kts",
+      "sha256": "949153b8bd1710e3178968032b72ff99b45e2f4d3f3a0ce929f87cdfe6519e6e",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "audio_service",
+      "path": "darwin/audio_service/Package.swift",
+      "sha256": "f36dafde68f04eb041a9e99dbc97280df5692d6d39cf4b6bc3882626809b105f",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "audio_service",
+      "path": "darwin/audio_service.podspec",
+      "sha256": "73824ae92f5ad2d005964b1396b082dbb9d682a13a347711f2eab3194fcb9cea",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "audio_session",
+      "path": "android/build.gradle.kts",
+      "sha256": "b3283aaea2e0df2869b7b2785781db77eea31ada04d20dabc48a45c5a846de56",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "audio_session",
+      "path": "android/settings.gradle.kts",
+      "sha256": "70156155e4525713c0293c6f3344d7ab8210d6d9165c259bcc8883b01b57964a",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "audio_session",
+      "path": "ios/audio_session/Package.swift",
+      "sha256": "5cf5ad32e0e56e9e7f46c1a31686f5f187041d3c0954fb1c4629fa9d9eab9679",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "audio_session",
+      "path": "ios/audio_session.podspec",
+      "sha256": "a03e7d8bac7c7286e49bd4bc6f1137365e9ab6d793fab4113ecb5307701954a4",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "audio_session",
+      "path": "macos/audio_session/Package.swift",
+      "sha256": "f30fd77eee7b39412203f106914b4db2fe32107f9f7c0e80d84489a29b52e5cf",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "audio_session",
+      "path": "macos/audio_session.podspec",
+      "sha256": "dcb532cdf8afac042e3f712db64bbaba1568027b76539c8eb45031d98fc41737",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "hook/build.dart",
+      "sha256": "421e56374d60053bc8f3f5abc81fe2a22931448027474cf39963aa66374b952e",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "device_info_plus",
+      "path": "android/build.gradle.kts",
+      "sha256": "fc00b2536f167838423eceda17411aee32a6c491b5af370ae4e1f5676246a4e4",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "device_info_plus",
+      "path": "android/settings.gradle.kts",
+      "sha256": "09941e5f14e348c2b2f473469b3b8709904a8184109b3ce7f4e7e54dee170c11",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "device_info_plus",
+      "path": "ios/device_info_plus/Package.swift",
+      "sha256": "510e6b8bc445a1152da72bdca2fac36477d43fbffa0662ee68033267bea16920",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "device_info_plus",
+      "path": "ios/device_info_plus.podspec",
+      "sha256": "6d2ea5f7f1558a876c183e3ac5bb65fc70922f61ea61c8abfe5b6fd28d7f4be6",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "device_info_plus",
+      "path": "macos/device_info_plus/Package.swift",
+      "sha256": "9f27c53dd6c005265abfaa354bc5c9d2d6363b01f9ff851697d4cc1d5d5fefb3",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "device_info_plus",
+      "path": "macos/device_info_plus.podspec",
+      "sha256": "6a4a8e0d09ed1b7ff5ac63a38283db237810cca542fb03da0c82584fab2a1a7a",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "file_picker_darwin",
+      "path": "darwin/file_picker_darwin/Package.swift",
+      "sha256": "2dc0e7f8934ef0fef77f8efa9a9086b49e433a342dc071c9ccd3260ee896b2a2",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "file_picker_darwin",
+      "path": "darwin/file_picker_darwin.podspec",
+      "sha256": "ba2d6927d890743a3580156f87ec2efbe1eab77af1b82c67525f8a72957e29d7",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "flutter_secure_storage",
+      "path": "android/build.gradle",
+      "sha256": "0013e75fdbf4ec4c80db514f5d01bd966fdcbbd9f65e115835e184266b2858fb",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "flutter_secure_storage",
+      "path": "android/settings.gradle",
+      "sha256": "b5fb1df0485dcc39fb62a5d323d02af51a27ba387ba7d297fcbb12594a271e14",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "flutter_secure_storage_darwin",
+      "path": "darwin/flutter_secure_storage_darwin/Package.swift",
+      "sha256": "9611d5065efffaf2336a48a284412736ee814b71782cf898d9a812aeea11d443",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "flutter_secure_storage_darwin",
+      "path": "darwin/flutter_secure_storage_darwin.podspec",
+      "sha256": "61285edb1b63e7c32da558d9923b60ce227bd73013c800dbaae5f009793bfeb2",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "flutter_secure_storage_linux",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "b139f8afb0a19009886a3e4e650f2b5ae7bed21b694423c209807d9dd7cf1b37",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "flutter_secure_storage_windows",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "4a2f8955d46d092b3e8a93dd721053e20cb13c8a75b0b3a1ba3fc951d07df41b",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "jni",
+      "path": "android/build.gradle",
+      "sha256": "7a70fa8cb48b09cb272b7163e3268eaf82f0dd3dad4b6ca484fe6a9a9b135dc5",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "jni",
+      "path": "android/settings.gradle",
+      "sha256": "d91b05de12e9bb05305cc346abc1125ca09c0817da14f3951a2ba6e941ea1356",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "jni",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "16955aa17ec5514d8cd3b13711e763927a3ff9e8c9b4cdd9e1311487bd8664c1",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "jni",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "3cae0b3c8091c70f409d4ba24481ce168243b67ddc191da36637f3f1bbe376c5",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "jni_flutter",
+      "path": "android/build.gradle",
+      "sha256": "efe6792295979b44a5112d66ea4797095f5ce54799564201b54d9b6aa8f37ce0",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "jni_flutter",
+      "path": "android/settings.gradle",
+      "sha256": "394f5957375b4cec4a82294b3f69afa1fc1b34da3853d87fc08c712759aa673c",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "android/build.gradle.kts",
+      "sha256": "e568ec02f8bdffabfeba525df3acea4959e07212195591285b1e3fda500cc2c2",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "android/settings.gradle.kts",
+      "sha256": "eeff410ca24e1d9ad3c8191bf54771e3669eac0405c15fdd6fe2c60b89ab5d1d",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "darwin/just_audio/Package.swift",
+      "sha256": "b25e80b68322bafadf65d5efce1e7995aaaa42192fe4042900c4d3b9913fc711",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "darwin/just_audio.podspec",
+      "sha256": "480ebdcb82b7de75e4019125d35af16f27549b1d4bcdb8daa7b227a42683c53f",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "just_audio_web",
+      "path": "ios/just_audio_web.podspec",
+      "sha256": "d538e0be1e8cd3707e6ad8ad435deeff192f40ee7ca9b3fdd67240f6f307eaf7",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "just_waveform",
+      "path": "android/build.gradle",
+      "sha256": "375eacd8ce29020bcdaa75bc3689f4906836eb954c2981f186a5e9cccea9d1ec",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_waveform",
+      "path": "android/settings.gradle",
+      "sha256": "2e54204f68bce890afbaae8a4e61b153881063de1e27fc9d48da71e56782050a",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_waveform",
+      "path": "darwin/just_waveform/Package.swift",
+      "sha256": "7a7185f40f6c0e86b72d747ee12e70eddf3266fbe29254cddad6acf48231c126",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "just_waveform",
+      "path": "darwin/just_waveform.podspec",
+      "sha256": "b75c2f9c228c2620ee329820db7905b943c666496ddeff5d283dd750e60dbd0f",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "media_kit_libs_linux",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "8e9bbe1f5e9429f5c3b1965dba663bc07d4cc40ddf7c6e065c1d2a897d4e33d6",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "media_kit_libs_windows_audio",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "4e2174c6800b2757e3636a919ccda20f0275835c9db2a8abda456176167690f6",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "objective_c",
+      "path": "hook/build.dart",
+      "sha256": "4673d675678e842c83880ef88ef14dc17b3aa89a7df615fbd0a4e5bed4846525",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "android/build.gradle.kts",
+      "sha256": "1fbc4122b6e622b2a8196e00eb7a5777c2e46f0a8f32b6176d5e2164416bb8dd",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "android/settings.gradle.kts",
+      "sha256": "721c8ab2cad39457f3a232a00cea451ecfc7eaca80ab72e70a5b3d4c3481edf5",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "ios/package_info_plus/Package.swift",
+      "sha256": "c86dfeeb8b2fdf724c52f352d9a1fd149f77684d811b841ce26c4b434f08b3ea",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "ios/package_info_plus.podspec",
+      "sha256": "20f18a30bd015d3c8787cae62c09105a79b1c0a8374711e78b41ad4a7a00948c",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "macos/package_info_plus/Package.swift",
+      "sha256": "edb65c18cf2a4e113a05d9a5b606a257a2c4aa29a268302db7ad42a7f17de333",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "macos/package_info_plus.podspec",
+      "sha256": "c6bc6d69711a4c21951eae34ef01d85fb2fb3688666869ced2be5c939743af05",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "permission_handler_android",
+      "path": "android/build.gradle",
+      "sha256": "93f521ab2c959c757090512d226fff6f66fdd9a1f31b40b3c0ad6935d07afc2f",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "permission_handler_android",
+      "path": "android/settings.gradle",
+      "sha256": "498e62f65c668b5686d078f4be72cf9f1ee833dc20554cb40f25c7724ac581a9",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "permission_handler_apple",
+      "path": "ios/permission_handler_apple/Package.swift",
+      "sha256": "f9292eca738b4ec57af61664f4f82961edd7221f769a3051f57d3459621e667a",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "permission_handler_apple",
+      "path": "ios/permission_handler_apple.podspec",
+      "sha256": "79a59da810810053610dd7d9b361ed9b58f839a0825461e6fc3a4291c833b218",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "permission_handler_windows",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "f877fb5c08c3ca9779cff242dcde18028097ac537c9a75a0111d011592ffe859",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "receive_sharing_intent",
+      "path": "android/build.gradle",
+      "sha256": "32f814c1bffe2ff5cafb8849832ddb33bb5b050ec5ae8afc95abb58a335e5458",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "receive_sharing_intent",
+      "path": "android/settings.gradle",
+      "sha256": "9779277eca196f39023c56ca651e61892f89b58166f5d5006f36c2d54074dadd",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "receive_sharing_intent",
+      "path": "ios/receive_sharing_intent.podspec",
+      "sha256": "a173716549546c9319324de600c783a8d18aee3be136b4f2b5fd415d1a268a70",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "android/build.gradle.kts",
+      "sha256": "0fa45ec1e7442ecdcaebd763c7edfb17f3d4904655bc55423e0d728d4be84145",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "android/settings.gradle.kts",
+      "sha256": "75a81c7820b4682ecf270b8a3419741fba483fc2ce116a0057a8597d2f9a8df5",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "ios/share_plus/Package.swift",
+      "sha256": "29b0ec39e3557602fa2c1a831b2f7b5f09a8335bf5b531255fda801f6330e5a2",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "ios/share_plus.podspec",
+      "sha256": "3f5582089b3329f8f63865cc082500640b6255211ba971b29787606ab612ab46",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "macos/share_plus/Package.swift",
+      "sha256": "dad5e932d5251bcc3445b64e4690779bfa9aa0212d74299f9dde65cbf6cf3eb6",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "macos/share_plus.podspec",
+      "sha256": "685b10419abf09233bfd240a6d5fef92597460862802a6b44be68eb9a5ad640d",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "65b58d65ab272b2873ffacde510ae7e58113cae64dc4308c8ec21fc6c149ecf2",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "shared_preferences_android",
+      "path": "android/build.gradle.kts",
+      "sha256": "577face480aa551a419d6c3310d5720f34cda0c2df0b20901090174aa607621d",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "shared_preferences_android",
+      "path": "android/settings.gradle.kts",
+      "sha256": "e32bb28ef85cb9620d9397d0e152ae062fdc9f9149b2e06396525996e919339d",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "shared_preferences_foundation",
+      "path": "darwin/shared_preferences_foundation/Package.swift",
+      "sha256": "e0aae125c494d061044a058c54e0e52e3f1cfcb63fa7c430eaa65792b9413269",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "shared_preferences_foundation",
+      "path": "darwin/shared_preferences_foundation.podspec",
+      "sha256": "277fa1f0a165e6c955b056299105946fe152b736c5dca5f9bd9e1d639e95d04d",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqflite_android",
+      "path": "android/build.gradle",
+      "sha256": "52fdf4b28897b9c7bd4d3edb68da47b367a12d292acdb2300bd1b5711336dc70",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqflite_android",
+      "path": "android/settings.gradle",
+      "sha256": "659b3bdf550c06b3b68e8f11a1481aca0ffea66ff59eee25c463c4d97c1285c2",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqflite_darwin",
+      "path": "darwin/sqflite_darwin/Package.swift",
+      "sha256": "4fb85181c3b455145523c5edd8470090615ee1ec29c434cc9552a2d39578e5df",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqflite_darwin",
+      "path": "darwin/sqflite_darwin.podspec",
+      "sha256": "129d0f63c692cef848a74563b2bc8a8fdc676a65ba93802c7130462e33092605",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "android/build.gradle",
+      "sha256": "0576670c6ea5a5d0e77bbed6c2de16abe8000bd708aa763605eec0da566f841b",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "android/settings.gradle",
+      "sha256": "7997571de74728a057bf3bb3d7547cde91158f0d9de29b6677bcf546becbc104",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "darwin/sqlite3_flutter_libs/Package.swift",
+      "sha256": "608af01d57910c3f00a9595c5eab22d9183dcc353536e42b998bfdc680c3d1f1",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "darwin/sqlite3_flutter_libs.podspec",
+      "sha256": "d6df712afd1250d5cc92210fdc7e59a828e6ccfaaf76294df7d2f347193ac3cb",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "8c5f19d962af838048ddfac800b52b249eb49d796eabaff572e63900c434869d",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "2d363aed62bbbb04b4e1bfea21b98de04343de5b61607042f870c3239a40edb0",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "url_launcher_android",
+      "path": "android/build.gradle.kts",
+      "sha256": "b7c15441541ac8a7d80d63780fb9128a518ac3067f70816e853a2c88ea8e8e45",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "url_launcher_android",
+      "path": "android/settings.gradle.kts",
+      "sha256": "48899388be4a4df328b6cfc308b756829bb09f9d286bbb5ec3957b8f85654a32",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "url_launcher_ios",
+      "path": "ios/url_launcher_ios/Package.swift",
+      "sha256": "a084c5f43a622fa55111da7a765002d43c312f601fcd232a0b03a673927f4660",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "url_launcher_ios",
+      "path": "ios/url_launcher_ios.podspec",
+      "sha256": "0307afd17d3408d04e375872d6563bb76457ffb1f38027aa3271647332329e93",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "url_launcher_linux",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "e629a47e833c505b7e8884d8d5f008d8b463a50ce3c675c7ebd22957cbe570b3",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "url_launcher_macos",
+      "path": "macos/url_launcher_macos/Package.swift",
+      "sha256": "2094ecd1aa9ee88e3169b5f8f8f92769f8f5d81b8282c4bdb5bc120a9fcd56e8",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "url_launcher_macos",
+      "path": "macos/url_launcher_macos.podspec",
+      "sha256": "4515bb8d31c88d546797e23d2c6a08392000a617da09dc9745dbd1aa7b08b454",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "url_launcher_windows",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "fd3030d7565f31ab7a0d3a8d7ae2a7da660a2a17d29298b2798ca2e694ae5a9c",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "ios/Podfile.lock",
+      "sha256": "20a46db4da8c44f8bee71415f2159447efc12b2a652a197cfc9bc5457efc9650",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "macos/Podfile.lock",
+      "sha256": "e068781fcb05cb58433d78f0891b2f4c4e03949a879739554784cac44249bec3",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "android/app/build.gradle.kts",
+      "sha256": "ff44dfabbfa3e68a7ae10e02eb88ad78751856877ebc8cd4c90332efbcdb2f1c",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "android/build.gradle.kts",
+      "sha256": "15beb7003613848ca3fcc6237db17cb91806296c516739abcc1e7aaf46dfb38b",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "android/settings.gradle.kts",
+      "sha256": "b76d554153a63772dddbe2ee91abdf582f5f871af40698b80a2ef7b70903d96f",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "ab8b50512f320ac2d4a3457cf97eca146b4d894d0f8ead3bfea41b0ffdd4773c",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "6cfdedb22c73d6999474c05dd3201a71b6d94a79d4bbff20d557f7fe55e907f0",
+      "platforms": [
+        "windows"
+      ]
+    }
+  ]
+}

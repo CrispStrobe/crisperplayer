@@ -25,6 +25,13 @@ jobs:
           "$RUNNER_TEMP/release-checks/bin/pip" install --quiet cryptography paramiko impacket
           "$RUNNER_TEMP/release-checks/bin/python" -m unittest discover -s scripts/tests -v
       - run: flutter pub get
+      - name: Report distribution license blockers
+        run: python3 scripts/check_distribution_licenses.py --report --platform all --output build/licensing/report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distribution-license-report
+          path: build/licensing/report.json
+          if-no-files-found: error
       - run: nice -n 10 dart run build_runner build --build-filter lib/services/db/app_database.g.dart
       - run: nice -n 10 flutter analyze
       - name: Unit and isolated SFTP/SMB tests

@@ -1,5 +1,27 @@
 # Releases and installation
 
+## Current release hold
+
+New binary and TestFlight releases are blocked by the
+[distribution license policy](LICENSE_POLICY.md). The application and resolved
+`crisp_storage` package currently declare AGPL-3.0; those rights must be resolved
+before switching to an allowed license. Native LGPL artifacts also require
+matching-source and distribution evidence. The Windows audio-only DLL's LGPL
+build markers do not remove those obligations, and arbitrary Linux system mpv
+builds are not approved by this policy.
+
+Run `flutter pub get`, then
+`python3 scripts/check_distribution_licenses.py --report --platform all` to
+inspect the current blockers. The release workflows use `--enforce` and stop
+before signing/uploading an app when a blocker remains. Development tests and
+unsigned compile checks continue. These checks are an engineering gate, not a
+legal opinion or a guarantee of app-store acceptance.
+
+The installation instructions below describe existing release layouts; they
+do not certify earlier binaries under the new policy.
+
+## Existing release layout
+
 Get downloads from [GitHub Releases](https://github.com/CrispStrobe/crisperplayer/releases/latest).
 Every public binary release contains a signed Android APK, complete Windows x64,
 Linux x64, Mac arm64 and Mac x64 app archives, separate CLI archives, native notices,
@@ -49,14 +71,17 @@ can use `Get-FileHash PATH -Algorithm SHA256` and compare with the manifest.
    Use the isolated SFTP/SMB test interpreters described in the README.
 3. Commit and push master; confirm CI. Tag that exact commit to match the full pubspec
    version: `git tag v0.1.0+13` then `git push origin v0.1.0+13`.
-4. `release.yml` validates the tag in each job and runs verification and every required
-   platform build in parallel. Only when all succeed does it hash assets, create the
+4. `release.yml` validates the tag and enforces the license policy during verification.
+   Only after verification succeeds do required platform builds run in parallel.
+   When all succeed it hashes assets, creates the
    draft and publish the complete release. A failed check or platform publishes nothing. Fix the issue and use a fresh build/tag if
    source changes are necessary; do not move a published tag.
 5. The same tag triggers `ios-release.yml`: existing App Store identity, profiles,
    entitlement validation, upload, processing, and internal TestFlight group assignment.
-   Do not dispatch another upload of the same build. Retry only distribution when the
-   binary is already uploaded. See [iOS build](IOS_BUILD.md).
+   Do not dispatch another upload of the same build. Distribution-only retries are
+   disabled until review evidence can be tied to the already uploaded IPA; a
+   successful check on a different source checkout cannot approve an old binary.
+   See [iOS build](IOS_BUILD.md).
 
 `Release binaries` also supports manual dispatch with an **existing matching tag** to retry
 builds without changing the release source. The iOS workflow is independent: public

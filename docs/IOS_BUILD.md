@@ -4,6 +4,14 @@ Use Flutter 3.44.4, Dart 3.12 and iOS 15+. The project uses CocoaPods only; Swif
 
 ## GitHub Actions
 
+New signed builds and TestFlight uploads first enforce the
+[distribution license policy](LICENSE_POLICY.md). The current AGPL application
+and `crisp_storage` declarations are unresolved release blockers. The workflow
+resolves dependencies and checks that policy before importing signing keys.
+Distribution-only retries are disabled until license evidence can be tied to
+the exact previously uploaded IPA; checking today's source is insufficient to
+approve yesterday's binary.
+
 The CI workflow checks analysis, Dart tests, release helper tests, Android APK generation and the iOS simulator build. It saves the APK and simulator app as artifacts.
 
 `ios-release.yml` archives unsigned, then signs at export with the existing canonical Apple Distribution certificate `L9PHHNLY9Y`. It explicitly restores the authorized App Group entitlement after export, re-signing the extension before its host with that same identity. Unsigned archives otherwise lose this custom entitlement during export. It never enables automatic provisioning or creates/revokes certificates. A `v*` tag uploads; manual dispatch defaults to `dry_run: true` and saves the signed IPA without uploading.

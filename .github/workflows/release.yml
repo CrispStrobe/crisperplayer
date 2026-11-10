@@ -39,6 +39,8 @@ jobs:
           "$RUNNER_TEMP/checks/bin/pip" install --quiet cryptography paramiko impacket
           "$RUNNER_TEMP/checks/bin/python" -m unittest discover -s scripts/tests -v
       - run: flutter pub get
+      - name: Enforce distribution license policy
+        run: python3 scripts/check_distribution_licenses.py --enforce --platform all
       - run: flutter analyze --no-pub
       - name: Unit and isolated protocol tests
         env:
@@ -52,6 +54,7 @@ jobs:
           npm test
 
   android:
+    needs: verify
     runs-on: ubuntu-latest
     env:
       CRISPER_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
@@ -132,6 +135,7 @@ jobs:
           if-no-files-found: error
 
   desktop:
+    needs: verify
     strategy:
       fail-fast: false
       matrix:
@@ -188,6 +192,20 @@ jobs:
           echo "XCODE_XCCONFIG_FILE=$RUNNER_TEMP/Release.xcconfig" >> "$GITHUB_ENV"
       - run: flutter pub get
       - run: flutter build ${{ matrix.target }} --release --dart-define=CRISPERPLAYER_CLI=true
+      - name: Verify the actual Windows audio DLL
+        if: matrix.target == 'windows'
+        run: >-
+          python scripts/audit_desktop_audio.py
+          build/windows/x64/runner/Release/libmpv-2.dll
+          --expected-sha256 0a5a0b476866c91a639a4e511e8153968f8fa23564461b0aa09acdba816164a4
+          --require-compatible-markers
+          --output build/license-evidence/windows-audio.json
+      - uses: actions/upload-artifact@v4
+        if: matrix.target == 'windows'
+        with:
+          name: windows-audio-license-evidence
+          path: build/license-evidence/windows-audio.json
+          if-no-files-found: error
       - name: Ad-hoc sign complete Mac app
         if: matrix.target == 'macos'
         run: |

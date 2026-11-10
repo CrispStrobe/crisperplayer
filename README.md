@@ -65,7 +65,9 @@ Choose exact playback rates from **0.50× to 3.00×**, adjust in **0.05×** step
 and see the remaining listening time. Rates are remembered per book. On
 Windows/Linux, **Speed → Speed processing** offers Automatic (the engine's
 default pitch-preserving route) and Legacy scaletempo, applied after restart.
-Android and Apple show their current native processor. See
+On iOS/macOS the same panel offers Time Domain (the voice default) and
+Spectral (an alternative for music and mixed audio), also applied after restart.
+Android identifies its existing Sonic processor. See
 [algorithms, platform differences and validation limits](docs/SPEED_PROCESSING.md).
 
 ## Import from Android Downloads
@@ -112,6 +114,13 @@ The license screen includes Flutter package notices and native SQLite, libsmb2 a
 desktop audio notices. Native notice texts are also included in release archives and
 [assets/licenses](assets/licenses). CrisperPlayer is licensed under [GNU AGPL-3.0](LICENSE), © 2026 Christian Ströbele.
 Third-party components retain their upstream licenses.
+
+The distribution policy now excludes GPL-only and AGPL-only code. The current
+AGPL application license and resolved `crisp_storage` license therefore block a
+new release until the necessary rights and replacement licenses are confirmed.
+The [license audit and processor policy](docs/LICENSE_POLICY.md) records these
+conflicts, native audio provenance, and the checks required before app-store or
+binary distribution. Existing license notices are preserved during that review.
 
 ## Current scope
 

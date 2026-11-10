@@ -25,6 +25,12 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+      - name: Select the SDK required by device_info_plus
+        # device_info_plus 13.3.0 requires Xcode >= 26.1.1. The macos-15
+        # runner still defaults to 16.4; select its installed 26.2 explicitly.
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.2.app/Contents/Developer
+          xcodebuild -version
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.4'

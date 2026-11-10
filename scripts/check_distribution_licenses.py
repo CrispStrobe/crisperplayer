@@ -288,8 +288,23 @@ def audit_native_source_manifest(root: Path, component: str, entry: dict,
             if not isinstance(name, str) or not name or name in names:
                 raise ValueError("Duplicate or invalid native source component")
             names.add(name)
-            if not re.fullmatch(r"[0-9a-f]{40}", source.get("revision", "")) or not SHA256.fullmatch(source.get("archive_sha256", "")):
-                raise ValueError(f"Native source component {name} has no exact revision/archive pin")
+            revision = source.get("revision", "")
+            if not re.fullmatch(r"[0-9a-f]{40}", revision):
+                raise ValueError(f"Native source component {name} has no exact revision pin")
+            source_type = source.get("source_type", "archive")
+            if source_type == "archive":
+                if not SHA256.fullmatch(source.get("archive_sha256", "")):
+                    raise ValueError(f"Native source component {name} has no exact archive pin")
+            elif source_type == "git-files":
+                # A selective Git snapshot has no downloaded archive. Retain
+                # the reviewed commit/tree, original blob identities and SHA256
+                # bytes instead of labeling a local bundle as an upstream tarball.
+                if (not re.fullmatch(r"[0-9a-f]{40}", source.get("git_tree_sha1", ""))
+                        or source.get("archive_sha256") is not None
+                        or source.get("archive_url") is not None):
+                    raise ValueError(f"Native source component {name} has invalid Git-file provenance")
+            else:
+                raise ValueError(f"Unsupported native source provenance: {source_type}")
             permitted_refs = frozenset(identifier for identifier in license_refs
                 if REVIEWED_NATIVE_LICENSE_REFS[(component, identifier)]["source_component"] == name)
             problem = license_problem(source.get("license_expression"), reviewed_license_refs=permitted_refs)
@@ -308,6 +323,26 @@ def audit_native_source_manifest(root: Path, component: str, entry: dict,
                 if not source_file.is_file() or digest(source_file) != item.get("sha256"):
                     issue("native_source_file_changed", component, f"Missing or changed native source file: {filename}")
                     valid = False
+                if source_type == "git-files":
+                    upstream = item.get("upstream_path", "")
+                    upstream_path = Path(upstream)
+                    url = urlparse(item.get("source_url", ""))
+                    if (not upstream or upstream_path.is_absolute()
+                            or ".." in upstream_path.parts or "\\" in upstream
+                            or upstream_path.as_posix() != upstream
+                            or url.scheme != "https" or not url.hostname
+                            or url.query or url.fragment
+                            or revision not in url.path.split("/")
+                            or not url.path.endswith("/" + upstream)
+                            or not re.fullmatch(r"[0-9a-f]{40}", item.get("git_blob_sha1", ""))):
+                        raise ValueError(f"Invalid pinned Git-file identity: {filename}")
+                    if source_file.is_file():
+                        data = source_file.read_bytes()
+                        blob = b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+                        if hashlib.sha1(blob).hexdigest() != item["git_blob_sha1"]:
+                            issue("native_source_git_blob_changed", component,
+                                  f"Source bytes do not match reviewed upstream Git blob: {filename}")
+                            valid = False
         actual = {p.relative_to(source_root).as_posix() for p in source_root.rglob("*") if p.is_file()}
         actual.discard(path.name)
         if actual != expected:

@@ -1,5 +1,6 @@
 import contextlib
 import copy
+import hashlib
 import io
 import json
 import sys
@@ -284,6 +285,66 @@ class DistributionLicenseTests(unittest.TestCase):
         self.assertIn("invalid_native_source_manifest", self.codes())
         del self.native["components"][0]["source_manifest"]
         self.assertIn("missing_native_source_manifest", self.codes())
+
+    def add_native_git_file_snapshot(self):
+        path, manifest = self.add_native_source_manifest()
+        source = manifest["components"][0]
+        del source["archive_sha256"]
+        source.update(source_type="git-files", git_tree_sha1="c" * 40)
+        for item in source["files"]:
+            data = (path.parent / item["path"]).read_bytes()
+            item.update(
+                upstream_path=item["path"],
+                source_url=f'https://example.invalid/repo/+/{source["revision"]}/{item["path"]}',
+                git_blob_sha1=hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(),
+            )
+        self.write_native_source_manifest(path, manifest)
+        return path, manifest
+
+    def write_native_source_manifest(self, path, manifest):
+        path.write_text(json.dumps(manifest))
+        self.native["components"][0]["source_manifest"]["sha256"] = check.digest(path)
+
+    def test_native_git_files_use_real_blob_identity_without_an_archive_claim(self):
+        self.add_native_git_file_snapshot()
+        self.assertEqual(self.findings(), [])
+
+    def test_native_git_files_detect_blob_changes_even_with_new_sha256(self):
+        path, manifest = self.add_native_git_file_snapshot()
+        source = path.parent / "source.cpp"
+        source.write_text("// locally edited, no longer the original Git object\n")
+        manifest["components"][0]["files"][0]["sha256"] = check.digest(source)
+        self.write_native_source_manifest(path, manifest)
+        self.assertIn("native_source_git_blob_changed", self.codes())
+
+    def test_native_git_files_require_immutable_urls_and_safe_original_paths(self):
+        path, manifest = self.add_native_git_file_snapshot()
+        original = copy.deepcopy(manifest)
+        for changes in (
+            {"source_url": "https://example.invalid/repo/+/main/source.cpp"},
+            {"source_url": f'https://example.invalid/repo/+/{"a" * 40}/other.cpp'},
+            {"upstream_path": "../source.cpp"},
+            {"git_blob_sha1": "not-a-git-object"},
+        ):
+            with self.subTest(changes=changes):
+                candidate = copy.deepcopy(original)
+                candidate["components"][0]["files"][0].update(changes)
+                self.write_native_source_manifest(path, candidate)
+                self.assertIn("invalid_native_source_manifest", self.codes())
+
+    def test_native_source_rejects_unknown_provenance_and_mixed_archive_claims(self):
+        path, manifest = self.add_native_git_file_snapshot()
+        original = copy.deepcopy(manifest)
+        for changes in (
+            {"source_type": "unverified-download"},
+            {"git_tree_sha1": "main"},
+            {"archive_sha256": "b" * 64},
+        ):
+            with self.subTest(changes=changes):
+                candidate = copy.deepcopy(original)
+                candidate["components"][0].update(changes)
+                self.write_native_source_manifest(path, candidate)
+                self.assertIn("invalid_native_source_manifest", self.codes())
 
     def add_reviewed_pffft_notice(self):
         component = "android-native-speed-processors"

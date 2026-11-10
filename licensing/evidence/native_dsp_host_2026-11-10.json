@@ -1,0 +1,1283 @@
+{
+  "recorded_date": "2026-11-10",
+  "scope": "Source-pinned native DSP and actual Media3/JNI host validation. Android SDK/NDK, APK and device validation are separate pending checks.",
+  "release_approved": false,
+  "native": {
+    "compiler_c": "gcc (Debian 14.2.0-19) 14.2.0",
+    "compiler_cxx": "g++ (Debian 14.2.0-19) 14.2.0",
+    "adapter_sha256": "d258286d62571ba0a5f238afd7adfee164cb04e3ef7dc1f7161fdc843c76b565",
+    "source_manifest_sha256": "e43ae779e7fcef68612d71dfb31d6fc63f5d0a0b61ead85198c75fa20892b7f2",
+    "library_sha256": "0820348aa5df2aba1b84c7bfa63f678f9002d3ea4ccfc24d8158350393bfd390",
+    "test_methods": 11,
+    "failures": 0,
+    "errors": 0,
+    "matrix_cases": 72,
+    "measurements": [
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9500578374309
+        ],
+        "seconds": 0.06310923398996238,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.01850184799695853,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.02302579936156
+        ],
+        "seconds": 0.027362231005099602,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.05011209283924
+        ],
+        "seconds": 0.029837612994015217,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.09686961609725
+        ],
+        "seconds": 0.036808158009080216,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          440.20213363279055
+        ],
+        "seconds": 0.03374307601188775,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9500578374309,
+          879.9007580809965
+        ],
+        "seconds": 0.08877761599433143,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0,
+          880.0013329778726
+        ],
+        "seconds": 0.024863785001798533,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.02302579936156,
+          880.0477543266466
+        ],
+        "seconds": 0.03645920299459249,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.05011209283924,
+          880.1043905434449
+        ],
+        "seconds": 0.034026224006083794,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.09686961609725,
+          880.1995917441596
+        ],
+        "seconds": 0.03493557500769384,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          440.20213363279055,
+          880.4141608283217
+        ],
+        "seconds": 0.035166426008800045,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.1836348906292
+        ],
+        "seconds": 0.10142337399884127,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.01607193199743051,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          439.9083524265778
+        ],
+        "seconds": 0.033624791001784615,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.817145618946
+        ],
+        "seconds": 0.04041073299595155,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.63363863447125
+        ],
+        "seconds": 0.0507224079919979,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          439.26561700676405
+        ],
+        "seconds": 0.06004938800469972,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.1836348906292,
+          880.3649064392938
+        ],
+        "seconds": 0.1753719409898622,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0,
+          879.9951013410079
+        ],
+        "seconds": 0.030600058002164587,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          439.9083524265778,
+          879.810462957034
+        ],
+        "seconds": 0.042348311995738186,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.817145618946,
+          879.634291237892
+        ],
+        "seconds": 0.08004508599697147,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.63363863447125,
+          879.2672772689425
+        ],
+        "seconds": 0.09384682499512564,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          439.26561700676405,
+          878.5312340135281
+        ],
+        "seconds": 0.08209805098886136,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          440.0012242149721
+        ],
+        "seconds": 0.07722985799773596,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.02036247300566174,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.02754493099928368,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          439.99208860759495
+        ],
+        "seconds": 0.0282789039920317,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.021599949002848007,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819
+        ],
+        "seconds": 0.021779004004201852,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9985309510256,
+          880.003059601028
+        ],
+        "seconds": 0.13137153000570834,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0,
+          880.0013329778726
+        ],
+        "seconds": 0.02915578799729701,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0,
+          879.9881597046891
+        ],
+        "seconds": 0.03926857800979633,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00394710874286,
+          880.0078942174857
+        ],
+        "seconds": 0.034123407007427886,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0,
+          880.0
+        ],
+        "seconds": 0.02794717499637045,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819,
+          879.9776910206358
+        ],
+        "seconds": 0.01685995500884019,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00022508708054
+        ],
+        "seconds": 0.06770336200133897,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.01507514200056903,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.027591860009124503,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          440.00322346683856
+        ],
+        "seconds": 0.024054820009041578,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          440.01309562784604
+        ],
+        "seconds": 0.018280881995451637,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0159426066162
+        ],
+        "seconds": 0.012482356993132271,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00022508708054,
+          880.0008997964211
+        ],
+        "seconds": 0.106014327990124,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0,
+          879.9951013410079
+        ],
+        "seconds": 0.02879791999293957,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0,
+          879.9935953886799
+        ],
+        "seconds": 0.04599008499644697,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          440.00322346683856,
+          880.0064469336771
+        ],
+        "seconds": 0.03442453101160936,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          440.0,
+          880.0
+        ],
+        "seconds": 0.02625364599225577,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009,
+          880.0318852132324
+        ],
+        "seconds": 0.02031851799983997,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9985309510256
+        ],
+        "seconds": 0.06299902099999599,
+        "latency_source_frames": 3969
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.013877826000680216,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.03501474700169638,
+        "latency_source_frames": 5953
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00175812583785
+        ],
+        "seconds": 0.02205546200275421,
+        "latency_source_frames": 6615
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0110500828756
+        ],
+        "seconds": 0.01853739000216592,
+        "latency_source_frames": 7938
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819
+        ],
+        "seconds": 0.012543317003292032,
+        "latency_source_frames": 10584
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9985309510256,
+          880.0024484299443
+        ],
+        "seconds": 0.12061521000578068,
+        "latency_source_frames": 3969
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0,
+          880.0013329778726
+        ],
+        "seconds": 0.02513900099438615,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0,
+          880.0017427675148
+        ],
+        "seconds": 0.04756536000058986,
+        "latency_source_frames": 5953
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00175812583785,
+          880.0078942174857
+        ],
+        "seconds": 0.03894531099649612,
+        "latency_source_frames": 6615
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0110500828756,
+          880.0
+        ],
+        "seconds": 0.02985042199725285,
+        "latency_source_frames": 7938
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819,
+          879.9776910206358
+        ],
+        "seconds": 0.020374041007016785,
+        "latency_source_frames": 10584
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00044989821055
+        ],
+        "seconds": 0.06438867100223433,
+        "latency_source_frames": 4320
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.014465342988842167,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.02705447700282093,
+        "latency_source_frames": 6480
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.99353900823775
+        ],
+        "seconds": 0.023198648006655276,
+        "latency_source_frames": 7200
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.9988056492789
+        ],
+        "seconds": 0.01781630699406378,
+        "latency_source_frames": 8640
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009
+        ],
+        "seconds": 0.012755600007949397,
+        "latency_source_frames": 11520
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00044989821055,
+          880.0008997964211
+        ],
+        "seconds": 0.11485337899648584,
+        "latency_source_frames": 4320
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0,
+          879.9951013410079
+        ],
+        "seconds": 0.027659671002766117,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0,
+          879.9935953886799
+        ],
+        "seconds": 0.04951473500113934,
+        "latency_source_frames": 6480
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.99353900823775,
+          879.9887180933578
+        ],
+        "seconds": 0.03970773599576205,
+        "latency_source_frames": 7200
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.9988056492789,
+          880.0
+        ],
+        "seconds": 0.030164645999320783,
+        "latency_source_frames": 8640
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009,
+          879.981780915509
+        ],
+        "seconds": 0.021342264997656457,
+        "latency_source_frames": 11520
+      }
+    ],
+    "isolated_impulse_measurements": [
+      {
+        "engine": "sonic",
+        "rate": 0.5,
+        "source_frame": 20,
+        "peak": 0.7999817132949829
+      },
+      {
+        "engine": "sonic",
+        "rate": 0.5,
+        "source_frame": 48000,
+        "peak": 0.7999817132949829
+      },
+      {
+        "engine": "sonic",
+        "rate": 0.5,
+        "source_frame": 95979,
+        "peak": 0.7609485387802124
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.25,
+        "source_frame": 20,
+        "peak": 0.7782829999923706
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.25,
+        "source_frame": 48000,
+        "peak": 0.7999817132949829
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.25,
+        "source_frame": 95979,
+        "peak": 0.36851099133491516
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.5,
+        "source_frame": 20,
+        "peak": 0.7782829999923706
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.5,
+        "source_frame": 48000,
+        "peak": 0.729514479637146
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.5,
+        "source_frame": 95979,
+        "peak": 0.3749809265136719
+      },
+      {
+        "engine": "sonic",
+        "rate": 2,
+        "source_frame": 20,
+        "peak": 0.7782829999923706
+      },
+      {
+        "engine": "sonic",
+        "rate": 2,
+        "source_frame": 48000,
+        "peak": 0.5788445472717285
+      },
+      {
+        "engine": "sonic",
+        "rate": 2,
+        "source_frame": 95979,
+        "peak": 0.0
+      },
+      {
+        "engine": "sonic",
+        "rate": 3,
+        "source_frame": 20,
+        "peak": 0.7566148638725281
+      },
+      {
+        "engine": "sonic",
+        "rate": 3,
+        "source_frame": 48000,
+        "peak": 0.5983458757400513
+      },
+      {
+        "engine": "sonic",
+        "rate": 3,
+        "source_frame": 95979,
+        "peak": 0.0
+      },
+      {
+        "engine": "bungee",
+        "rate": 0.5,
+        "source_frame": 20,
+        "peak": 0.07508937269449234
+      },
+      {
+        "engine": "bungee",
+        "rate": 0.5,
+        "source_frame": 48000,
+        "peak": 0.711894690990448
+      },
+      {
+        "engine": "bungee",
+        "rate": 0.5,
+        "source_frame": 95979,
+        "peak": 0.47007036209106445
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.25,
+        "source_frame": 20,
+        "peak": 0.4023369252681732
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.25,
+        "source_frame": 48000,
+        "peak": 0.419141948223114
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.25,
+        "source_frame": 95979,
+        "peak": 0.4464305639266968
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.5,
+        "source_frame": 20,
+        "peak": 0.25731128454208374
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.5,
+        "source_frame": 48000,
+        "peak": 0.46949681639671326
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.5,
+        "source_frame": 95979,
+        "peak": 0.3628450334072113
+      },
+      {
+        "engine": "bungee",
+        "rate": 2,
+        "source_frame": 20,
+        "peak": 0.26171791553497314
+      },
+      {
+        "engine": "bungee",
+        "rate": 2,
+        "source_frame": 48000,
+        "peak": 0.4453624486923218
+      },
+      {
+        "engine": "bungee",
+        "rate": 2,
+        "source_frame": 95979,
+        "peak": 0.3367260992527008
+      },
+      {
+        "engine": "bungee",
+        "rate": 3,
+        "source_frame": 20,
+        "peak": 0.20003344118595123
+      },
+      {
+        "engine": "bungee",
+        "rate": 3,
+        "source_frame": 48000,
+        "peak": 0.33127182722091675
+      },
+      {
+        "engine": "bungee",
+        "rate": 3,
+        "source_frame": 95979,
+        "peak": 0.2895514667034149
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 0.5,
+        "source_frame": 20,
+        "peak": 0.9001708030700684
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 0.5,
+        "source_frame": 48000,
+        "peak": 0.7694385051727295
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 0.5,
+        "source_frame": 95979,
+        "peak": 0.594008207321167
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.25,
+        "source_frame": 20,
+        "peak": 0.7289962768554688
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.25,
+        "source_frame": 48000,
+        "peak": 0.6618238687515259
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.25,
+        "source_frame": 95979,
+        "peak": 0.6509977579116821
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.5,
+        "source_frame": 20,
+        "peak": 0.5715019106864929
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.5,
+        "source_frame": 48000,
+        "peak": 0.5985652804374695
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.5,
+        "source_frame": 95979,
+        "peak": 0.5437619686126709
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 2,
+        "source_frame": 20,
+        "peak": 0.6313945055007935
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 2,
+        "source_frame": 48000,
+        "peak": 0.49159371852874756
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 2,
+        "source_frame": 95979,
+        "peak": 0.2529143691062927
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 3,
+        "source_frame": 20,
+        "peak": 0.6247173547744751
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 3,
+        "source_frame": 48000,
+        "peak": 0.20306463539600372
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 3,
+        "source_frame": 95979,
+        "peak": 0.3251853287220001
+      }
+    ]
+  },
+  "java": {
+    "media3": "1.4.1",
+    "junit": "4.13.2",
+    "runtime": "OpenJDK21",
+    "plugin_java_compilation": "Passed against exact Media3 and current Flutter engine embedding classes",
+    "pipeline_tests": 10,
+    "actual_jni_tests": 4,
+    "root_verified_junit_result": "OK (14 tests)",
+    "host_shim": "Android Build constants only; real Media3 classes and actual native algorithms",
+    "test_source_sha256": {
+      "packages/just_audio/android/src/test/java/com/ryanheise/just_audio/CrisperAudioProcessorTest.java": "151dad1265ce7d5453f27a9443763ff37b675eb7624490e3799b0a918818d294",
+      "packages/just_audio/android/src/androidTest/java/com/ryanheise/just_audio/CrisperDspJniTest.java": "9d247de87255a45b96db8b0579185eeaba5a1d661253a9ceed1932e052e651be"
+    }
+  },
+  "reproduction": "docs/ANDROID_AUDIO_PROCESSORS.md",
+  "limitations": [
+    "Synthetic signal and lifecycle checks are not a speech-intelligibility ranking.",
+    "Native Sonic C in the comparison harness is not a bit-exact Media3 Sonic implementation.",
+    "Sonic removed the final isolated impulse at 2x and 3x in this synthetic fixture; observations are retained.",
+    "No target-device listening, CPU or battery results are claimed."
+  ]
+}

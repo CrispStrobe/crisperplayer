@@ -324,6 +324,207 @@
       "blockers": [
         "The optional externally loaded libcrypto build is not pinned or inspected. Distinguish this host runtime from distributed files, and require reviewed provenance before ever bundling it. For a completely controlled runtime, disable probing and use the reviewed fallback or an approved library build."
       ]
+    },
+    {
+      "id": "android-native-speed-processors",
+      "platforms": [
+        "android"
+      ],
+      "version": "just_audio 0.10.6+crisper.2 / pinned Bungee Basic, Signalsmith Stretch, and comparison core",
+      "license_expression": "MIT AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND LicenseRef-PFFFT-FFTPACK",
+      "review_status": "needs_review",
+      "source_review_status": "reviewed",
+      "license_review_status": "reviewed",
+      "artifact_review_status": "pending_android_artifact_validation",
+      "scope": "The exact unmodified upstream source/license closure and independent MIT adapters were reviewed. This source review does not approve an Android binary, complete NDK/Maven closure, performance, or app-store distribution.",
+      "source": {
+        "repository": "https://github.com/CrispStrobe/crisperplayer",
+        "vendored_source_revision": "349e2be81165dab7acdd3dfe3e6df79ad138322d",
+        "source_url": "https://github.com/CrispStrobe/crisperplayer/tree/349e2be81165dab7acdd3dfe3e6df79ad138322d/packages/just_audio/native/crisper_dsp/vendor",
+        "local_adapter_identity": "Exact package source-tree hash, 20 local additions, reviewed upstream patch, and build-input hashes in dependencies.json; all adapter changes retain MIT notices.",
+        "upstream_component_count": 6,
+        "upstream_file_count": 252,
+        "upstream_modified": false
+      },
+      "source_manifest": {
+        "path": "packages/just_audio/native/crisper_dsp/vendor/manifest.json",
+        "sha256": "e43ae779e7fcef68612d71dfb31d6fc63f5d0a0b61ead85198c75fa20892b7f2"
+      },
+      "license_refs": [
+        {
+          "id": "LicenseRef-PFFFT-FFTPACK",
+          "path": "packages/just_audio/native/crisper_dsp/vendor/pffft/LICENSE.txt",
+          "sha256": "deffd5aa43d83be2e0818b5c5b8b21425bb769df9c585a45f633e6f979015fde",
+          "review_basis": "Exact PFFFT/FFTPACK notice permits source/binary redistribution and modification with notice preservation and no endorsement; this selected grant falls within the user-authorized permissive/similar policy. The reference is not a standard SPDX license name or an ownership exemption."
+        }
+      ],
+      "selected_components": [
+        {
+          "id": "sonic",
+          "repository": "waywardgeek/sonic",
+          "revision": "b93885dcb70aae50c6f76b0fe4e0868f029a077e",
+          "archive_url": "https://api.github.com/repos/waywardgeek/sonic/tarball/b93885dcb70aae50c6f76b0fe4e0868f029a077e",
+          "archive_sha256": "7a56d118e8e011c3dbe678b08a3f4870f2b039691e4bcbc351673d5f6066bb66",
+          "license_expression": "Apache-2.0",
+          "upstream_modified": false,
+          "file_count": 3
+        },
+        {
+          "id": "signalsmith-stretch",
+          "repository": "Signalsmith-Audio/signalsmith-stretch",
+          "revision": "88061fd4eda56a2353c5d65c74aa3f4ccf76f9da",
+          "archive_url": "https://api.github.com/repos/Signalsmith-Audio/signalsmith-stretch/tarball/88061fd4eda56a2353c5d65c74aa3f4ccf76f9da",
+          "archive_sha256": "fa35575c38636449864e230398fee84e512b98f81ab08a88688f9ecdeca4d78d",
+          "license_expression": "MIT",
+          "upstream_modified": false,
+          "file_count": 2
+        },
+        {
+          "id": "signalsmith-linear",
+          "repository": "Signalsmith-Audio/linear",
+          "revision": "7bb1c8f36794d6980080ce817c91f8da8fe56a66",
+          "archive_url": "https://api.github.com/repos/Signalsmith-Audio/linear/tarball/7bb1c8f36794d6980080ce817c91f8da8fe56a66",
+          "archive_sha256": "55619ee678de67d4c76d46191d524bc36b1b5db19d11621eb2fe6ee67be4352f",
+          "license_expression": "MIT",
+          "upstream_modified": false,
+          "file_count": 4
+        },
+        {
+          "id": "bungee",
+          "repository": "bungee-audio-stretch/bungee",
+          "revision": "61f52bf34be577d189d388772ddfa3696dee77d8",
+          "archive_url": "https://api.github.com/repos/bungee-audio-stretch/bungee/tarball/61f52bf34be577d189d388772ddfa3696dee77d8",
+          "archive_sha256": "f08e72f65c494bbe0ed3064f2582435c3aa6f12275fc199fea182fce8f17565f",
+          "license_expression": "MPL-2.0",
+          "upstream_modified": false,
+          "file_count": 35
+        },
+        {
+          "id": "eigen",
+          "repository": "https://github.com/eigenteam/eigen-git-mirror",
+          "revision": "c29c800126982c561e8d0b9255dc65474cd98de3",
+          "archive_url": "https://api.github.com/repos/eigenteam/eigen-git-mirror/tarball/c29c800126982c561e8d0b9255dc65474cd98de3",
+          "archive_sha256": "545a3278d9cd8d46099e4d7f9bb263b716086db6bd6f40bb278d67af8c0a1b13",
+          "license_expression": "MPL-2.0 AND BSD-3-Clause AND Apache-2.0",
+          "upstream_modified": false,
+          "file_count": 203
+        },
+        {
+          "id": "pffft",
+          "repository": "https://bitbucket.org/jpommier/pffft",
+          "revision": "02fe7715a5bf8bfd914681c53429600f94e0f536",
+          "archive_url": "https://bitbucket.org/jpommier/pffft/get/02fe7715a5bf8bfd914681c53429600f94e0f536.tar.gz",
+          "archive_sha256": "9adeb18ac7bb52e9fb921c31c0c6a4e9ae150cc6fcb20a899d4b3a2275176ded",
+          "license_expression": "LicenseRef-PFFFT-FFTPACK",
+          "upstream_modified": false,
+          "file_count": 5
+        }
+      ],
+      "build_constraints": {
+        "EIGEN_MPL2_ONLY": true,
+        "excluded": "Unsupported/GPL-only Eigen modules, Bungee Pro, CLI/cxxopts, Sonic Speedy integration, external FFT backends and build-time/runtime dependency downloads.",
+        "android_ndk": "28.2.13676358",
+        "cmake": "3.22.1",
+        "stl": "c++_shared; separately inventoried NDK runtime must ship with the app",
+        "target_artifact_validation": "Pending Android ABI builds, APK packaged-library hashes/dependencies, R8/JNI retention and 16 KB page-alignment checks.",
+        "device_validation": "Pending Android/emulator instrumentation and device listening/performance; host measurements are not Android results."
+      },
+      "evidence": [
+        {
+          "path": "packages/just_audio/native/crisper_dsp/vendor/manifest.json",
+          "sha256": "e43ae779e7fcef68612d71dfb31d6fc63f5d0a0b61ead85198c75fa20892b7f2",
+          "note": "Six exact upstream revisions/archive hashes and 252 per-file hashes; verified matching immutable published vendor tree 349e2be."
+        },
+        {
+          "path": "packages/just_audio/UPSTREAM_SHA256.json",
+          "sha256": "5cb94f81cdcb3d6222eaf146a3032b36cb205a6d9bba1bab861db634eb3c2950",
+          "note": "38 original just_audio 0.10.6 source-file hashes."
+        },
+        {
+          "path": "packages/just_audio/UPSTREAM.patch",
+          "sha256": "9304cc7b9d285f30c3270511f6c6bf027708936dbc02c3322cd1620e55e6b7af",
+          "note": "Complete verified changes to 9 original files plus 20 local adapter additions."
+        },
+        {
+          "path": "packages/just_audio/LOCAL_ADDITIONS.json",
+          "sha256": "9d52730ea4990410ceb5a5bff3130ea069a76b739c46d2ae754f49dee2cb6b37",
+          "note": "Exact local adapter/test/build-file list; individual current hashes also recorded as build inputs."
+        },
+        {
+          "path": "packages/just_audio/native/crisper_dsp/LICENSE",
+          "sha256": "6f1615225a4a9c80b104473ba3c623439240eee4b61360fd8ac04219fb3ab08d",
+          "note": "MIT grant for the independent adapter; upstream grants remain separate."
+        },
+        {
+          "path": "packages/just_audio/native/crisper_dsp/CMakeLists.txt",
+          "sha256": "6d3fccc65f48ff8c182f9d0e7027489d9ae8e0cf9656af7d8639ab9e6dfb5f2d",
+          "note": "Explicit offline source list and EIGEN_MPL2_ONLY restriction; no FetchContent."
+        },
+        {
+          "path": "packages/just_audio/android/src/main/cpp/CMakeLists.txt",
+          "sha256": "87661c10e2ab32bfb7887442871685e5237143987080e2b3df5b39297d06795e",
+          "note": "JNI shared-library linkage and 16 KB page-alignment request; no claim that an APK has been inspected."
+        },
+        {
+          "path": "packages/just_audio/android/build.gradle.kts",
+          "sha256": "b68360fbfdfbc1a2ee3f8caf2a8a573d39c951cb46c8c2cb664eeda61de52950",
+          "note": "Exact NDK/CMake pins and c++_shared declaration; Media3 remains 1.4.1."
+        },
+        {
+          "path": "assets/licenses/ANDROID-DSP.txt",
+          "sha256": "01c644613508f5859b4b68b7c846893309bea909b861c28d7bb23aaf1d43e94c",
+          "note": "In-app upstream notices and immutable MPL source URL; preserved actual notices, not inferred from wrapper license."
+        },
+        {
+          "path": "lib/services/native_licenses.dart",
+          "sha256": "cf9021f9ba4fe47cf5202b1503202ae450605d43385b2baa701d5089e7c6d4eb",
+          "note": "Registers the Android DSP notice in the app license registry."
+        },
+        {
+          "path": "licensing/evidence/native_dsp_host_2026-11-10.json",
+          "sha256": "c7f230c1e2c0c79d8dfea0370a633c660dc8997f5514b0fc9c3e4192152be77a",
+          "note": "Actual native and Media3/JNI host evidence, explicitly release_approved: false. This does not satisfy Android package/runtime validation."
+        }
+      ],
+      "blockers": [
+        "No final Android APK/AAB has been inspected for per-ABI libcrisper_audio_dsp.so hashes, exact source/build correspondence, actual linked dependencies, and included source/notices. Host binaries and tests do not establish Android artifact provenance."
+      ]
+    },
+    {
+      "id": "android-ndk-runtime-28.2.13676358",
+      "platforms": [
+        "android"
+      ],
+      "version": "Declared NDK 28.2.13676358 / libc++_shared.so",
+      "license_expression": "Apache-2.0 WITH LLVM-exception",
+      "license_expression_scope": "Identified upstream LLVM grant; exact packaged NDK runtime and all bundled third-party notices remain to be inspected.",
+      "review_status": "needs_review",
+      "source_review_status": "needs_review",
+      "license_review_status": "upstream_grant_identified",
+      "artifact_review_status": "pending_android_artifact_validation",
+      "source": {
+        "repository": "https://android.googlesource.com/platform/ndk",
+        "declared_ndk_package": "28.2.13676358",
+        "exact_runtime_source_revision": "pending build/artifact inspection"
+      },
+      "evidence": [
+        {
+          "path": "packages/just_audio/android/build.gradle.kts",
+          "sha256": "b68360fbfdfbc1a2ee3f8caf2a8a573d39c951cb46c8c2cb664eeda61de52950",
+          "note": "Plugin explicitly pins NDK 28.2.13676358 and requests c++_shared, creating a separate packaged runtime dependency."
+        },
+        {
+          "url": "https://developer.android.com/ndk/guides/cpp-support",
+          "note": "Official NDK documentation identifies libc++ as Apache-2.0 with LLVM exceptions and requires libc++_shared.so to be packaged; it is not an Android system library. The exact shipped NDK build must still be verified."
+        },
+        {
+          "url": "https://llvm.org/LICENSE.txt",
+          "note": "Reviewed permissive Apache-2.0 WITH LLVM-exception pair. LLVM also documents separately licensed third-party files and legacy notices; the pair is not a blanket approval of every runtime object."
+        }
+      ],
+      "blockers": [
+        "Capture the actual per-ABI libc++_shared.so hashes, NDK source/build provenance, included third-party notices, and final APK dependency resolution. The declared NDK version and upstream license statement do not identify the redistributed runtime bytes."
+      ]
     }
   ]
 }

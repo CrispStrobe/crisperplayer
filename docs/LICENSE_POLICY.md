@@ -69,8 +69,8 @@ permissive DSP on Apple platforms to avoid adding this burden to audio.
 | Apple Time Domain / Spectral | AVFoundation system API; the maintained just_audio adapter is MIT. | Offer both on iOS/macOS. Time Domain remains the voice default; Spectral is an optional, more computationally intensive alternative. |
 | Sonic | Apache-2.0 native library and implementation in AndroidX Media3. | First choice for audiobook speech, including high rates; keep the existing Android default and use it as the comparison baseline. |
 | mpv scaletempo2 / scaletempo | Available in an appropriately built LGPL libmpv. | Retain the existing choices subject to native artifact verification; processor choice does not waive packaging obligations. |
-| Bungee Basic | MPL-2.0, with separately licensed Eigen/PFFFT dependencies. | First alternative to benchmark for speech mixed with music or ambience. The proprietary Bungee Pro edition is outside this open dependency plan. |
-| Signalsmith Stretch | MIT; its selected FFT dependencies must also be reviewed. | Candidate for moderate rate changes. Upstream describes best time-stretch quality around 0.75×–1.5×; do not assume a 2×–3× speech improvement. |
+| Bungee Basic | MPL-2.0; the selected Eigen Core and PFFFT source and original notices are pinned. | Experimental Android option for comparison on speech mixed with music or ambience. `EIGEN_MPL2_ONLY` excludes GPL modules; proprietary Bungee Pro is not included. |
+| Signalsmith Stretch | MIT, with the selected MIT Signalsmith Linear implementation. | Experimental Android option for moderate rate changes. Upstream describes best time-stretch quality around 0.75×–1.5×; do not assume a 2×–3× speech improvement. |
 | SoundTouch | LGPL-2.1. | A possible alternative with the same source/relinking review needed for LGPL components. It is not assumed better for every voice. |
 | Rubber Band | GPL-2.0-or-later or a separately purchased commercial license. | Excluded from the openly reproducible default dependency set under this policy. A commercial license for one publisher does not give all open-source recipients the same commercial redistribution rights. |
 
@@ -78,6 +78,11 @@ The word “quality” describes an available processing choice, not a measured
 claim that one algorithm beats every other algorithm. Compare the same speech
 and speech-with-music passages at matched level and several speeds, and measure
 CPU/battery use, seek latency and interruption behavior on target devices.
+
+The [Android processor record](ANDROID_AUDIO_PROCESSORS.md) documents the exact
+source revisions, native integration and validation limits. The entire selected
+external source closure is included with per-file hashes; app notices link to an
+immutable public source snapshot. The independent adapter is MIT licensed.
 
 ## Enforced checks and current evidence
 

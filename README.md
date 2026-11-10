@@ -67,7 +67,10 @@ Windows/Linux, **Speed → Speed processing** offers Automatic (the engine's
 default pitch-preserving route) and Legacy scaletempo, applied after restart.
 On iOS/macOS the same panel offers Time Domain (the voice default) and
 Spectral (an alternative for music and mixed audio), also applied after restart.
-Android identifies its existing Sonic processor. See
+Android keeps Sonic as the default and offers experimental Bungee Basic and
+Signalsmith Stretch alternatives after restart. The native alternatives retain
+original source timing for resume/history; skip silence remains available with
+Sonic. Their pinned MPL/permissive source and notices are included. See
 [algorithms, platform differences and validation limits](docs/SPEED_PROCESSING.md).
 
 ## Import from Android Downloads
@@ -110,8 +113,8 @@ currently builds the native app's platform-availability notice.
 
 Open **Settings → About CrisperPlayer** for the installed version/build, provider and
 contact information, privacy details, source/download links, and third-party licenses.
-The license screen includes Flutter package notices and native SQLite, libsmb2 and
-desktop audio notices. Native notice texts are also included in release archives and
+The license screen includes Flutter package notices and native SQLite, libsmb2,
+desktop audio and Android processor notices. Native notice texts are also included in release archives and
 [assets/licenses](assets/licenses). CrisperPlayer is licensed under [GNU AGPL-3.0](LICENSE), © 2026 Christian Ströbele.
 Third-party components retain their upstream licenses.
 
@@ -119,7 +122,7 @@ The distribution policy excludes GPL-only and AGPL-only **external dependencies*
 The project owner has confirmed distribution authority for CrisperPlayer and
 `crisp_storage`, including App Store additional permissions and dual licensing;
 their own AGPL declarations do not block this policy.
-The [license audit and processor policy](docs/LICENSE_POLICY.md) records these
+The [license audit and processor policy](docs/LICENSE_POLICY.md) records the
 external dependency evidence, native audio provenance, and the checks required
 before app-store or binary distribution. Existing license notices are preserved.
 

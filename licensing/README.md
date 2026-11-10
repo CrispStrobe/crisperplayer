@@ -61,7 +61,52 @@ not make an LGPL-only component a forbidden GPL component. External GPL/AGPL
 identifiers are blocked. An external dual-license offer containing a forbidden grant must
 have an explicitly reviewed selection of an allowed grant in the inventory;
 the checker does not select one automatically. Unknown licenses and exceptions
-require a policy decision.
+require a policy decision. The exact `Apache-2.0 WITH LLVM-exception` pair is
+recognized as a permissive grant; the exception does not approve a different
+base license or any uninspected LLVM third-party code. See the
+[upstream LLVM grant](https://llvm.org/LICENSE.txt).
+
+## Android native source evidence
+
+The `android-native-speed-processors` entry separates three review states:
+
+| Evidence | Current scope |
+| --- | --- |
+| Source review | Reviewed: six exact upstream revisions and archive hashes, with 252 source and notice files verified against the vendored manifest. |
+| License review | Reviewed: independent MIT adapters; Sonic Apache-2.0; Signalsmith Stretch/Linear MIT; Bungee Basic MPL-2.0; selected Eigen Core MPL-2.0 with retained BSD/Apache notices; exact permissive PFFFT/FFTPACK notice. |
+| Android artifact review | Pending: target ABI builds, packaged native hashes and dependencies, source/build correspondence, included notices, and Android validation remain separate checks. |
+
+The checker reads the pinned native source manifest as well as the bundle's
+top-level license declaration. A new or changed file, stale manifest, missing
+source pin, or forbidden transitive declaration is a blocker. The app package
+also pins the complete vendor tree, reviewed upstream patch, local additions,
+Gradle/CMake recipes, JNI and Java adapters, and source-test files. The app's
+Android DSP notice and license registration are separately hashed as evidence.
+
+`LicenseRef-PFFFT-FFTPACK` identifies the actual NCAR/UCAR permissive notice;
+it is not substituted with an inaccurate standard license name. The checker
+recognizes that reference only for the exact Android DSP component, PFFFT
+source component, notice path and SHA-256 already reviewed. Copying the string
+into another package or native component does not create an approval.
+
+The source files match the [immutable published vendor tree](https://github.com/CrispStrobe/crisperplayer/tree/349e2be81165dab7acdd3dfe3e6df79ad138322d/packages/just_audio/native/crisper_dsp/vendor).
+The original MPL-covered files are unmodified. Unsupported and GPL-only Eigen
+modules are omitted, and the build enforces `EIGEN_MPL2_ONLY`. The app preserves the
+upstream notices and gives the corresponding-source URL. Host signal and
+Media3/JNI results are retained in
+[native_dsp_host_2026-11-10.json](evidence/native_dsp_host_2026-11-10.json),
+which explicitly does not approve a release artifact.
+
+The pinned NDK `28.2.13676358` and its `libc++_shared.so` are a separate native
+component. The [official NDK documentation](https://developer.android.com/ndk/guides/cpp-support)
+identifies the upstream LLVM grant and explains that this shared runtime must
+ship in the app. Exact redistributed runtime bytes, third-party notices and
+APK dependency resolution still need artifact evidence. Neither the DSP source
+review nor an allowed upstream runtime license removes that requirement.
+
+Machine reports expose `native_source_reviews` separately from distribution
+findings. A verified source manifest is not an artifact approval; an explicitly
+pending artifact cannot pass merely by changing an overall review label.
 
 ## Exact ownership scope
 

@@ -34,6 +34,16 @@ ALLOWED_LICENSES = {
     "LGPL-2.1-or-later", "LGPL-3.0-only", "LGPL-3.0-or-later",
     "Unicode-3.0", "Unicode-DFS-2016", "OFL-1.1", "blessing",
 }
+# LLVM's exception grants additional permissions; it does not turn the Apache
+# license into a GPL grant. Only this exact reviewed base/exception pair is known.
+ALLOWED_EXCEPTION_PAIRS = {("Apache-2.0", "LLVM-exception")}
+REVIEWED_NATIVE_LICENSE_REFS = {
+    ("android-native-speed-processors", "LicenseRef-PFFFT-FFTPACK"): {
+        "path": "packages/just_audio/native/crisper_dsp/vendor/pffft/LICENSE.txt",
+        "sha256": "deffd5aa43d83be2e0818b5c5b8b21425bb769df9c585a45f633e6f979015fde",
+        "source_component": "pffft",
+    },
+}
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SPDX_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+:-]*|[()]")
 OWNERSHIP_AUTHORIZATION_ID = "user-owned-crisperplayer-crisp-storage-2026-11-10"
@@ -64,7 +74,7 @@ def digest(path: Path) -> str:
 
 def tree_digest(root: Path) -> str:
     """Pin local vendored package content, excluding generated build/cache files."""
-    ignored = {".git", ".dart_tool", ".build", "build", "__pycache__"}
+    ignored = {".git", ".dart_tool", ".build", "build", "__pycache__", ".cxx", ".gradle"}
     h = hashlib.sha256()
     for path in sorted(root.rglob("*")):
         relative = path.relative_to(root)
@@ -167,7 +177,8 @@ def source_pin(lock: dict) -> dict:
     raise ValueError(f"Unrecognized dependency source: {source}")
 
 
-def license_problem(expression: object, *, user_owned: bool = False) -> str | None:
+def license_problem(expression: object, *, user_owned: bool = False,
+                    reviewed_license_refs: frozenset[str] = frozenset()) -> str | None:
     """Validate explicit SPDX metadata, never grep the license's legal prose.
 
     A GPL text incorporated by LGPL-3.0 is not a separate GPL component. Actual
@@ -199,12 +210,13 @@ def license_problem(expression: object, *, user_owned: bool = False) -> str | No
         else:
             identifiers.append(token)
             if position < len(tokens) and tokens[position] == "WITH":
-                # Exceptions need an explicit policy decision; none are
-                # automatically approved by this project's current policy.
+                # Unreviewed exceptions and mismatched base licenses fail.
                 position += 1
                 if position >= len(tokens) or tokens[position] in {"AND", "OR", "WITH", "(", ")"}:
                     raise ValueError()
-                identifiers.append("Exception:" + tokens[position])
+                exception = tokens[position]
+                if (token, exception) not in ALLOWED_EXCEPTION_PAIRS:
+                    identifiers.append("Exception:" + exception)
                 position += 1
 
     def expr():
@@ -223,11 +235,88 @@ def license_problem(expression: object, *, user_owned: bool = False) -> str | No
     forbidden = [value for value in identifiers if re.match(r"^(?:AGPL|GPL)(?:-|$)", value, re.IGNORECASE)]
     if forbidden and not user_owned:
         return "Forbidden license: " + ", ".join(forbidden)
-    allowed = ALLOWED_LICENSES | (OWNED_COPYLEFT_LICENSES if user_owned else set())
+    allowed = ALLOWED_LICENSES | reviewed_license_refs | (OWNED_COPYLEFT_LICENSES if user_owned else set())
     unknown = [value for value in identifiers if value not in allowed]
     if unknown:
         return "License requires explicit policy review: " + ", ".join(unknown)
     return None
+
+
+def native_license_refs(root: Path, component: str, entry: dict, issue) -> frozenset[str]:
+    """Recognize a local grant only for its reviewed identity and exact notice.
+
+    A LicenseRef string is not an approval and cannot exempt other packages,
+    other native components, or changed notice text from the normal policy.
+    """
+    recognized = set()
+    for reference in entry.get("license_refs", []):
+        identifier = reference.get("id")
+        policy = REVIEWED_NATIVE_LICENSE_REFS.get((component, identifier))
+        if policy is None or any(reference.get(key) != policy[key] for key in ("path", "sha256")):
+            issue("invalid_native_license_ref", component, "Local license reference does not match an exact reviewed grant and component")
+            continue
+        path = (root / policy["path"]).resolve()
+        if not path.is_relative_to(root.resolve()) or not path.is_file() or digest(path) != policy["sha256"]:
+            issue("native_license_ref_changed", component, f"Missing or changed reviewed local license: {identifier}")
+            continue
+        recognized.add(identifier)
+    return frozenset(recognized)
+
+
+def audit_native_source_manifest(root: Path, component: str, entry: dict,
+                                license_refs: frozenset[str], issue) -> bool | None:
+    """Check a vendored source closure without approving a compiled artifact."""
+    evidence = entry.get("source_manifest")
+    if evidence is None:
+        if entry.get("source_review_status") == "reviewed":
+            issue("missing_native_source_manifest", component, "A reviewed native source closure requires its pinned manifest")
+            return False
+        return None
+    try:
+        relative = Path(evidence["path"])
+        path = (root / relative).resolve()
+        if relative.is_absolute() or not path.is_relative_to(root.resolve()) or not path.is_file() or digest(path) != evidence.get("sha256"):
+            raise ValueError("The reviewed native source manifest is missing or changed")
+        manifest = read_json(path)
+        if manifest.get("schema_version") != 1 or not isinstance(manifest.get("components"), list) or not manifest["components"]:
+            raise ValueError("Invalid native source manifest schema")
+        source_root = path.parent
+        expected, names = set(), set()
+        valid = True
+        for source in manifest["components"]:
+            name = source["id"]
+            if not isinstance(name, str) or not name or name in names:
+                raise ValueError("Duplicate or invalid native source component")
+            names.add(name)
+            if not re.fullmatch(r"[0-9a-f]{40}", source.get("revision", "")) or not SHA256.fullmatch(source.get("archive_sha256", "")):
+                raise ValueError(f"Native source component {name} has no exact revision/archive pin")
+            permitted_refs = frozenset(identifier for identifier in license_refs
+                if REVIEWED_NATIVE_LICENSE_REFS[(component, identifier)]["source_component"] == name)
+            problem = license_problem(source.get("license_expression"), reviewed_license_refs=permitted_refs)
+            if problem:
+                issue("native_source_license_policy", f"{component}/{name}", problem)
+                valid = False
+            if not isinstance(source.get("files"), list) or not source["files"]:
+                raise ValueError(f"Native source component {name} has no file inventory")
+            for item in source["files"]:
+                relative_file = Path(item["path"])
+                source_file = source_root / relative_file
+                filename = relative_file.as_posix()
+                if relative_file.is_absolute() or ".." in relative_file.parts or filename in expected or source_file.is_symlink() or not source_file.resolve().is_relative_to(source_root):
+                    raise ValueError(f"Invalid or duplicate native source file {filename}")
+                expected.add(filename)
+                if not source_file.is_file() or digest(source_file) != item.get("sha256"):
+                    issue("native_source_file_changed", component, f"Missing or changed native source file: {filename}")
+                    valid = False
+        actual = {p.relative_to(source_root).as_posix() for p in source_root.rglob("*") if p.is_file()}
+        actual.discard(path.name)
+        if actual != expected:
+            issue("native_source_closure_changed", component, f"Unlisted or missing native source files: {', '.join(sorted(actual ^ expected))}")
+            valid = False
+        return valid
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+        issue("invalid_native_source_manifest", component, str(error))
+        return False
 
 
 def runtime_closure(graph: dict, root_name: str) -> tuple[set[str], dict[str, dict]]:
@@ -287,6 +376,7 @@ def audit(root: Path, platform: str = "all") -> dict:
         "runtime_package_count": 0,
         "native_component_count": 0,
         "owned_policy_exemptions": [],
+        "native_source_reviews": [],
         "findings": [],
     }
     findings = report["findings"]
@@ -460,7 +550,17 @@ def audit(root: Path, platform: str = "all") -> dict:
             if platform != "all" and platform not in targets:
                 continue
             report["native_component_count"] += 1
-            problem = license_problem(entry.get("license_expression"))
+            refs = native_license_refs(root, component, entry, issue)
+            source_verified = audit_native_source_manifest(root, component, entry, refs, issue)
+            if source_verified is not None or "source_review_status" in entry:
+                report["native_source_reviews"].append({
+                    "component": component,
+                    "source_review_status": entry.get("source_review_status", "missing"),
+                    "license_review_status": entry.get("license_review_status", "missing"),
+                    "source_manifest_verified": source_verified,
+                    "artifact_review_status": entry.get("artifact_review_status", "missing"),
+                })
+            problem = license_problem(entry.get("license_expression"), reviewed_license_refs=refs)
             if problem:
                 issue("native_license_policy", component, problem)
             if entry.get("review_status") != "reviewed":
@@ -471,6 +571,8 @@ def audit(root: Path, platform: str = "all") -> dict:
             for blocker in blockers:
                 issue("native_provenance", component, str(blocker))
             if entry.get("review_status") == "reviewed":
+                if entry.get("artifact_review_status", "reviewed") != "reviewed":
+                    issue("native_artifact_review_required", component, "Source/license review cannot substitute for pending artifact validation")
                 artifact = entry.get("artifact", {})
                 artifacts = entry.get("artifacts", [artifact])
                 if not artifacts or any(not isinstance(a.get("sha256"), str) or not SHA256.fullmatch(a["sha256"]) for a in artifacts):
@@ -507,6 +609,9 @@ def main(argv=None) -> int:
     print(f"Checked {report['runtime_package_count']} runtime packages and {report['native_component_count']} native components.")
     if report["owned_policy_exemptions"]:
         print("User-owned policy scope: " + ", ".join(item["component"] for item in report["owned_policy_exemptions"]) + ". Existing license notices and external dependencies remain checked.")
+    for review in report["native_source_reviews"]:
+        verified = "not recorded" if review['source_manifest_verified'] is None else str(review['source_manifest_verified'])
+        print(f"Native evidence [{review['component']}]: source={review['source_review_status']}, license={review['license_review_status']}, source manifest verified={verified}, artifact={review['artifact_review_status']}.")
     for finding in report["findings"]:
         print(f"BLOCKER [{finding['code']}] {finding['component']}: {finding['message']}")
     print(report["scope"])

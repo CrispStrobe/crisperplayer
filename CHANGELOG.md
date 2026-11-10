@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- Added experimental **Bungee Basic** and **Signalsmith Stretch** Android speed
+  processors through a real Media3/JNI PCM pipeline. Sonic remains the default;
+  processor changes apply after restart. Native modes preserve source timing,
+  drain/reset buffered audio and retain saved skip-silence preferences while
+  explaining that silence removal requires Sonic.
+- Vendored the exact MPL/permissive DSP source closure and original notices,
+  with an offline native build, streaming correctness tests, WAV comparison
+  renderer and Android compile/JNI CI. No GPL/AGPL external processor was added.
+- Corrected the distribution checker to honor the owner's confirmed authority
+  and existing App Store permissions for CrisperPlayer and `crisp_storage`.
+  External dependencies remain checked independently.
 - Added an optional **Apple Spectral** speed processor alongside Time Domain on
   iOS/macOS, using a documented patch to the MIT-licensed just_audio adapter.
   Selection applies after restart and uses the AVFoundation system API.

@@ -223,6 +223,96 @@ class DistributionLicenseTests(unittest.TestCase):
             with self.subTest(expression=expression):
                 self.assertIsNone(check.license_problem(expression))
 
+    def test_llvm_exception_is_permitted_only_with_its_reviewed_apache_grant(self):
+        self.assertIsNone(check.license_problem("Apache-2.0 WITH LLVM-exception"))
+        for expression in ("MIT WITH LLVM-exception", "GPL-2.0-only WITH LLVM-exception", "Apache-2.0 WITH Unknown-exception"):
+            with self.subTest(expression=expression):
+                self.assertIsNotNone(check.license_problem(expression))
+
+    def add_native_source_manifest(self):
+        base = self.root / "licensing/native-source"
+        base.mkdir()
+        (base / "source.cpp").write_text("// source under MIT\n")
+        (base / "LICENSE").write_text("MIT source notice")
+        manifest = {
+            "schema_version": 1,
+            "components": [{
+                "id": "upstream", "revision": "a" * 40,
+                "archive_sha256": "b" * 64, "license_expression": "MIT",
+                "files": [{"path": name, "sha256": check.digest(base / name)}
+                          for name in ("source.cpp", "LICENSE")],
+            }],
+        }
+        path = base / "manifest.json"
+        path.write_text(json.dumps(manifest))
+        self.native["components"][0].update({
+            "source_review_status": "reviewed", "license_review_status": "reviewed",
+            "artifact_review_status": "reviewed",
+            "source_manifest": {"path": str(path.relative_to(self.root)), "sha256": check.digest(path)},
+        })
+        return path, manifest
+
+    def test_reviewed_source_and_license_do_not_approve_a_pending_native_artifact(self):
+        self.add_native_source_manifest()
+        self.native["components"][0].update({"review_status": "needs_review", "artifact_review_status": "pending_android_artifact_validation"})
+        self.assertEqual(self.codes(), {"native_review_required"})
+        report = check.audit(self.root)
+        self.assertTrue(report["native_source_reviews"][0]["source_manifest_verified"])
+        self.assertEqual(report["native_source_reviews"][0]["license_review_status"], "reviewed")
+        # An accidental overall approval cannot hide an explicitly pending artifact.
+        self.native["components"][0]["review_status"] = "reviewed"
+        self.assertIn("native_artifact_review_required", self.codes())
+
+    def test_native_manifest_checks_transitive_grants_not_only_bundle_label(self):
+        path, manifest = self.add_native_source_manifest()
+        self.assertEqual(self.findings(), [])
+        manifest["components"][0]["license_expression"] = "AGPL-3.0-only"
+        path.write_text(json.dumps(manifest))
+        self.native["components"][0]["source_manifest"]["sha256"] = check.digest(path)
+        self.assertIn("native_source_license_policy", self.codes())
+
+    def test_native_manifest_detects_changed_and_unlisted_source_files(self):
+        path, _ = self.add_native_source_manifest()
+        self.assertEqual(self.findings(), [])
+        (path.parent / "source.cpp").write_text("different native source")
+        (path.parent / "unlisted.cpp").write_text("new transitive native source")
+        self.assertTrue({"native_source_file_changed", "native_source_closure_changed"}.issubset(self.codes()))
+
+    def test_source_review_without_manifest_or_with_stale_manifest_is_blocked(self):
+        path, _ = self.add_native_source_manifest()
+        path.write_text(path.read_text() + "\n")
+        self.assertIn("invalid_native_source_manifest", self.codes())
+        del self.native["components"][0]["source_manifest"]
+        self.assertIn("missing_native_source_manifest", self.codes())
+
+    def add_reviewed_pffft_notice(self):
+        component = "android-native-speed-processors"
+        identifier = "LicenseRef-PFFFT-FFTPACK"
+        policy = check.REVIEWED_NATIVE_LICENSE_REFS[(component, identifier)]
+        repository = Path(__file__).resolve().parents[2]
+        path = self.root / policy["path"]
+        path.parent.mkdir(parents=True)
+        path.write_bytes((repository / policy["path"]).read_bytes())
+        entry = self.native["components"][0]
+        entry.update({"id": component, "platforms": ["android"], "license_expression": identifier,
+                      "license_refs": [{"id": identifier, "path": policy["path"], "sha256": policy["sha256"]}]})
+        self.inventory["required_native_components"] = [{"id": component, "platforms": ["android"]}]
+        return path
+
+    def test_custom_permissive_notice_requires_exact_component_and_bytes(self):
+        path = self.add_reviewed_pffft_notice()
+        self.assertEqual(self.findings(), [])
+        path.write_text("A different grant using the same identifier")
+        self.assertTrue({"native_license_ref_changed", "native_license_policy"}.issubset(self.codes()))
+
+    def test_custom_license_reference_cannot_spread_to_other_native_or_dart_components(self):
+        self.add_reviewed_pffft_notice()
+        self.recorded("transitive")["license_expression"] = "LicenseRef-PFFFT-FFTPACK"
+        self.assertIn("license_policy", self.codes())
+        self.native["components"][0]["id"] = "unrelated-native"
+        self.inventory["required_native_components"][0]["id"] = "unrelated-native"
+        self.assertTrue({"invalid_native_license_ref", "native_license_policy"}.issubset(self.codes()))
+
     def test_changed_license_bytes_block_even_when_version_is_unchanged(self):
         (self.root / "cache/transitive/LICENSE").write_text("New different grant")
         self.assertIn("license_evidence_changed", self.codes())
@@ -250,6 +340,18 @@ class DistributionLicenseTests(unittest.TestCase):
         entry["source"] = source
         entry["source_tree_sha256"] = check.tree_digest(source_root)
         self.assertEqual(self.findings(), [])
+        for generated in (
+            "build/generated/output.so",
+            "tools/__pycache__/helper.pyc",
+            "android/.cxx/Debug/arm64-v8a/build.ninja",
+            "android/.gradle/8.9/executionHistory/executionHistory.bin",
+        ):
+            with self.subTest(generated=generated):
+                path = source_root / generated
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("generated cache content")
+                self.assertEqual(check.tree_digest(source_root), entry["source_tree_sha256"])
+                self.assertEqual(self.findings(), [])
         (source_root / "copied_native.c").write_text("new native dependency")
         self.assertIn("local_source_changed", self.codes())
 

@@ -9,12 +9,15 @@ failed changes, and stops controlling a book when another one becomes active.
 ## What the installed app uses
 
 This assessment is based on the dependency versions in `pubspec.lock`:
-`just_audio 0.10.6+crisper.1` (a small, MIT-licensed local patch to 0.10.6),
+`just_audio 0.10.6+crisper.2` (a maintained MIT-licensed adapter to 0.10.6,
+with separately licensed native processors),
 `just_audio_media_kit 2.1.0`, and `media_kit 1.2.6`.
 
 | Platform | Current speed processing | Choice available in this app |
 | --- | --- | --- |
-| Android | Media3/ExoPlayer's Sonic processor on the normal decoded PCM path. The packaged just_audio Android plugin uses Media3 1.4.1, the default renderer/audio sink, and disables audio offload. | Fixed by the current native backend. |
+| Android, Sonic | Media3 1.4.1's Sonic processor on the normal decoded PCM path, with audio offload disabled. | Default; selectable. Keeps the existing speech and skip-silence behavior. |
+| Android, Bungee Basic | A native, MPL-2.0 phase-vocoder processor with the pinned Eigen/PFFFT source closure. | Experimental opt-in; compare on narration mixed with music or ambience. |
+| Android, Signalsmith Stretch | A native MIT processor, using the MIT Signalsmith Linear FFT implementation. | Experimental opt-in; recommended comparison range is 0.75×–1.5×. |
 | iOS and macOS, Time Domain | AVFoundation `AVAudioTimePitchAlgorithmTimeDomain`, the upstream voice-oriented default. | Default; selectable. |
 | iOS and macOS, Spectral | AVFoundation `AVAudioTimePitchAlgorithmSpectral`, Apple's music-oriented alternative with higher computational cost. | Optional; selectable. |
 | Windows and Linux, Automatic | mpv's default pitch-preserving speed path, through media_kit. Current mpv documentation specifies `scaletempo2`; the exact implementation depends on the bundled or installed mpv version. | Default for new launches; selectable. |
@@ -22,6 +25,41 @@ This assessment is based on the dependency versions in `pubspec.lock`:
 
 The separate Pages browser player uses browser media playback; this document
 describes the native Flutter app.
+
+## Android choice
+
+Open **Speed → Speed processing** and choose **Sonic**, **Bungee Basic**, or
+**Signalsmith Stretch**. Sonic remains the default. The preference applies to
+all books after restarting CrisperPlayer; the panel distinguishes the processor
+active now from a saved choice that is pending restart.
+
+The two native alternatives support mono/stereo PCM at 8–192 kHz and the app's
+full 0.50×–3.00× rate range. Support for a rate does not establish that it sounds
+better at that rate. Signalsmith's upstream recommendation is approximately
+0.75×–1.5×; Sonic remains the speech baseline, particularly at high rates.
+At 1.00× the native adapters pass PCM through unchanged.
+
+**Skip silence is available with Sonic.** The first version of the native
+alternatives does not combine silence removal with time stretching. Global and
+per-book preferences are retained, but the controls show that the feature is
+unavailable for the current processor. Choosing a pending mode does not change
+the capability of the running player.
+
+The native modes replace Media3's speed-processing chain; they do not append a
+second stretcher after Sonic. They force decoding to PCM and disable encoded
+passthrough, offload and AudioTrack speed adjustment so processing cannot be
+bypassed or applied twice. Media3 drains the old processing segment before a
+rate transition. Seek/reset discards buffered audio, end-of-stream drains the
+tail, and the clock maps delivered output back to original source time. These
+properties matter to resume, played ranges, Return Trail and the journal.
+
+The unchanged Sonic path does not load the JNI library. Initialization errors
+in an explicitly selected native processor are reported rather than silently
+claiming that a different engine is running. Native source pins, original
+licenses, offline build/test tools and the WAV comparison renderer are in
+[the native processor package](../packages/just_audio/native/crisper_dsp/README.md).
+These options are experimental pending target-device listening and battery
+measurements. See [Android validation](ANDROID_AUDIO_PROCESSORS.md).
 
 ## Desktop choice
 
@@ -59,7 +97,7 @@ for the shared player. The patched native source sets the public
 swap the active audio processor during playback. The choice is also transported
 again if just_audio recreates its native player.
 
-The complete seven-file upstream diff, original source hashes, license and
+The complete upstream diff, original source hashes, licenses and
 update procedure are documented in
 [the vendored package provenance](../packages/just_audio/UPSTREAM.md).
 The patch uses public AVFoundation APIs and adds no GPL or AGPL library.
@@ -68,26 +106,26 @@ The broader app/distribution license review is tracked separately in
 
 ## Other algorithms and tradeoffs
 
-- **Sonic** is already present on Android. It adjusts speed while preserving
-  voice pitch. Selecting another processor requires integration in the native
-  audio sink; changing a Dart setting cannot replace it.
+- **Sonic** remains the Android default. The native C implementation is also
+  included as the host comparison baseline; the default app path continues
+  to use Media3's implementation rather than replacing it with the C copy.
 - **scaletempo2** uses Chromium's waveform similarity overlap-and-add (WSOLA)
   approach. Current mpv selects it automatically for pitch-corrected speed
   changes. The mpv manual describes improved quality relative to older
   scaletempo and Rubber Band's R2 engine; this is an upstream characterization,
   not a CrisperPlayer listening benchmark.
 - **Signalsmith Stretch** and its current **Signalsmith Linear** dependency use
-  MIT licenses. This is a useful candidate for a future custom native DSP path.
+  MIT licenses. The Android alternative now has a real native PCM integration.
   The author says time stretching sounds best for modest changes around
   0.75×–1.5×, so it should not be assumed to improve 2×–3× audiobook speech.
-  Its API exposes input/output latency, seek priming and flush behavior. Those
-  need explicit handling to preserve track boundaries and the original
-  timestamps used by Return Trail and the listening journal.
+  Its adapter handles input/output latency, seek priming and flush behavior to
+  preserve track boundaries and original source timestamps.
 - **Bungee** provides a C++ streaming/granular stretcher under MPL 2.0. MPL is
   file-level copyleft, with source/notice obligations, rather than an
-  unrestricted permissive license. Its dependencies and exact build need review
-  before adoption. The separately marketed proprietary Bungee Pro is not the
-  open-source implementation and is not part of this plan.
+  unrestricted permissive license. The vendored Basic build includes only the
+  selected Eigen/PFFFT source closure, original notices and file hashes. It uses
+  `EIGEN_MPL2_ONLY`; no unsupported Eigen modules or proprietary Bungee Pro code
+  are included.
 - **SoundTouch** uses LGPL 2.1 and supplies a native streaming processing API.
   It is another candidate for a measured comparison, not an established upgrade
   over the app's existing Sonic speech processing. LGPL obligations for source,
@@ -98,14 +136,14 @@ The broader app/distribution license review is tracked separately in
   license. Its normal open-source license fails this project's no-GPL/AGPL
   dependency policy, so it is excluded from the open-source processor options.
 
-Signalsmith, Bungee and SoundTouch consume decoded audio samples. They are not
-drop-in Dart options for the current just_audio backends. A supported integration
-would need a native PCM processing stage, reset/drain/latency handling, correct
-source-time mapping, and real device tests. The current adapter does not expose
-arbitrary mpv filters. No unavailable processor is shown as a functioning switch.
+The Bungee and Signalsmith native integrations are currently Android-only.
+iOS/macOS retain the public AVFoundation choices; Windows/Linux retain the
+documented mpv choices. SoundTouch remains an unintegrated candidate. Sharing
+the native core across platforms does not itself connect it to another
+platform's decoder or audio output.
 
 No algorithm is claimed to sound best for every narrator, recording, speed,
-device or listener. A future native processor comparison should use the same
+device or listener. A processor listening comparison should use the same
 spoken passages, matched output level, several voices/languages and both
 speech-only and music-backed material, while measuring CPU/battery use and
 seeking/interruption behavior. Interface and configuration tests do not establish

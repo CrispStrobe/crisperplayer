@@ -339,12 +339,13 @@
       "scope": "The exact unchanged upstream source/license closure, derived BSD-3-Clause WSOLA fork/fixtures and independent MIT adapters were reviewed. This source review does not approve an Android binary, complete NDK/Maven closure, performance, or app-store distribution.",
       "source": {
         "repository": "https://github.com/CrispStrobe/crisperplayer",
-        "source_url": "https://github.com/CrispStrobe/crisperplayer/tree/feature/return-trail/packages/just_audio/native/crisper_dsp",
+        "source_url": "https://github.com/CrispStrobe/crisperplayer/tree/bea68aca9a357ce713e83653c269de7937e9fc63/packages/just_audio/native/crisper_dsp",
         "local_adapter_identity": "Exact package source-tree hash, 38 local additions, reviewed upstream patch, and build-input hashes in dependencies.json. Independent adapters retain MIT; the derived Chromium WSOLA implementation and inherited fixtures retain BSD-3-Clause.",
         "upstream_component_count": 7,
         "upstream_file_count": 258,
         "upstream_modified": false,
-        "modification_scope": "Retained upstream originals under vendor are unchanged. Modified portable Chromium-derived code lives under wsola, with its origin map and maintenance differences in wsola/UPSTREAM.md."
+        "modification_scope": "Retained upstream originals under vendor are unchanged. Modified portable Chromium-derived code lives under wsola, with its origin map and maintenance differences in wsola/UPSTREAM.md.",
+        "vendored_source_revision": "bea68aca9a357ce713e83653c269de7937e9fc63"
       },
       "source_manifest": {
         "path": "packages/just_audio/native/crisper_dsp/vendor/manifest.json",
@@ -443,7 +444,7 @@
         {
           "path": "packages/just_audio/native/crisper_dsp/vendor/manifest.json",
           "sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
-          "note": "Seven exact upstream revisions and 258 unchanged per-file originals: six archived components plus the exact Git-file Chromium snapshot. SHA-256 plus Git blob identities preserve the extracted source provenance."
+          "note": "Seven exact upstream revisions and 258 unchanged per-file originals: six archived components plus the exact Git-file Chromium snapshot. SHA-256 and Git blob identities verified; public snapshot bea68aca9a357ce713e83653c269de7937e9fc63 includes the complete original closure and compiled portable fork."
         },
         {
           "path": "packages/just_audio/UPSTREAM_SHA256.json",
@@ -482,8 +483,8 @@
         },
         {
           "path": "assets/licenses/ANDROID-DSP.txt",
-          "sha256": "670a7d611cfc8dee5483a0249bdc5eed7e8f808e086bae4d88e258db302a3fa0",
-          "note": "In-app upstream notices and immutable MPL source URL; preserved actual notices, not inferred from wrapper license."
+          "sha256": "fdef880fd3ef0a92bd5907f1b1652792b8e4f184f77b23e992c048ccadab328e",
+          "note": "In-app original notices and immutable public source URLs for the selected upstream closure and maintained BSD WSOLA fork; actual grants preserved independently of the wrapper license."
         },
         {
           "path": "lib/services/native_licenses.dart",

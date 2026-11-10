@@ -4,9 +4,9 @@ CrisperPlayer includes Bungee Basic, Signalsmith Stretch and Chromium-derived
 WSOLA as optional native speed processors. Android's default path continues to use AndroidX Media3's
 Sonic implementation. The native comparison adapter also includes Sonic C.
 
-Exact selected Bungee/Signalsmith/Sonic source, original notices and per-file SHA-256 values are
+Exact selected processor source, original notices and per-file SHA-256 values are
 available without charge at:
-https://github.com/CrispStrobe/crisperplayer/tree/349e2be81165dab7acdd3dfe3e6df79ad138322d/packages/just_audio/native/crisper_dsp/vendor
+https://github.com/CrispStrobe/crisperplayer/tree/bea68aca9a357ce713e83653c269de7937e9fc63/packages/just_audio/native/crisper_dsp/vendor
 
 The MPL-covered source files are unmodified. The independent CrisperPlayer
 adapter is MIT licensed. No Bungee Pro implementation, unsupported Eigen
@@ -16,7 +16,7 @@ The maintained WSOLA extraction retains Chromium's BSD-3-Clause grant. It is
 derived from this exact upstream revision, with the original source snapshot,
 local modifications and tests recorded separately:
 https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/wsola_internals.cc
-https://github.com/CrispStrobe/crisperplayer/tree/feature/return-trail/packages/just_audio/native/crisper_dsp/wsola
+https://github.com/CrispStrobe/crisperplayer/tree/bea68aca9a357ce713e83653c269de7937e9fc63/packages/just_audio/native/crisper_dsp/wsola
 The fork contains the matching/window/overlap-add implementation, without
 Chromium's browser, base or media runtime dependency graph. Chromium's original
 notice is included below; its contributors do not endorse this adaptation.

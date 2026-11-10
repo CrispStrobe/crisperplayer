@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "Selected unmodified native core sources; no command-line tools, GPL Eigen modules, Speedy, proprietary Bungee Pro, external FFT backends or runtime downloads. EIGEN_MPL2_ONLY is enforced. Sonic C is a host comparison baseline; Android default uses Media3 Sonic.",
+  "scope": "Selected unmodified native core sources and pinned Chromium WSOLA derivation/reference originals; the maintained BSD WSOLA fork is outside vendor. No command-line tools, GPL Eigen modules, Speedy, proprietary Bungee Pro, external FFT backends or runtime downloads. EIGEN_MPL2_ONLY is enforced. Sonic C is a host comparison baseline; Android default uses Media3 Sonic.",
   "components": [
     {
       "id": "sonic",
@@ -1074,6 +1074,67 @@
           "path": "pffft/LICENSE.txt",
           "sha256": "deffd5aa43d83be2e0818b5c5b8b21425bb769df9c585a45f633e6f979015fde",
           "note": "Verbatim license/copyright extracted from pffft.c; original header retained."
+        }
+      ]
+    },
+    {
+      "id": "chromium-wsola",
+      "repository": "https://chromium.googlesource.com/chromium/src.git",
+      "mirror_repository": "https://github.com/chromium/chromium",
+      "revision": "ddd30ef8aa98443509bf4ce006cb36b4e2296c0b",
+      "source_type": "git-files",
+      "git_tree_sha1": "b0be693632ea3df0aedf514bb577ce5fce9b1e37",
+      "license_expression": "BSD-3-Clause",
+      "upstream_modified": false,
+      "scope": "Unmodified derivation/reference/test originals. The maintained BSD portable fork under ../wsola is compiled; Chromium base/media/browser dependencies are not imported.",
+      "files": [
+        {
+          "path": "chromium-wsola/LICENSE",
+          "upstream_path": "LICENSE",
+          "source_url": "https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/LICENSE",
+          "sha256": "368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b",
+          "git_blob_sha1": "2249a28657f86c645f8978b75babc1bd52aca318",
+          "role": "license"
+        },
+        {
+          "path": "chromium-wsola/media/filters/audio_renderer_algorithm.cc",
+          "upstream_path": "media/filters/audio_renderer_algorithm.cc",
+          "source_url": "https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/audio_renderer_algorithm.cc",
+          "sha256": "75cc204c8be9e6e86b2bd2aaf1975bd3778ec8c5cfe8e5aabb1c7266732ec7f2",
+          "git_blob_sha1": "0180d4cef73a64a495cf31d85c955fda85a5b815",
+          "role": "derived_code_or_fixture_origin"
+        },
+        {
+          "path": "chromium-wsola/media/filters/audio_renderer_algorithm.h",
+          "upstream_path": "media/filters/audio_renderer_algorithm.h",
+          "source_url": "https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/audio_renderer_algorithm.h",
+          "sha256": "aa608c53446f28721a452cd9b674bebcebbd5fd90a0b9ddbc3ec41798c816a79",
+          "git_blob_sha1": "3e108f1c4c7de1214596ac3c228b1deda62323b7",
+          "role": "reference_only"
+        },
+        {
+          "path": "chromium-wsola/media/filters/audio_renderer_algorithm_unittest.cc",
+          "upstream_path": "media/filters/audio_renderer_algorithm_unittest.cc",
+          "source_url": "https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/audio_renderer_algorithm_unittest.cc",
+          "sha256": "ef3e04d86eae0b6702c99a20fd7656ea4e2b3537ff297188216a97da5aa8e92f",
+          "git_blob_sha1": "34714a728f05174ace6fa2398e0bd6bc53cc4239",
+          "role": "derived_code_or_fixture_origin"
+        },
+        {
+          "path": "chromium-wsola/media/filters/wsola_internals.cc",
+          "upstream_path": "media/filters/wsola_internals.cc",
+          "source_url": "https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/wsola_internals.cc",
+          "sha256": "73ebdfb442955959c22247b29de1888a107e09d9dee1013824844dc0a0681638",
+          "git_blob_sha1": "f0e0bf389f829c009ab075287aab8b18dd265f8f",
+          "role": "derived_code_or_fixture_origin"
+        },
+        {
+          "path": "chromium-wsola/media/filters/wsola_internals.h",
+          "upstream_path": "media/filters/wsola_internals.h",
+          "source_url": "https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/wsola_internals.h",
+          "sha256": "824d2f26d2c85b83bb0470e8df942d8504ce7317c54bc3ac3e142f368a095d79",
+          "git_blob_sha1": "ef0c9d0cfac3f2b3347604402412729309895f8e",
+          "role": "derived_code_or_fixture_origin"
         }
       ]
     }

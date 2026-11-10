@@ -9,7 +9,7 @@ failed changes, and stops controlling a book when another one becomes active.
 ## What the installed app uses
 
 This assessment is based on the dependency versions in `pubspec.lock`:
-`just_audio 0.10.6+crisper.2` (a maintained MIT-licensed adapter to 0.10.6,
+`just_audio 0.10.6+crisper.3` (a maintained MIT-licensed adapter to 0.10.6,
 with separately licensed native processors),
 `just_audio_media_kit 2.1.0`, and `media_kit 1.2.6`.
 
@@ -18,6 +18,7 @@ with separately licensed native processors),
 | Android, Sonic | Media3 1.4.1's Sonic processor on the normal decoded PCM path, with audio offload disabled. | Default; selectable. Keeps the existing speech and skip-silence behavior. |
 | Android, Bungee Basic | A native, MPL-2.0 phase-vocoder processor with the pinned Eigen/PFFFT source closure. | Experimental opt-in; compare on narration mixed with music or ambience. |
 | Android, Signalsmith Stretch | A native MIT processor, using the MIT Signalsmith Linear FFT implementation. | Experimental opt-in; recommended comparison range is 0.75×–1.5×. |
+| Android, WSOLA | A maintained portable fork of Chromium's waveform-similarity overlap-and-add processing, under BSD-3-Clause. | Experimental opt-in; compare speech at moderate rates. |
 | iOS and macOS, Time Domain | AVFoundation `AVAudioTimePitchAlgorithmTimeDomain`, the upstream voice-oriented default. | Default; selectable. |
 | iOS and macOS, Spectral | AVFoundation `AVAudioTimePitchAlgorithmSpectral`, Apple's music-oriented alternative with higher computational cost. | Optional; selectable. |
 | Windows and Linux, Automatic | mpv's default pitch-preserving speed path, through media_kit. Current mpv documentation specifies `scaletempo2`; the exact implementation depends on the bundled or installed mpv version. | Default for new launches; selectable. |
@@ -28,12 +29,12 @@ describes the native Flutter app.
 
 ## Android choice
 
-Open **Speed → Speed processing** and choose **Sonic**, **Bungee Basic**, or
-**Signalsmith Stretch**. Sonic remains the default. The preference applies to
+Open **Speed → Speed processing** and choose **Sonic**, **Bungee Basic**,
+**Signalsmith Stretch**, or **WSOLA**. Sonic remains the default. The preference applies to
 all books after restarting CrisperPlayer; the panel distinguishes the processor
 active now from a saved choice that is pending restart.
 
-The two native alternatives support mono/stereo PCM at 8–192 kHz and the app's
+The three native alternatives support mono/stereo PCM at 8–192 kHz and the app's
 full 0.50×–3.00× rate range. Support for a rate does not establish that it sounds
 better at that rate. Signalsmith's upstream recommendation is approximately
 0.75×–1.5×; Sonic remains the speech baseline, particularly at high rates.
@@ -109,6 +110,14 @@ The broader app/distribution license review is tracked separately in
 - **Sonic** remains the Android default. The native C implementation is also
   included as the host comparison baseline; the default app path continues
   to use Media3's implementation rather than replacing it with the C copy.
+- **WSOLA** now has its own portable C++ implementation maintained in this
+  repository, derived from Chromium's BSD-3-Clause matching, windowing and
+  overlap-add code. It uses shared stereo alignment, bounded streaming buffers,
+  exact unity-rate passthrough and source-time accounting. The retained original
+  source and [documented modifications](../packages/just_audio/native/crisper_dsp/wsola/UPSTREAM.md)
+  make future updates reviewable. Chromium's browser/runtime and mpv are not
+  dependencies of this Android processor. This fork is an additional listening
+  choice; signal tests do not establish that it sounds better than Sonic.
 - **scaletempo2** uses Chromium's waveform similarity overlap-and-add (WSOLA)
   approach. Current mpv selects it automatically for pitch-corrected speed
   changes. The mpv manual describes improved quality relative to older
@@ -136,7 +145,7 @@ The broader app/distribution license review is tracked separately in
   license. Its normal open-source license fails this project's no-GPL/AGPL
   dependency policy, so it is excluded from the open-source processor options.
 
-The Bungee and Signalsmith native integrations are currently Android-only.
+The Bungee, Signalsmith and WSOLA native integrations are currently Android-only.
 iOS/macOS retain the public AVFoundation choices; Windows/Linux retain the
 documented mpv choices. SoundTouch remains an unintegrated candidate. Sharing
 the native core across platforms does not itself connect it to another
@@ -156,6 +165,8 @@ audible superiority.
 - [just_audio source: Apple UriAudioSource](https://github.com/ryanheise/just_audio/blob/minor/just_audio/darwin/just_audio/Sources/just_audio/UriAudioSource.m)
 - [Android: DefaultAudioSink.Builder and speed processing](https://developer.android.com/reference/androidx/media3/exoplayer/audio/DefaultAudioSink.Builder)
 - [Android: SonicAudioProcessor](https://developer.android.com/reference/androidx/media3/common/audio/SonicAudioProcessor)
+- [Chromium: pinned WSOLA helpers](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/wsola_internals.cc)
+- [Chromium: pinned BSD license](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/LICENSE)
 - [mpv manual: audio-pitch-correction and audio filters](https://mpv.io/manual/stable/)
 - [Apple: Time Domain](https://developer.apple.com/documentation/avfoundation/avaudiotimepitchalgorithm/timedomain)
 - [Apple: Spectral](https://developer.apple.com/documentation/avfoundation/avaudiotimepitchalgorithm/spectral)

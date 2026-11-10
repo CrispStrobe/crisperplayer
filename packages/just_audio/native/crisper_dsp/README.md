@@ -2,14 +2,16 @@
 
 This is a real streaming PCM processor used by the optional Android quality
 modes. It compiles Bungee Basic and Signalsmith Stretch from pinned, unmodified
-sources. The same core can be built on Linux for deterministic tests and WAV
-comparisons. The adapter is MIT licensed; each upstream implementation keeps its
-own license, recorded in [vendor/manifest.json](vendor/manifest.json).
+sources, plus a maintained portable **Chromium WSOLA** fork. The same core can
+be built on Linux for deterministic tests and WAV comparisons. The streaming
+adapter is MIT licensed; the Chromium-derived port is BSD-3-Clause. Each upstream
+implementation keeps its license, recorded in
+[vendor/manifest.json](vendor/manifest.json).
 
 Android's default remains Media3's Sonic processor. The native Sonic C processor
 is included for the host comparison harness; that comparison is **not** a
-bit-exact replica of Media3 Sonic. Bungee and Signalsmith are optional listening
-choices, not a claim that either wins for every voice or speed. Signalsmith's
+bit-exact replica of Media3 Sonic. Bungee, Signalsmith and WSOLA are optional
+listening choices, not a claim that one wins for every voice or speed. Signalsmith's
 upstream guidance concentrates on moderate time stretch, roughly 0.75–1.5×.
 The adapter's tested functional range is 0.5–3×.
 
@@ -32,6 +34,10 @@ writes the compiler arguments, source hashes and binary hash to
 `build/native-dsp/build-report.json`. It uses no FFmpeg, MPV, downloaded runtime
 binary or build-time dependency fetch. Android adds this directory through CMake
 and links target `crisper_dsp`. DSP optimization remains enabled in debug builds.
+The build also compiles/runs eight WSOLA search regression fixtures, including
+all-negative correlations, signed/excluded endpoints, silence, anti-phase stereo
+and a silent first channel. Git-file snapshots verify both SHA-256 and the exact
+upstream Git blob ID; existing archive source pins remain unchanged.
 
 The host tests exercise the actual compiled library, including:
 
@@ -43,11 +49,16 @@ The host tests exercise the actual compiled library, including:
   chunk sizes producing identical results; 8/192 kHz corner configurations.
 - PCM16 output, bit-exact unity playback, reset isolation, invalid arguments and
   non-finite input, bounded backpressure, and clocks that exclude queued audio.
+- WSOLA shared alignment for opposite-phase stereo and a silent first channel;
+  DC/silence, fractional rates, uncommon sample rates, and exact final samples
+  across full/partial output-hop boundaries and different chunk sizes.
+- Recorded WSOLA host workloads for ordinary/high-speed stereo and 192 kHz PCM.
+  These include Python transport time and are not Android CPU/battery results.
 
 Sonic can discard an isolated impulse at high speed when it removes a pitch
 period. The report keeps that baseline measurement; it does not hide it or turn
-it into a claim about intelligibility. The two new engines must preserve these
-markers in the test. All three must preserve boundary tone bursts. Synthetic
+it into a claim about intelligibility. The three optional engines must preserve
+these particular markers in the test. All four must preserve boundary tone bursts. Synthetic
 signals test timing and signal handling, not human speech quality, battery use
 or a particular Android device's real-time reliability.
 
@@ -61,7 +72,7 @@ python3 packages/just_audio/native/crisper_dsp/tools/render_ab.py \
   --output-dir build/my-dsp-comparison --rate 1.5
 ```
 
-It streams the same source through all three processors and writes separate WAVs
+It streams the same source through all four processors and writes separate WAVs
 plus `render-report.json`. That report records input/binary/output hashes, input
 and output frame counts, peak and saturated PCM samples, and host render time.
 Without `--input`, the tool generates six seconds of harmonic bursts, silence
@@ -92,6 +103,11 @@ Bungee removes preroll using the source positions attached to each grain and
 feeds zero-valued lookahead at the end. Signalsmith uses upstream `outputSeek`
 and `flush` to preserve the beginning and drain the end. Sonic's short residual
 rounding is padded through its processor and trimmed to the same duration.
+WSOLA retains bounded input lookahead until EOS is known. Its final output hop
+uses a smooth complementary blend from ordinary WSOLA continuation to the real
+ending source segment, reaching the actual last sample without changing the
+exact output frame total. This boundary rule is independent of the signal
+content and applies to full, partial and short hops.
 
 `source_frames` counts the original frames represented by **output already
 read**, capped at accepted input. Queued output, input lookahead, preroll and
@@ -103,6 +119,32 @@ A reset validates and constructs the replacement processor first, then drops all
 old input, lookahead, output and counters. Android drains before a speed change,
 and resets on seek/flush. The app selects a different algorithm at startup. The
 native modes do not implement silence skipping or pitch shifting.
+
+## Maintained Chromium WSOLA fork
+
+The portable implementation in [wsola/](wsola/) derives from Chromium's BSD
+`wsola_internals` helpers and documented audio-renderer WSOLA loop at immutable
+commit `ddd30ef8aa98443509bf4ce006cb36b4e2296c0b`. Exact unmodified originals are
+retained for provenance under `vendor/chromium-wsola`. The fork uses a 20 ms Hann
+window, 10 ms synthesis hop, 30 ms candidate interval, normalized per-channel
+correlation, five-frame coarse search plus interpolated/refined candidates, and
+the source-continuation transition window. It has no Chromium `base`, media
+renderer, browser, codec or FFmpeg build dependency.
+
+Both stereo channels share a single selected source offset; their normalized
+scores are combined without downmixing, so opposite-phase audio does not cancel
+out the alignment signal. All scratch memory is allocated at configuration.
+Compile-time SSE2/NEON is used where available, with a portable scalar fallback.
+The initial hop retains the real onset instead of fading against nonexistent
+preceding audio. Source locations and output position use 64-bit coordinates,
+while only bounded window-relative offsets become `int` indices.
+
+Local fixes include valid all-negative correlation candidates, signed exclusion
+intervals, nonnegative double-precision rolling energy, explicit endpoint and
+interpolated-candidate evaluation, and deterministic closest-to-nominal tie
+selection for silence. This is a maintained fork, not bit-exact Chromium browser
+playback. The derivation and independent upstream comparisons are documented in
+[wsola/UPSTREAM.md](wsola/UPSTREAM.md).
 
 Bungee uses its granular interface with a rebased input origin for every grain.
 It does not use the cumulative 32-bit `Stream` input position, so a long audiobook
@@ -118,6 +160,7 @@ can pass the 2³¹-frame boundary without that counter wrapping.
 | Bungee Basic | `61f52bf34be577d189d388772ddfa3696dee77d8` | MPL-2.0 |
 | Eigen Core | `c29c800126982c561e8d0b9255dc65474cd98de3` | MPL-2.0; included BSD/Apache notices retained |
 | PFFFT/FFTPACK | `02fe7715a5bf8bfd914681c53429600f94e0f536` | Permissive NCAR/UCAR FFTPACK notice |
+| Chromium WSOLA source snapshot | `ddd30ef8aa98443509bf4ce006cb36b4e2296c0b` | BSD-3-Clause |
 
 Eigen is limited to `Core`, its internal core headers, plugins and miscellaneous
 support. `EIGEN_MPL2_ONLY` is always defined. Unsupported modules, GPL-only

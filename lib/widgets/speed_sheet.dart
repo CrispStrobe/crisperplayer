@@ -362,6 +362,8 @@ class _SpeedProcessingPanel extends StatelessWidget {
                         'Experimental · mixed audio · may use more CPU.',
                       AndroidSpeedProcessing.signalsmith =>
                         'Experimental · recommended for 0.75×–1.5× · may use more CPU.',
+                      AndroidSpeedProcessing.wsola =>
+                        'Experimental · try for speech at moderate speeds.',
                     }),
                     value: mode,
                   ),

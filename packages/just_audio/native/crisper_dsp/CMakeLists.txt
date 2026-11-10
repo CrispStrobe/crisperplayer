@@ -18,7 +18,7 @@ set(BUNGEE_SOURCES
   vendor/bungee/src/Timing.cpp
   vendor/bungee/src/Window.cpp
   vendor/bungee/src/version.cpp)
-add_library(crisper_dsp STATIC crisper_dsp.cpp ${BUNGEE_SOURCES}
+add_library(crisper_dsp STATIC crisper_dsp.cpp wsola/wsola.cpp ${BUNGEE_SOURCES}
   vendor/pffft/pffft.c vendor/pffft/fftpack.c vendor/sonic/sonic.c)
 set_target_properties(crisper_dsp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(crisper_dsp PUBLIC cxx_std_20)

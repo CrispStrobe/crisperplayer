@@ -45,11 +45,13 @@ class SettingsService extends ChangeNotifier {
 
   String get androidSpeedProcessing {
     final value = _p.getString('android_speed_processing') ?? 'sonic';
-    return ['sonic', 'bungee', 'signalsmith'].contains(value) ? value : 'sonic';
+    return ['sonic', 'bungee', 'signalsmith', 'wsola'].contains(value)
+        ? value
+        : 'sonic';
   }
 
   set androidSpeedProcessing(String value) {
-    if (!['sonic', 'bungee', 'signalsmith'].contains(value)) {
+    if (!['sonic', 'bungee', 'signalsmith', 'wsola'].contains(value)) {
       throw const FormatException('Unknown Android speed processing mode');
     }
     _changed(_p.setString('android_speed_processing', value));

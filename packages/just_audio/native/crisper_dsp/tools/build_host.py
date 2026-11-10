@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+from urllib.parse import urlparse
 
 CORE = Path(__file__).resolve().parents[1]
 REPO = CORE.parents[3]
@@ -21,13 +22,31 @@ def verify_vendor():
     manifest = json.loads((vendor / 'manifest.json').read_text())
     expected = set()
     for component in manifest['components']:
-        if not component['revision'] or not component['archive_sha256']:
+        if not re.fullmatch(r'[0-9a-f]{40}', component.get('revision', '')):
             raise RuntimeError('Missing upstream source pin')
+        git_files = component.get('source_type', 'archive') == 'git-files'
+        if git_files:
+            if not re.fullmatch(r'[0-9a-f]{40}', component.get('git_tree_sha1', '')):
+                raise RuntimeError('Missing exact upstream Git tree pin')
+        elif component.get('source_type', 'archive') != 'archive' or not re.fullmatch(r'[0-9a-f]{64}', component.get('archive_sha256', '')):
+            raise RuntimeError('Missing upstream source archive pin')
         for item in component['files']:
             path = vendor / item['path']
+            if not path.resolve().is_relative_to(vendor.resolve()):
+                raise RuntimeError('Vendored file escapes source directory')
             expected.add(item['path'])
-            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item['sha256']:
+            data = path.read_bytes() if path.is_file() else b''
+            if not path.is_file() or hashlib.sha256(data).hexdigest() != item['sha256']:
                 raise RuntimeError(f'Unreviewed/missing vendored file: {path}')
+            if git_files:
+                upstream = item.get('upstream_path', '')
+                source = urlparse(item.get('source_url', ''))
+                clean_path = upstream and not upstream.startswith('/') and all(p not in ('', '.', '..') for p in upstream.split('/'))
+                if not clean_path or source.scheme != 'https' or not source.netloc or source.query or source.fragment or component['revision'] not in source.path.split('/') or not source.path.endswith('/' + upstream):
+                    raise RuntimeError(f'Invalid pinned Git source URL: {path}')
+                blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+                if blob != item.get('git_blob_sha1'):
+                    raise RuntimeError(f'Upstream Git blob hash does not match: {path}')
     actual = {str(p.relative_to(vendor)) for p in vendor.rglob('*') if p.is_file()} - {'manifest.json'}
     if actual != expected:
         raise RuntimeError(f'Unreviewed source closure: {sorted(actual ^ expected)}')
@@ -47,7 +66,7 @@ def build(out, cc, cxx, jobs):
     verify_vendor()
     out.mkdir(parents=True, exist_ok=True)
     c_sources = ['vendor/sonic/sonic.c', 'vendor/pffft/pffft.c', 'vendor/pffft/fftpack.c']
-    cpp_sources = ['crisper_dsp.cpp'] + [str(p.relative_to(CORE)) for p in sorted((CORE / 'vendor/bungee/src').glob('*.cpp'))]
+    cpp_sources = ['crisper_dsp.cpp', 'wsola/wsola.cpp'] + [str(p.relative_to(CORE)) for p in sorted((CORE / 'vendor/bungee/src').glob('*.cpp'))]
     cmake = (CORE / 'CMakeLists.txt').read_text()
     for source in c_sources + cpp_sources:
         if source not in cmake:
@@ -68,15 +87,29 @@ def build(out, cc, cxx, jobs):
     library = out / 'libcrisper_dsp.so'
     link = [cxx, '-shared', '-Wl,--no-undefined', *objects, '-lm', '-o', str(library)]
     run(link)
+    search_test = out / 'test-wsola-search'
+    search_test_command = [cxx, '-O2', '-std=c++20', '-I' + str(CORE),
+                           str(CORE / 'tools/test_wsola_search.cpp'),
+                           str(out / 'wsola_wsola.cpp.o'), '-o', str(search_test)]
+    run(search_test_command)
+    search_result = json.loads(run([str(search_test)]).stdout)
     report = {
         'scope': 'Linux host build; not an Android ABI or device validation',
         'compiler_c': run([cc, '--version']).stdout.splitlines()[0],
         'compiler_cxx': run([cxx, '--version']).stdout.splitlines()[0],
         'source_manifest_sha256': hashlib.sha256((CORE / 'vendor/manifest.json').read_bytes()).hexdigest(),
         'adapter_sha256': hashlib.sha256((CORE / 'crisper_dsp.cpp').read_bytes()).hexdigest(),
+        'wsola_source_sha256': {name: hashlib.sha256((CORE / name).read_bytes()).hexdigest() for name in ('wsola/wsola.h', 'wsola/wsola.cpp')},
+        'build_input_sha256': {
+            name: hashlib.sha256((CORE / name).read_bytes()).hexdigest()
+            for name in ('CMakeLists.txt', 'crisper_dsp.h', 'crisper_dsp.cpp',
+                         'wsola/wsola.h', 'wsola/wsola.cpp',
+                         'tools/build_host.py', 'tools/test_wsola_search.cpp')
+        },
         'library': str(library),
         'library_sha256': hashlib.sha256(library.read_bytes()).hexdigest(),
-        'commands': commands + [link],
+        'wsola_search_checks': search_result,
+        'commands': commands + [link, search_test_command, [str(search_test)]],
     }
     (out / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({k: report[k] for k in ('scope', 'compiler_cxx', 'library', 'library_sha256')}, indent=2))

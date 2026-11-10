@@ -185,7 +185,8 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
                 Object speedProcessor = loadControlMap.get("speedProcessor");
                 crisperSpeedProcessor = speedProcessor == null || "sonic".equals(speedProcessor) ? 0
                     : "bungee".equals(speedProcessor) ? 1
-                    : "signalsmith".equals(speedProcessor) ? 2 : -1;
+                    : "signalsmith".equals(speedProcessor) ? 2
+                    : "wsola".equals(speedProcessor) ? 3 : -1;
                 DefaultLoadControl.Builder builder = new DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
                         (int)((getLong(loadControlMap.get("minBufferDuration")))/1000),

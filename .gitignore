@@ -68,3 +68,7 @@ pubspec_overrides.yaml
 
 # Generated standalone Apple companion project
 /ios/Companions/CrisperPlayerCompanions.xcodeproj/
+
+# Chromium's test-only include path is source, not generated build output.
+!packages/just_audio/native/crisper_dsp/tools/wsola_reference/shims/build/
+!packages/just_audio/native/crisper_dsp/tools/wsola_reference/shims/build/build_config.h

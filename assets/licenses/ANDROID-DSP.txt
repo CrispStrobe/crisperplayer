@@ -1,16 +1,25 @@
 Optional Android audio processors — sources and notices
 
-CrisperPlayer includes Bungee Basic and Signalsmith Stretch as optional native
-speed processors. Android's default path continues to use AndroidX Media3's
+CrisperPlayer includes Bungee Basic, Signalsmith Stretch and Chromium-derived
+WSOLA as optional native speed processors. Android's default path continues to use AndroidX Media3's
 Sonic implementation. The native comparison adapter also includes Sonic C.
 
-Exact selected source, original notices and per-file SHA-256 values are
+Exact selected Bungee/Signalsmith/Sonic source, original notices and per-file SHA-256 values are
 available without charge at:
 https://github.com/CrispStrobe/crisperplayer/tree/349e2be81165dab7acdd3dfe3e6df79ad138322d/packages/just_audio/native/crisper_dsp/vendor
 
 The MPL-covered source files are unmodified. The independent CrisperPlayer
 adapter is MIT licensed. No Bungee Pro implementation, unsupported Eigen
 module, external FFT backend or runtime code download is included.
+
+The maintained WSOLA extraction retains Chromium's BSD-3-Clause grant. It is
+derived from this exact upstream revision, with the original source snapshot,
+local modifications and tests recorded separately:
+https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/wsola_internals.cc
+https://github.com/CrispStrobe/crisperplayer/tree/feature/return-trail/packages/just_audio/native/crisper_dsp/wsola
+The fork contains the matching/window/overlap-add implementation, without
+Chromium's browser, base or media runtime dependency graph. Chromium's original
+notice is included below; its contributors do not endorse this adaptation.
 
 Sonic C: Copyright 2010 Bill Cox. Apache License 2.0.
 
@@ -38,6 +47,10 @@ Source: https://api.github.com/repos/eigenteam/eigen-git-mirror/tarball/c29c8001
 pffft: 02fe7715a5bf8bfd914681c53429600f94e0f536
 License: LicenseRef-PFFFT-FFTPACK
 Source: https://bitbucket.org/jpommier/pffft/get/02fe7715a5bf8bfd914681c53429600f94e0f536.tar.gz
+
+chromium-wsola: ddd30ef8aa98443509bf4ce006cb36b4e2296c0b
+License: BSD-3-Clause
+Source: https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/
 
 
 sonic/LICENSE
@@ -1351,3 +1364,35 @@ Copyright (c) 2013  Julien Pommier ( pommier@modartt.com )
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE
    SOFTWARE.
 
+
+
+chromium-wsola/LICENSE
+======================
+
+// Copyright 2015 The Chromium Authors
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//    * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//    * Neither the name of Google LLC nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

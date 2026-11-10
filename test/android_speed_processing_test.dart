@@ -230,10 +230,7 @@ void main() {
         TargetPlatform.windows,
         TargetPlatform.linux,
       ]) {
-        SpeedProcessing.configureAndroidForStartup(
-          'bungee',
-          platform: platform,
-        );
+        SpeedProcessing.configureAndroidForStartup('wsola', platform: platform);
         expect(SpeedProcessing.activeAndroidMode, AndroidSpeedProcessing.sonic);
         expect(
           SpeedProcessing.supportsAndroidChoice(platform: platform),
@@ -244,7 +241,7 @@ void main() {
           isFalse,
         );
       }
-      SpeedProcessing.configureAndroidForStartup('signalsmith', isWeb: true);
+      SpeedProcessing.configureAndroidForStartup('wsola', isWeb: true);
       expect(SpeedProcessing.activeAndroidMode, AndroidSpeedProcessing.sonic);
       SpeedProcessing.configureAndroidForStartup('corrupt');
       expect(SpeedProcessing.activeAndroidMode, AndroidSpeedProcessing.sonic);
@@ -259,6 +256,7 @@ void main() {
   for (final mode in [
     AndroidSpeedProcessing.bungee,
     AndroidSpeedProcessing.signalsmith,
+    AndroidSpeedProcessing.wsola,
   ]) {
     test(
       'saved skip silence is retained but never enabled for ${mode.label}',

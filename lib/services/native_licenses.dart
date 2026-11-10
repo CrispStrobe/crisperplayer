@@ -20,7 +20,7 @@ void registerNativeLicenses() {
       'Native playback: libmpv / FFmpeg (Windows/Linux)',
     ], await rootBundle.loadString('assets/licenses/DESKTOP-AUDIO.txt'));
     yield LicenseEntryWithLineBreaks([
-      'Android speed processing: Bungee Basic, Signalsmith Stretch, Sonic',
+      'Android speed processing: Bungee Basic, Signalsmith Stretch, WSOLA, Sonic',
       'Eigen and PFFFT',
     ], await rootBundle.loadString('assets/licenses/ANDROID-DSP.txt'));
     yield LicenseEntryWithLineBreaks([

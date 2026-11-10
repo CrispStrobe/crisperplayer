@@ -1,0 +1,2595 @@
+{
+  "recorded_date": "2026-11-10",
+  "scope": "WSOLA source provenance and actual compiled host native/Media3/JNI validation; Android packaging, device listening and App Store review are separate.",
+  "release_approved": false,
+  "raw_report_sha256": {
+    "native_build": "d5839e37d79d36ee5ffb30e13e4203122cb6b563c06469782f9f5258d21d32f9",
+    "native_streaming": "aed4c9a4dfd854548a9a70280b5516951a91422accbe37a4fe939bfe27f4c9d8",
+    "reference_comparison": "c00782192f0fd0f4942b799f9a0a40ca968600d6e9a8099d6e90d790f5c3ee93",
+    "java_jni": "639a9def5d6bd95bd446a84443626b7d73808e70cedbb916f441c37f37aa536d",
+    "comparison_render": "33cfbc24a605109a0d08c593bf5d4995ab89f50c61cfd8dbfde8122c08c4193f",
+    "independent_boundary_review": "9e16b52aa85a2bc74c3a7f7c55bc4ed1e09fd5a2961dca4a72f12e7484623edd"
+  },
+  "native_build": {
+    "scope": "Linux host build; not an Android ABI or device validation",
+    "compiler_c": "gcc (Debian 14.2.0-19) 14.2.0",
+    "compiler_cxx": "g++ (Debian 14.2.0-19) 14.2.0",
+    "source_manifest_sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
+    "adapter_sha256": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
+    "wsola_source_sha256": {
+      "wsola/wsola.h": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e",
+      "wsola/wsola.cpp": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102"
+    },
+    "build_input_sha256": {
+      "CMakeLists.txt": "9795770a2b544e51fbd69b9f00d54e5d7255685f215ae676cc10ab60364bc37d",
+      "crisper_dsp.h": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
+      "crisper_dsp.cpp": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
+      "wsola/wsola.h": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e",
+      "wsola/wsola.cpp": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+      "tools/build_host.py": "8915b4dea66cb2d90642adf4e6543e26cf6a6de3475801c9d1b6662629c9877b",
+      "tools/test_wsola_search.cpp": "5138392b116b147bd4090fa6c0d3d2a594c477e34099e3548a39e19d703fa8d5"
+    },
+    "library": "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/libcrisper_dsp.so",
+    "library_sha256": "4e28d4f77bd41771344deeca4deb26295dbf912f3971a9d4b31b3ef3b9b00652",
+    "wsola_search_checks": {
+      "checks": 8,
+      "failures": 0
+    },
+    "commands": [
+      [
+        "gcc",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic/sonic.c",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_sonic_sonic.c.o"
+      ],
+      [
+        "gcc",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft/pffft.c",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_pffft_pffft.c.o"
+      ],
+      [
+        "gcc",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft/fftpack.c",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_pffft_fftpack.c.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/crisper_dsp.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/crisper_dsp.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/wsola/wsola.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/wsola_wsola.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Assert.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Assert.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Fourier.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Fourier.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Grain.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Grain.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Grains.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Grains.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Input.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Input.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Instrumentation.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Instrumentation.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Output.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Output.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Partials.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Partials.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Stretch.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Stretch.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Stretcher.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Stretcher.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Synthesis.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Synthesis.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Timing.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Timing.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/Window.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Window.cpp.o"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-g",
+        "-fPIC",
+        "-fvisibility=hidden",
+        "-std=c++20",
+        "-fwrapv",
+        "-DEIGEN_MPL2_ONLY=1",
+        "-DEIGEN_DONT_PARALLELIZE=1",
+        "-DBUNGEE_SELF_TEST=0",
+        "-DBUNGEE_VISIBILITY=",
+        "-DBUNGEE_VERSION=\"61f52bf34be577d189d388772ddfa3696dee77d8\"",
+        "-Deigen_assert=BUNGEE_ASSERT1",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/eigen",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/pffft",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/sonic",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/signalsmith-stretch",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor",
+        "-c",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/vendor/bungee/src/version.cpp",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_version.cpp.o"
+      ],
+      [
+        "g++",
+        "-shared",
+        "-Wl,--no-undefined",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_sonic_sonic.c.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_pffft_pffft.c.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_pffft_fftpack.c.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/crisper_dsp.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/wsola_wsola.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Assert.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Fourier.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Grain.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Grains.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Input.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Instrumentation.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Output.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Partials.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Stretch.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Stretcher.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Synthesis.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Timing.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_Window.cpp.o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/vendor_bungee_src_version.cpp.o",
+        "-lm",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/libcrisper_dsp.so"
+      ],
+      [
+        "g++",
+        "-O2",
+        "-std=c++20",
+        "-I/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/native/crisper_dsp/tools/test_wsola_search.cpp",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/wsola_wsola.cpp.o",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/test-wsola-search"
+      ],
+      [
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-native/test-wsola-search"
+      ]
+    ]
+  },
+  "native_streaming": {
+    "scope": "Host streaming correctness and synthetic signal measurements; not perceptual quality or Android device certification",
+    "library_sha256": "4e28d4f77bd41771344deeca4deb26295dbf912f3971a9d4b31b3ef3b9b00652",
+    "test_methods": 15,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 8.742900015990017,
+    "measurements": [
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9500578374309
+        ],
+        "seconds": 0.05677189599373378,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.014007844991283491,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.02302579936156
+        ],
+        "seconds": 0.023751090993755497,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.05011209283924
+        ],
+        "seconds": 0.024546697008190677,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.09686961609725
+        ],
+        "seconds": 0.027364185996702872,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          440.20213363279055
+        ],
+        "seconds": 0.030884113992215134,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9500578374309,
+          879.9007580809965
+        ],
+        "seconds": 0.08145543599675875,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0,
+          880.0013329778726
+        ],
+        "seconds": 0.02518641400092747,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.02302579936156,
+          880.0477543266466
+        ],
+        "seconds": 0.03277515200898051,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.05011209283924,
+          880.1043905434449
+        ],
+        "seconds": 0.03215642599388957,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.09686961609725,
+          880.1995917441596
+        ],
+        "seconds": 0.03309858099964913,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          440.20213363279055,
+          880.4141608283217
+        ],
+        "seconds": 0.03452890599146485,
+        "latency_source_frames": 1356
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.1836348906292
+        ],
+        "seconds": 0.09882034899783321,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.01504807399760466,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          439.9083524265778
+        ],
+        "seconds": 0.03283904699492268,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.817145618946
+        ],
+        "seconds": 0.03939691898995079,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.63363863447125
+        ],
+        "seconds": 0.05005414699553512,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          439.26561700676405
+        ],
+        "seconds": 0.05912214300769847,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.1836348906292,
+          880.3649064392938
+        ],
+        "seconds": 0.1255508269969141,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0,
+          879.9951013410079
+        ],
+        "seconds": 0.02834822199656628,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          439.9083524265778,
+          879.810462957034
+        ],
+        "seconds": 0.04328131600050256,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.817145618946,
+          879.634291237892
+        ],
+        "seconds": 0.047557983998558484,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.63363863447125,
+          879.2672772689425
+        ],
+        "seconds": 0.054775922995759174,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "sonic",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          439.26561700676405,
+          878.5312340135281
+        ],
+        "seconds": 0.06442945600429084,
+        "latency_source_frames": 1476
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          440.0012242149721
+        ],
+        "seconds": 0.060470208001788706,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.014556445996277034,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.025411487004021183,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          439.99208860759495
+        ],
+        "seconds": 0.020602302000042982,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.01754675101255998,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819
+        ],
+        "seconds": 0.010883101989747956,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9985309510256,
+          880.003059601028
+        ],
+        "seconds": 0.09420328700798564,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0,
+          880.0013329778726
+        ],
+        "seconds": 0.026081327989231795,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0,
+          879.9881597046891
+        ],
+        "seconds": 0.03728395300277043,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00394710874286,
+          880.0078942174857
+        ],
+        "seconds": 0.031143287997110747,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0,
+          880.0
+        ],
+        "seconds": 0.023994771006982774,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819,
+          879.9776910206358
+        ],
+        "seconds": 0.014876209999783896,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00022508708054
+        ],
+        "seconds": 0.059967935012537055,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.01528050799970515,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.025119065001490526,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          440.00322346683856
+        ],
+        "seconds": 0.021612736993120052,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          440.01309562784604
+        ],
+        "seconds": 0.016393794998293743,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0159426066162
+        ],
+        "seconds": 0.011714681997545995,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00022508708054,
+          880.0008997964211
+        ],
+        "seconds": 0.09368958699633367,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0,
+          879.9951013410079
+        ],
+        "seconds": 0.027331937992130406,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0,
+          879.9935953886799
+        ],
+        "seconds": 0.03792008399614133,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          440.00322346683856,
+          880.0064469336771
+        ],
+        "seconds": 0.03195375599898398,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          440.0,
+          880.0
+        ],
+        "seconds": 0.024161517998436466,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "bungee",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009,
+          880.0318852132324
+        ],
+        "seconds": 0.016795928997453302,
+        "latency_source_frames": 8192
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9985309510256
+        ],
+        "seconds": 0.06301131700456608,
+        "latency_source_frames": 3969
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.014824274010607041,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.027243598000495695,
+        "latency_source_frames": 5953
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00175812583785
+        ],
+        "seconds": 0.02282860600098502,
+        "latency_source_frames": 6615
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0110500828756
+        ],
+        "seconds": 0.018125147005775943,
+        "latency_source_frames": 7938
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819
+        ],
+        "seconds": 0.01283087300544139,
+        "latency_source_frames": 10584
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          439.9985309510256,
+          880.0024484299443
+        ],
+        "seconds": 0.10521403299935628,
+        "latency_source_frames": 3969
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0,
+          880.0013329778726
+        ],
+        "seconds": 0.025095470002270304,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0,
+          880.0017427675148
+        ],
+        "seconds": 0.042885150003712624,
+        "latency_source_frames": 5953
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00175812583785,
+          880.0078942174857
+        ],
+        "seconds": 0.035690354998223484,
+        "latency_source_frames": 6615
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0110500828756,
+          880.0
+        ],
+        "seconds": 0.027049932003137656,
+        "latency_source_frames": 7938
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          439.9825403753819,
+          879.9776910206358
+        ],
+        "seconds": 0.018808888999046758,
+        "latency_source_frames": 10584
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00044989821055
+        ],
+        "seconds": 0.061267045995919034,
+        "latency_source_frames": 4320
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.015039311008877121,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.025736908995895647,
+        "latency_source_frames": 6480
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.99353900823775
+        ],
+        "seconds": 0.0217639400070766,
+        "latency_source_frames": 7200
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.9988056492789
+        ],
+        "seconds": 0.01723094400949776,
+        "latency_source_frames": 8640
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009
+        ],
+        "seconds": 0.01259609599946998,
+        "latency_source_frames": 11520
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00044989821055,
+          880.0008997964211
+        ],
+        "seconds": 0.11886624699400272,
+        "latency_source_frames": 4320
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0,
+          879.9951013410079
+        ],
+        "seconds": 0.026614517002599314,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.0,
+          879.9935953886799
+        ],
+        "seconds": 0.04449903800559696,
+        "latency_source_frames": 6480
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          439.99353900823775,
+          879.9887180933578
+        ],
+        "seconds": 0.03763551398878917,
+        "latency_source_frames": 7200
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          439.9988056492789,
+          880.0
+        ],
+        "seconds": 0.028697708999970928,
+        "latency_source_frames": 8640
+      },
+      {
+        "engine": "signalsmith",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009,
+          879.981780915509
+        ],
+        "seconds": 0.020377118009491824,
+        "latency_source_frames": 11520
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          440.0012242149721
+        ],
+        "seconds": 0.0320904789987253,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.013677656999789178,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.012293667998164892,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00175812583785
+        ],
+        "seconds": 0.011277997007709928,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0110500828756
+        ],
+        "seconds": 0.009793841003556736,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          440.01611303916707
+        ],
+        "seconds": 0.01051746099255979,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 88337,
+        "output_frames": 176674,
+        "frequency_hz": [
+          440.0012242149721,
+          880.003059601028
+        ],
+        "seconds": 0.06965841200144496,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 88337,
+        "output_frames": 88337,
+        "frequency_hz": [
+          440.0,
+          880.0013329778726
+        ],
+        "seconds": 0.024675759006640874,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 88337,
+        "output_frames": 70670,
+        "frequency_hz": [
+          440.00174125021766,
+          880.0034825004353
+        ],
+        "seconds": 0.022599167001317255,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 88337,
+        "output_frames": 58891,
+        "frequency_hz": [
+          440.00394710874286,
+          880.0100760081484
+        ],
+        "seconds": 0.021042111999122426,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 88337,
+        "output_frames": 44169,
+        "frequency_hz": [
+          440.0110500828756,
+          880.0
+        ],
+        "seconds": 0.017719285999191925,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 44100,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 88337,
+        "output_frames": 29446,
+        "frequency_hz": [
+          440.01611303916707,
+          880.0383047077721
+        ],
+        "seconds": 0.015869829003349878,
+        "latency_source_frames": 3531
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00044989821055
+        ],
+        "seconds": 0.035235853007179685,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0
+        ],
+        "seconds": 0.01555639698926825,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.006421576497
+        ],
+        "seconds": 0.013931622001109645,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          440.00242292083107
+        ],
+        "seconds": 0.012332896993029863,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          440.01194386384
+        ],
+        "seconds": 0.010939014988252893,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 1,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009
+        ],
+        "seconds": 0.009314210998127237,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.5,
+        "input_frames": 96137,
+        "output_frames": 192274,
+        "frequency_hz": [
+          440.00022508708054,
+          880.0008997964211
+        ],
+        "seconds": 0.0677922809991287,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1,
+        "input_frames": 96137,
+        "output_frames": 96137,
+        "frequency_hz": [
+          440.0,
+          879.9951013410079
+        ],
+        "seconds": 0.028209016993059777,
+        "latency_source_frames": 0
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.25,
+        "input_frames": 96137,
+        "output_frames": 76910,
+        "frequency_hz": [
+          440.006421576497,
+          880.0
+        ],
+        "seconds": 0.025067048001801595,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_frames": 96137,
+        "output_frames": 64091,
+        "frequency_hz": [
+          440.00242292083107,
+          879.9967730224678
+        ],
+        "seconds": 0.02238380699418485,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 2,
+        "input_frames": 96137,
+        "output_frames": 48069,
+        "frequency_hz": [
+          440.01194386384,
+          880.0
+        ],
+        "seconds": 0.0195466699951794,
+        "latency_source_frames": 3843
+      },
+      {
+        "engine": "wsola",
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_frames": 96137,
+        "output_frames": 32046,
+        "frequency_hz": [
+          440.0137504297009,
+          879.981780915509
+        ],
+        "seconds": 0.022884487989358604,
+        "latency_source_frames": 3843
+      }
+    ],
+    "isolated_impulse_measurements": [
+      {
+        "engine": "sonic",
+        "rate": 0.5,
+        "source_frame": 20,
+        "peak": 0.7999817132949829
+      },
+      {
+        "engine": "sonic",
+        "rate": 0.5,
+        "source_frame": 48000,
+        "peak": 0.7999817132949829
+      },
+      {
+        "engine": "sonic",
+        "rate": 0.5,
+        "source_frame": 95979,
+        "peak": 0.7609485387802124
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.25,
+        "source_frame": 20,
+        "peak": 0.7782829999923706
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.25,
+        "source_frame": 48000,
+        "peak": 0.7999817132949829
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.25,
+        "source_frame": 95979,
+        "peak": 0.36851099133491516
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.5,
+        "source_frame": 20,
+        "peak": 0.7782829999923706
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.5,
+        "source_frame": 48000,
+        "peak": 0.729514479637146
+      },
+      {
+        "engine": "sonic",
+        "rate": 1.5,
+        "source_frame": 95979,
+        "peak": 0.3749809265136719
+      },
+      {
+        "engine": "sonic",
+        "rate": 2,
+        "source_frame": 20,
+        "peak": 0.7782829999923706
+      },
+      {
+        "engine": "sonic",
+        "rate": 2,
+        "source_frame": 48000,
+        "peak": 0.5788445472717285
+      },
+      {
+        "engine": "sonic",
+        "rate": 2,
+        "source_frame": 95979,
+        "peak": 0.0
+      },
+      {
+        "engine": "sonic",
+        "rate": 3,
+        "source_frame": 20,
+        "peak": 0.7566148638725281
+      },
+      {
+        "engine": "sonic",
+        "rate": 3,
+        "source_frame": 48000,
+        "peak": 0.5983458757400513
+      },
+      {
+        "engine": "sonic",
+        "rate": 3,
+        "source_frame": 95979,
+        "peak": 0.0
+      },
+      {
+        "engine": "bungee",
+        "rate": 0.5,
+        "source_frame": 20,
+        "peak": 0.07508937269449234
+      },
+      {
+        "engine": "bungee",
+        "rate": 0.5,
+        "source_frame": 48000,
+        "peak": 0.711894690990448
+      },
+      {
+        "engine": "bungee",
+        "rate": 0.5,
+        "source_frame": 95979,
+        "peak": 0.47007036209106445
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.25,
+        "source_frame": 20,
+        "peak": 0.4023369252681732
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.25,
+        "source_frame": 48000,
+        "peak": 0.419141948223114
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.25,
+        "source_frame": 95979,
+        "peak": 0.4464305639266968
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.5,
+        "source_frame": 20,
+        "peak": 0.25731128454208374
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.5,
+        "source_frame": 48000,
+        "peak": 0.46949681639671326
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.5,
+        "source_frame": 95979,
+        "peak": 0.3628450334072113
+      },
+      {
+        "engine": "bungee",
+        "rate": 2,
+        "source_frame": 20,
+        "peak": 0.26171791553497314
+      },
+      {
+        "engine": "bungee",
+        "rate": 2,
+        "source_frame": 48000,
+        "peak": 0.4453624486923218
+      },
+      {
+        "engine": "bungee",
+        "rate": 2,
+        "source_frame": 95979,
+        "peak": 0.3367260992527008
+      },
+      {
+        "engine": "bungee",
+        "rate": 3,
+        "source_frame": 20,
+        "peak": 0.20003344118595123
+      },
+      {
+        "engine": "bungee",
+        "rate": 3,
+        "source_frame": 48000,
+        "peak": 0.33127182722091675
+      },
+      {
+        "engine": "bungee",
+        "rate": 3,
+        "source_frame": 95979,
+        "peak": 0.2895514667034149
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 0.5,
+        "source_frame": 20,
+        "peak": 0.9001708030700684
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 0.5,
+        "source_frame": 48000,
+        "peak": 0.7694385051727295
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 0.5,
+        "source_frame": 95979,
+        "peak": 0.594008207321167
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.25,
+        "source_frame": 20,
+        "peak": 0.7289962768554688
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.25,
+        "source_frame": 48000,
+        "peak": 0.6618238687515259
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.25,
+        "source_frame": 95979,
+        "peak": 0.6509977579116821
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.5,
+        "source_frame": 20,
+        "peak": 0.5715019106864929
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.5,
+        "source_frame": 48000,
+        "peak": 0.5985652804374695
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.5,
+        "source_frame": 95979,
+        "peak": 0.5437619686126709
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 2,
+        "source_frame": 20,
+        "peak": 0.6313945055007935
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 2,
+        "source_frame": 48000,
+        "peak": 0.49159371852874756
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 2,
+        "source_frame": 95979,
+        "peak": 0.2529143691062927
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 3,
+        "source_frame": 20,
+        "peak": 0.6247173547744751
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 3,
+        "source_frame": 48000,
+        "peak": 0.20306463539600372
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 3,
+        "source_frame": 95979,
+        "peak": 0.3251853287220001
+      },
+      {
+        "engine": "wsola",
+        "rate": 0.5,
+        "source_frame": 20,
+        "peak": 0.800000011920929
+      },
+      {
+        "engine": "wsola",
+        "rate": 0.5,
+        "source_frame": 48000,
+        "peak": 0.800000011920929
+      },
+      {
+        "engine": "wsola",
+        "rate": 0.5,
+        "source_frame": 95979,
+        "peak": 0.7965636849403381
+      },
+      {
+        "engine": "wsola",
+        "rate": 1.25,
+        "source_frame": 20,
+        "peak": 0.800000011920929
+      },
+      {
+        "engine": "wsola",
+        "rate": 1.25,
+        "source_frame": 48000,
+        "peak": 0.3986867368221283
+      },
+      {
+        "engine": "wsola",
+        "rate": 1.25,
+        "source_frame": 95979,
+        "peak": 0.7965636849403381
+      },
+      {
+        "engine": "wsola",
+        "rate": 1.5,
+        "source_frame": 20,
+        "peak": 0.800000011920929
+      },
+      {
+        "engine": "wsola",
+        "rate": 1.5,
+        "source_frame": 48000,
+        "peak": 0.800000011920929
+      },
+      {
+        "engine": "wsola",
+        "rate": 1.5,
+        "source_frame": 95979,
+        "peak": 0.7691726088523865
+      },
+      {
+        "engine": "wsola",
+        "rate": 2,
+        "source_frame": 20,
+        "peak": 0.800000011920929
+      },
+      {
+        "engine": "wsola",
+        "rate": 2,
+        "source_frame": 48000,
+        "peak": 0.40131327509880066
+      },
+      {
+        "engine": "wsola",
+        "rate": 2,
+        "source_frame": 95979,
+        "peak": 0.7965636849403381
+      },
+      {
+        "engine": "wsola",
+        "rate": 3,
+        "source_frame": 20,
+        "peak": 0.800000011920929
+      },
+      {
+        "engine": "wsola",
+        "rate": 3,
+        "source_frame": 48000,
+        "peak": 0.40131327509880066
+      },
+      {
+        "engine": "wsola",
+        "rate": 3,
+        "source_frame": 95979,
+        "peak": 0.7922660112380981
+      }
+    ],
+    "wsola_workload_measurements": [
+      {
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 0.75,
+        "input_seconds": 2.0,
+        "output_seconds": 2.6666666666666665,
+        "render_seconds": 0.011873138006194495,
+        "host_render_seconds_per_input_second": 0.005936569003097247,
+        "peak": 0.20000000298023224,
+        "latency_source_frames": 3843
+      },
+      {
+        "sample_rate": 48000,
+        "channels": 2,
+        "rate": 3,
+        "input_seconds": 2.0,
+        "output_seconds": 0.6666666666666666,
+        "render_seconds": 0.012354209000477567,
+        "host_render_seconds_per_input_second": 0.006177104500238784,
+        "peak": 0.20000000298023224,
+        "latency_source_frames": 3843
+      },
+      {
+        "sample_rate": 192000,
+        "channels": 2,
+        "rate": 1.5,
+        "input_seconds": 2.0,
+        "output_seconds": 1.3333333333333333,
+        "render_seconds": 0.10649211199779529,
+        "host_render_seconds_per_input_second": 0.053246055998897646,
+        "peak": 0.20000001788139343,
+        "latency_source_frames": 15363
+      }
+    ]
+  },
+  "reference_comparison": {
+    "upstream_revision": "ddd30ef8aa98443509bf4ce006cb36b4e2296c0b",
+    "scope": "Unchanged upstream scalar helper path with test-only framework shims versus the compiled portable implementation; not a full Chromium renderer, Android device or listening-quality test.",
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "portable_dot_path": "SSE2",
+    "upstream_sources": [
+      {
+        "path": "LICENSE",
+        "sha256": "368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b",
+        "git_blob_sha1": "2249a28657f86c645f8978b75babc1bd52aca318"
+      },
+      {
+        "path": "media/filters/audio_renderer_algorithm.cc",
+        "sha256": "75cc204c8be9e6e86b2bd2aaf1975bd3778ec8c5cfe8e5aabb1c7266732ec7f2",
+        "git_blob_sha1": "0180d4cef73a64a495cf31d85c955fda85a5b815"
+      },
+      {
+        "path": "media/filters/audio_renderer_algorithm.h",
+        "sha256": "aa608c53446f28721a452cd9b674bebcebbd5fd90a0b9ddbc3ec41798c816a79",
+        "git_blob_sha1": "3e108f1c4c7de1214596ac3c228b1deda62323b7"
+      },
+      {
+        "path": "media/filters/audio_renderer_algorithm_unittest.cc",
+        "sha256": "ef3e04d86eae0b6702c99a20fd7656ea4e2b3537ff297188216a97da5aa8e92f",
+        "git_blob_sha1": "34714a728f05174ace6fa2398e0bd6bc53cc4239"
+      },
+      {
+        "path": "media/filters/wsola_internals.cc",
+        "sha256": "73ebdfb442955959c22247b29de1888a107e09d9dee1013824844dc0a0681638",
+        "git_blob_sha1": "f0e0bf389f829c009ab075287aab8b18dd265f8f"
+      },
+      {
+        "path": "media/filters/wsola_internals.h",
+        "sha256": "824d2f26d2c85b83bb0470e8df942d8504ce7317c54bc3ac3e142f368a095d79",
+        "git_blob_sha1": "ef0c9d0cfac3f2b3347604402412729309895f8e"
+      }
+    ],
+    "original_library_sha256": "4504c96eb77edbc6c2bad255ebb68d571139ed8d5fd91d2d22d2ce01c1d8a785",
+    "portable_library_sha256": "63c9cf791c5c89aee0635cb28deb216420f962051bf3612ce50fff7b0d9158ee",
+    "portable_source_sha256": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+    "test_methods": 12,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 0.005719327004044317,
+    "measurements": [
+      {
+        "case": "asymmetric-eight-lane-dot",
+        "value": 36
+      },
+      {
+        "case": "hann-original-vs-double-precision-port",
+        "sizes": 6,
+        "max_absolute_difference": 2.086162567138672e-07,
+        "max_overlap_pair_error": 2.9802322387695312e-08
+      },
+      {
+        "case": "intentional-negative-correlation-fix",
+        "original_excluded_index": 0,
+        "port_valid_index": 2
+      },
+      {
+        "case": "original-stereo-moving-energy",
+        "values_checked": 36
+      },
+      {
+        "case": "original-stereo-search",
+        "full": 5,
+        "full_excluded": 7,
+        "decimated4": 4,
+        "optimal": 5
+      },
+      {
+        "case": "scalar-vs-port-dot",
+        "frame_sizes": 99,
+        "max_absolute_error": 5.245208740234375e-06
+      }
+    ]
+  },
+  "java_jni": {
+    "verification": "Final WSOLA core: complete plugin Java compilation, lifecycle and real JNI tests",
+    "junit": {
+      "passed": 16,
+      "failed": 0,
+      "lifecycle": 11,
+      "actual_jni": 5
+    },
+    "runtime": "openjdk version \"21.0.13\" 2026-10-20\nOpenJDK Runtime Environment (build 21.0.13+9-1-deb13u2-Debian)\nOpenJDK 64-Bit Server VM (build 21.0.13+9-1-deb13u2-Debian, mixed mode, sharing)",
+    "native_core_expected_sha256": "4e28d4f77bd41771344deeca4deb26295dbf912f3971a9d4b31b3ef3b9b00652",
+    "files_sha256": {
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java": "3f19fdfd9987e80039934fe30f47ed37eef1df07ad034ffabf42cde00d67677d",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/BetterEventChannel.java": "ce2816c014760b9397c38c43ccd5d5796928dd77a029b42e136baf4e8f9cfbe7",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessor.java": "b4bfe728a43f3a612a04975c72b1c923e65a19499623843661f42d24e0963a66",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessorChain.java": "ba7b634277fbffcc58102a34de6980360a0e7a49b5d98232288102626e01c851",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperDspEngine.java": "d602221b393da7f10e682e6c37c8f731bef8122b015d17d11f5e5de209b80718",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperPcmAudioSink.java": "7be8285ccd9c179bc69c1eaadbb32141211368d5afaa19f558715dadc00dba0d",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperRenderersFactory.java": "25bd43cc5d209fececdc804ef6d00ddceac0b715e69e12f45f0d42444dee40bb",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/JniCrisperDspEngine.java": "9f2d218173b3c5698d04183916f41200bba0997ae8aed1d17db0b98e531c4202",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/JustAudioPlugin.java": "b72144aff5e57bc706563287921d8fb7a631f9b7a14fa85a7b77180c2a9b7daa",
+      "packages/just_audio/android/src/main/java/com/ryanheise/just_audio/MainMethodCallHandler.java": "e94040e14ae05d48e117fa2499935546bd249570684ceeb791eb2eb539f68779",
+      "packages/just_audio/android/src/test/java/com/ryanheise/just_audio/CrisperAudioProcessorTest.java": "4dc96ab583f235e07ab69357de7227e2dba9db0765b47acc07016fb0dfbf46f3",
+      "packages/just_audio/android/src/androidTest/java/com/ryanheise/just_audio/CrisperDspJniTest.java": "3af3f9c0c75bdc953878388e4bd2a7ab61f5999f55e6e20fe56d10328a4e7097",
+      "packages/just_audio/android/src/main/cpp/crisper_audio_jni.cpp": "9447e4177f6fd67fde9e6d4b4b23520ea3a1c9990f36591db4f7641bcdb2543d",
+      "packages/just_audio/native/crisper_dsp/crisper_dsp.cpp": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
+      "packages/just_audio/native/crisper_dsp/crisper_dsp.h": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
+      "packages/just_audio/native/crisper_dsp/wsola/wsola.cpp": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+      "packages/just_audio/native/crisper_dsp/wsola/wsola.h": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e",
+      "build/wsola-native/libcrisper_dsp.so": "4e28d4f77bd41771344deeca4deb26295dbf912f3971a9d4b31b3ef3b9b00652",
+      "build/wsola-java-host/libcrisper_audio_dsp.so": "e607a13cbac33d5df344014c7bd21bd359ce0909be940ceac1c5f411d6fe0257",
+      "build/wsola-java-host/final-wsola-jni.log": "3f316e71f5c288153484c5aa6c6bc52153162a79aa046cf75f97bcc6b8e8b409"
+    },
+    "steps": [
+      {
+        "step": 1,
+        "exit_code": 0,
+        "seconds": 1.236
+      },
+      {
+        "step": 2,
+        "exit_code": 0,
+        "seconds": 0.968
+      },
+      {
+        "step": 3,
+        "exit_code": 0,
+        "seconds": 0.128
+      },
+      {
+        "step": 4,
+        "exit_code": 0,
+        "seconds": 0.319
+      }
+    ],
+    "commands": [
+      [
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "-m",
+        "jdk.compiler/com.sun.tools.javac.Main",
+        "-source",
+        "17",
+        "-target",
+        "17",
+        "-cp",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/android-all.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/annotation.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/flutter.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/guava.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/hamcrest.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/junit.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-common.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-container.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-database.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-datasource.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-decoder.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-dash.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-hls.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-smoothstreaming.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-extractor.jar",
+        "-d",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-java-host/classes",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/BetterEventChannel.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessor.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessorChain.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperDspEngine.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperPcmAudioSink.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/CrisperRenderersFactory.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/JniCrisperDspEngine.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/JustAudioPlugin.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/main/java/com/ryanheise/just_audio/MainMethodCallHandler.java"
+      ],
+      [
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "-m",
+        "jdk.compiler/com.sun.tools.javac.Main",
+        "-source",
+        "17",
+        "-target",
+        "17",
+        "-cp",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-java-host/classes:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/classes:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/android-all.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/annotation.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/flutter.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/guava.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/hamcrest.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/junit.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-common.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-container.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-database.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-datasource.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-decoder.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-dash.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-hls.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-smoothstreaming.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-extractor.jar",
+        "-d",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-java-host/classes",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/test/java/com/ryanheise/just_audio/CrisperAudioProcessorTest.java",
+        "/workspace/scratch/aef2d102d610/crisperplayer/packages/just_audio/android/src/androidTest/java/com/ryanheise/just_audio/CrisperDspJniTest.java"
+      ],
+      [
+        "g++",
+        "-std=c++17",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Ibuild/android-dsp-host/include",
+        "-Ipackages/just_audio/native/crisper_dsp",
+        "packages/just_audio/android/src/main/cpp/crisper_audio_jni.cpp",
+        "-Lbuild/wsola-native",
+        "-lcrisper_dsp",
+        "-Wl,-rpath,$ORIGIN/../wsola-native",
+        "-Wl,-z,max-page-size=16384",
+        "-Wl,--no-undefined",
+        "-o",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-java-host/libcrisper_audio_dsp.so"
+      ],
+      [
+        "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
+        "-Djava.library.path=/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-java-host",
+        "-cp",
+        "/workspace/scratch/aef2d102d610/crisperplayer/build/wsola-java-host/classes:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/classes:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/android-all.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/annotation.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/flutter.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/guava.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/hamcrest.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/junit.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-common.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-container.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-database.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-datasource.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-decoder.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-dash.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-hls.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer-smoothstreaming.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-exoplayer.jar:/workspace/scratch/aef2d102d610/crisperplayer/build/android-dsp-host/media3-extractor.jar",
+        "org.junit.runner.JUnitCore",
+        "com.ryanheise.just_audio.CrisperAudioProcessorTest",
+        "com.ryanheise.just_audio.CrisperDspJniTest"
+      ]
+    ],
+    "limitations": [
+      "Host Java/Media3 with Android Build constants shim; no Android device, AudioTrack, or on-device playback verification."
+    ],
+    "verified_at_utc": "2026-11-10T20:10:36.357336+00:00",
+    "provenance": "All listed commands rerun for this verification: complete plugin Java and test compilation, JNI bridge rebuild, and 16-test JUnit invocation. Native core was rebuilt separately by the native owner and its expected hash was checked before and after."
+  },
+  "comparison_render": {
+    "scope": "Same-input actual native DSP render; no automatic perceptual ranking",
+    "input_kind": "synthetic tones/transients; not speech",
+    "input": "build/wsola-ab/synthetic-input.wav",
+    "input_sha256": "9d1887eb20aa63e6b45699f3ddce602f92b2f90fe8a8bc44004ef7d5f4659cdf",
+    "library_sha256": "4e28d4f77bd41771344deeca4deb26295dbf912f3971a9d4b31b3ef3b9b00652",
+    "notes": [
+      "Sonic C comparison is not a bit-exact replica of Android Media3 Sonic.",
+      "Signalsmith is recommended upstream mainly for moderate time stretch; inspect speech at your chosen rate.",
+      "WSOLA is our maintained Chromium-derived BSD fork; it is not a bit-exact browser playback replica.",
+      "Listen at equal loudness, including first/last words, consonants, breaths, music, stereo image and rapid speed changes."
+    ],
+    "results": [
+      {
+        "engine": "sonic",
+        "rate": 1.5,
+        "sample_rate": 48000,
+        "channels": 1,
+        "input_frames": 288000,
+        "output_frames": 192000,
+        "output_seconds": 4.0,
+        "render_seconds": 0.14766864699777216,
+        "peak_pcm16": 26214,
+        "saturated_samples": 0,
+        "file": "synthetic-input-sonic-1.5x.wav",
+        "sha256": "15c6b23612718d0a7a8c6516d912a7d13a6a1e6303e2827a1971bf9a2152630b"
+      },
+      {
+        "engine": "bungee",
+        "rate": 1.5,
+        "sample_rate": 48000,
+        "channels": 1,
+        "input_frames": 288000,
+        "output_frames": 192000,
+        "output_seconds": 4.0,
+        "render_seconds": 0.07718231799663045,
+        "peak_pcm16": 18787,
+        "saturated_samples": 0,
+        "file": "synthetic-input-bungee-1.5x.wav",
+        "sha256": "94362a9f8003fc0ffc1aea96b4384431d53d702ad41d9cae488aee311955b602"
+      },
+      {
+        "engine": "signalsmith",
+        "rate": 1.5,
+        "sample_rate": 48000,
+        "channels": 1,
+        "input_frames": 288000,
+        "output_frames": 192000,
+        "output_seconds": 4.0,
+        "render_seconds": 0.054241331992670894,
+        "peak_pcm16": 18203,
+        "saturated_samples": 0,
+        "file": "synthetic-input-signalsmith-1.5x.wav",
+        "sha256": "38b56184f7a8641460607be2c37420dc5eace81e5d6948721998dd43a4060d0d"
+      },
+      {
+        "engine": "wsola",
+        "rate": 1.5,
+        "sample_rate": 48000,
+        "channels": 1,
+        "input_frames": 288000,
+        "output_frames": 192000,
+        "output_seconds": 4.0,
+        "render_seconds": 0.03498255700105801,
+        "peak_pcm16": 26214,
+        "saturated_samples": 0,
+        "file": "synthetic-input-wsola-1.5x.wav",
+        "sha256": "fc0d8d8402e6a2bba6d67126ba6d73563960cf70394eee623d7a34121b53fcf2"
+      }
+    ]
+  },
+  "independent_boundary_review": {
+    "scope": "Independent focused tail/boundary review with nonstationary stereo PCM and two opposite transport chunk patterns; not listening or Android device acceptance.",
+    "library_sha256": "4e28d4f77bd41771344deeca4deb26295dbf912f3971a9d4b31b3ef3b9b00652",
+    "cases": 300,
+    "renders": 600,
+    "sample_rates": [
+      8000,
+      11025,
+      44100,
+      48000,
+      192000
+    ],
+    "rates": [
+      0.51,
+      0.99,
+      1.01,
+      1.3333333333,
+      2.99,
+      3.0
+    ],
+    "checks": [
+      "finite bounded stereo PCM",
+      "rounded duration",
+      "exact final stereo source frame when output nonempty",
+      "complete input/output counters",
+      "final source clock",
+      "finite drain",
+      "bit-exact chunk independence",
+      "no discarded input requests"
+    ],
+    "seconds": 0.6518580639967695,
+    "passed": true
+  },
+  "app_checks": {
+    "flutter_configuration_and_controls_passed": 25,
+    "full_flutter_analyze": "No issues found",
+    "python_tests_passed": 93,
+    "python_license_checker_tests": 37,
+    "python_apk_audit_tests": 22
+  },
+  "limitations": [
+    "No subjective speech-intelligibility ranking.",
+    "Host SIMD path is SSE2; Android NEON and full player/output behavior require target validation.",
+    "The final-hop boundary blend also applies when Media3 drains a rate-change segment."
+  ]
+}

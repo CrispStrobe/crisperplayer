@@ -22,3 +22,5 @@ SOFTWARE.
 
 This license covers the CrisperPlayer adapter and its build/test harness.
 Vendored upstream code retains the separate licenses listed in vendor/manifest.json.
+The Chromium-derived portable WSOLA implementation and derived semantic tests
+retain BSD-3-Clause instead; see wsola/LICENSE and wsola/UPSTREAM.md.

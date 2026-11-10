@@ -6,6 +6,7 @@
 #include "bungee/Bungee.h"
 #include "signalsmith-stretch.h"
 #include "sonic.h"
+#include "wsola/wsola.h"
 
 #include <algorithm>
 #include <cmath>
@@ -26,7 +27,7 @@ void require(bool ok, const char *message) {
     if (!ok) throw std::invalid_argument(message);
 }
 void validate(int engine, int sample_rate, int channels, double rate) {
-    require(engine >= CP_DSP_SONIC && engine <= CP_DSP_SIGNALSMITH, "Unknown DSP engine");
+    require(engine >= CP_DSP_SONIC && engine <= CP_DSP_WSOLA, "Unknown DSP engine");
     require(sample_rate >= 8000 && sample_rate <= 192000, "Sample rate must be 8000..192000 Hz");
     require(channels == 1 || channels == 2, "Only mono and stereo PCM are supported");
     require(std::isfinite(rate) && rate >= 0.5 && rate <= 3.0, "Rate must be finite and 0.5..3.0");
@@ -314,12 +315,83 @@ private:
     std::vector<float> planar;
 };
 
+class WsolaEngine final : public Engine {
+public:
+    WsolaEngine(int sr, int ch, double rate) : processor(sr, ch, rate), channels(ch),
+        stride(processor.maximum_input_frames()), planar(stride * ch) {
+        require(stride < kInputCapacity, "WSOLA lookahead exceeds the input bound");
+    }
+    int latency() const override { return stride; }
+    bool pump(cp_dsp &h) override {
+        const int hop = processor.hop_frames();
+        if (h.output.free() < hop || (!h.finishing && h.room() < hop)) return false;
+        const auto range = processor.input_range();
+        // Hold at least one source hop beyond a complete output hop. At fast
+        // rates the ordinary search window can end before that hop's mapped
+        // media endpoint; without this reserve the final words could already
+        // be irreversibly emitted before EOS tells us where the source ends.
+        const int64_t lookahead_end = std::max(range.end,
+            int64_t(std::ceil(double(h.generated + hop) * h.rate)) + hop);
+        if (!h.finishing && lookahead_end > h.accepted) return false;
+        const int frames = int(range.end - range.begin);
+        require(frames >= 0 && frames <= stride, "WSOLA requested an invalid input span");
+        for (int c = 0; c < channels; ++c) {
+            for (int f = 0; f < frames; ++f) {
+                const int64_t absolute = range.begin + f;
+                const int64_t offset = absolute - h.input_base;
+                if (absolute < 0 || absolute >= h.accepted) {
+                    planar[c * stride + f] = 0.f;
+                } else {
+                    require(offset >= 0 && offset < h.input.size(), "WSOLA requested discarded input");
+                    planar[c * stride + f] = h.input.at(int(offset), c);
+                }
+            }
+        }
+        processor.process({planar.data(), channels, frames, stride}, range.begin);
+        const int64_t remaining = h.limit() - h.generated;
+        if (h.finishing && remaining <= hop) {
+            const int final_frames = int(remaining);
+            // Anchor the last output hop to the real final source segment.
+            // A complementary half-cosine blend begins at the normal WSOLA
+            // continuation and ends at the actual final sample. This general
+            // boundary rule also covers partial/short hops; it does not scan
+            // for impulses or fabricate/repeat an isolated final sample.
+            for (int c = 0; c < channels; ++c) {
+                for (int f = 0; f < final_frames; ++f) {
+                    const int64_t source = h.accepted - final_frames + f;
+                    float ending = 0.f;
+                    if (source >= 0) {
+                        const int64_t offset = source - h.input_base;
+                        require(offset >= 0 && offset < h.input.size(), "WSOLA discarded its final source segment");
+                        ending = h.input.at(int(offset), c);
+                    }
+                    const double weight = final_frames == 1 ? 1.
+                        : .5 * (1. - std::cos(std::acos(-1.) * f / (final_frames - 1)));
+                    planar[c * stride + f] = float(
+                        processor.output()[c * hop + f] * (1. - weight) + ending * weight);
+                }
+            }
+            h.emit(planar.data(), stride, 0, final_frames);
+        } else {
+            h.emit(processor.output(), hop, 0, hop);
+        }
+        const int64_t next = processor.input_range().begin;
+        h.consume(int(std::clamp<int64_t>(next - h.input_base, 0, h.input.size())));
+        return true;
+    }
+private:
+    crisper_wsola::Processor processor;
+    int channels, stride;
+    std::vector<float> planar;
+};
+
 std::unique_ptr<Engine> make_engine(int id, int sr, int ch, double rate) {
     if (rate == 1.) return {};
     switch (id) {
     case CP_DSP_SONIC: return std::make_unique<SonicEngine>(sr, ch, rate);
     case CP_DSP_BUNGEE_BASIC: return std::make_unique<BungeeEngine>(sr, ch, rate);
     case CP_DSP_SIGNALSMITH: return std::make_unique<SignalsmithEngine>(sr, ch, rate);
+    case CP_DSP_WSOLA: return std::make_unique<WsolaEngine>(sr, ch, rate);
     default: throw std::invalid_argument("Unknown DSP engine");
     }
 }

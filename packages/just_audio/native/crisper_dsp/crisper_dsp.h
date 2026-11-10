@@ -21,6 +21,7 @@ enum cp_dsp_engine {
     CP_DSP_SONIC = 0,
     CP_DSP_BUNGEE_BASIC = 1,
     CP_DSP_SIGNALSMITH = 2,
+    CP_DSP_WSOLA = 3,
 };
 
 // A handle belongs to one audio thread. Units are FRAMES, not individual samples.

@@ -57,18 +57,19 @@
      private boolean offloadSchedulingEnabled;
      private AudioOffloadPreferences audioOffloadPreferences;
      private boolean useLazyPreparation;
-@@ -180,6 +182,10 @@
+@@ -180,6 +182,11 @@
          if (audioLoadConfiguration != null) {
              Map<?, ?> loadControlMap = (Map<?, ?>)audioLoadConfiguration.get("androidLoadControl");
              if (loadControlMap != null) {
 +                Object speedProcessor = loadControlMap.get("speedProcessor");
 +                crisperSpeedProcessor = speedProcessor == null || "sonic".equals(speedProcessor) ? 0
 +                    : "bungee".equals(speedProcessor) ? 1
-+                    : "signalsmith".equals(speedProcessor) ? 2 : -1;
++                    : "signalsmith".equals(speedProcessor) ? 2
++                    : "wsola".equals(speedProcessor) ? 3 : -1;
                  DefaultLoadControl.Builder builder = new DefaultLoadControl.Builder()
                      .setBufferDurationsMs(
                          (int)((getLong(loadControlMap.get("minBufferDuration")))/1000),
-@@ -206,6 +212,13 @@
+@@ -206,6 +213,13 @@
                      .setMinPossibleLiveOffsetSmoothingFactor((float)((double)((Double)livePlaybackSpeedControlMap.get("minPossibleLiveOffsetSmoothingFactor"))));
                  livePlaybackSpeedControl = builder.build();
              }
@@ -82,7 +83,7 @@
          }
      }
  
-@@ -432,9 +445,8 @@
+@@ -432,9 +446,8 @@
  
      @Override
      public void onMethodCall(final MethodCall call, final Result result) {
@@ -93,7 +94,7 @@
              switch (call.method) {
              case "load":
                  Long initialPosition = getLong(call.argument("initialPosition"));
-@@ -776,8 +788,14 @@
+@@ -776,8 +789,14 @@
  
      private void ensurePlayerInitialized() {
          if (player == null) {
@@ -109,7 +110,7 @@
                      .createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput);
                  Renderer[] allRenderers = Arrays.copyOf(defaultRenderers, defaultRenderers.length + 1);
                  allRenderers[defaultRenderers.length] = new ObserverRenderer();
-@@ -1001,6 +1019,10 @@
+@@ -1001,6 +1020,10 @@
      }
  
      public void setSpeed(final float speed) {
@@ -120,7 +121,7 @@
          PlaybackParameters params = player.getPlaybackParameters();
          if (params.speed == speed) return;
          player.setPlaybackParameters(new PlaybackParameters(speed, params.pitch));
-@@ -1010,6 +1032,9 @@
+@@ -1010,6 +1033,9 @@
      }
  
      public void setPitch(final float pitch) {
@@ -130,7 +131,7 @@
          PlaybackParameters params = player.getPlaybackParameters();
          if (params.pitch == pitch) return;
          player.setPlaybackParameters(new PlaybackParameters(params.speed, pitch));
-@@ -1017,6 +1042,9 @@
+@@ -1017,6 +1043,9 @@
      }
  
      public void setSkipSilenceEnabled(final boolean enabled) {
@@ -270,7 +271,7 @@
 +/// options use CrisperPlayer's native PCM processor and require its Android
 +/// library. They support 0.5x-3.0x, mono/stereo, and preserve pitch; independent
 +/// pitch changes and silence skipping are not supported by those options.
-+enum AndroidSpeedProcessor { sonic, bungee, signalsmith }
++enum AndroidSpeedProcessor { sonic, bungee, signalsmith, wsola }
 +
 +/// Buffering, loading and speed-processing options for Android.
  class AndroidLoadControl {
@@ -335,7 +336,7 @@
  name: just_audio
  description: A feature-rich audio player for Flutter. Loop, clip and sequence any sound from any source (asset/file/URL/stream) in gapless playlists.
 -version: 0.10.6
-+version: 0.10.6+crisper.2
++version: 0.10.6+crisper.3
 +publish_to: none
  repository: https://github.com/ryanheise/just_audio/tree/minor/just_audio
  issue_tracker: https://github.com/ryanheise/just_audio/issues
@@ -348,7 +349,7 @@
 +-keep class com.ryanheise.just_audio.JniCrisperDspEngine { *; }
 --- /dev/null
 +++ b/android/src/androidTest/java/com/ryanheise/just_audio/CrisperDspJniTest.java
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,197 @@
 +// SPDX-License-Identifier: MIT
 +package com.ryanheise.just_audio;
 +
@@ -367,7 +368,7 @@
 +/** Runs the packaged ABI and real DSP through JNI; no mock engine or audio device. */
 +public class CrisperDspJniTest {
 +    @Test public void realMedia3PipelineHandlesNativeBackpressureAndFiniteDrain() throws Exception {
-+        for (int engineId : new int[] {1, 2}) {
++        for (int engineId : new int[] {1, 2, 3}) {
 +            CrisperAudioProcessor processor = new CrisperAudioProcessor(engineId, new JniCrisperDspEngine());
 +            processor.setRate(2.0);
 +            AudioProcessingPipeline pipeline = new AudioProcessingPipeline(ImmutableList.of(processor));
@@ -398,8 +399,8 @@
 +        }
 +    }
 +
-+    @Test public void bothEnginesStretchGeneratedToneAndPreservePitch() {
-+        for (int engineId : new int[] {1, 2}) {
++    @Test public void allNativeEnginesStretchGeneratedToneAndPreservePitch() {
++        for (int engineId : new int[] {1, 2, 3}) {
 +            JniCrisperDspEngine engine = new JniCrisperDspEngine();
 +            long handle = engine.create(engineId, 48000, 1, 1.5);
 +            try {
@@ -423,7 +424,7 @@
 +    }
 +
 +    @Test public void unityStereoIsExactAndNewHandleDropsOldLookahead() {
-+        for (int engineId : new int[] {1, 2}) {
++        for (int engineId : new int[] {1, 2, 3}) {
 +            JniCrisperDspEngine engine = new JniCrisperDspEngine();
 +            long old = engine.create(engineId, 44100, 2, 2.0);
 +            ByteBuffer abandoned = pcm(new short[] {111, -111, 222, -222, 333, -333});
@@ -461,6 +462,41 @@
 +        }
 +        assertThrows(IllegalStateException.class, () -> engine.create(1, 48000, 6, 1.5));
 +        assertThrows(IllegalStateException.class, () -> engine.create(2, 48000, 1, Double.NaN));
++        assertThrows(IllegalStateException.class, () -> engine.create(3, 48000, 1, 3.01));
++        assertThrows(IllegalStateException.class, () -> engine.create(4, 48000, 1, 1.5));
++    }
++
++    @Test public void wsolaPreservesOppositePhaseStereoThroughPcm16Jni() {
++        final int sampleRate = 48000;
++        short[] mono = tone(sampleRate, sampleRate, 440);
++        short[] stereo = new short[mono.length * 2];
++        for (int i = 0; i < mono.length; i++) {
++            stereo[2 * i] = mono[i];
++            stereo[2 * i + 1] = (short) -mono[i];
++        }
++        for (double rate : new double[] {0.75, 2.0}) {
++            JniCrisperDspEngine engine = new JniCrisperDspEngine();
++            long handle = engine.create(3, sampleRate, 2, rate);
++            try {
++                List<Short> output = process(engine, handle, stereo, 2);
++                long frames = Math.round(sampleRate / rate);
++                assertEquals(frames * 2, output.size());
++                assertEquals(sampleRate, engine.sourceFrames(handle));
++                assertEquals(frames, engine.outputFrames(handle));
++                long energy = 0;
++                for (int frame = 1000; frame < frames - 1000; frame++) {
++                    int left = output.get(2 * frame);
++                    int right = output.get(2 * frame + 1);
++                    assertTrue("The same WSOLA alignment must be used for both channels",
++                        Math.abs(left + right) <= 1);
++                    energy += (long) left * left;
++                }
++                assertTrue("Opposite-phase stereo must not cancel into silence",
++                    Math.sqrt((double) energy / (frames - 2000)) > 4000);
++            } finally {
++                engine.destroy(handle);
++            }
++        }
 +    }
 +
 +    private static List<Short> process(JniCrisperDspEngine engine, long handle, short[] samples, int channels) {
@@ -714,7 +750,7 @@
 +    private ByteBuffer output = EMPTY_BUFFER;
 +
 +    CrisperAudioProcessor(int engineId, CrisperDspEngine engine) {
-+        if (engineId != 1 && engineId != 2) {
++        if (engineId != 1 && engineId != 2 && engineId != 3) {
 +            throw new IllegalArgumentException("Unknown native speed processor");
 +        }
 +        this.engineId = engineId;
@@ -993,7 +1029,7 @@
 +}
 --- /dev/null
 +++ b/android/src/test/java/com/ryanheise/just_audio/CrisperAudioProcessorTest.java
-@@ -0,0 +1,284 @@
+@@ -0,0 +1,306 @@
 +// SPDX-License-Identifier: MIT
 +package com.ryanheise.just_audio;
 +
@@ -1022,6 +1058,26 @@
 +public class CrisperAudioProcessorTest {
 +    private static final AudioProcessor.AudioFormat MONO =
 +        new AudioProcessor.AudioFormat(48000, 1, C.ENCODING_PCM_16BIT);
++
++    @Test public void nativeEngineIdsRemainStableAndReachTheConfiguredStage() throws Exception {
++        for (int engineId : new int[] {1, 2, 3}) {
++            FakeEngine engine = new FakeEngine();
++            CrisperAudioProcessorChain chain = new CrisperAudioProcessorChain(engineId, engine);
++            assertEquals(1, chain.getAudioProcessors().length);
++            CrisperAudioProcessor processor = (CrisperAudioProcessor) chain.getAudioProcessors()[0];
++            chain.applyPlaybackParameters(new PlaybackParameters(1.5f));
++            processor.configure(MONO);
++            processor.flush();
++            assertEquals(engineId, engine.lastEngineId);
++            assertEquals(1.5, engine.latest().rate, 0.0);
++            assertFalse(chain.applySkipSilenceEnabled(true));
++            processor.reset();
++        }
++        for (int unsupported : new int[] {-1, 0, 4}) {
++            assertThrows(IllegalArgumentException.class,
++                () -> new CrisperAudioProcessor(unsupported, new FakeEngine()));
++        }
++    }
 +
 +    @Test public void partialInputWritesLeaveTheUnconsumedFramesInTheCallerBuffer() throws Exception {
 +        FakeEngine engine = new FakeEngine();
@@ -1243,10 +1299,12 @@
 +        }
 +        final Map<Long, Stream> streams = new HashMap<>();
 +        long lastHandle;
++        int lastEngineId;
 +        int maxWriteFrames = Integer.MAX_VALUE, maxReadFrames = Integer.MAX_VALUE;
 +        int finishCalls, readCalls;
 +        Stream latest() { return streams.get(lastHandle); }
 +        @Override public long create(int engine, int sampleRate, int channels, double rate) {
++            lastEngineId = engine;
 +            streams.put(++lastHandle, new Stream(sampleRate, channels, rate));
 +            return lastHandle;
 +        }
@@ -1301,7 +1359,7 @@
 +  vendor/bungee/src/Timing.cpp
 +  vendor/bungee/src/Window.cpp
 +  vendor/bungee/src/version.cpp)
-+add_library(crisper_dsp STATIC crisper_dsp.cpp ${BUNGEE_SOURCES}
++add_library(crisper_dsp STATIC crisper_dsp.cpp wsola/wsola.cpp ${BUNGEE_SOURCES}
 +  vendor/pffft/pffft.c vendor/pffft/fftpack.c vendor/sonic/sonic.c)
 +set_target_properties(crisper_dsp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 +target_compile_features(crisper_dsp PUBLIC cxx_std_20)
@@ -1324,7 +1382,7 @@
 +endif()
 --- /dev/null
 +++ b/native/crisper_dsp/LICENSE
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,26 @@
 +MIT License
 +
 +Copyright (c) 2026 CrisperPlayer contributors
@@ -1349,21 +1407,25 @@
 +
 +This license covers the CrisperPlayer adapter and its build/test harness.
 +Vendored upstream code retains the separate licenses listed in vendor/manifest.json.
++The Chromium-derived portable WSOLA implementation and derived semantic tests
++retain BSD-3-Clause instead; see wsola/LICENSE and wsola/UPSTREAM.md.
 --- /dev/null
 +++ b/native/crisper_dsp/README.md
-@@ -0,0 +1,134 @@
+@@ -0,0 +1,177 @@
 +# CrisperPlayer native time-stretch adapter
 +
 +This is a real streaming PCM processor used by the optional Android quality
 +modes. It compiles Bungee Basic and Signalsmith Stretch from pinned, unmodified
-+sources. The same core can be built on Linux for deterministic tests and WAV
-+comparisons. The adapter is MIT licensed; each upstream implementation keeps its
-+own license, recorded in [vendor/manifest.json](vendor/manifest.json).
++sources, plus a maintained portable **Chromium WSOLA** fork. The same core can
++be built on Linux for deterministic tests and WAV comparisons. The streaming
++adapter is MIT licensed; the Chromium-derived port is BSD-3-Clause. Each upstream
++implementation keeps its license, recorded in
++[vendor/manifest.json](vendor/manifest.json).
 +
 +Android's default remains Media3's Sonic processor. The native Sonic C processor
 +is included for the host comparison harness; that comparison is **not** a
-+bit-exact replica of Media3 Sonic. Bungee and Signalsmith are optional listening
-+choices, not a claim that either wins for every voice or speed. Signalsmith's
++bit-exact replica of Media3 Sonic. Bungee, Signalsmith and WSOLA are optional
++listening choices, not a claim that one wins for every voice or speed. Signalsmith's
 +upstream guidance concentrates on moderate time stretch, roughly 0.75–1.5×.
 +The adapter's tested functional range is 0.5–3×.
 +
@@ -1386,6 +1448,10 @@
 +`build/native-dsp/build-report.json`. It uses no FFmpeg, MPV, downloaded runtime
 +binary or build-time dependency fetch. Android adds this directory through CMake
 +and links target `crisper_dsp`. DSP optimization remains enabled in debug builds.
++The build also compiles/runs eight WSOLA search regression fixtures, including
++all-negative correlations, signed/excluded endpoints, silence, anti-phase stereo
++and a silent first channel. Git-file snapshots verify both SHA-256 and the exact
++upstream Git blob ID; existing archive source pins remain unchanged.
 +
 +The host tests exercise the actual compiled library, including:
 +
@@ -1397,11 +1463,16 @@
 +  chunk sizes producing identical results; 8/192 kHz corner configurations.
 +- PCM16 output, bit-exact unity playback, reset isolation, invalid arguments and
 +  non-finite input, bounded backpressure, and clocks that exclude queued audio.
++- WSOLA shared alignment for opposite-phase stereo and a silent first channel;
++  DC/silence, fractional rates, uncommon sample rates, and exact final samples
++  across full/partial output-hop boundaries and different chunk sizes.
++- Recorded WSOLA host workloads for ordinary/high-speed stereo and 192 kHz PCM.
++  These include Python transport time and are not Android CPU/battery results.
 +
 +Sonic can discard an isolated impulse at high speed when it removes a pitch
 +period. The report keeps that baseline measurement; it does not hide it or turn
-+it into a claim about intelligibility. The two new engines must preserve these
-+markers in the test. All three must preserve boundary tone bursts. Synthetic
++it into a claim about intelligibility. The three optional engines must preserve
++these particular markers in the test. All four must preserve boundary tone bursts. Synthetic
 +signals test timing and signal handling, not human speech quality, battery use
 +or a particular Android device's real-time reliability.
 +
@@ -1415,7 +1486,7 @@
 +  --output-dir build/my-dsp-comparison --rate 1.5
 +```
 +
-+It streams the same source through all three processors and writes separate WAVs
++It streams the same source through all four processors and writes separate WAVs
 +plus `render-report.json`. That report records input/binary/output hashes, input
 +and output frame counts, peak and saturated PCM samples, and host render time.
 +Without `--input`, the tool generates six seconds of harmonic bursts, silence
@@ -1446,6 +1517,11 @@
 +feeds zero-valued lookahead at the end. Signalsmith uses upstream `outputSeek`
 +and `flush` to preserve the beginning and drain the end. Sonic's short residual
 +rounding is padded through its processor and trimmed to the same duration.
++WSOLA retains bounded input lookahead until EOS is known. Its final output hop
++uses a smooth complementary blend from ordinary WSOLA continuation to the real
++ending source segment, reaching the actual last sample without changing the
++exact output frame total. This boundary rule is independent of the signal
++content and applies to full, partial and short hops.
 +
 +`source_frames` counts the original frames represented by **output already
 +read**, capped at accepted input. Queued output, input lookahead, preroll and
@@ -1457,6 +1533,32 @@
 +old input, lookahead, output and counters. Android drains before a speed change,
 +and resets on seek/flush. The app selects a different algorithm at startup. The
 +native modes do not implement silence skipping or pitch shifting.
++
++## Maintained Chromium WSOLA fork
++
++The portable implementation in [wsola/](wsola/) derives from Chromium's BSD
++`wsola_internals` helpers and documented audio-renderer WSOLA loop at immutable
++commit `ddd30ef8aa98443509bf4ce006cb36b4e2296c0b`. Exact unmodified originals are
++retained for provenance under `vendor/chromium-wsola`. The fork uses a 20 ms Hann
++window, 10 ms synthesis hop, 30 ms candidate interval, normalized per-channel
++correlation, five-frame coarse search plus interpolated/refined candidates, and
++the source-continuation transition window. It has no Chromium `base`, media
++renderer, browser, codec or FFmpeg build dependency.
++
++Both stereo channels share a single selected source offset; their normalized
++scores are combined without downmixing, so opposite-phase audio does not cancel
++out the alignment signal. All scratch memory is allocated at configuration.
++Compile-time SSE2/NEON is used where available, with a portable scalar fallback.
++The initial hop retains the real onset instead of fading against nonexistent
++preceding audio. Source locations and output position use 64-bit coordinates,
++while only bounded window-relative offsets become `int` indices.
++
++Local fixes include valid all-negative correlation candidates, signed exclusion
++intervals, nonnegative double-precision rolling energy, explicit endpoint and
++interpolated-candidate evaluation, and deterministic closest-to-nominal tie
++selection for silence. This is a maintained fork, not bit-exact Chromium browser
++playback. The derivation and independent upstream comparisons are documented in
++[wsola/UPSTREAM.md](wsola/UPSTREAM.md).
 +
 +Bungee uses its granular interface with a rebased input origin for every grain.
 +It does not use the cumulative 32-bit `Stream` input position, so a long audiobook
@@ -1472,6 +1574,7 @@
 +| Bungee Basic | `61f52bf34be577d189d388772ddfa3696dee77d8` | MPL-2.0 |
 +| Eigen Core | `c29c800126982c561e8d0b9255dc65474cd98de3` | MPL-2.0; included BSD/Apache notices retained |
 +| PFFFT/FFTPACK | `02fe7715a5bf8bfd914681c53429600f94e0f536` | Permissive NCAR/UCAR FFTPACK notice |
++| Chromium WSOLA source snapshot | `ddd30ef8aa98443509bf4ce006cb36b4e2296c0b` | BSD-3-Clause |
 +
 +Eigen is limited to `Core`, its internal core headers, plugins and miscellaneous
 +support. `EIGEN_MPL2_ONLY` is always defined. Unsupported modules, GPL-only
@@ -1488,7 +1591,7 @@
 +and Maven dependency closure; those remain separate release checks.
 --- /dev/null
 +++ b/native/crisper_dsp/crisper_dsp.cpp
-@@ -0,0 +1,419 @@
+@@ -0,0 +1,491 @@
 +// SPDX-License-Identifier: MIT
 +// Copyright (c) 2026 CrisperPlayer contributors
 +// Third-party implementations retain their licenses; see vendor/manifest.json.
@@ -1497,6 +1600,7 @@
 +#include "bungee/Bungee.h"
 +#include "signalsmith-stretch.h"
 +#include "sonic.h"
++#include "wsola/wsola.h"
 +
 +#include <algorithm>
 +#include <cmath>
@@ -1517,7 +1621,7 @@
 +    if (!ok) throw std::invalid_argument(message);
 +}
 +void validate(int engine, int sample_rate, int channels, double rate) {
-+    require(engine >= CP_DSP_SONIC && engine <= CP_DSP_SIGNALSMITH, "Unknown DSP engine");
++    require(engine >= CP_DSP_SONIC && engine <= CP_DSP_WSOLA, "Unknown DSP engine");
 +    require(sample_rate >= 8000 && sample_rate <= 192000, "Sample rate must be 8000..192000 Hz");
 +    require(channels == 1 || channels == 2, "Only mono and stereo PCM are supported");
 +    require(std::isfinite(rate) && rate >= 0.5 && rate <= 3.0, "Rate must be finite and 0.5..3.0");
@@ -1805,12 +1909,83 @@
 +    std::vector<float> planar;
 +};
 +
++class WsolaEngine final : public Engine {
++public:
++    WsolaEngine(int sr, int ch, double rate) : processor(sr, ch, rate), channels(ch),
++        stride(processor.maximum_input_frames()), planar(stride * ch) {
++        require(stride < kInputCapacity, "WSOLA lookahead exceeds the input bound");
++    }
++    int latency() const override { return stride; }
++    bool pump(cp_dsp &h) override {
++        const int hop = processor.hop_frames();
++        if (h.output.free() < hop || (!h.finishing && h.room() < hop)) return false;
++        const auto range = processor.input_range();
++        // Hold at least one source hop beyond a complete output hop. At fast
++        // rates the ordinary search window can end before that hop's mapped
++        // media endpoint; without this reserve the final words could already
++        // be irreversibly emitted before EOS tells us where the source ends.
++        const int64_t lookahead_end = std::max(range.end,
++            int64_t(std::ceil(double(h.generated + hop) * h.rate)) + hop);
++        if (!h.finishing && lookahead_end > h.accepted) return false;
++        const int frames = int(range.end - range.begin);
++        require(frames >= 0 && frames <= stride, "WSOLA requested an invalid input span");
++        for (int c = 0; c < channels; ++c) {
++            for (int f = 0; f < frames; ++f) {
++                const int64_t absolute = range.begin + f;
++                const int64_t offset = absolute - h.input_base;
++                if (absolute < 0 || absolute >= h.accepted) {
++                    planar[c * stride + f] = 0.f;
++                } else {
++                    require(offset >= 0 && offset < h.input.size(), "WSOLA requested discarded input");
++                    planar[c * stride + f] = h.input.at(int(offset), c);
++                }
++            }
++        }
++        processor.process({planar.data(), channels, frames, stride}, range.begin);
++        const int64_t remaining = h.limit() - h.generated;
++        if (h.finishing && remaining <= hop) {
++            const int final_frames = int(remaining);
++            // Anchor the last output hop to the real final source segment.
++            // A complementary half-cosine blend begins at the normal WSOLA
++            // continuation and ends at the actual final sample. This general
++            // boundary rule also covers partial/short hops; it does not scan
++            // for impulses or fabricate/repeat an isolated final sample.
++            for (int c = 0; c < channels; ++c) {
++                for (int f = 0; f < final_frames; ++f) {
++                    const int64_t source = h.accepted - final_frames + f;
++                    float ending = 0.f;
++                    if (source >= 0) {
++                        const int64_t offset = source - h.input_base;
++                        require(offset >= 0 && offset < h.input.size(), "WSOLA discarded its final source segment");
++                        ending = h.input.at(int(offset), c);
++                    }
++                    const double weight = final_frames == 1 ? 1.
++                        : .5 * (1. - std::cos(std::acos(-1.) * f / (final_frames - 1)));
++                    planar[c * stride + f] = float(
++                        processor.output()[c * hop + f] * (1. - weight) + ending * weight);
++                }
++            }
++            h.emit(planar.data(), stride, 0, final_frames);
++        } else {
++            h.emit(processor.output(), hop, 0, hop);
++        }
++        const int64_t next = processor.input_range().begin;
++        h.consume(int(std::clamp<int64_t>(next - h.input_base, 0, h.input.size())));
++        return true;
++    }
++private:
++    crisper_wsola::Processor processor;
++    int channels, stride;
++    std::vector<float> planar;
++};
++
 +std::unique_ptr<Engine> make_engine(int id, int sr, int ch, double rate) {
 +    if (rate == 1.) return {};
 +    switch (id) {
 +    case CP_DSP_SONIC: return std::make_unique<SonicEngine>(sr, ch, rate);
 +    case CP_DSP_BUNGEE_BASIC: return std::make_unique<BungeeEngine>(sr, ch, rate);
 +    case CP_DSP_SIGNALSMITH: return std::make_unique<SignalsmithEngine>(sr, ch, rate);
++    case CP_DSP_WSOLA: return std::make_unique<WsolaEngine>(sr, ch, rate);
 +    default: throw std::invalid_argument("Unknown DSP engine");
 +    }
 +}
@@ -1910,7 +2085,7 @@
 +}
 --- /dev/null
 +++ b/native/crisper_dsp/crisper_dsp.h
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,64 @@
 +// SPDX-License-Identifier: MIT
 +// Copyright (c) 2026 CrisperPlayer contributors
 +// Third-party processor licenses and exact source pins are in vendor/manifest.json.
@@ -1934,6 +2109,7 @@
 +    CP_DSP_SONIC = 0,
 +    CP_DSP_BUNGEE_BASIC = 1,
 +    CP_DSP_SIGNALSMITH = 2,
++    CP_DSP_WSOLA = 3,
 +};
 +
 +// A handle belongs to one audio thread. Units are FRAMES, not individual samples.
@@ -1976,7 +2152,7 @@
 +#endif
 --- /dev/null
 +++ b/native/crisper_dsp/tools/build_host.py
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,130 @@
 +#!/usr/bin/env python3
 +# SPDX-License-Identifier: MIT
 +"""Compile exactly the offline native DSP source closure using a host C/C++ compiler."""
@@ -1990,6 +2166,7 @@
 +import shutil
 +import subprocess
 +import sys
++from urllib.parse import urlparse
 +
 +CORE = Path(__file__).resolve().parents[1]
 +REPO = CORE.parents[3]
@@ -2000,13 +2177,31 @@
 +    manifest = json.loads((vendor / 'manifest.json').read_text())
 +    expected = set()
 +    for component in manifest['components']:
-+        if not component['revision'] or not component['archive_sha256']:
++        if not re.fullmatch(r'[0-9a-f]{40}', component.get('revision', '')):
 +            raise RuntimeError('Missing upstream source pin')
++        git_files = component.get('source_type', 'archive') == 'git-files'
++        if git_files:
++            if not re.fullmatch(r'[0-9a-f]{40}', component.get('git_tree_sha1', '')):
++                raise RuntimeError('Missing exact upstream Git tree pin')
++        elif component.get('source_type', 'archive') != 'archive' or not re.fullmatch(r'[0-9a-f]{64}', component.get('archive_sha256', '')):
++            raise RuntimeError('Missing upstream source archive pin')
 +        for item in component['files']:
 +            path = vendor / item['path']
++            if not path.resolve().is_relative_to(vendor.resolve()):
++                raise RuntimeError('Vendored file escapes source directory')
 +            expected.add(item['path'])
-+            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item['sha256']:
++            data = path.read_bytes() if path.is_file() else b''
++            if not path.is_file() or hashlib.sha256(data).hexdigest() != item['sha256']:
 +                raise RuntimeError(f'Unreviewed/missing vendored file: {path}')
++            if git_files:
++                upstream = item.get('upstream_path', '')
++                source = urlparse(item.get('source_url', ''))
++                clean_path = upstream and not upstream.startswith('/') and all(p not in ('', '.', '..') for p in upstream.split('/'))
++                if not clean_path or source.scheme != 'https' or not source.netloc or source.query or source.fragment or component['revision'] not in source.path.split('/') or not source.path.endswith('/' + upstream):
++                    raise RuntimeError(f'Invalid pinned Git source URL: {path}')
++                blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
++                if blob != item.get('git_blob_sha1'):
++                    raise RuntimeError(f'Upstream Git blob hash does not match: {path}')
 +    actual = {str(p.relative_to(vendor)) for p in vendor.rglob('*') if p.is_file()} - {'manifest.json'}
 +    if actual != expected:
 +        raise RuntimeError(f'Unreviewed source closure: {sorted(actual ^ expected)}')
@@ -2026,7 +2221,7 @@
 +    verify_vendor()
 +    out.mkdir(parents=True, exist_ok=True)
 +    c_sources = ['vendor/sonic/sonic.c', 'vendor/pffft/pffft.c', 'vendor/pffft/fftpack.c']
-+    cpp_sources = ['crisper_dsp.cpp'] + [str(p.relative_to(CORE)) for p in sorted((CORE / 'vendor/bungee/src').glob('*.cpp'))]
++    cpp_sources = ['crisper_dsp.cpp', 'wsola/wsola.cpp'] + [str(p.relative_to(CORE)) for p in sorted((CORE / 'vendor/bungee/src').glob('*.cpp'))]
 +    cmake = (CORE / 'CMakeLists.txt').read_text()
 +    for source in c_sources + cpp_sources:
 +        if source not in cmake:
@@ -2047,15 +2242,29 @@
 +    library = out / 'libcrisper_dsp.so'
 +    link = [cxx, '-shared', '-Wl,--no-undefined', *objects, '-lm', '-o', str(library)]
 +    run(link)
++    search_test = out / 'test-wsola-search'
++    search_test_command = [cxx, '-O2', '-std=c++20', '-I' + str(CORE),
++                           str(CORE / 'tools/test_wsola_search.cpp'),
++                           str(out / 'wsola_wsola.cpp.o'), '-o', str(search_test)]
++    run(search_test_command)
++    search_result = json.loads(run([str(search_test)]).stdout)
 +    report = {
 +        'scope': 'Linux host build; not an Android ABI or device validation',
 +        'compiler_c': run([cc, '--version']).stdout.splitlines()[0],
 +        'compiler_cxx': run([cxx, '--version']).stdout.splitlines()[0],
 +        'source_manifest_sha256': hashlib.sha256((CORE / 'vendor/manifest.json').read_bytes()).hexdigest(),
 +        'adapter_sha256': hashlib.sha256((CORE / 'crisper_dsp.cpp').read_bytes()).hexdigest(),
++        'wsola_source_sha256': {name: hashlib.sha256((CORE / name).read_bytes()).hexdigest() for name in ('wsola/wsola.h', 'wsola/wsola.cpp')},
++        'build_input_sha256': {
++            name: hashlib.sha256((CORE / name).read_bytes()).hexdigest()
++            for name in ('CMakeLists.txt', 'crisper_dsp.h', 'crisper_dsp.cpp',
++                         'wsola/wsola.h', 'wsola/wsola.cpp',
++                         'tools/build_host.py', 'tools/test_wsola_search.cpp')
++        },
 +        'library': str(library),
 +        'library_sha256': hashlib.sha256(library.read_bytes()).hexdigest(),
-+        'commands': commands + [link],
++        'wsola_search_checks': search_result,
++        'commands': commands + [link, search_test_command, [str(search_test)]],
 +    }
 +    (out / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
 +    print(json.dumps({k: report[k] for k in ('scope', 'compiler_cxx', 'library', 'library_sha256')}, indent=2))
@@ -2083,7 +2292,7 @@
 +import ctypes as C
 +from pathlib import Path
 +
-+ENGINES = {'sonic': 0, 'bungee': 1, 'signalsmith': 2}
++ENGINES = {'sonic': 0, 'bungee': 1, 'signalsmith': 2, 'wsola': 3}
 +DEFAULT_LIBRARY = Path(__file__).resolve().parents[5] / 'build/native-dsp/libcrisper_dsp.so'
 +
 +
@@ -2192,10 +2401,10 @@
 +    return result
 --- /dev/null
 +++ b/native/crisper_dsp/tools/render_ab.py
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,144 @@
 +#!/usr/bin/env python3
 +# SPDX-License-Identifier: MIT
-+"""Render the same PCM16 WAV through pinned Sonic, Bungee Basic and Signalsmith.
++"""Render the same PCM16 WAV through Sonic, Bungee, Signalsmith and Chromium WSOLA.
 +
 +The outputs share one source; adjust listening loudness equally when comparing. Synthetic input
 +is a reproducible engineering fixture, not a speech-quality benchmark. This tool
@@ -2326,6 +2535,7 @@
 +        'notes': [
 +            'Sonic C comparison is not a bit-exact replica of Android Media3 Sonic.',
 +            'Signalsmith is recommended upstream mainly for moderate time stretch; inspect speech at your chosen rate.',
++            'WSOLA is our maintained Chromium-derived BSD fork; it is not a bit-exact browser playback replica.',
 +            'Listen at equal loudness, including first/last words, consonants, breaths, music, stereo image and rapid speed changes.',
 +        ],
 +        'results': results,
@@ -2338,7 +2548,7 @@
 +    main()
 --- /dev/null
 +++ b/native/crisper_dsp/tools/test_streaming.py
-@@ -0,0 +1,214 @@
+@@ -0,0 +1,278 @@
 +#!/usr/bin/env python3
 +# SPDX-License-Identifier: MIT
 +"""Actual native functional tests; synthetic signals are not a listening-quality verdict."""
@@ -2357,6 +2567,7 @@
 +LIBRARY = None
 +METRICS = []
 +IMPULSE_METRICS = []
++WSOLA_METRICS = []
 +
 +
 +def tone(sr, frames, channels=1, frequencies=(440, 880)):
@@ -2538,6 +2749,69 @@
 +                        result = render(p, tone(sr, 32000, 2))
 +                        self.assertEqual(len(result), 2 * math.floor(32000 / rate + .5))
 +
++    def test_wsola_shared_alignment_preserves_opposite_phase_and_silent_channels(self):
++        sr, frames = 48000, 96137
++        for kind in ('opposite', 'left_silent'):
++            source = tone(sr, frames)
++            samples = array('f', (value for sample in source for value in ((sample, -sample) if kind == 'opposite' else (0., sample))))
++            for rate in (.5, .75, 1.25, 2, 3):
++                with self.subTest(kind=kind, rate=rate), LIBRARY.create('wsola', sr, 2, rate) as p:
++                    result = render(p, samples)
++                    left, right = result[0::2], result[1::2]
++                    self.assertEqual(len(left), math.floor(frames / rate + .5))
++                    self.assertGreater(math.sqrt(sum(v * v for v in right) / len(right)), .10)
++                    self.assertAlmostEqual(frequency(result, sr, 2, 1), 440, delta=8)
++                    if kind == 'opposite':
++                        self.assertLess(max(abs(a + b) for a, b in zip(left, right)), 1e-7)
++                    else:
++                        self.assertEqual(max(map(abs, left)), 0.)
++
++    def test_wsola_silence_dc_and_fractional_rates_remain_finite_and_bounded(self):
++        for sr in (11025, 22050, 88200):
++            for rate in (.51, .99, 1.01, 2.99):
++                with self.subTest(sr=sr, rate=rate), LIBRARY.create('wsola', sr, 1, rate) as p:
++                    samples = tone(sr, sr + 137)
++                    result = render(p, samples)
++                    self.assertEqual(len(result), math.floor(len(samples) / rate + .5))
++                    self.assertAlmostEqual(frequency(result, sr, 1, 0), 440, delta=9)
++        for value in (0., -.2, .2):
++            with self.subTest(value=value), LIBRARY.create('wsola', 48000, 1, 1.5) as p:
++                result = render(p, array('f', [value]) * 96137)
++                self.assertTrue(all(math.isfinite(v) for v in result))
++                for sample in result[4800:-4800]:
++                    self.assertAlmostEqual(sample, value, delta=1e-6)
++
++    def test_wsola_eof_keeps_the_real_tail_at_full_and_partial_hop_boundaries(self):
++        for frames in (17, 479, 1440, 1441, 1501, 96000):
++            for rate in (.5, 1.25, 1.5, 2, 3):
++                with self.subTest(frames=frames, rate=rate):
++                    samples = tone(48000, frames)
++                    samples[-1] = .37
++                    with LIBRARY.create('wsola', 48000, 1, rate) as p:
++                        large = render(p, samples, chunks=(32768,), read_sizes=(32768,))
++                    with LIBRARY.create('wsola', 48000, 1, rate) as p:
++                        tiny = render(p, samples, chunks=(1, 7, 19), read_sizes=(1, 97))
++                    self.assertEqual(large, tiny)
++                    self.assertEqual(len(large), math.floor(frames / rate + .5))
++                    self.assertEqual(large[-1], samples[-1])
++                    self.assertLessEqual(max(map(abs, large)), .370001)
++
++    def test_wsola_workload_measurements_are_recorded_without_device_claims(self):
++        # Include ordinary stereo, high-rate stereo and the upper sample-rate
++        # bound. Timing includes Python transport and is evidence, not a hard
++        # battery/perceptual-performance promise or a timing-dependent gate.
++        for sr, channels, rate in ((48000, 2, .75), (48000, 2, 3), (192000, 2, 1.5)):
++            samples = tone(sr, sr * 2, channels, frequencies=(173, 811))
++            started = time.perf_counter()
++            with LIBRARY.create('wsola', sr, channels, rate) as p:
++                result = render(p, samples, chunks=(4096,), read_sizes=(4096,))
++                duration = time.perf_counter() - started
++                self.assertEqual(len(result) // channels, math.floor(sr * 2 / rate + .5))
++                WSOLA_METRICS.append({'sample_rate': sr, 'channels': channels, 'rate': rate,
++                    'input_seconds': 2., 'output_seconds': len(result) / channels / sr,
++                    'render_seconds': duration, 'host_render_seconds_per_input_second': duration / 2,
++                    'peak': max(map(abs, result)), 'latency_source_frames': p.stat('latency_frames')})
++
 +
 +if __name__ == '__main__':
 +    parser = argparse.ArgumentParser(description=__doc__)
@@ -2548,8 +2822,1059 @@
 +    started = time.monotonic()
 +    suite = unittest.defaultTestLoader.loadTestsFromNames(tests, sys.modules[__name__]) if tests else unittest.defaultTestLoader.loadTestsFromTestCase(StreamingTests)
 +    result = unittest.TextTestRunner(verbosity=2).run(suite)
-+    report = {'scope': 'Host streaming correctness and synthetic signal measurements; not perceptual quality or Android device certification', 'library_sha256': hashlib.sha256(args.library.read_bytes()).hexdigest(), 'test_methods': result.testsRun, 'failures': len(result.failures), 'errors': len(result.errors), 'seconds': time.monotonic() - started, 'measurements': METRICS, 'isolated_impulse_measurements': IMPULSE_METRICS}
++    report = {'scope': 'Host streaming correctness and synthetic signal measurements; not perceptual quality or Android device certification', 'library_sha256': hashlib.sha256(args.library.read_bytes()).hexdigest(), 'test_methods': result.testsRun, 'failures': len(result.failures), 'errors': len(result.errors), 'seconds': time.monotonic() - started, 'measurements': METRICS, 'isolated_impulse_measurements': IMPULSE_METRICS, 'wsola_workload_measurements': WSOLA_METRICS}
 +    if args.report:
 +        args.report.parent.mkdir(parents=True, exist_ok=True)
 +        args.report.write_text(json.dumps(report, indent=2) + '\n')
 +    sys.exit(0 if result.wasSuccessful() else 1)
+--- /dev/null
++++ b/native/crisper_dsp/tools/test_wsola_reference.py
+@@ -0,0 +1,257 @@
++#!/usr/bin/env python3
++# Copyright 2012 The Chromium Authors
++# Copyright 2026 CrisperPlayer contributors
++# SPDX-License-Identifier: BSD-3-Clause
++"""Compare unchanged Chromium helpers with the maintained portable extraction.
++
++Search, energy and interpolation fixtures derive from the pinned upstream
++audio_renderer_algorithm_unittest.cc. Its notice is in
++../vendor/chromium-wsola/LICENSE. Only Python's stdlib and a C++20 compiler are
++needed. See wsola_reference/README.md for the test-only shim boundaries.
++"""
++import argparse
++import ctypes as C
++import hashlib
++import json
++import math
++import os
++from pathlib import Path
++import shlex
++import subprocess
++import sys
++import time
++import unittest
++
++NATIVE = Path(__file__).resolve().parents[1]
++REPO = Path(__file__).resolve().parents[5]
++HELPERS = NATIVE / 'tools/wsola_reference'
++VENDOR = NATIVE / 'vendor/chromium-wsola'
++REVISION = 'ddd30ef8aa98443509bf4ce006cb36b4e2296c0b'
++F = C.POINTER(C.c_float)
++ORIGINAL = PORT = None
++MEASUREMENTS = []
++
++
++def floats(values):
++    return (C.c_float * len(values))(*values)
++
++
++def search(frames, targets, exclusion=(45, 63), mode=0, decimation=5,
++           portable=False, preferred=0):
++    channels = len(frames[0])
++    a = floats([value for frame in frames for value in frame])
++    b = floats([value for frame in targets for value in frame])
++    args = (a, len(frames), b, len(targets), channels, *exclusion)
++    if portable:
++        return PORT.portable_search(*args, preferred)
++    return ORIGINAL.reference_search(*args, mode, decimation)
++
++
++def bind(original_path, port_path):
++    original, port = C.CDLL(str(original_path)), C.CDLL(str(port_path))
++    original.reference_search.argtypes = [F, C.c_int, F, C.c_int, C.c_int,
++                                          C.c_int64, C.c_int64, C.c_int, C.c_int]
++    original.reference_search.restype = C.c_int
++    for name, args in {
++        'dot': [F, F, C.c_int, C.c_int, F],
++        'energy': [F, C.c_int, C.c_int, C.c_int, F],
++        'quadratic': [F, F],
++        'hann': [F, C.c_int],
++    }.items():
++        function = getattr(original, 'reference_' + name)
++        function.argtypes, function.restype = args, None
++    port.portable_search.argtypes = [F, C.c_int, F, C.c_int, C.c_int,
++                                     C.c_int, C.c_int, C.c_int]
++    port.portable_search.restype = C.c_int
++    port.portable_dot.argtypes, port.portable_dot.restype = [F, F, C.c_int], C.c_float
++    port.portable_hann.argtypes, port.portable_hann.restype = [F, C.c_int], None
++    port.portable_simd_name.argtypes, port.portable_simd_name.restype = [], C.c_char_p
++    return original, port
++
++
++def stereo_fixture():
++    left = [0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
++    right = [0, 0, 0, 0, 0, 0, 0, .1, 1, .1, 0, 0]
++    return list(zip(left, right)), list(zip([1, 1, 1, 0], [0, 1, .1, 1]))
++
++
++class ReferenceSemantics(unittest.TestCase):
++    def test_asymmetric_dot_sum(self):
++        a, b, result = floats(list(range(1, 9))), floats([1] * 8), floats([0])
++        ORIGINAL.reference_dot(a, b, 8, 1, result)
++        self.assertEqual(result[0], 36)
++        self.assertEqual(PORT.portable_dot(a, b, 8), 36)
++        MEASUREMENTS.append({'case': 'asymmetric-eight-lane-dot', 'value': 36})
++
++    def test_scalar_original_against_port_dot_remainders(self):
++        maximum_error = 0
++        for frames in range(1, 100):
++            a = floats([math.sin(i * .23) for i in range(frames)])
++            b = floats([math.cos(i * .31) for i in range(frames)])
++            result = floats([0])
++            ORIGINAL.reference_dot(a, b, frames, 1, result)
++            error = abs(PORT.portable_dot(a, b, frames) - result[0])
++            maximum_error = max(maximum_error, error)
++            self.assertLess(error, 1e-5, f'frames={frames}')
++        MEASUREMENTS.append({'case': 'scalar-vs-port-dot', 'frame_sizes': 99,
++                             'max_absolute_error': maximum_error})
++
++    def test_original_dot_preserves_channel_polarity(self):
++        a = floats([value for i in range(1, 9) for value in (i, -i)])
++        b = floats([1] * 16)
++        result = floats([0, 0])
++        ORIGINAL.reference_dot(a, b, 8, 2, result)
++        self.assertEqual(list(result), [36, -36])
++
++    def test_original_sliding_energy_fixture(self):
++        samples = floats([value for n in range(20) for value in (n, 19 - n)])
++        energies = floats([0] * 36)
++        ORIGINAL.reference_energy(samples, 20, 2, 3, energies)
++        expected = [sum((n + k if c == 0 else 19 - n - k) ** 2 for k in range(3))
++                    for n in range(18) for c in range(2)]
++        self.assertEqual(list(energies), expected)
++        MEASUREMENTS.append({'case': 'original-stereo-moving-energy', 'values_checked': 36})
++
++    def test_original_stereo_search_fixture(self):
++        source, target = stereo_fixture()
++        observed = {
++            'full': search(source, target, mode=1),
++            'full_excluded': search(source, target, (2, 5), mode=1),
++            'decimated4': search(source, target, mode=2, decimation=4),
++            'optimal': search(source, target),
++        }
++        self.assertEqual(observed, {'full': 5, 'full_excluded': 7,
++                                    'decimated4': 4, 'optimal': 5})
++        MEASUREMENTS.append({'case': 'original-stereo-search', **observed})
++
++    def test_port_matches_original_stereo_fixture(self):
++        source, target = stereo_fixture()
++        self.assertEqual(search(source, target, portable=True), search(source, target))
++        self.assertEqual(search(source, target, (2, 5), portable=True),
++                         search(source, target, (2, 5), mode=1))
++
++    def test_original_quadratic_and_flat_interpolation(self):
++        result = floats([0, 0])
++        ORIGINAL.reference_quadratic(floats([.7 - 1.2 + .8, .8, .7 + 1.2 + .8]), result)
++        x = -1.2 / (2 * .7)
++        y = .7 * x * x + 1.2 * x + .8
++        self.assertAlmostEqual(result[0], x, delta=1e-6)
++        self.assertAlmostEqual(result[1], y, delta=1e-6)
++        ORIGINAL.reference_quadratic(floats([1, 1, 1]), result)
++        self.assertEqual(list(result), [0, 1])
++
++    def test_port_shared_stereo_match_without_downmix_cancellation(self):
++        values = [math.sin(i * .37) + .2 * math.sin(i * .71) for i in range(120)]
++        opposite = [(value, -value) for value in values]
++        self.assertEqual(search(opposite, opposite[19:59], (1000, 1100),
++                                portable=True, preferred=40), 19)
++
++    def test_intentional_negative_correlation_fallback_fix(self):
++        source, target = [[-1]] * 4, [[1]]
++        # The exact upstream FullSearch returns its excluded initial index when
++        # every score is negative. Preserve that observation and require the fix.
++        old = search(source, target, (0, 0), mode=1)
++        new = search(source, target, (0, 0), portable=True, preferred=2)
++        self.assertEqual(old, 0)
++        self.assertEqual(new, 2)
++        MEASUREMENTS.append({'case': 'intentional-negative-correlation-fix',
++                             'original_excluded_index': old, 'port_valid_index': new})
++
++    def test_port_signed_exclusions_and_single_valid_candidate(self):
++        self.assertEqual(search([[0]] * 6, [[0]], (-10, 2), portable=True), 3)
++        self.assertEqual(search([[0]] * 6, [[0]], (-10, 10), portable=True), -1)
++        self.assertEqual(search([[0]] * 6, [[0]], (1, 10), portable=True, preferred=5), 0)
++
++    def test_port_silence_prefers_requested_center(self):
++        for preferred in (0, 1, 8, 19):
++            self.assertEqual(search([[0]] * 20, [[0]], (30, 40),
++                                    portable=True, preferred=preferred), preferred)
++
++    def test_hann_windows_match_with_documented_precision_tolerance(self):
++        maximum_difference = maximum_pair_error = 0
++        sizes = (2, 160, 320, 882, 960, 3840)
++        for size in sizes:
++            original, port = floats([0] * size), floats([0] * size)
++            ORIGINAL.reference_hann(original, size)
++            PORT.portable_hann(port, size)
++            difference = max(abs(a - b) for a, b in zip(original, port))
++            pair_error = max(abs(port[n] + port[n + size // 2] - 1)
++                             for n in range(size // 2))
++            self.assertLess(difference, 5e-7, f'size={size}')
++            self.assertLess(pair_error, 1e-6, f'size={size}')
++            maximum_difference = max(maximum_difference, difference)
++            maximum_pair_error = max(maximum_pair_error, pair_error)
++        MEASUREMENTS.append({'case': 'hann-original-vs-double-precision-port',
++                             'sizes': len(sizes), 'max_absolute_difference': maximum_difference,
++                             'max_overlap_pair_error': maximum_pair_error})
++
++
++def verified_sources():
++    manifest = json.loads((NATIVE / 'vendor/manifest.json').read_text())
++    component = next(item for item in manifest['components'] if item['id'] == 'chromium-wsola')
++    if component['revision'] != REVISION:
++        raise RuntimeError('Review the reference fixtures when changing the Chromium revision')
++    result = []
++    for item in component['files']:
++        data = (NATIVE / 'vendor' / item['path']).read_bytes()
++        sha256 = hashlib.sha256(data).hexdigest()
++        blob = hashlib.sha1(f'blob {len(data)}\0'.encode() + data).hexdigest()
++        if sha256 != item['sha256'] or blob != item['git_blob_sha1']:
++            raise RuntimeError(f'Upstream original is modified: {item["path"]}')
++        result.append({'path': item['upstream_path'], 'sha256': sha256, 'git_blob_sha1': blob})
++    return result
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--compiler', default=os.environ.get('CXX', 'c++'))
++    parser.add_argument('--build-dir', type=Path, default=REPO / 'build/native-dsp/wsola-reference')
++    parser.add_argument('--report', type=Path, default=REPO / 'build/native-dsp/wsola-reference-report.json')
++    args = parser.parse_args()
++    source_identity = verified_sources()
++    args.build_dir.mkdir(parents=True, exist_ok=True)
++    extension = '.dylib' if sys.platform == 'darwin' else '.so'
++    original_path = args.build_dir.resolve() / ('libchromium_wsola_reference' + extension)
++    port_path = args.build_dir.resolve() / ('libportable_wsola_semantics' + extension)
++    compiler = shlex.split(args.compiler)
++    if not compiler:
++        parser.error('--compiler must name a C++20 compiler')
++    compiler_version = subprocess.run(compiler + ['--version'], check=True,
++                                      capture_output=True, text=True).stdout.splitlines()[0]
++    flags = ['-std=c++20', '-O2', '-fPIC', '-dynamiclib' if sys.platform == 'darwin' else '-shared']
++    commands = [
++        compiler + flags + ['-I' + str(HELPERS / 'shims'), '-I' + str(VENDOR),
++                            str(VENDOR / 'media/filters/wsola_internals.cc'),
++                            str(HELPERS / 'reference_bridge.cpp'), '-o', str(original_path)],
++        compiler + flags + [str(HELPERS / 'portable_bridge.cpp'), '-o', str(port_path)],
++    ]
++    for command in commands:
++        subprocess.run(command, check=True)
++    global ORIGINAL, PORT
++    ORIGINAL, PORT = bind(original_path, port_path)
++    started = time.monotonic()
++    suite = unittest.defaultTestLoader.loadTestsFromTestCase(ReferenceSemantics)
++    result = unittest.TextTestRunner(verbosity=2).run(suite)
++    report = {
++        'upstream_revision': REVISION,
++        'scope': 'Unchanged upstream scalar helper path with test-only framework shims versus the compiled portable implementation; not a full Chromium renderer, Android device or listening-quality test.',
++        'compiler': compiler_version,
++        'portable_dot_path': PORT.portable_simd_name().decode(),
++        'upstream_sources': source_identity,
++        'original_library_sha256': hashlib.sha256(original_path.read_bytes()).hexdigest(),
++        'portable_library_sha256': hashlib.sha256(port_path.read_bytes()).hexdigest(),
++        'portable_source_sha256': hashlib.sha256((NATIVE / 'wsola/wsola.cpp').read_bytes()).hexdigest(),
++        'test_methods': result.testsRun,
++        'failures': len(result.failures),
++        'errors': len(result.errors),
++        'seconds': time.monotonic() - started,
++        'measurements': MEASUREMENTS,
++    }
++    args.report.parent.mkdir(parents=True, exist_ok=True)
++    args.report.write_text(json.dumps(report, indent=2) + '\n')
++    print(f'Reference evidence: {args.report}')
++    return 0 if result.wasSuccessful() else 1
++
++
++if __name__ == '__main__':
++    sys.exit(main())
+--- /dev/null
++++ b/native/crisper_dsp/tools/test_wsola_search.cpp
+@@ -0,0 +1,73 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++// Regression fixtures for the maintained BSD WSOLA search, not a sound-quality
++// benchmark. Compile against the same implementation that Android packages.
++#include "wsola/wsola.h"
++
++#include <cmath>
++#include <iostream>
++#include <stdexcept>
++#include <vector>
++
++namespace {
++int checks = 0;
++void check(bool condition, const char *message) {
++    ++checks;
++    if (!condition) throw std::runtime_error(message);
++}
++}
++
++int main() {
++    using namespace crisper_wsola;
++    try {
++        std::vector<float> wanted(100, 1.f), negative(120, -1.f), silence(120, 0.f);
++        Search mono(1, 21);
++        check(mono.find({negative.data(), 1, 120, 120}, {wanted.data(), 1, 100, 100}, {0, 7}, 10) == 10,
++              "All-negative scores must return a valid unexcluded candidate");
++        check(mono.find({negative.data(), 1, 120, 120}, {wanted.data(), 1, 100, 100}, {0, 19}, 10) == 20,
++              "The only allowed endpoint must not fall back to excluded zero");
++        check(mono.find({negative.data(), 1, 120, 120}, {wanted.data(), 1, 100, 100}, {0, 20}, 10) == -1,
++              "A fully excluded search has no candidate");
++        check(mono.find({silence.data(), 1, 120, 120}, {wanted.data(), 1, 100, 100}, {-200, -40}, 13) == 13,
++              "Negative source-relative exclusions must not wrap unsigned");
++        check(mono.find({silence.data(), 1, 120, 120}, {wanted.data(), 1, 100, 100}, {0, 3}, 14) == 14,
++              "Silence should use the closest allowed nominal source position");
++
++        // Matching two channels with opposite polarity must select the same
++        // alignment as the left channel alone, rather than canceling the target.
++        constexpr int target_frames = 200, search_frames = 260, shift = 27;
++        std::vector<float> target(2 * target_frames), search(2 * search_frames);
++        for (int i = 0; i < target_frames; ++i) {
++            const float value = std::sin(i * .033f) + .31f * std::cos(i * .071f);
++            target[i] = value;
++            target[target_frames + i] = -value;
++        }
++        for (int i = 0; i < search_frames; ++i) {
++            const float value = std::sin((i - shift) * .033f) + .31f * std::cos((i - shift) * .071f);
++            search[i] = value;
++            search[search_frames + i] = -value;
++        }
++        Search stereo(2, search_frames - target_frames + 1);
++        const AudioView search_view{search.data(), 2, search_frames, search_frames};
++        const AudioView target_view{target.data(), 2, target_frames, target_frames};
++        check(stereo.find(search_view, target_view, {-1, -1}, 30) == shift,
++              "Opposite-phase stereo must retain the common waveform match");
++        std::fill(target.begin(), target.begin() + target_frames, 0.f);
++        std::fill(search.begin(), search.begin() + search_frames, 0.f);
++        check(stereo.find(search_view, target_view, {-1, -1}, 30) == shift,
++              "A silent first channel must not hide the audible second channel");
++
++        std::vector<float> impulse(1000, 0.f), zeros(100, 0.f);
++        impulse[0] = 1.f;
++        impulse[1] = 1e-6f;
++        Search tail(1, 901);
++        check(tail.find({impulse.data(), 1, 1000, 1000}, {zeros.data(), 1, 100, 100}, {-1, -1}, 850) == 850,
++              "Rolling energy after a transient must remain finite through silence");
++
++        std::cout << "{\"checks\":" << checks << ",\"failures\":0}\n";
++        return 0;
++    } catch (const std::exception &error) {
++        std::cerr << "WSOLA search regression failed: " << error.what() << '\n';
++        return 1;
++    }
++}
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/README.md
+@@ -0,0 +1,65 @@
++# WSOLA reference comparison
++
++From the repository root, run:
++
++```sh
++python3 packages/just_audio/native/crisper_dsp/tools/test_wsola_reference.py
++```
++
++This needs Python's standard library and a C++20 compiler (`CXX` or
++`--compiler`, default `c++`). It builds two small host libraries in the ignored
++`build/native-dsp/wsola-reference/` directory and writes
++`build/native-dsp/wsola-reference-report.json`. `--build-dir` and `--report`
++override those paths. There is no network download or extra package dependency.
++
++The reference library compiles the **unchanged** pinned
++`vendor/chromium-wsola/media/filters/wsola_internals.cc`. Before compilation the
++runner verifies every retained Chromium source's SHA-256 and Git blob identity
++against the vendor manifest. Updating the pinned revision requires reviewing
++the fixtures and updating the runner's revision guard.
++
++## Test boundary
++
++The `shims/` directory supplies only the framework interfaces used by these
++helpers: planar owned channel arrays, `std::span`, assertions and the bounded
++checked subtraction used by valid fixtures. Architecture macros are left
++undefined deliberately, selecting Chromium's scalar dot-product function. The
++shim is not a replacement implementation of Chromium's algorithms, general
++`base` library or `AudioBus` behavior. It must not enter an app build.
++
++The second library includes the production portable source unchanged in a
++test-only translation unit. This makes its internal dot product and Hann
++window available for comparison, alongside the public search object. Its
++normal compile-time SIMD selection remains active: SSE2, NEON or scalar. The
++report records the selected path. Small documented tolerances allow different
++floating-point accumulation order and the port's double-precision window
++construction; output bit identity is not required.
++
++The twelve tests cover asymmetric vector sums, 99 dot-product remainder
++lengths, the original stereo search fixture and excluded match, a shared
++opposite-polarity stereo match, Hann overlap complement, signed exclusions,
++silence tie-breaking and the deliberate negative-correlation fallback fix.
++Original-only block-energy and interpolation fixtures also check the behavior
++of the compiled reference/shim setup; they are not represented as direct
++comparisons of standalone portable functions. The port integrates those
++operations into its search routine.
++
++The fixture derived from upstream `FullSearch` deliberately observes its
++excluded-index-zero fallback for all-negative scores, then requires the port
++to select a valid negative candidate. That is an intentional maintenance
++difference. The test runner does not require random search outputs or full
++renderer output to be identical across implementations.
++
++This suite does not exercise Chromium's AVX2 implementation, its browser
++renderer, the streaming queues, JNI/Media3, an Android device, or perceptual
++audio quality. Run the separate streaming suite for duration, source clocks,
++stereo output, reset, short-input and end-of-stream contracts.
++
++## Attribution
++
++The search/energy/interpolation fixtures in `test_wsola_reference.py` derive
++from Chromium's `audio_renderer_algorithm_unittest.cc` at revision
++`ddd30ef8aa98443509bf4ce006cb36b4e2296c0b` and retain BSD-3-Clause attribution.
++The full notice is preserved in `../../vendor/chromium-wsola/LICENSE`.
++The bridge and compatibility shims are independently written MIT test support;
++they do not change the BSD license of the sources included in the test builds.
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/portable_bridge.cpp
+@@ -0,0 +1,40 @@
++// SPDX-License-Identifier: MIT
++// Test-only introspection in one translation unit. The included BSD-3-Clause
++// production source remains unchanged. Never include this bridge in app builds.
++#include "../../wsola/wsola.cpp"
++
++extern "C" int portable_search(const float* search, int search_frames,
++    const float* target, int target_frames, int channels,
++    int exclude_low, int exclude_high, int preferred) {
++  std::vector<float> a(search_frames * channels), b(target_frames * channels);
++  for (int c = 0; c < channels; ++c) {
++    for (int f = 0; f < search_frames; ++f)
++      a[c * search_frames + f] = search[f * channels + c];
++    for (int f = 0; f < target_frames; ++f)
++      b[c * target_frames + f] = target[f * channels + c];
++  }
++  crisper_wsola::Search matcher(channels, search_frames - target_frames + 1);
++  return matcher.find({a.data(), channels, search_frames, search_frames},
++      {b.data(), channels, target_frames, target_frames},
++      {exclude_low, exclude_high}, preferred);
++}
++
++extern "C" float portable_dot(const float* a, const float* b, int frames) {
++  return crisper_wsola::dot_product(a, b, frames);
++}
++
++extern "C" void portable_hann(float* output, int frames) {
++  std::vector<float> result(frames);
++  crisper_wsola::periodic_hann(result);
++  std::copy(result.begin(), result.end(), output);
++}
++
++extern "C" const char* portable_simd_name() {
++#if defined(__SSE2__)
++  return "SSE2";
++#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
++  return "NEON";
++#else
++  return "scalar";
++#endif
++}
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/reference_bridge.cpp
+@@ -0,0 +1,60 @@
++// SPDX-License-Identifier: MIT
++// Test-only C ABI for the exact, unmodified Chromium WSOLA helper source.
++// This bridge and its compatibility shims are outside every app build list.
++#include "media/base/audio_bus.h"
++#include "media/filters/wsola_internals.h"
++#include <cstdint>
++#include <vector>
++
++static media::AudioBus bus(const float* data, int frames, int channels) {
++  media::AudioBus result(channels, frames);
++  for (int c = 0; c < channels; ++c)
++    for (int f = 0; f < frames; ++f)
++      result.channel(c)[f] = data[f * channels + c];
++  return result;
++}
++
++extern "C" int reference_search(const float* search, int search_frames,
++    const float* target, int target_frames, int channels, int64_t exclude_low,
++    int64_t exclude_high, int mode, int decimation) {
++  auto a = bus(search, search_frames, channels);
++  auto b = bus(target, target_frames, channels);
++  // Keep the upstream unsigned interval semantics so their edge-case behavior
++  // remains observable. The production fork intentionally uses signed bounds.
++  media::internal::Interval interval{static_cast<size_t>(exclude_low),
++                                    static_cast<size_t>(exclude_high)};
++  if (mode == 0) return media::internal::OptimalIndex(&a, &b, interval);
++  std::vector<float> energies((search_frames - target_frames + 1) * channels);
++  std::vector<float> target_energy(channels);
++  media::internal::MultiChannelMovingBlockEnergies(&a, target_frames, energies);
++  media::internal::MultiChannelDotProduct(&b, 0, &b, 0, target_frames,
++                                         target_energy);
++  if (mode == 1)
++    return media::internal::FullSearch(0, search_frames - target_frames,
++        interval, &b, &a, target_energy, energies);
++  return media::internal::DecimatedSearch(decimation, interval, &b, &a,
++                                          target_energy, energies);
++}
++
++extern "C" void reference_dot(const float* a, const float* b, int frames,
++                              int channels, float* out) {
++  auto first = bus(a, frames, channels), second = bus(b, frames, channels);
++  media::internal::MultiChannelDotProduct(&first, 0, &second, 0, frames,
++                                          std::span<float>(out, channels));
++}
++
++extern "C" void reference_energy(const float* samples, int frames, int channels,
++                                 int window, float* out) {
++  auto input = bus(samples, frames, channels);
++  media::internal::MultiChannelMovingBlockEnergies(&input, window,
++      std::span<float>(out, (frames - window + 1) * channels));
++}
++
++extern "C" void reference_quadratic(const float* input, float* out) {
++  media::internal::QuadraticInterpolation(
++      std::span<const float, 3>(input, 3), out, out + 1);
++}
++
++extern "C" void reference_hann(float* out, int frames) {
++  media::internal::GetPeriodicHanningWindow(std::span<float>(out, frames));
++}
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/base/check_op.h
+@@ -0,0 +1,7 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
++#include <stdexcept>
++#define CHECK_EQ(a,b) do { if ((a)!=(b)) throw std::runtime_error("reference CHECK_EQ"); } while(0)
++#define DCHECK_EQ CHECK_EQ
++#define DCHECK_LE(a,b) do { if ((a)>(b)) throw std::runtime_error("reference DCHECK_LE"); } while(0)
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/base/containers/auto_spanification_helper.h
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/base/containers/span.h
+@@ -0,0 +1,7 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
++#include <span>
++namespace base {
++template<class T, size_t N = std::dynamic_extent> using span = std::span<T, N>;
++}
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/base/cpu.h
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/base/numerics/checked_math.h
+@@ -0,0 +1,23 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
++#include <cstdint>
++#include <limits>
++#include <stdexcept>
++namespace base {
++template<class T> struct CheckedValue {
++  int64_t value;
++  T ValueOrDie() const {
++    if (value < 0 || static_cast<uint64_t>(value) > std::numeric_limits<T>::max())
++      throw std::out_of_range("reference checked cast");
++    return static_cast<T>(value);
++  }
++};
++struct CheckedDifference {
++  int64_t value;
++  template<class T> CheckedValue<T> Cast() const { return {value}; }
++};
++template<class A, class B> CheckedDifference CheckSub(A a, B b) {
++  return {static_cast<int64_t>(a) - static_cast<int64_t>(b)};
++}
++}
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/base/numerics/safe_conversions.h
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/build/build_config.h
+@@ -0,0 +1,4 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
++// Deliberately leave Chromium architecture macros undefined: scalar reference.
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/media/base/audio_bus.h
+@@ -0,0 +1,20 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
++#include <memory>
++#include <span>
++#include <vector>
++namespace media {
++class AudioBus {
++ public:
++  AudioBus(int channels, int frames) : channels_(channels), frames_(frames), data_(channels, std::vector<float>(frames)) {}
++  static std::unique_ptr<AudioBus> Create(int channels, int frames) { return std::make_unique<AudioBus>(channels, frames); }
++  int channels() const { return channels_; }
++  int frames() const { return frames_; }
++  std::span<float> channel(int channel) { return data_.at(channel); }
++  std::span<const float> channel(int channel) const { return data_.at(channel); }
++ private:
++  int channels_, frames_;
++  std::vector<std::vector<float>> data_;
++};
++}
+--- /dev/null
++++ b/native/crisper_dsp/tools/wsola_reference/shims/media/base/media_export.h
+@@ -0,0 +1,4 @@
++// SPDX-License-Identifier: MIT
++// Test-only compatibility shim; never compiled into the app.
++#pragma once
++#define MEDIA_EXPORT
+--- /dev/null
++++ b/native/crisper_dsp/wsola/LICENSE
+@@ -0,0 +1,27 @@
++// Copyright 2015 The Chromium Authors
++//
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++//
++//    * Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++//    * Redistributions in binary form must reproduce the above
++// copyright notice, this list of conditions and the following disclaimer
++// in the documentation and/or other materials provided with the
++// distribution.
++//    * Neither the name of Google LLC nor the names of its
++// contributors may be used to endorse or promote products derived from
++// this software without specific prior written permission.
++//
++// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--- /dev/null
++++ b/native/crisper_dsp/wsola/UPSTREAM.md
+@@ -0,0 +1,122 @@
++# Chromium WSOLA: maintained portable extraction
++
++The WSOLA implementation in this directory derives its matching and
++overlap-add behavior from Chromium. The compiled portable implementation lives
++in `wsola.h` and `wsola.cpp`; CrisperPlayer's existing streaming adapter supplies
++bounded input/output queues and its source-frame clock.
++
++## Exact source identity
++
++- Upstream: <https://chromium.googlesource.com/chromium/src.git>
++- Retrieval mirror: <https://github.com/chromium/chromium>
++- Revision: `ddd30ef8aa98443509bf4ce006cb36b4e2296c0b` (7 October 2026).
++- Commit tree: `b0be693632ea3df0aedf514bb577ce5fce9b1e37`.
++- License: **BSD-3-Clause**, with the original Chromium copyright, conditions
++  and disclaimer retained. The original `LICENSE` SHA-256 is
++  `368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b`.
++
++The six exact originals are retained under `../vendor/chromium-wsola/` and
++listed in `../vendor/manifest.json`. Each source has an immutable URL, upstream
++path, Git blob object ID and SHA-256. Their Git blob IDs were checked against
++the upstream commit's tree, including the Git blob header and exact byte count.
++The provenance method is an exact-file snapshot; no downloaded archive or
++archive hash is asserted.
++
++The selected revision includes Chromium's AVX2 dot-product reduction fix.
++It corrected the omission of the upper four lanes during horizontal summation.
++Our tests retain an asymmetric eight-lane sum case even when the portable
++implementation selects a different vector or scalar path.
++
++## Origin map
++
++| Original file | Role in this extraction |
++| --- | --- |
++| [`LICENSE`](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/LICENSE) | Full upstream BSD grant and notice. |
++| [`media/filters/wsola_internals.cc`](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/wsola_internals.cc) | Per-channel dot products and normalized similarity, sliding block energy, quadratic peak interpolation, decimated search, local full-search refinement and periodic Hann window. |
++| [`media/filters/wsola_internals.h`](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/wsola_internals.h) | Original helper contracts and interval/window definitions. |
++| [`media/filters/audio_renderer_algorithm.cc`](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/audio_renderer_algorithm.cc) | Documented WSOLA iteration, 20 ms overlap window, 10 ms output hop, 30 ms search interval, natural-continuation target, transition blend and overlap-add sequencing. |
++| [`media/filters/audio_renderer_algorithm.h`](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/audio_renderer_algorithm.h) | Reference for original buffering and state semantics. |
++| [`media/filters/audio_renderer_algorithm_unittest.cc`](https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/media/filters/audio_renderer_algorithm_unittest.cc) | Synthetic dot-product, block-energy, search and interpolation fixture origins. |
++
++The build compiles the portable extraction. Chromium's browser renderer,
++`AudioBus`, `base` infrastructure, decoder, CPU-dispatch machinery and unrelated
++third-party dependencies are outside its compilation closure. The BSD notice
++covers the derived implementation; the independently written C ABI adapter
++retains its MIT grant. Chromium is an external component and does not use the
++application-owner licensing exemption.
++
++## Maintained changes
++
++The port adapts Chromium's planar-buffer operations to a small owned PCM view,
++keeps one matching displacement for all channels, and preallocates working
++storage. Its scheduler uses bounded buffers and 64-bit source coordinates.
++Matching time is separate from the delivered-output source clock: a search
++offset changes the waveform splice, while accepted input and delivered output
++continue to determine the exact playback timeline.
++
++Dot products use the compiler's baseline SSE2 or NEON path when available,
++with a scalar fallback; Chromium's runtime CPU dispatch and AVX2 implementation
++are not copied into the port. Coarse search retains the five-frame spacing and
++quadratic peak estimate, explicitly evaluates the proposed candidate and
++endpoints, then refines within five frames. Tied scores prefer the requested
++search center. Window construction and energy accumulation use double
++precision before storing float PCM/window values.
++
++The extraction explicitly addresses edge conditions in the selected source:
++
++- A valid negative correlation may win. The search uses an actual valid
++  candidate and a lowest-score baseline, rather than a positive
++  `numeric_limits<float>::min()` fallback to index zero.
++- Excluded candidates cannot become the initial or fallback winner. Exclusion
++  offsets retain signed bounds so intervals crossing zero do not wrap to a
++  large unsigned position.
++- Sliding-energy roundoff cannot feed a negative energy to a square root.
++  Silence and near-silence retain finite, deterministic search behavior.
++- The adapter defines short-input, beginning/end padding, finite drain and
++  exact output-length behavior for a standalone streaming processor. Seeking
++  or resetting discards previous overlap/search/output state.
++- The first WSOLA hop uses the source samples directly, avoiding a fade
++  against a fictitious preceding silent grain.
++
++The independently written streaming adapter also reserves one source hop
++beyond the mapped live output endpoint. At end of stream it blends the final
++output segment (at most one hop) toward the actual final source segment with
++complementary half-cosine weights. This makes the final output frame agree
++with the final source frame whenever rounded output length is nonzero,
++including tiny clips and partial hops. The rule is independent of signal
++content and uses the same weight for every channel. It is a standalone
++boundary policy, not behavior asserted to match Chromium's renderer.
++
++These maintenance changes and the standalone queue lifecycle mean Chromium
++bit-for-bit output identity is not a compatibility claim. The retained
++synthetic fixtures check the inherited mathematical semantics, while streaming
++tests separately check duration, pitch, channel coherence, chunk independence,
++boundaries, drain, reset and source-clock behavior.
++
++## Semantic and streaming acceptance
++
++The minimum semantic cases are the original asymmetric dot-product sum,
++opposed/correlated channels, sliding-energy values, the two-channel search
++fixture (including an excluded best match), and flat/non-flat interpolation.
++Additional cases cover all-negative correlations, signed exclusion bounds,
++silent/low-energy inputs and a single permitted candidate.
++
++Run `python3 packages/just_audio/native/crisper_dsp/tools/test_wsola_reference.py`
++from the repository root for the preserved original-versus-port comparison.
++It verifies retained source hashes, compiles the unchanged upstream helper's
++scalar path with small test-only framework shims, and compares it with the
++production port's normal SIMD/scalar implementation. The test-only interfaces,
++fixture attribution, intentional differences and evidence report are described
++in `../tools/wsola_reference/README.md`; none of these shims is an app dependency.
++
++The native streaming suite must run WSOLA through the same rate/channel/sample
++rate matrix as the other processors, including exact unity pass-through,
++fractional rates, small input/output chunks, finite empty/short/tail drains,
++partial-write backpressure and reset isolation. Source-frame accounting must
++remain monotonic and bounded by accepted input, with final output rounded to
++the requested duration. Long-coordinate cases must not overflow a 32-bit
++index or make the matching search drift with call chunk size.
++
++These checks establish the implemented signal and transport contracts. Sound
++preference, high-rate speech intelligibility, real-device CPU/battery use and
++the full Android output path need listening and device measurements.
+--- /dev/null
++++ b/native/crisper_dsp/wsola/wsola.cpp
+@@ -0,0 +1,218 @@
++// Copyright 2012-2013 The Chromium Authors
++// Copyright 2026 CrisperPlayer contributors
++// SPDX-License-Identifier: BSD-3-Clause
++// Adapted from Chromium wsola_internals.cc and the WSOLA processing loop in
++// audio_renderer_algorithm.cc at ddd30ef8aa98443509bf4ce006cb36b4e2296c0b.
++// Local portability, bounded scratch, signed-index and numerical changes are
++// documented in UPSTREAM.md. Original notice: ../vendor/chromium-wsola/LICENSE.
++#include "wsola.h"
++
++#include <algorithm>
++#include <cmath>
++#include <limits>
++#include <numbers>
++#include <stdexcept>
++
++#if defined(__SSE2__)
++#include <xmmintrin.h>
++#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
++#include <arm_neon.h>
++#endif
++
++namespace crisper_wsola {
++namespace {
++bool excluded(int index, Interval interval) {
++    return index >= interval.begin && index <= interval.end;
++}
++
++// Compile-time baseline SIMD avoids Chromium's base::CPU/runtime-dispatch
++// dependency. Both channels are correlated independently and their normalized
++// scores are summed; opposite-polarity stereo is never downmixed to silence.
++float dot_product(const float *a, const float *b, int frames) {
++    int i = 0;
++    float result = 0.f;
++#if defined(__SSE2__)
++    __m128 sum = _mm_setzero_ps();
++    for (; i + 4 <= frames; i += 4)
++        sum = _mm_add_ps(sum, _mm_mul_ps(_mm_loadu_ps(a + i), _mm_loadu_ps(b + i)));
++    sum = _mm_add_ps(_mm_movehl_ps(sum, sum), sum);
++    _mm_store_ss(&result, _mm_add_ss(sum, _mm_shuffle_ps(sum, sum, 1)));
++#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
++    float32x4_t sum = vmovq_n_f32(0);
++    for (; i + 4 <= frames; i += 4)
++        sum = vmlaq_f32(sum, vld1q_f32(a + i), vld1q_f32(b + i));
++    const float32x2_t half = vadd_f32(vget_high_f32(sum), vget_low_f32(sum));
++    result = vget_lane_f32(vpadd_f32(half, half), 0);
++#endif
++    for (; i < frames; ++i) result += a[i] * b[i];
++    return result;
++}
++
++void periodic_hann(std::vector<float> &window) {
++    const double scale = 2. * std::numbers::pi / window.size();
++    for (size_t i = 0; i < window.size(); ++i)
++        window[i] = float(.5 * (1. - std::cos(i * scale)));
++}
++
++int window_frames(int sample_rate) {
++    const int frames = sample_rate * 20 / 1000;
++    return frames + (frames & 1);
++}
++} // namespace
++
++Search::Search(int channels, int maximum_candidates)
++    : channels_(channels), maximum_candidates_(maximum_candidates),
++      candidate_energy_(size_t(channels) * maximum_candidates) {
++    if ((channels != 1 && channels != 2) || maximum_candidates < 1)
++        throw std::invalid_argument("Invalid WSOLA search configuration");
++}
++
++int Search::find(AudioView search, AudioView target, Interval exclude, int preferred) {
++    const int candidates = search.frames - target.frames + 1;
++    if (search.channels != channels_ || target.channels != channels_ ||
++        target.frames < 1 || candidates < 1 || candidates > maximum_candidates_ ||
++        search.stride < search.frames || target.stride < target.frames)
++        throw std::invalid_argument("Invalid WSOLA search buffers");
++    preferred = std::clamp(preferred, 0, candidates - 1);
++
++    // Chromium's sliding-energy calculation with double accumulation and an
++    // explicit nonnegative clamp avoids tiny negative energies after silence.
++    for (int c = 0; c < channels_; ++c) {
++        const float *values = search.channel(c), *wanted = target.channel(c);
++        double energy = 0, target_energy = 0;
++        for (int i = 0; i < target.frames; ++i) {
++            energy += double(values[i]) * values[i];
++            target_energy += double(wanted[i]) * wanted[i];
++        }
++        target_energy_[c] = target_energy;
++        candidate_energy_[c] = energy;
++        for (int n = 1; n < candidates; ++n) {
++            energy += double(values[n + target.frames - 1]) * values[n + target.frames - 1]
++                    - double(values[n - 1]) * values[n - 1];
++            energy = std::max(0., energy);
++            candidate_energy_[n * channels_ + c] = energy;
++        }
++    }
++    const auto score = [&](int offset) {
++        double similarity = 0;
++        for (int c = 0; c < channels_; ++c) {
++            const double dot = dot_product(target.channel(c), search.channel(c) + offset, target.frames);
++            similarity += dot / std::sqrt(target_energy_[c] * candidate_energy_[offset * channels_ + c] + 1e-12);
++        }
++        return similarity;
++    };
++    int best = -1;
++    double best_similarity = std::numeric_limits<double>::lowest();
++    const auto consider = [&](int index, double similarity) {
++        if (index < 0 || index >= candidates || excluded(index, exclude)) return;
++        if (best < 0 || similarity > best_similarity + 1e-12 ||
++            (std::abs(similarity - best_similarity) <= 1e-12 &&
++             std::abs(index - preferred) < std::abs(best - preferred))) {
++            best = index;
++            best_similarity = similarity;
++        }
++    };
++    // Same coarse spacing and parabolic-peak estimate as Chromium, then a full
++    // +/-5-frame refinement. Include endpoints/preferred explicitly, evaluate
++    // interpolated candidates before accepting them, and honor exclusions even
++    // for the initial candidate. Negative correlations are valid candidates.
++    constexpr int decimation = 5;
++    double previous[2] = {0, 0};
++    for (int n = 0; n < candidates; n += decimation) {
++        const double current = score(n);
++        consider(n, current);
++        if (n >= 2 * decimation && previous[1] >= previous[0] && previous[1] >= current) {
++            const double a = .5 * (current + previous[0]) - previous[1];
++            const double b = .5 * (current - previous[0]);
++            const double extremum = a == 0. ? 0. : std::clamp(-b / (2. * a), -1., 1.);
++            const int candidate = std::clamp(n - decimation + int(std::lround(extremum * decimation)), 0, candidates - 1);
++            if (!excluded(candidate, exclude)) consider(candidate, score(candidate));
++        }
++        previous[0] = previous[1];
++        previous[1] = current;
++    }
++    consider(candidates - 1, score(candidates - 1));
++    consider(preferred, score(preferred));
++    // If the allowed interval is smaller than the coarse step, find a valid
++    // seed instead of falling back to an excluded zero as upstream can do.
++    if (best < 0) {
++        for (int n = 0; n < candidates; ++n) {
++            if (!excluded(n, exclude)) { consider(n, score(n)); break; }
++        }
++    }
++    if (best < 0) return -1;
++    const int low = std::max(0, best - decimation), high = std::min(candidates - 1, best + decimation);
++    for (int n = low; n <= high; ++n)
++        if (!excluded(n, exclude)) consider(n, score(n));
++    return best;
++}
++
++Processor::Processor(int sample_rate, int channels, double rate)
++    : channels_(channels), window_(window_frames(sample_rate)), hop_(window_ / 2),
++      candidates_(sample_rate * 30 / 1000), search_frames_(candidates_ + window_ - 1),
++      center_offset_(candidates_ / 2 + hop_ - 1),
++      maximum_input_frames_(search_frames_ + 3 * hop_ + 4), rate_(rate),
++      search_(channels, candidates_), window_weights_(window_), transition_weights_(2 * window_),
++      tail_(channels * hop_), optimal_(channels * window_), rendered_(channels * hop_) {
++    if (sample_rate < 8000 || sample_rate > 192000 || !std::isfinite(rate) || rate < .5 || rate > 3.)
++        throw std::invalid_argument("Invalid WSOLA configuration");
++    periodic_hann(window_weights_);
++    periodic_hann(transition_weights_);
++}
++
++InputRange Processor::input_range() const {
++    return {std::min(target_position_, search_position_),
++            std::max(target_position_ + window_, search_position_ + search_frames_)};
++}
++
++void Processor::process(AudioView input, int64_t origin) {
++    const InputRange needed = input_range();
++    if (input.channels != channels_ || origin != needed.begin ||
++        input.frames != needed.end - needed.begin || input.frames > maximum_input_frames_ ||
++        input.stride < input.frames)
++        throw std::invalid_argument("Invalid WSOLA input range");
++    const AudioView target{input.data + (target_position_ - origin), channels_, window_, input.stride};
++    const AudioView search{input.data + (search_position_ - origin), channels_, search_frames_, input.stride};
++    int64_t optimal_position;
++    const bool direct = target_position_ >= search_position_ &&
++        target_position_ + window_ <= search_position_ + search_frames_;
++    if (direct) {
++        optimal_position = target_position_;
++    } else {
++        const int64_t last_optimal = target_position_ - hop_ - search_position_;
++        if (last_optimal < std::numeric_limits<int>::min() + 80 ||
++            last_optimal > std::numeric_limits<int>::max() - 80)
++            throw std::runtime_error("WSOLA source-window distance is unbounded");
++        // Keep Chromium's heuristic 160-frame anti-repetition exclusion.
++        const Interval exclude{int(last_optimal) - 80, int(last_optimal) + 80};
++        int offset = search_.find(search, target, exclude, candidates_ / 2);
++        if (offset < 0) offset = candidates_ / 2;
++        optimal_position = search_position_ + offset;
++    }
++    const int offset = int(optimal_position - origin);
++    for (int c = 0; c < channels_; ++c) {
++        float *optimal = optimal_.data() + c * window_;
++        const float *source = input.channel(c) + offset;
++        for (int i = 0; i < window_; ++i) {
++            optimal[i] = direct ? source[i]
++                : source[i] * transition_weights_[i] + target.channel(c)[i] * transition_weights_[window_ + i];
++        }
++        float *out = rendered_.data() + c * hop_;
++        float *tail = tail_.data() + c * hop_;
++        for (int i = 0; i < hop_; ++i) {
++            // Preserve the first source samples instead of fading in against
++            // a fictitious all-zero preceding grain.
++            out[i] = first_ ? optimal[i]
++                : tail[i] * window_weights_[hop_ + i] + optimal[i] * window_weights_[i];
++            tail[i] = optimal[hop_ + i];
++        }
++    }
++    first_ = false;
++    target_position_ = optimal_position + hop_;
++    output_position_ += hop_;
++    // Absolute coordinates never use Chromium's cumulative signed-int queue
++    // offset. The enclosing ABI bounds accepted frames below 2^50.
++    search_position_ = std::llround(double(output_position_) * rate_) - center_offset_;
++}
++
++} // namespace crisper_wsola
+--- /dev/null
++++ b/native/crisper_dsp/wsola/wsola.h
+@@ -0,0 +1,61 @@
++// Copyright 2013 The Chromium Authors
++// Copyright 2026 CrisperPlayer contributors
++// SPDX-License-Identifier: BSD-3-Clause
++// Portable maintained adaptation; see UPSTREAM.md and
++// ../vendor/chromium-wsola/LICENSE for the original license and source snapshot.
++#ifndef CRISPER_WSOLA_H
++#define CRISPER_WSOLA_H
++
++#include <array>
++#include <cstdint>
++#include <vector>
++
++namespace crisper_wsola {
++
++struct AudioView {
++    const float *data;
++    int channels, frames, stride;
++    const float *channel(int index) const { return data + index * stride; }
++};
++
++// Signed inclusive search exclusions. Negative endpoints are legitimate when
++// the preceding grain lies before the current search interval.
++struct Interval { int begin, end; };
++struct InputRange { int64_t begin, end; };
++
++// No per-search allocation: channels, candidates and energy scratch are bounded
++// at construction. Returns -1 only if every candidate is explicitly excluded.
++class Search {
++public:
++    Search(int channels, int maximum_candidates);
++    int find(AudioView search, AudioView target, Interval exclude, int preferred);
++private:
++    int channels_, maximum_candidates_;
++    std::array<double, 2> target_energy_{};
++    std::vector<double> candidate_energy_;
++};
++
++// Configuration-sized portable WSOLA. The caller supplies a planar copy of
++// input_range(), zero-prepending before frame zero and padding only after EOS.
++// Each process() generates hop_frames() planar output. The caller trims the
++// final hop to round(real_input_frames/rate) and owns streaming/backpressure.
++class Processor {
++public:
++    Processor(int sample_rate, int channels, double rate);
++    InputRange input_range() const;
++    int maximum_input_frames() const { return maximum_input_frames_; }
++    int hop_frames() const { return hop_; }
++    const float *output() const { return rendered_.data(); }
++    void process(AudioView input, int64_t origin);
++private:
++    int channels_, window_, hop_, candidates_, search_frames_, center_offset_;
++    int maximum_input_frames_;
++    double rate_;
++    int64_t output_position_ = 0, target_position_ = 0, search_position_ = 0;
++    bool first_ = true;
++    Search search_;
++    std::vector<float> window_weights_, transition_weights_, tail_, optimal_, rendered_;
++};
++
++} // namespace crisper_wsola
++#endif

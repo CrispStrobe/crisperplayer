@@ -43,6 +43,8 @@ jobs:
           python3 packages/just_audio/native/crisper_dsp/tools/test_streaming.py
           --library build/native-dsp/libcrisper_dsp.so
           --report build/native-dsp/test-report.json
+      - name: Compare the WSOLA fork with unchanged Chromium helpers
+        run: python3 packages/just_audio/native/crisper_dsp/tools/test_wsola_reference.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

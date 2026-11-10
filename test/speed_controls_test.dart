@@ -25,9 +25,19 @@ Future<void> _waitFor(WidgetTester tester, bool Function() ready) async {
   await tester.pump(const Duration(milliseconds: 350));
 }
 
-Future<void> _show(WidgetTester tester, PlaybackService svc) async {
+Future<void> _show(
+  WidgetTester tester,
+  PlaybackService svc, {
+  double textScale = 1,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(
@@ -428,7 +438,7 @@ void main() {
       if (SpeedProcessing.experimentalAndroidProcessorsAvailable) {
         expect(
           find.byType(RadioListTile<AndroidSpeedProcessing>),
-          findsNWidgets(3),
+          findsNWidgets(4),
         );
         expect(
           find.textContaining('experimental alternatives'),
@@ -437,6 +447,7 @@ void main() {
         for (final mode in [
           AndroidSpeedProcessing.bungee,
           AndroidSpeedProcessing.signalsmith,
+          AndroidSpeedProcessing.wsola,
         ]) {
           final choice = find.byKey(
             ValueKey('speed-processing-android-${mode.id}'),
@@ -461,16 +472,13 @@ void main() {
         SpeedProcessing.configureAndroidForStartup(
           h.settings.androidSpeedProcessing,
         );
-        expect(
-          SpeedProcessing.activeAndroidMode,
-          AndroidSpeedProcessing.signalsmith,
-        );
+        expect(SpeedProcessing.activeAndroidMode, AndroidSpeedProcessing.wsola);
         expect(
           SpeedProcessing
               .audioLoadConfiguration!
               .androidLoadControl!
               .speedProcessor,
-          AndroidSpeedProcessor.signalsmith,
+          AndroidSpeedProcessor.wsola,
         );
         expect(SpeedProcessing.supportsSkipSilence(), isFalse);
       } else {
@@ -493,6 +501,54 @@ void main() {
       }
     }
   });
+
+  testWidgets(
+    'WSOLA choice and restart status remain reachable at 200 percent text',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 568);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final previous = SpeedProcessing.activeAndroidMode;
+      SpeedProcessing.configureAndroidForStartup('sonic');
+      final h = PlaybackHarness();
+      await tester.runAsync(h.init);
+      try {
+        await _show(tester, h.playback, textScale: 2);
+        final panel = find.byKey(const ValueKey('speed-processing-panel'));
+        await tester.ensureVisible(panel);
+        await tester.tap(panel);
+        await tester.pumpAndSettle();
+        final choice = find.byKey(
+          const ValueKey('speed-processing-android-wsola'),
+        );
+        await tester.ensureVisible(choice);
+        await tester.pumpAndSettle();
+        await tester.tap(choice);
+        await tester.pumpAndSettle();
+        expect(h.settings.androidSpeedProcessing, 'wsola');
+        expect(SpeedProcessing.activeAndroidMode, AndroidSpeedProcessing.sonic);
+        final status = find.byKey(
+          const ValueKey('speed-processing-android-restart'),
+        );
+        await tester.ensureVisible(status);
+        await tester.pumpAndSettle();
+        expect(
+          find.textContaining('Saved for next launch: WSOLA.'),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      } finally {
+        try {
+          await _close(tester, h.dispose);
+        } finally {
+          SpeedProcessing.configureAndroidForStartup(previous.id);
+          debugDefaultTargetPlatformOverride = null;
+        }
+      }
+    },
+  );
 
   for (final platform in [TargetPlatform.iOS, TargetPlatform.macOS]) {
     testWidgets('Apple selection is restart-only on $platform', (tester) async {

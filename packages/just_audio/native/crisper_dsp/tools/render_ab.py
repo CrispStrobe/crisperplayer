@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Render the same PCM16 WAV through pinned Sonic, Bungee Basic and Signalsmith.
+"""Render the same PCM16 WAV through Sonic, Bungee, Signalsmith and Chromium WSOLA.
 
 The outputs share one source; adjust listening loudness equally when comparing. Synthetic input
 is a reproducible engineering fixture, not a speech-quality benchmark. This tool
@@ -131,6 +131,7 @@ def main():
         'notes': [
             'Sonic C comparison is not a bit-exact replica of Android Media3 Sonic.',
             'Signalsmith is recommended upstream mainly for moderate time stretch; inspect speech at your chosen rate.',
+            'WSOLA is our maintained Chromium-derived BSD fork; it is not a bit-exact browser playback replica.',
             'Listen at equal loudness, including first/last words, consonants, breaths, music, stereo image and rapid speed changes.',
         ],
         'results': results,

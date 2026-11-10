@@ -330,25 +330,25 @@
       "platforms": [
         "android"
       ],
-      "version": "just_audio 0.10.6+crisper.2 / pinned Bungee Basic, Signalsmith Stretch, and comparison core",
+      "version": "just_audio 0.10.6+crisper.3 / pinned Bungee Basic, Signalsmith Stretch, Chromium-derived WSOLA fork and comparison core",
       "license_expression": "MIT AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND LicenseRef-PFFFT-FFTPACK",
       "review_status": "needs_review",
       "source_review_status": "reviewed",
       "license_review_status": "reviewed",
       "artifact_review_status": "pending_android_artifact_validation",
-      "scope": "The exact unmodified upstream source/license closure and independent MIT adapters were reviewed. This source review does not approve an Android binary, complete NDK/Maven closure, performance, or app-store distribution.",
+      "scope": "The exact unchanged upstream source/license closure, derived BSD-3-Clause WSOLA fork/fixtures and independent MIT adapters were reviewed. This source review does not approve an Android binary, complete NDK/Maven closure, performance, or app-store distribution.",
       "source": {
         "repository": "https://github.com/CrispStrobe/crisperplayer",
-        "vendored_source_revision": "349e2be81165dab7acdd3dfe3e6df79ad138322d",
-        "source_url": "https://github.com/CrispStrobe/crisperplayer/tree/349e2be81165dab7acdd3dfe3e6df79ad138322d/packages/just_audio/native/crisper_dsp/vendor",
-        "local_adapter_identity": "Exact package source-tree hash, 20 local additions, reviewed upstream patch, and build-input hashes in dependencies.json; all adapter changes retain MIT notices.",
-        "upstream_component_count": 6,
-        "upstream_file_count": 252,
-        "upstream_modified": false
+        "source_url": "https://github.com/CrispStrobe/crisperplayer/tree/feature/return-trail/packages/just_audio/native/crisper_dsp",
+        "local_adapter_identity": "Exact package source-tree hash, 38 local additions, reviewed upstream patch, and build-input hashes in dependencies.json. Independent adapters retain MIT; the derived Chromium WSOLA implementation and inherited fixtures retain BSD-3-Clause.",
+        "upstream_component_count": 7,
+        "upstream_file_count": 258,
+        "upstream_modified": false,
+        "modification_scope": "Retained upstream originals under vendor are unchanged. Modified portable Chromium-derived code lives under wsola, with its origin map and maintenance differences in wsola/UPSTREAM.md."
       },
       "source_manifest": {
         "path": "packages/just_audio/native/crisper_dsp/vendor/manifest.json",
-        "sha256": "e43ae779e7fcef68612d71dfb31d6fc63f5d0a0b61ead85198c75fa20892b7f2"
+        "sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b"
       },
       "license_refs": [
         {
@@ -418,11 +418,21 @@
           "license_expression": "LicenseRef-PFFFT-FFTPACK",
           "upstream_modified": false,
           "file_count": 5
+        },
+        {
+          "id": "chromium-wsola",
+          "repository": "https://chromium.googlesource.com/chromium/src.git",
+          "revision": "ddd30ef8aa98443509bf4ce006cb36b4e2296c0b",
+          "source_type": "git-files",
+          "git_tree_sha1": "b0be693632ea3df0aedf514bb577ce5fce9b1e37",
+          "license_expression": "BSD-3-Clause",
+          "upstream_modified": false,
+          "file_count": 6
         }
       ],
       "build_constraints": {
         "EIGEN_MPL2_ONLY": true,
-        "excluded": "Unsupported/GPL-only Eigen modules, Bungee Pro, CLI/cxxopts, Sonic Speedy integration, external FFT backends and build-time/runtime dependency downloads.",
+        "excluded": "Chromium browser/base/media runtime and test-only shim linkage, unsupported/GPL-only Eigen modules, Bungee Pro, CLI/cxxopts, Sonic Speedy integration, external FFT backends and build-time/runtime dependency downloads.",
         "android_ndk": "28.2.13676358",
         "cmake": "3.22.1",
         "stl": "c++_shared; separately inventoried NDK runtime must ship with the app",
@@ -432,8 +442,8 @@
       "evidence": [
         {
           "path": "packages/just_audio/native/crisper_dsp/vendor/manifest.json",
-          "sha256": "e43ae779e7fcef68612d71dfb31d6fc63f5d0a0b61ead85198c75fa20892b7f2",
-          "note": "Six exact upstream revisions/archive hashes and 252 per-file hashes; verified matching immutable published vendor tree 349e2be."
+          "sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
+          "note": "Seven exact upstream revisions and 258 unchanged per-file originals: six archived components plus the exact Git-file Chromium snapshot. SHA-256 plus Git blob identities preserve the extracted source provenance."
         },
         {
           "path": "packages/just_audio/UPSTREAM_SHA256.json",
@@ -442,23 +452,23 @@
         },
         {
           "path": "packages/just_audio/UPSTREAM.patch",
-          "sha256": "9304cc7b9d285f30c3270511f6c6bf027708936dbc02c3322cd1620e55e6b7af",
-          "note": "Complete verified changes to 9 original files plus 20 local adapter additions."
+          "sha256": "06948fe3aa77c9edaef2782ccb393266568f22df04bf463151b7f7eb7eec879e",
+          "note": "Complete verified changes to 9 original files plus 38 local adapter/fork/test/build additions."
         },
         {
           "path": "packages/just_audio/LOCAL_ADDITIONS.json",
-          "sha256": "9d52730ea4990410ceb5a5bff3130ea069a76b739c46d2ae754f49dee2cb6b37",
-          "note": "Exact local adapter/test/build-file list; individual current hashes also recorded as build inputs."
+          "sha256": "eea17423668a63c95aa8df7e317d1000730eb0e1a8c5ca7ae708f94cd5488706",
+          "note": "Exact local adapter, derived fork, reference fixture/shim and build-file list; each current hash is also recorded as a build input."
         },
         {
           "path": "packages/just_audio/native/crisper_dsp/LICENSE",
-          "sha256": "6f1615225a4a9c80b104473ba3c623439240eee4b61360fd8ac04219fb3ab08d",
-          "note": "MIT grant for the independent adapter; upstream grants remain separate."
+          "sha256": "2749c73f9c1cb9bf22449b00f983a5413c69403d8bd864978fec744237b12194",
+          "note": "MIT grant for the independent adapter with explicit BSD exception for the derived WSOLA implementation and semantic fixtures; original upstream grants remain separate."
         },
         {
           "path": "packages/just_audio/native/crisper_dsp/CMakeLists.txt",
-          "sha256": "6d3fccc65f48ff8c182f9d0e7027489d9ae8e0cf9656af7d8639ab9e6dfb5f2d",
-          "note": "Explicit offline source list and EIGEN_MPL2_ONLY restriction; no FetchContent."
+          "sha256": "9795770a2b544e51fbd69b9f00d54e5d7255685f215ae676cc10ab60364bc37d",
+          "note": "Explicit offline source list compiles the portable BSD WSOLA extraction, not Chromium renderer/runtime or test shims. EIGEN_MPL2_ONLY remains required."
         },
         {
           "path": "packages/just_audio/android/src/main/cpp/CMakeLists.txt",
@@ -472,18 +482,18 @@
         },
         {
           "path": "assets/licenses/ANDROID-DSP.txt",
-          "sha256": "01c644613508f5859b4b68b7c846893309bea909b861c28d7bb23aaf1d43e94c",
+          "sha256": "670a7d611cfc8dee5483a0249bdc5eed7e8f808e086bae4d88e258db302a3fa0",
           "note": "In-app upstream notices and immutable MPL source URL; preserved actual notices, not inferred from wrapper license."
         },
         {
           "path": "lib/services/native_licenses.dart",
-          "sha256": "63de540d9deca090ebb816f8216b053c4383e8eacf0feb3ec4c72dc8996e4773",
+          "sha256": "6bc6a1508bb460854314cd4365b421ae0bb464ca83fdafc7f7114399dc22984b",
           "note": "Registers Android DSP notices and the prepared exact NDK notice asset in the app license registry."
         },
         {
           "path": "licensing/evidence/native_dsp_host_2026-11-10.json",
           "sha256": "c7f230c1e2c0c79d8dfea0370a633c660dc8997f5514b0fc9c3e4192152be77a",
-          "note": "Actual native and Media3/JNI host evidence, explicitly release_approved: false. This does not satisfy Android package/runtime validation."
+          "note": "Historical pre-WSOLA native and Media3/JNI host evidence, explicitly release_approved: false; superseded for the current DSP by wsola_host_2026-11-10.json."
         },
         {
           "path": "scripts/audit_android_audio.py",
@@ -492,8 +502,33 @@
         },
         {
           "path": ".github/workflows/android-audio.yml",
-          "sha256": "dc007eb3867c08ae392f98150059936d05827f427c3eca902023bdd87f8d496f",
+          "sha256": "931813ab5cd3d612ff8d1615667e78f0b3ebfb8cacf4ce543b966541c56741f2",
           "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
+        },
+        {
+          "path": "packages/just_audio/native/crisper_dsp/wsola/LICENSE",
+          "sha256": "368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b",
+          "note": "Exact Chromium BSD-3-Clause notice retained for the derived portable fork."
+        },
+        {
+          "path": "packages/just_audio/native/crisper_dsp/wsola/UPSTREAM.md",
+          "sha256": "a16f652301399e40cf4024733d967cc5da0f7fdbc0e1aa1917d4a0b253e6fc95",
+          "note": "Pinned origin map, modified-code boundary and intentional numerical, search, onset and EOF differences."
+        },
+        {
+          "path": "packages/just_audio/native/crisper_dsp/tools/test_wsola_reference.py",
+          "sha256": "892b25bb8cc3ed80198c2a4f83d4bcd4b5dca2d246e4345d4bbe64871d2d5dfb",
+          "note": "Reproducible compiled comparison with unchanged original helpers, including explicit BSD attribution for derived fixtures; test-only shims excluded from app."
+        },
+        {
+          "path": "licensing/evidence/wsola_host_2026-11-10.json",
+          "sha256": "99e872d4dafadb83003fadc3dc77835ff6bd739b4aea4f986b152898f73196a4",
+          "note": "Actual final WSOLA core build, 15 streaming methods/96 matrix cases, 12 reference methods, 8 search checks, 16 Java/JNI tests and independent 300-case boundary review; release_approved: false."
+        },
+        {
+          "path": "docs/WSOLA_VALIDATION.md",
+          "sha256": "0da6b9ed495d15dce2b2cadfcc1a5c6ee23c7934702cea641f6e008eac6b153e",
+          "note": "Current implementation, reproducible checks, host measurements and limitations; no Android device, perceptual quality or release approval claim."
         }
       ],
       "blockers": [
@@ -544,12 +579,12 @@
         },
         {
           "path": "lib/services/native_licenses.dart",
-          "sha256": "63de540d9deca090ebb816f8216b053c4383e8eacf0feb3ec4c72dc8996e4773",
+          "sha256": "6bc6a1508bb460854314cd4365b421ae0bb464ca83fdafc7f7114399dc22984b",
           "note": "Registers Android DSP notices and the prepared exact NDK notice asset in the app license registry."
         },
         {
           "path": ".github/workflows/android-audio.yml",
-          "sha256": "dc007eb3867c08ae392f98150059936d05827f427c3eca902023bdd87f8d496f",
+          "sha256": "931813ab5cd3d612ff8d1615667e78f0b3ebfb8cacf4ce543b966541c56741f2",
           "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
         },
         {

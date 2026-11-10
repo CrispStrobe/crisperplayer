@@ -36,7 +36,8 @@ enum AndroidSpeedProcessing {
     'signalsmith',
     'Signalsmith Stretch',
     AndroidSpeedProcessor.signalsmith,
-  );
+  ),
+  wsola('wsola', 'WSOLA', AndroidSpeedProcessor.wsola);
 
   final String id;
   final String label;
@@ -49,6 +50,7 @@ enum AndroidSpeedProcessing {
   static AndroidSpeedProcessing parse(String value) => switch (value) {
     'bungee' => bungee,
     'signalsmith' => signalsmith,
+    'wsola' => wsola,
     _ => sonic,
   };
 }
@@ -189,7 +191,7 @@ abstract final class SpeedProcessing {
     return switch (platform ?? defaultTargetPlatform) {
       TargetPlatform.android =>
         experimentalAndroidProcessorsAvailable
-            ? 'Sonic is the default for speech. Bungee Basic and Signalsmith Stretch '
+            ? 'Sonic is the default for speech. Bungee Basic, Signalsmith Stretch and WSOLA '
                   'are experimental alternatives that may use more CPU and '
                   'increase battery use. They support mono and stereo audio. '
                   'Results depend on the recording and '

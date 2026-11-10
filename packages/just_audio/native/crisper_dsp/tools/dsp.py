@@ -4,7 +4,7 @@ from array import array
 import ctypes as C
 from pathlib import Path
 
-ENGINES = {'sonic': 0, 'bungee': 1, 'signalsmith': 2}
+ENGINES = {'sonic': 0, 'bungee': 1, 'signalsmith': 2, 'wsola': 3}
 DEFAULT_LIBRARY = Path(__file__).resolve().parents[5] / 'build/native-dsp/libcrisper_dsp.so'
 
 

@@ -8,10 +8,12 @@
   `e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6`
 - Upstream repository: <https://github.com/ryanheise/just_audio/tree/minor/just_audio>
 - The upstream [MIT license](LICENSE) is retained unchanged. Our Dart, Java,
-  Objective-C, JNI and C++ adapter changes use MIT. The separately pinned DSP
-  dependencies retain their own permissive or MPL licenses; see
+  Objective-C, JNI and independent C++ adapter changes use MIT. The derived
+  portable Chromium WSOLA implementation and derived semantic fixtures retain
+  BSD-3-Clause. The separately pinned DSP dependencies retain their own
+  permissive or MPL licenses; see
   [the native component manifest](native/crisper_dsp/vendor/manifest.json).
-- Local package version: **0.10.6+crisper.2**, `publish_to: none`.
+- Local package version: **0.10.6+crisper.3**, `publish_to: none`.
 
 The 38 original source, platform build, documentation and notice files are
 listed with their original SHA-256 values in [UPSTREAM_SHA256.json](UPSTREAM_SHA256.json).
@@ -50,7 +52,7 @@ is never reconfigured mid-passage.
 ### Android streaming processors
 
 `AndroidSpeedProcessor` and `AndroidLoadControl.speedProcessor` add an immutable
-startup selection: `sonic` (default), `bungee` or `signalsmith`. A public message
+startup selection: `sonic` (default), `bungee`, `signalsmith` or `wsola`. A public message
 subclass carries the value without forking `just_audio_platform_interface`.
 Missing selections preserve upstream Sonic; an unknown non-null native value
 fails explicitly. `AudioPlayer.java` retains the upstream renderer factory for
@@ -72,8 +74,14 @@ The new Java files are `CrisperAudioProcessor`, `CrisperAudioProcessorChain`,
 `CrisperRenderersFactory`. JNI range checks and exception translation live in
 `android/src/main/cpp/crisper_audio_jni.cpp`. The C ABI and bounded streaming
 engine live under `native/crisper_dsp`; Bungee Basic and Signalsmith use their
-actual pinned sources. Sonic C supplies a host comparison baseline, while the
-app's default stays on Media3's existing Sonic implementation.
+actual pinned sources. WSOLA uses the maintained BSD-3-Clause portable
+Chromium extraction under `native/crisper_dsp/wsola`. Its unchanged derivation
+and reference sources are separately retained under `vendor/chromium-wsola`,
+with exact revision, tree, Git blob and SHA-256 pins; Chromium's browser/runtime
+is outside the app compilation closure. The fork's origin map and modifications
+are documented in [its provenance](native/crisper_dsp/wsola/UPSTREAM.md).
+Sonic C supplies a host comparison baseline, while the app's default stays on
+Media3's existing Sonic implementation.
 
 Gradle builds the C++ source locally with NDK `28.2.13676358` and CMake `3.22.1`.
 The fork's Android minimum SDK is 21 (the app itself requires 24). The JNI target
@@ -108,7 +116,7 @@ native-instance recreation and the unaffected Android configuration path.
 platform capability checks and the iOS/macOS restart-required UI.
 
 `test/android_speed_processing_test.dart` checks the real Dart method-channel
-configuration for all three Android selections and player-instance recreation.
+configuration for all four Android selections and player-instance recreation.
 The native tests can be run from the app's `android` directory:
 
 ```sh
@@ -120,17 +128,22 @@ The native tests can be run from the app's `android` directory:
 engine test double: partial writes, unread buffers, EOS polls, finite drain,
 source clocks, rate checkpoints, seeks, mono/stereo configuration and disabled
 passthrough/offload. `CrisperDspJniTest` loads the real packaged JNI core, checks
-both algorithms' generated PCM duration and pitch, source counters, exact unity
+all three optional algorithms' generated PCM duration and pitch, source counters, exact unity
 stereo, handle replacement and invalid-buffer errors, and runs the real core
-inside Media3's pipeline. These tests establish transport and signal invariants,
+inside Media3's pipeline. WSOLA also checks opposite-phase stereo at 0.75× and
+2×. These tests establish transport and signal invariants,
 not a subjective quality ranking or an audible-device comparison.
 
-The same 14 Java/JNI tests passed under the host JVM against actual Media3 1.4.1
+The same 16 Java/JNI tests passed under the host JVM against actual Media3 1.4.1
 JARs and the compiled native core during development. Host-only Android Build
 constants and OpenJDK development headers stayed in ignored build output.
 Android NDK/ABI, APK packaging and emulator tests are separate CI gates; a host
 pass is not an Android device pass. The core's standalone streaming tests and
-reproducible A/B renderer are under `native/crisper_dsp/tools`.
+reproducible four-processor A/B renderer are under `native/crisper_dsp/tools`.
+The preserved-original WSOLA helper comparison compiles the unchanged Chromium
+scalar helper with test-only framework shims, compares selected semantics with
+the portable SIMD/scalar helper, and documents intentional edge-case changes.
+Those shims and retained reference originals are never linked into the app.
 
 The native `ios/RunnerTests` and `macos/RunnerTests` exercise actual AVPlayerItem
 properties for default, Time Domain and Spectral settings, including loop-copy

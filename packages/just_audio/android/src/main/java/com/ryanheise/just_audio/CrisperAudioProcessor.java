@@ -24,7 +24,7 @@ final class CrisperAudioProcessor implements AudioProcessor {
     private ByteBuffer output = EMPTY_BUFFER;
 
     CrisperAudioProcessor(int engineId, CrisperDspEngine engine) {
-        if (engineId != 1 && engineId != 2) {
+        if (engineId != 1 && engineId != 2 && engineId != 3) {
             throw new IllegalArgumentException("Unknown native speed processor");
         }
         this.engineId = engineId;

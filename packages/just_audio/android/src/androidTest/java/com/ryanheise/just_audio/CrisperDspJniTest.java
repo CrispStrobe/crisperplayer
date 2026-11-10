@@ -16,7 +16,7 @@ import org.junit.Test;
 /** Runs the packaged ABI and real DSP through JNI; no mock engine or audio device. */
 public class CrisperDspJniTest {
     @Test public void realMedia3PipelineHandlesNativeBackpressureAndFiniteDrain() throws Exception {
-        for (int engineId : new int[] {1, 2}) {
+        for (int engineId : new int[] {1, 2, 3}) {
             CrisperAudioProcessor processor = new CrisperAudioProcessor(engineId, new JniCrisperDspEngine());
             processor.setRate(2.0);
             AudioProcessingPipeline pipeline = new AudioProcessingPipeline(ImmutableList.of(processor));
@@ -47,8 +47,8 @@ public class CrisperDspJniTest {
         }
     }
 
-    @Test public void bothEnginesStretchGeneratedToneAndPreservePitch() {
-        for (int engineId : new int[] {1, 2}) {
+    @Test public void allNativeEnginesStretchGeneratedToneAndPreservePitch() {
+        for (int engineId : new int[] {1, 2, 3}) {
             JniCrisperDspEngine engine = new JniCrisperDspEngine();
             long handle = engine.create(engineId, 48000, 1, 1.5);
             try {
@@ -72,7 +72,7 @@ public class CrisperDspJniTest {
     }
 
     @Test public void unityStereoIsExactAndNewHandleDropsOldLookahead() {
-        for (int engineId : new int[] {1, 2}) {
+        for (int engineId : new int[] {1, 2, 3}) {
             JniCrisperDspEngine engine = new JniCrisperDspEngine();
             long old = engine.create(engineId, 44100, 2, 2.0);
             ByteBuffer abandoned = pcm(new short[] {111, -111, 222, -222, 333, -333});
@@ -110,6 +110,41 @@ public class CrisperDspJniTest {
         }
         assertThrows(IllegalStateException.class, () -> engine.create(1, 48000, 6, 1.5));
         assertThrows(IllegalStateException.class, () -> engine.create(2, 48000, 1, Double.NaN));
+        assertThrows(IllegalStateException.class, () -> engine.create(3, 48000, 1, 3.01));
+        assertThrows(IllegalStateException.class, () -> engine.create(4, 48000, 1, 1.5));
+    }
+
+    @Test public void wsolaPreservesOppositePhaseStereoThroughPcm16Jni() {
+        final int sampleRate = 48000;
+        short[] mono = tone(sampleRate, sampleRate, 440);
+        short[] stereo = new short[mono.length * 2];
+        for (int i = 0; i < mono.length; i++) {
+            stereo[2 * i] = mono[i];
+            stereo[2 * i + 1] = (short) -mono[i];
+        }
+        for (double rate : new double[] {0.75, 2.0}) {
+            JniCrisperDspEngine engine = new JniCrisperDspEngine();
+            long handle = engine.create(3, sampleRate, 2, rate);
+            try {
+                List<Short> output = process(engine, handle, stereo, 2);
+                long frames = Math.round(sampleRate / rate);
+                assertEquals(frames * 2, output.size());
+                assertEquals(sampleRate, engine.sourceFrames(handle));
+                assertEquals(frames, engine.outputFrames(handle));
+                long energy = 0;
+                for (int frame = 1000; frame < frames - 1000; frame++) {
+                    int left = output.get(2 * frame);
+                    int right = output.get(2 * frame + 1);
+                    assertTrue("The same WSOLA alignment must be used for both channels",
+                        Math.abs(left + right) <= 1);
+                    energy += (long) left * left;
+                }
+                assertTrue("Opposite-phase stereo must not cancel into silence",
+                    Math.sqrt((double) energy / (frames - 2000)) > 4000);
+            } finally {
+                engine.destroy(handle);
+            }
+        }
     }
 
     private static List<Short> process(JniCrisperDspEngine engine, long handle, short[] samples, int channels) {

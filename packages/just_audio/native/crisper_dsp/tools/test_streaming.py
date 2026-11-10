@@ -16,6 +16,7 @@ from dsp import DEFAULT_LIBRARY, ENGINES, Library, render
 LIBRARY = None
 METRICS = []
 IMPULSE_METRICS = []
+WSOLA_METRICS = []
 
 
 def tone(sr, frames, channels=1, frequencies=(440, 880)):
@@ -197,6 +198,69 @@ class StreamingTests(unittest.TestCase):
                         result = render(p, tone(sr, 32000, 2))
                         self.assertEqual(len(result), 2 * math.floor(32000 / rate + .5))
 
+    def test_wsola_shared_alignment_preserves_opposite_phase_and_silent_channels(self):
+        sr, frames = 48000, 96137
+        for kind in ('opposite', 'left_silent'):
+            source = tone(sr, frames)
+            samples = array('f', (value for sample in source for value in ((sample, -sample) if kind == 'opposite' else (0., sample))))
+            for rate in (.5, .75, 1.25, 2, 3):
+                with self.subTest(kind=kind, rate=rate), LIBRARY.create('wsola', sr, 2, rate) as p:
+                    result = render(p, samples)
+                    left, right = result[0::2], result[1::2]
+                    self.assertEqual(len(left), math.floor(frames / rate + .5))
+                    self.assertGreater(math.sqrt(sum(v * v for v in right) / len(right)), .10)
+                    self.assertAlmostEqual(frequency(result, sr, 2, 1), 440, delta=8)
+                    if kind == 'opposite':
+                        self.assertLess(max(abs(a + b) for a, b in zip(left, right)), 1e-7)
+                    else:
+                        self.assertEqual(max(map(abs, left)), 0.)
+
+    def test_wsola_silence_dc_and_fractional_rates_remain_finite_and_bounded(self):
+        for sr in (11025, 22050, 88200):
+            for rate in (.51, .99, 1.01, 2.99):
+                with self.subTest(sr=sr, rate=rate), LIBRARY.create('wsola', sr, 1, rate) as p:
+                    samples = tone(sr, sr + 137)
+                    result = render(p, samples)
+                    self.assertEqual(len(result), math.floor(len(samples) / rate + .5))
+                    self.assertAlmostEqual(frequency(result, sr, 1, 0), 440, delta=9)
+        for value in (0., -.2, .2):
+            with self.subTest(value=value), LIBRARY.create('wsola', 48000, 1, 1.5) as p:
+                result = render(p, array('f', [value]) * 96137)
+                self.assertTrue(all(math.isfinite(v) for v in result))
+                for sample in result[4800:-4800]:
+                    self.assertAlmostEqual(sample, value, delta=1e-6)
+
+    def test_wsola_eof_keeps_the_real_tail_at_full_and_partial_hop_boundaries(self):
+        for frames in (17, 479, 1440, 1441, 1501, 96000):
+            for rate in (.5, 1.25, 1.5, 2, 3):
+                with self.subTest(frames=frames, rate=rate):
+                    samples = tone(48000, frames)
+                    samples[-1] = .37
+                    with LIBRARY.create('wsola', 48000, 1, rate) as p:
+                        large = render(p, samples, chunks=(32768,), read_sizes=(32768,))
+                    with LIBRARY.create('wsola', 48000, 1, rate) as p:
+                        tiny = render(p, samples, chunks=(1, 7, 19), read_sizes=(1, 97))
+                    self.assertEqual(large, tiny)
+                    self.assertEqual(len(large), math.floor(frames / rate + .5))
+                    self.assertEqual(large[-1], samples[-1])
+                    self.assertLessEqual(max(map(abs, large)), .370001)
+
+    def test_wsola_workload_measurements_are_recorded_without_device_claims(self):
+        # Include ordinary stereo, high-rate stereo and the upper sample-rate
+        # bound. Timing includes Python transport and is evidence, not a hard
+        # battery/perceptual-performance promise or a timing-dependent gate.
+        for sr, channels, rate in ((48000, 2, .75), (48000, 2, 3), (192000, 2, 1.5)):
+            samples = tone(sr, sr * 2, channels, frequencies=(173, 811))
+            started = time.perf_counter()
+            with LIBRARY.create('wsola', sr, channels, rate) as p:
+                result = render(p, samples, chunks=(4096,), read_sizes=(4096,))
+                duration = time.perf_counter() - started
+                self.assertEqual(len(result) // channels, math.floor(sr * 2 / rate + .5))
+                WSOLA_METRICS.append({'sample_rate': sr, 'channels': channels, 'rate': rate,
+                    'input_seconds': 2., 'output_seconds': len(result) / channels / sr,
+                    'render_seconds': duration, 'host_render_seconds_per_input_second': duration / 2,
+                    'peak': max(map(abs, result)), 'latency_source_frames': p.stat('latency_frames')})
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
@@ -207,7 +271,7 @@ if __name__ == '__main__':
     started = time.monotonic()
     suite = unittest.defaultTestLoader.loadTestsFromNames(tests, sys.modules[__name__]) if tests else unittest.defaultTestLoader.loadTestsFromTestCase(StreamingTests)
     result = unittest.TextTestRunner(verbosity=2).run(suite)
-    report = {'scope': 'Host streaming correctness and synthetic signal measurements; not perceptual quality or Android device certification', 'library_sha256': hashlib.sha256(args.library.read_bytes()).hexdigest(), 'test_methods': result.testsRun, 'failures': len(result.failures), 'errors': len(result.errors), 'seconds': time.monotonic() - started, 'measurements': METRICS, 'isolated_impulse_measurements': IMPULSE_METRICS}
+    report = {'scope': 'Host streaming correctness and synthetic signal measurements; not perceptual quality or Android device certification', 'library_sha256': hashlib.sha256(args.library.read_bytes()).hexdigest(), 'test_methods': result.testsRun, 'failures': len(result.failures), 'errors': len(result.errors), 'seconds': time.monotonic() - started, 'measurements': METRICS, 'isolated_impulse_measurements': IMPULSE_METRICS, 'wsola_workload_measurements': WSOLA_METRICS}
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report, indent=2) + '\n')

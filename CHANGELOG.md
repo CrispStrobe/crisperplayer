@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- Added experimental **WSOLA** Android speed processing through a maintained
+  portable Chromium BSD-3-Clause fork. The same streaming core supports host
+  WAV comparisons. The extraction retains exact upstream sources, Git blob
+  hashes, original notices and reproducible reference checks; it adds no
+  Chromium browser runtime, mpv, or external GPL/AGPL dependency. Sonic remains
+  the default and the selection applies after restart.
+
 - Added final Android APK evidence checks for native hashes/dependencies,
   ABI and 16 KB alignment, loader-reachable JNI exports, retained DEX native
   declarations, exact pinned-NDK C++ runtime bytes and packaged notices.

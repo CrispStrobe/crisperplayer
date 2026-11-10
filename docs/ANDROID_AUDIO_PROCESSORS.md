@@ -1,7 +1,7 @@
 # Optional Android audio processors
 
 CrisperPlayer keeps Media3 Sonic as the default and adds real, experimental
-native Bungee Basic and Signalsmith Stretch alternatives. Choose a processor
+native Bungee Basic, Signalsmith Stretch and WSOLA alternatives. Choose a processor
 under **Speed → Speed processing**, then restart the app. The choice applies
 to all books. The displayed active processor does not change merely because
 a different preference has been saved.
@@ -11,6 +11,7 @@ a different preference has been saved.
 | Sonic | Spoken audio, including high listening rates | Existing Media3 path and skip-silence support remain unchanged. |
 | Bungee Basic | Narration with music or ambience | Experimental; mono/stereo; skip silence unavailable. |
 | Signalsmith Stretch | Moderate changes, approximately 0.75×–1.5× | Experimental; mono/stereo; skip silence unavailable. The full app rate range is accepted, but high-rate speech superiority is not claimed. |
+| WSOLA | Speech at moderate speeds; compare against Sonic on the same passage | Experimental Chromium-derived BSD fork; mono/stereo; skip silence unavailable. |
 
 The native processors accept 8–192 kHz PCM and rates from 0.50× to 3.00×.
 At 1.00× the adapter passes samples through unchanged. Global and per-book
@@ -51,7 +52,9 @@ that remains a separate, default-off preference.
 
 All selected source is vendored. Builds do not fetch a moving branch or
 download processor code at runtime. The source manifest records exact upstream
-revisions, archive hashes and hashes for every selected file:
+revisions and hashes for every selected file. Archive sources retain their
+archive hashes; the Chromium extraction instead records its exact Git tree and
+blob IDs alongside SHA-256 hashes and immutable source URLs:
 
 | Component | Revision | License |
 | --- | --- | --- |
@@ -61,11 +64,14 @@ revisions, archive hashes and hashes for every selected file:
 | PFFFT / FFTPACK | `02fe7715a5bf8bfd914681c53429600f94e0f536` | Original permissive NCAR/UCAR notice; recorded as `LicenseRef-PFFFT-FFTPACK` |
 | Signalsmith Stretch | `88061fd4eda56a2353c5d65c74aa3f4ccf76f9da` | MIT |
 | Signalsmith Linear | `7bb1c8f36794d6980080ce817c91f8da8fe56a66` | MIT |
+| Chromium WSOLA derivation and reference snapshot | `ddd30ef8aa98443509bf4ce006cb36b4e2296c0b` | BSD-3-Clause |
 
 `EIGEN_MPL2_ONLY` is defined for the selected build. Unsupported Eigen modules,
 proprietary Bungee Pro, Sonic Speedy and external FFT backends are excluded.
-The upstream files are unmodified; the independent adapter and JNI bridge
-are MIT licensed. Original notices and a link to the exact public source
+The 258 retained upstream files across seven components are unmodified. The
+compiled WSOLA fork lives separately in `native/crisper_dsp/wsola`, retains the
+Chromium BSD-3-Clause notice, and documents its changes. The independent adapter
+and JNI bridge are MIT licensed. Original notices and a link to the exact public source
 snapshot are included in the app's license screen through
 `assets/licenses/ANDROID-DSP.txt`.
 
@@ -73,6 +79,29 @@ The owner's confirmed distribution authority for their own AGPL code is
 separate from this external dependency policy. This implementation adds no
 GPL-only or AGPL-only external processor. Existing desktop/libmpv and other
 native payload evidence is tracked separately in [the policy](LICENSE_POLICY.md).
+
+## The maintained WSOLA fork
+
+The portable fork extracts Chromium's matching, Hann windows and overlap-add
+sequencing without its browser, renderer or `base` runtime dependencies. Its
+20 ms analysis window, 10 ms output hop and 30 ms search interval use one shared
+lag across stereo channels. Each channel contributes its own normalized score,
+so opposite-phase stereo does not disappear through a mono downmix.
+
+Local changes include bounded preallocated scratch, compile-time SSE2/NEON or
+scalar dot products, 64-bit stream coordinates, signed search exclusions,
+valid fallback candidates even for negative correlations, and deterministic
+tie-breaking. The first source samples are preserved. A bounded final-hop blend
+reaches the real ending source segment while keeping the exact output frame
+total. The enclosing streaming adapter owns seek/reset, backpressure, duration
+and clock mapping.
+
+The [fork provenance](../packages/just_audio/native/crisper_dsp/wsola/UPSTREAM.md)
+distinguishes retained originals, derived implementation and intentional
+semantic changes. A test-only compatibility harness compiles the unchanged
+original helper and compares selected fixtures against the portable helper;
+these shims are not linked into the app. See [WSOLA validation](WSOLA_VALIDATION.md)
+for the exact tests and their limits.
 
 ## Reproduce the checks
 
@@ -84,6 +113,7 @@ python3 packages/just_audio/native/crisper_dsp/tools/build_host.py --jobs 2
 python3 packages/just_audio/native/crisper_dsp/tools/test_streaming.py \
   --library build/native-dsp/libcrisper_dsp.so \
   --report build/native-dsp/test-report.json
+python3 packages/just_audio/native/crisper_dsp/tools/test_wsola_reference.py
 ```
 
 The host suite checks output duration, preserved tone pitch, separate stereo
@@ -174,7 +204,7 @@ installed here. Consult the exact commit's PR checks for those results.
 ## Compare sound before choosing a default
 
 Use the native package's WAV comparison renderer to produce the same passage
-with Sonic, Bungee Basic and Signalsmith at identical requested rates. Start
+with Sonic, Bungee Basic, Signalsmith and WSOLA at identical requested rates. Start
 with clean narration, then music-backed narration, several voices/languages,
 and short chapter transitions. Compare intelligibility, consonants, transients,
 noise and fatigue at 1.25×, 1.5×, 2× and 3×. Check CPU/battery use, seeking,

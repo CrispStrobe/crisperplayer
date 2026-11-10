@@ -2313,7 +2313,7 @@ class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
 /// options use CrisperPlayer's native PCM processor and require its Android
 /// library. They support 0.5x-3.0x, mono/stereo, and preserve pitch; independent
 /// pitch changes and silence skipping are not supported by those options.
-enum AndroidSpeedProcessor { sonic, bungee, signalsmith }
+enum AndroidSpeedProcessor { sonic, bungee, signalsmith, wsola }
 
 /// Buffering, loading and speed-processing options for Android.
 class AndroidLoadControl {

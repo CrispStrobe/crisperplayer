@@ -1382,13 +1382,13 @@
     },
     {
       "name": "just_audio",
-      "version": "0.10.6+crisper.2",
+      "version": "0.10.6+crisper.3",
       "source": {
         "type": "path",
         "path": "packages/just_audio",
         "relative": true
       },
-      "pubspec_sha256": "a28ff9e6a3198967b9f83c48aad73410d5567a919139124ce5acd5531495db93",
+      "pubspec_sha256": "7c7d12a899ca564b927a2b263231381acd84f55e2d6f308f61ae87d7b7b7dd65",
       "license_expression": "MIT",
       "review_status": "reviewed",
       "license_files": [
@@ -1398,10 +1398,10 @@
           "sha256": "63ce4443e916b27424700d7fe970003add9f54944daf732f2dbcc1d8caf1bbad"
         }
       ],
-      "source_tree_sha256": "5db1ff90fc9f710b67e8e1aa7c621d8f6d8c4eb571eae59dfd2a32e12aed4df3",
+      "source_tree_sha256": "acbbd86f306bc5abaa3caa692d11225667ff3eb65d165f18de788c2b443aa881",
       "notes": [
-        "Local MIT Apple time-pitch and Android streaming-processor patch, version 0.10.6+crisper.2. Original 0.10.6 archive SHA-256 e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6; 38 original hashes, 9 patched files and 20 local additions independently verified against UPSTREAM_SHA256.json, UPSTREAM.patch and LOCAL_ADDITIONS.json.",
-        "This MIT declaration covers the just_audio wrapper and independent adapters. It does not relabel the six native source components: their MIT/Apache/BSD/MPL/custom permissive grants, exact 252-file closure, source publication and pending Android artifacts are recorded separately in android-native-speed-processors. NDK libc++ and the Gradle runtime closure remain separate native components."
+        "Local MIT Apple time-pitch and Android streaming-processor adapter, version 0.10.6+crisper.3, with a separately BSD-3-Clause Chromium WSOLA fork. Original 0.10.6 archive SHA-256 e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6; 38 original hashes, 9 patched files and 38 local additions independently verified against UPSTREAM_SHA256.json, UPSTREAM.patch and LOCAL_ADDITIONS.json.",
+        "This MIT declaration covers the just_audio wrapper and independent adapters. It does not relabel the seven native source components or the derived WSOLA implementation/fixtures: their MIT/Apache/BSD/MPL/custom permissive grants, exact 258-file original closure, source publication and pending Android artifacts are recorded separately in android-native-speed-processors. NDK libc++ and the Gradle runtime closure remain separate native components."
       ]
     },
     {
@@ -4289,7 +4289,7 @@
     {
       "package": "just_audio",
       "path": "LOCAL_ADDITIONS.json",
-      "sha256": "9d52730ea4990410ceb5a5bff3130ea069a76b739c46d2ae754f49dee2cb6b37",
+      "sha256": "eea17423668a63c95aa8df7e317d1000730eb0e1a8c5ca7ae708f94cd5488706",
       "platforms": [
         "android"
       ]
@@ -4297,7 +4297,7 @@
     {
       "package": "just_audio",
       "path": "UPSTREAM.patch",
-      "sha256": "9304cc7b9d285f30c3270511f6c6bf027708936dbc02c3322cd1620e55e6b7af",
+      "sha256": "06948fe3aa77c9edaef2782ccb393266568f22df04bf463151b7f7eb7eec879e",
       "platforms": [
         "android"
       ]
@@ -4321,7 +4321,7 @@
     {
       "package": "just_audio",
       "path": "android/src/androidTest/java/com/ryanheise/just_audio/CrisperDspJniTest.java",
-      "sha256": "9d247de87255a45b96db8b0579185eeaba5a1d661253a9ceed1932e052e651be",
+      "sha256": "3af3f9c0c75bdc953878388e4bd2a7ab61f5999f55e6e20fe56d10328a4e7097",
       "platforms": [
         "android"
       ]
@@ -4345,7 +4345,7 @@
     {
       "package": "just_audio",
       "path": "android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java",
-      "sha256": "0236b74621592653df064a40b5b29704e24e3f99d93103969246008755f7724d",
+      "sha256": "3f19fdfd9987e80039934fe30f47ed37eef1df07ad034ffabf42cde00d67677d",
       "platforms": [
         "android"
       ]
@@ -4353,7 +4353,7 @@
     {
       "package": "just_audio",
       "path": "android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessor.java",
-      "sha256": "33c098c2a899ceff477d015e33450bdc609e1fe0b9772533758a3c0052c493f2",
+      "sha256": "b4bfe728a43f3a612a04975c72b1c923e65a19499623843661f42d24e0963a66",
       "platforms": [
         "android"
       ]
@@ -4401,7 +4401,7 @@
     {
       "package": "just_audio",
       "path": "android/src/test/java/com/ryanheise/just_audio/CrisperAudioProcessorTest.java",
-      "sha256": "151dad1265ce7d5453f27a9443763ff37b675eb7624490e3799b0a918818d294",
+      "sha256": "4dc96ab583f235e07ab69357de7227e2dba9db0765b47acc07016fb0dfbf46f3",
       "platforms": [
         "android"
       ]
@@ -4409,7 +4409,7 @@
     {
       "package": "just_audio",
       "path": "lib/just_audio.dart",
-      "sha256": "694414d98fc03df5c1e12c31564e209fff8e1f2c1ac66da23fdb0265f75e39f4",
+      "sha256": "939e6a5dfc1b1fd5f9c1a853bf2629adb9164b99a48476a30699543574705144",
       "platforms": [
         "android"
       ]
@@ -4417,7 +4417,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/CMakeLists.txt",
-      "sha256": "6d3fccc65f48ff8c182f9d0e7027489d9ae8e0cf9656af7d8639ab9e6dfb5f2d",
+      "sha256": "9795770a2b544e51fbd69b9f00d54e5d7255685f215ae676cc10ab60364bc37d",
       "platforms": [
         "android"
       ]
@@ -4425,7 +4425,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/LICENSE",
-      "sha256": "6f1615225a4a9c80b104473ba3c623439240eee4b61360fd8ac04219fb3ab08d",
+      "sha256": "2749c73f9c1cb9bf22449b00f983a5413c69403d8bd864978fec744237b12194",
       "platforms": [
         "android"
       ]
@@ -4433,7 +4433,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/README.md",
-      "sha256": "b72795a5ae27a89c1b8549fc49d2f9099c2aad04557539f8659720de69f93b0e",
+      "sha256": "9ef5b005992532da693a662e86a3be4e143bbb4cd0b061f9476c10aecfb12f1c",
       "platforms": [
         "android"
       ]
@@ -4441,7 +4441,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/crisper_dsp.cpp",
-      "sha256": "d258286d62571ba0a5f238afd7adfee164cb04e3ef7dc1f7161fdc843c76b565",
+      "sha256": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
       "platforms": [
         "android"
       ]
@@ -4449,7 +4449,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/crisper_dsp.h",
-      "sha256": "279c5b4109568a193166066f06e40356a9bd13ceb98e9bec4f1f9271f248f5c4",
+      "sha256": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
       "platforms": [
         "android"
       ]
@@ -4457,7 +4457,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/tools/build_host.py",
-      "sha256": "0a672014357f3105918ede27fbef5667bc8c622129b04247e312b5d8cf246d44",
+      "sha256": "8915b4dea66cb2d90642adf4e6543e26cf6a6de3475801c9d1b6662629c9877b",
       "platforms": [
         "android"
       ]
@@ -4465,7 +4465,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/tools/dsp.py",
-      "sha256": "60e7a68b3935dc39dbfa9ce8ee779682f4709e2592d565dff1822b92bff38403",
+      "sha256": "9db29e6015d1de54490352d82d9cf07c3bb0caf55d4897913c0e093ab0cf9b7e",
       "platforms": [
         "android"
       ]
@@ -4473,7 +4473,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/tools/render_ab.py",
-      "sha256": "81e693fd45db3597e882e6f83221838f6c55ffe5927d620a0c4f7eeba2031e5c",
+      "sha256": "f92048708e68c953ed9146d9cb2e3ac985cb08f448652bf1fbf907b5f0866242",
       "platforms": [
         "android"
       ]
@@ -4481,7 +4481,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/tools/test_streaming.py",
-      "sha256": "47e38be76e0a79c0368c6a375afe44a76798c9411221b2983b083cd8c3330c40",
+      "sha256": "66f57485f860c219b6d465967f179a97cc56f952816520a04efdfac8a497c4c2",
       "platforms": [
         "android"
       ]
@@ -4489,7 +4489,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/vendor/manifest.json",
-      "sha256": "e43ae779e7fcef68612d71dfb31d6fc63f5d0a0b61ead85198c75fa20892b7f2",
+      "sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
       "platforms": [
         "android"
       ]
@@ -4513,7 +4513,7 @@
     {
       "package": "crisperplayer",
       "path": "lib/services/native_licenses.dart",
-      "sha256": "63de540d9deca090ebb816f8216b053c4383e8eacf0feb3ec4c72dc8996e4773",
+      "sha256": "6bc6a1508bb460854314cd4365b421ae0bb464ca83fdafc7f7114399dc22984b",
       "platforms": [
         "android"
       ]
@@ -4521,7 +4521,7 @@
     {
       "package": "crisperplayer",
       "path": ".github/workflows/android-audio.yml",
-      "sha256": "dc007eb3867c08ae392f98150059936d05827f427c3eca902023bdd87f8d496f",
+      "sha256": "931813ab5cd3d612ff8d1615667e78f0b3ebfb8cacf4ce543b966541c56741f2",
       "platforms": [
         "android"
       ]
@@ -4538,6 +4538,150 @@
       "package": "crisperplayer",
       "path": ".github/workflows/release.yml",
       "sha256": "0f1257e8649443f1f047c65b351990b4b72837659f9b8df1bb5bc7b18d668694",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/test_wsola_reference.py",
+      "sha256": "892b25bb8cc3ed80198c2a4f83d4bcd4b5dca2d246e4345d4bbe64871d2d5dfb",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/test_wsola_search.cpp",
+      "sha256": "5138392b116b147bd4090fa6c0d3d2a594c477e34099e3548a39e19d703fa8d5",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/README.md",
+      "sha256": "948901db5a3b4b7fb02791fafbd8f126a72c1446d7cb7a28a60cf1599370dd8c",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/portable_bridge.cpp",
+      "sha256": "f8f021ffd4f216b2b3f2ae6aae3785ca5638034fa59cb7a6864b365f8c0a1426",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/reference_bridge.cpp",
+      "sha256": "f76e9cb51a1a50be5860e304ee761809f815627b49295aeeb161ddab14185aeb",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/check_op.h",
+      "sha256": "37b948ad88443b52f82da822cd34a3ea3215b5a3d14d7de704d0ba99726f0cd3",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/containers/auto_spanification_helper.h",
+      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/containers/span.h",
+      "sha256": "0f53675384683915aaceef94a933e931c506f9d6f50b4349245ae09de4fa2f1b",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/cpu.h",
+      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/numerics/checked_math.h",
+      "sha256": "c5f790a8da7a7ea47c387b0e38acbca880219e9baf3a19350d2efc8868e09c79",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/numerics/safe_conversions.h",
+      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/build/build_config.h",
+      "sha256": "8440e1adccc60f50a7d7cb4d28b4e3d97438bce37920980f710e53d9e1dc114e",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/media/base/audio_bus.h",
+      "sha256": "089b0ee55f3f446b95c09d6696a70f18e73635994e391f8e5de951c1de1c6782",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/media/base/media_export.h",
+      "sha256": "f4056b1b8ab3e3d5080fa0214baf31e7f2cf6527d4113aaf766f3392b1d48095",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/LICENSE",
+      "sha256": "368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/UPSTREAM.md",
+      "sha256": "a16f652301399e40cf4024733d967cc5da0f7fdbc0e1aa1917d4a0b253e6fc95",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/wsola.cpp",
+      "sha256": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/wsola.h",
+      "sha256": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e",
       "platforms": [
         "android"
       ]

@@ -27,6 +27,26 @@ public class CrisperAudioProcessorTest {
     private static final AudioProcessor.AudioFormat MONO =
         new AudioProcessor.AudioFormat(48000, 1, C.ENCODING_PCM_16BIT);
 
+    @Test public void nativeEngineIdsRemainStableAndReachTheConfiguredStage() throws Exception {
+        for (int engineId : new int[] {1, 2, 3}) {
+            FakeEngine engine = new FakeEngine();
+            CrisperAudioProcessorChain chain = new CrisperAudioProcessorChain(engineId, engine);
+            assertEquals(1, chain.getAudioProcessors().length);
+            CrisperAudioProcessor processor = (CrisperAudioProcessor) chain.getAudioProcessors()[0];
+            chain.applyPlaybackParameters(new PlaybackParameters(1.5f));
+            processor.configure(MONO);
+            processor.flush();
+            assertEquals(engineId, engine.lastEngineId);
+            assertEquals(1.5, engine.latest().rate, 0.0);
+            assertFalse(chain.applySkipSilenceEnabled(true));
+            processor.reset();
+        }
+        for (int unsupported : new int[] {-1, 0, 4}) {
+            assertThrows(IllegalArgumentException.class,
+                () -> new CrisperAudioProcessor(unsupported, new FakeEngine()));
+        }
+    }
+
     @Test public void partialInputWritesLeaveTheUnconsumedFramesInTheCallerBuffer() throws Exception {
         FakeEngine engine = new FakeEngine();
         engine.maxWriteFrames = 3;
@@ -247,10 +267,12 @@ public class CrisperAudioProcessorTest {
         }
         final Map<Long, Stream> streams = new HashMap<>();
         long lastHandle;
+        int lastEngineId;
         int maxWriteFrames = Integer.MAX_VALUE, maxReadFrames = Integer.MAX_VALUE;
         int finishCalls, readCalls;
         Stream latest() { return streams.get(lastHandle); }
         @Override public long create(int engine, int sampleRate, int channels, double rate) {
+            lastEngineId = engine;
             streams.put(++lastHandle, new Stream(sampleRate, channels, rate));
             return lastHandle;
         }

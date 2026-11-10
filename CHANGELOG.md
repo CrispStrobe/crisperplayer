@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+- Added an optional **Listening journal** with persistent dated playback,
+  separate replays, stops and explicit source/destination jumps; date and book
+  filters; a year-ago shortcut; pagination; and paused historical navigation
+  protected by a saved-place bookmark. Schema seven adds validated journal
+  backups and stable checkpoint IDs without automatic expiry.
+- Added exact speed entry and 0.05× adjustments, listening-time estimates and
+  supported Windows/Linux Automatic versus Legacy scaletempo processing choices.
+  Desktop processor changes apply on restart; platform-specific behavior is
+  documented in [speed processing](docs/SPEED_PROCESSING.md).
+- Made full metadata exports transactionally consistent and routed history
+  clearing through the playback coordinator so pending writes cannot restore
+  deleted history. See [journal behavior](docs/LISTENING_JOURNAL.md).
 - Added **Listening map** with cumulative played sections, visible gaps, unique
   coverage percentages, per-track timelines and deliberate paused navigation.
   Schema six preserves coverage beyond the recent replay buffer and includes it

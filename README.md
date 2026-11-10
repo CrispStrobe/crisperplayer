@@ -45,6 +45,29 @@ to open it paused. Unknown durations remain unknown, and older or other-device
 listening is not reconstructed from a saved position. See
 [map behavior, privacy and CLI](docs/LISTENING_MAP.md).
 
+## Listening journal: return to a past listening day
+
+Open **History → Journal** and enable **Keep a listening journal** to retain
+dated playback passages, pauses, stops and jumps. Recording is optional and off
+by default. Entries have no automatic expiry or recent-history limit; turning
+recording off preserves existing entries. Choose **A year ago**, a date range,
+or a book to inspect what played and where navigation occurred.
+
+Open a passage's start/end or a jump's source/destination paused. The player
+saves the previous place in a **Before journal jump** bookmark. Replays stay
+separate, including Return Trail replays; old dates are never inferred from
+resume positions. Explicit metadata backups include the journal. See
+[journal behavior and commands](docs/LISTENING_JOURNAL.md).
+
+## Precise speed controls
+
+Choose exact playback rates from **0.50× to 3.00×**, adjust in **0.05×** steps,
+and see the remaining listening time. Rates are remembered per book. On
+Windows/Linux, **Speed → Speed processing** offers Automatic (the engine's
+default pitch-preserving route) and Legacy scaletempo, applied after restart.
+Android and Apple show their current native processor. See
+[algorithms, platform differences and validation limits](docs/SPEED_PROCESSING.md).
+
 ## Import from Android Downloads
 
 Choose **Import → Import audio files**, then select the audiobooks inside
@@ -160,7 +183,7 @@ flutter test
 flutter run -d <device-id>
 ```
 
-The database upgrades existing libraries in place; schema three adds organization, playback preferences and the queue; schema four adds remote download identities without credentials; schema five adds bounded played passages for Return Trail; schema six adds cumulative listening coverage. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
+The database upgrades existing libraries in place; schema three adds organization, playback preferences and the queue; schema four adds remote download identities without credentials; schema five adds bounded played passages for Return Trail; schema six adds cumulative listening coverage; schema seven adds the optional dated journal. Legacy file references are adopted into app storage and their durations measured when first opened; unavailable source files must be re-imported.
 
 The playback tests use the production coordinator and SQLite with an injected audio backend that preserves just_audio's pending `play()` future semantics. Native decoder, interruption and background behavior still require device testing:
 

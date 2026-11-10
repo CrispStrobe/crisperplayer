@@ -85,3 +85,13 @@ audible superiority.
 References reviewed 10 November 2026. Local package sources were inspected in
 addition to documentation; online defaults may change with future dependency
 updates.
+
+## Screenshots and validation
+
+Actual Flutter renders at 390 × 844 with fictional book metadata:
+
+| Precise rates and time estimate | Supported desktop processing choice |
+| --- | --- |
+| ![Speed controls](images/speed-controls-preview.png) | ![Speed processing](images/speed-processing-preview.png) |
+
+See [journal and speed validation](JOURNAL_SPEED_VALIDATION.md).

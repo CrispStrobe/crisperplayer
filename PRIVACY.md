@@ -73,6 +73,24 @@ upload audio or played passages. The map also operates locally; other-device
 resume positions are not inferred as cumulative coverage. Optional progress sync continues to use the
 saved normal resume point while a trail is playing.
 
+The optional **Listening journal** is off by default. When enabled, it keeps
+dated physical playback intervals and player actions such as pauses, stops,
+chapter/track jumps, smart rewind and historical-position navigation. Entries
+include book and chapter titles where available, file paths and offsets, UTC
+timestamps, the observed local UTC offset, playback speed and action reasons.
+Replays remain separate records, including labeled Return Trail replays. No
+microphone recording, transcription or attention measurement is involved.
+
+Journal entries have no automatic expiry or count cap. Turning recording off
+keeps existing entries and stops future capture. **Clear journal** removes only
+the dated journal; **Clear listening history** also removes session history,
+Listening map coverage and Return Trail passages. Deleting a book removes its
+journal entries. These operations do not erase previously exported backups.
+Explicit library metadata backups include journal entries and can restore them
+without duplicating stable entry IDs. Journal data is not included in Plex or
+folder progress sync and is not uploaded by this feature. The local database
+and JSON exports use the device/OS protection described above.
+
 The browser player stores selected audio and progress in that browser's
 IndexedDB. Audio is processed locally, without an upload endpoint. Its progress
 backups contain metadata and sampled file fingerprints. GitHub hosts the public

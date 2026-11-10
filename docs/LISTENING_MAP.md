@@ -59,6 +59,10 @@ Coverage is not added to optional cloud progress sync; a remote resume position
 does not establish which intervening audio played. Audio is never uploaded by
 this feature. The separate Pages browser player does not yet have this map.
 
+To retain **when** each passage played, enable the separate optional
+[Listening journal](LISTENING_JOURNAL.md). It preserves dated replays and
+explicit pauses/jumps; the map remains a cumulative union counted once.
+
 ## Desktop CLI
 
 ```sh

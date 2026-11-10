@@ -21,7 +21,7 @@ builds a deterministic, speed-aware plan of up to three recent excerpts bounded
 by the saved anchor. Schema five adds `played_passages`; history clearing,
 managed-path adoption and explicit metadata backup/restore include these rows.
 The coordinator saves progress and a return bookmark before entering review.
-During review, ordinary progress, automatic bookmarks, new passage capture and
+During review, ordinary progress, automatic bookmarks, recent-passage capture and
 listening-session accounting are suppressed. Excerpt transitions use generation
 checks so queued native events cannot consume Up next or undo an explicit
 pause. Completion restores the exact physical anchor paused; only explicit
@@ -118,6 +118,41 @@ serialized. Credential writes are serialized separately to prevent concurrent
 GUI/CLI sign-ins from losing stored accounts. Offline playback and listening
 progress remain independent of remote transfer state.
 
+
+## Optional dated listening journal
+
+Schema seven adds `listening_journal` with stable UUIDs, UTC start/end times,
+captured UTC offset, source positions, action destinations, speed and title
+snapshots. The migration starts empty. Existing session endpoints and timeless
+coverage unions do not establish older passage dates.
+
+`PlayedRangeRecorder` also exposes validated consecutive position observations
+without retaining a recent queue. `ListeningJournalRecorder` uses these to
+extend one stable passage ID across checkpoints; replays and discontinuities
+start new IDs. Equal-position checkpoint reads preserve the original baseline.
+Opt-in/out, speed, source, pause, buffering and UTC-offset boundaries reset
+journal capture. Journal recording includes labeled Return Trail playback while
+normal progress and cumulative coverage retain their existing review isolation.
+
+`ListeningJournalService.page` uses indexed `(startedAtMs, id)` keyset paging
+with cursors bound to book/date filters. Date ranges return whole overlapping
+passages with their original timestamps. Journal queries flush pending samples
+but never navigate. Historical opening validates the destination, saves the
+current place as a durable bookmark and seeks paused without smart rewind.
+
+Journal-only deletion discards matching pending writes before deleting rows.
+Full history deletion pauses and resets every history/capture buffer. Metadata
+exports read related tables in one transaction; imports validate journal data
+and atomically merge stable IDs without changing established origins. Journal
+data has no automatic retention cap and is excluded from progress sync.
+
+## Speed processing
+
+`SpeedProcessing.configureForStartup` sets the supported media-kit pitch-control
+option before constructing any player. Automatic uses mpv's own pitch-preserving
+speed path; Legacy scaletempo retains the previous adapter behavior. The saved
+selection and current process's selection are distinct until restart. Other
+platforms retain their native processor. See [speed details](SPEED_PROCESSING.md).
 
 ## Distribution and browser player
 

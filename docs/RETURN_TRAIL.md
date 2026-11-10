@@ -54,6 +54,10 @@ The [Listening map](LISTENING_MAP.md) keeps a separate cumulative union of these
 recorded intervals. Earlier coverage stays visible after the recent 200-passage
 buffer rolls over; clearing history or deleting the book clears that union too.
 
+When separately enabled, the [Listening journal](LISTENING_JOURNAL.md) retains
+dated Return Trail replays and navigation actions. They are explicitly labeled
+as review playback and do not expand normal coverage or session totals.
+
 Before reviewing, the app saves normal progress and adds a **Return Trail ·
 saved place** bookmark. Up to five such bookmarks are retained per book. If the
 app closes during review, the regular resume point still opens at that saved

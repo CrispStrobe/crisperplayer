@@ -421,6 +421,7 @@ class LibraryService {
               ))
               .write(PlayedPassagesCompanion(filePath: Value(entry.value)));
           await db.remapCoverageFile(book.id, entry.key, entry.value);
+          await db.remapJournalFile(book.id, entry.key, entry.value);
         }
       });
     }

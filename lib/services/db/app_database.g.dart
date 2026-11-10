@@ -3643,6 +3643,874 @@ class PlaybackCoverageCompanion extends UpdateCompanion<CoverageRange> {
   }
 }
 
+class $ListeningJournalTable extends ListeningJournal
+    with TableInfo<$ListeningJournalTable, JournalRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ListeningJournalTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookTitleMeta = const VerificationMeta(
+    'bookTitle',
+  );
+  @override
+  late final GeneratedColumn<String> bookTitle = GeneratedColumn<String>(
+    'book_title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _chapterTitleMeta = const VerificationMeta(
+    'chapterTitle',
+  );
+  @override
+  late final GeneratedColumn<String> chapterTitle = GeneratedColumn<String>(
+    'chapter_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startMsMeta = const VerificationMeta(
+    'startMs',
+  );
+  @override
+  late final GeneratedColumn<int> startMs = GeneratedColumn<int>(
+    'start_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endMsMeta = const VerificationMeta('endMs');
+  @override
+  late final GeneratedColumn<int> endMs = GeneratedColumn<int>(
+    'end_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetFilePathMeta = const VerificationMeta(
+    'targetFilePath',
+  );
+  @override
+  late final GeneratedColumn<String> targetFilePath = GeneratedColumn<String>(
+    'target_file_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _targetPositionMsMeta = const VerificationMeta(
+    'targetPositionMs',
+  );
+  @override
+  late final GeneratedColumn<int> targetPositionMs = GeneratedColumn<int>(
+    'target_position_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startedAtMsMeta = const VerificationMeta(
+    'startedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> startedAtMs = GeneratedColumn<int>(
+    'started_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMsMeta = const VerificationMeta(
+    'endedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> endedAtMs = GeneratedColumn<int>(
+    'ended_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _utcOffsetMinutesMeta = const VerificationMeta(
+    'utcOffsetMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> utcOffsetMinutes = GeneratedColumn<int>(
+    'utc_offset_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _speedMeta = const VerificationMeta('speed');
+  @override
+  late final GeneratedColumn<double> speed = GeneratedColumn<double>(
+    'speed',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bookId,
+    kind,
+    bookTitle,
+    chapterTitle,
+    filePath,
+    startMs,
+    endMs,
+    targetFilePath,
+    targetPositionMs,
+    startedAtMs,
+    endedAtMs,
+    utcOffsetMinutes,
+    speed,
+    reason,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'listening_journal';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<JournalRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('book_title')) {
+      context.handle(
+        _bookTitleMeta,
+        bookTitle.isAcceptableOrUnknown(data['book_title']!, _bookTitleMeta),
+      );
+    }
+    if (data.containsKey('chapter_title')) {
+      context.handle(
+        _chapterTitleMeta,
+        chapterTitle.isAcceptableOrUnknown(
+          data['chapter_title']!,
+          _chapterTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('start_ms')) {
+      context.handle(
+        _startMsMeta,
+        startMs.isAcceptableOrUnknown(data['start_ms']!, _startMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startMsMeta);
+    }
+    if (data.containsKey('end_ms')) {
+      context.handle(
+        _endMsMeta,
+        endMs.isAcceptableOrUnknown(data['end_ms']!, _endMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endMsMeta);
+    }
+    if (data.containsKey('target_file_path')) {
+      context.handle(
+        _targetFilePathMeta,
+        targetFilePath.isAcceptableOrUnknown(
+          data['target_file_path']!,
+          _targetFilePathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('target_position_ms')) {
+      context.handle(
+        _targetPositionMsMeta,
+        targetPositionMs.isAcceptableOrUnknown(
+          data['target_position_ms']!,
+          _targetPositionMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('started_at_ms')) {
+      context.handle(
+        _startedAtMsMeta,
+        startedAtMs.isAcceptableOrUnknown(
+          data['started_at_ms']!,
+          _startedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMsMeta);
+    }
+    if (data.containsKey('ended_at_ms')) {
+      context.handle(
+        _endedAtMsMeta,
+        endedAtMs.isAcceptableOrUnknown(data['ended_at_ms']!, _endedAtMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtMsMeta);
+    }
+    if (data.containsKey('utc_offset_minutes')) {
+      context.handle(
+        _utcOffsetMinutesMeta,
+        utcOffsetMinutes.isAcceptableOrUnknown(
+          data['utc_offset_minutes']!,
+          _utcOffsetMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_utcOffsetMinutesMeta);
+    }
+    if (data.containsKey('speed')) {
+      context.handle(
+        _speedMeta,
+        speed.isAcceptableOrUnknown(data['speed']!, _speedMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  JournalRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return JournalRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      bookTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_title'],
+      )!,
+      chapterTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chapter_title'],
+      ),
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      startMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_ms'],
+      )!,
+      endMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_ms'],
+      )!,
+      targetFilePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_file_path'],
+      ),
+      targetPositionMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_position_ms'],
+      ),
+      startedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at_ms'],
+      )!,
+      endedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at_ms'],
+      )!,
+      utcOffsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}utc_offset_minutes'],
+      )!,
+      speed: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}speed'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
+    );
+  }
+
+  @override
+  $ListeningJournalTable createAlias(String alias) {
+    return $ListeningJournalTable(attachedDatabase, alias);
+  }
+}
+
+class JournalRecord extends DataClass implements Insertable<JournalRecord> {
+  final String id;
+  final String bookId;
+  final String kind;
+  final String bookTitle;
+  final String? chapterTitle;
+  final String filePath;
+  final int startMs;
+  final int endMs;
+  final String? targetFilePath;
+  final int? targetPositionMs;
+  final int startedAtMs;
+  final int endedAtMs;
+  final int utcOffsetMinutes;
+  final double speed;
+  final String? reason;
+  const JournalRecord({
+    required this.id,
+    required this.bookId,
+    required this.kind,
+    required this.bookTitle,
+    this.chapterTitle,
+    required this.filePath,
+    required this.startMs,
+    required this.endMs,
+    this.targetFilePath,
+    this.targetPositionMs,
+    required this.startedAtMs,
+    required this.endedAtMs,
+    required this.utcOffsetMinutes,
+    required this.speed,
+    this.reason,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['book_id'] = Variable<String>(bookId);
+    map['kind'] = Variable<String>(kind);
+    map['book_title'] = Variable<String>(bookTitle);
+    if (!nullToAbsent || chapterTitle != null) {
+      map['chapter_title'] = Variable<String>(chapterTitle);
+    }
+    map['file_path'] = Variable<String>(filePath);
+    map['start_ms'] = Variable<int>(startMs);
+    map['end_ms'] = Variable<int>(endMs);
+    if (!nullToAbsent || targetFilePath != null) {
+      map['target_file_path'] = Variable<String>(targetFilePath);
+    }
+    if (!nullToAbsent || targetPositionMs != null) {
+      map['target_position_ms'] = Variable<int>(targetPositionMs);
+    }
+    map['started_at_ms'] = Variable<int>(startedAtMs);
+    map['ended_at_ms'] = Variable<int>(endedAtMs);
+    map['utc_offset_minutes'] = Variable<int>(utcOffsetMinutes);
+    map['speed'] = Variable<double>(speed);
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
+    return map;
+  }
+
+  ListeningJournalCompanion toCompanion(bool nullToAbsent) {
+    return ListeningJournalCompanion(
+      id: Value(id),
+      bookId: Value(bookId),
+      kind: Value(kind),
+      bookTitle: Value(bookTitle),
+      chapterTitle: chapterTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chapterTitle),
+      filePath: Value(filePath),
+      startMs: Value(startMs),
+      endMs: Value(endMs),
+      targetFilePath: targetFilePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetFilePath),
+      targetPositionMs: targetPositionMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetPositionMs),
+      startedAtMs: Value(startedAtMs),
+      endedAtMs: Value(endedAtMs),
+      utcOffsetMinutes: Value(utcOffsetMinutes),
+      speed: Value(speed),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
+    );
+  }
+
+  factory JournalRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return JournalRecord(
+      id: serializer.fromJson<String>(json['id']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      bookTitle: serializer.fromJson<String>(json['bookTitle']),
+      chapterTitle: serializer.fromJson<String?>(json['chapterTitle']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      startMs: serializer.fromJson<int>(json['startMs']),
+      endMs: serializer.fromJson<int>(json['endMs']),
+      targetFilePath: serializer.fromJson<String?>(json['targetFilePath']),
+      targetPositionMs: serializer.fromJson<int?>(json['targetPositionMs']),
+      startedAtMs: serializer.fromJson<int>(json['startedAtMs']),
+      endedAtMs: serializer.fromJson<int>(json['endedAtMs']),
+      utcOffsetMinutes: serializer.fromJson<int>(json['utcOffsetMinutes']),
+      speed: serializer.fromJson<double>(json['speed']),
+      reason: serializer.fromJson<String?>(json['reason']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'bookId': serializer.toJson<String>(bookId),
+      'kind': serializer.toJson<String>(kind),
+      'bookTitle': serializer.toJson<String>(bookTitle),
+      'chapterTitle': serializer.toJson<String?>(chapterTitle),
+      'filePath': serializer.toJson<String>(filePath),
+      'startMs': serializer.toJson<int>(startMs),
+      'endMs': serializer.toJson<int>(endMs),
+      'targetFilePath': serializer.toJson<String?>(targetFilePath),
+      'targetPositionMs': serializer.toJson<int?>(targetPositionMs),
+      'startedAtMs': serializer.toJson<int>(startedAtMs),
+      'endedAtMs': serializer.toJson<int>(endedAtMs),
+      'utcOffsetMinutes': serializer.toJson<int>(utcOffsetMinutes),
+      'speed': serializer.toJson<double>(speed),
+      'reason': serializer.toJson<String?>(reason),
+    };
+  }
+
+  JournalRecord copyWith({
+    String? id,
+    String? bookId,
+    String? kind,
+    String? bookTitle,
+    Value<String?> chapterTitle = const Value.absent(),
+    String? filePath,
+    int? startMs,
+    int? endMs,
+    Value<String?> targetFilePath = const Value.absent(),
+    Value<int?> targetPositionMs = const Value.absent(),
+    int? startedAtMs,
+    int? endedAtMs,
+    int? utcOffsetMinutes,
+    double? speed,
+    Value<String?> reason = const Value.absent(),
+  }) => JournalRecord(
+    id: id ?? this.id,
+    bookId: bookId ?? this.bookId,
+    kind: kind ?? this.kind,
+    bookTitle: bookTitle ?? this.bookTitle,
+    chapterTitle: chapterTitle.present ? chapterTitle.value : this.chapterTitle,
+    filePath: filePath ?? this.filePath,
+    startMs: startMs ?? this.startMs,
+    endMs: endMs ?? this.endMs,
+    targetFilePath: targetFilePath.present
+        ? targetFilePath.value
+        : this.targetFilePath,
+    targetPositionMs: targetPositionMs.present
+        ? targetPositionMs.value
+        : this.targetPositionMs,
+    startedAtMs: startedAtMs ?? this.startedAtMs,
+    endedAtMs: endedAtMs ?? this.endedAtMs,
+    utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
+    speed: speed ?? this.speed,
+    reason: reason.present ? reason.value : this.reason,
+  );
+  JournalRecord copyWithCompanion(ListeningJournalCompanion data) {
+    return JournalRecord(
+      id: data.id.present ? data.id.value : this.id,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      bookTitle: data.bookTitle.present ? data.bookTitle.value : this.bookTitle,
+      chapterTitle: data.chapterTitle.present
+          ? data.chapterTitle.value
+          : this.chapterTitle,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      startMs: data.startMs.present ? data.startMs.value : this.startMs,
+      endMs: data.endMs.present ? data.endMs.value : this.endMs,
+      targetFilePath: data.targetFilePath.present
+          ? data.targetFilePath.value
+          : this.targetFilePath,
+      targetPositionMs: data.targetPositionMs.present
+          ? data.targetPositionMs.value
+          : this.targetPositionMs,
+      startedAtMs: data.startedAtMs.present
+          ? data.startedAtMs.value
+          : this.startedAtMs,
+      endedAtMs: data.endedAtMs.present ? data.endedAtMs.value : this.endedAtMs,
+      utcOffsetMinutes: data.utcOffsetMinutes.present
+          ? data.utcOffsetMinutes.value
+          : this.utcOffsetMinutes,
+      speed: data.speed.present ? data.speed.value : this.speed,
+      reason: data.reason.present ? data.reason.value : this.reason,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JournalRecord(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('kind: $kind, ')
+          ..write('bookTitle: $bookTitle, ')
+          ..write('chapterTitle: $chapterTitle, ')
+          ..write('filePath: $filePath, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs, ')
+          ..write('targetFilePath: $targetFilePath, ')
+          ..write('targetPositionMs: $targetPositionMs, ')
+          ..write('startedAtMs: $startedAtMs, ')
+          ..write('endedAtMs: $endedAtMs, ')
+          ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
+          ..write('speed: $speed, ')
+          ..write('reason: $reason')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bookId,
+    kind,
+    bookTitle,
+    chapterTitle,
+    filePath,
+    startMs,
+    endMs,
+    targetFilePath,
+    targetPositionMs,
+    startedAtMs,
+    endedAtMs,
+    utcOffsetMinutes,
+    speed,
+    reason,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is JournalRecord &&
+          other.id == this.id &&
+          other.bookId == this.bookId &&
+          other.kind == this.kind &&
+          other.bookTitle == this.bookTitle &&
+          other.chapterTitle == this.chapterTitle &&
+          other.filePath == this.filePath &&
+          other.startMs == this.startMs &&
+          other.endMs == this.endMs &&
+          other.targetFilePath == this.targetFilePath &&
+          other.targetPositionMs == this.targetPositionMs &&
+          other.startedAtMs == this.startedAtMs &&
+          other.endedAtMs == this.endedAtMs &&
+          other.utcOffsetMinutes == this.utcOffsetMinutes &&
+          other.speed == this.speed &&
+          other.reason == this.reason);
+}
+
+class ListeningJournalCompanion extends UpdateCompanion<JournalRecord> {
+  final Value<String> id;
+  final Value<String> bookId;
+  final Value<String> kind;
+  final Value<String> bookTitle;
+  final Value<String?> chapterTitle;
+  final Value<String> filePath;
+  final Value<int> startMs;
+  final Value<int> endMs;
+  final Value<String?> targetFilePath;
+  final Value<int?> targetPositionMs;
+  final Value<int> startedAtMs;
+  final Value<int> endedAtMs;
+  final Value<int> utcOffsetMinutes;
+  final Value<double> speed;
+  final Value<String?> reason;
+  final Value<int> rowid;
+  const ListeningJournalCompanion({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.bookTitle = const Value.absent(),
+    this.chapterTitle = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.startMs = const Value.absent(),
+    this.endMs = const Value.absent(),
+    this.targetFilePath = const Value.absent(),
+    this.targetPositionMs = const Value.absent(),
+    this.startedAtMs = const Value.absent(),
+    this.endedAtMs = const Value.absent(),
+    this.utcOffsetMinutes = const Value.absent(),
+    this.speed = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ListeningJournalCompanion.insert({
+    required String id,
+    required String bookId,
+    required String kind,
+    this.bookTitle = const Value.absent(),
+    this.chapterTitle = const Value.absent(),
+    required String filePath,
+    required int startMs,
+    required int endMs,
+    this.targetFilePath = const Value.absent(),
+    this.targetPositionMs = const Value.absent(),
+    required int startedAtMs,
+    required int endedAtMs,
+    required int utcOffsetMinutes,
+    this.speed = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       bookId = Value(bookId),
+       kind = Value(kind),
+       filePath = Value(filePath),
+       startMs = Value(startMs),
+       endMs = Value(endMs),
+       startedAtMs = Value(startedAtMs),
+       endedAtMs = Value(endedAtMs),
+       utcOffsetMinutes = Value(utcOffsetMinutes);
+  static Insertable<JournalRecord> custom({
+    Expression<String>? id,
+    Expression<String>? bookId,
+    Expression<String>? kind,
+    Expression<String>? bookTitle,
+    Expression<String>? chapterTitle,
+    Expression<String>? filePath,
+    Expression<int>? startMs,
+    Expression<int>? endMs,
+    Expression<String>? targetFilePath,
+    Expression<int>? targetPositionMs,
+    Expression<int>? startedAtMs,
+    Expression<int>? endedAtMs,
+    Expression<int>? utcOffsetMinutes,
+    Expression<double>? speed,
+    Expression<String>? reason,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookId != null) 'book_id': bookId,
+      if (kind != null) 'kind': kind,
+      if (bookTitle != null) 'book_title': bookTitle,
+      if (chapterTitle != null) 'chapter_title': chapterTitle,
+      if (filePath != null) 'file_path': filePath,
+      if (startMs != null) 'start_ms': startMs,
+      if (endMs != null) 'end_ms': endMs,
+      if (targetFilePath != null) 'target_file_path': targetFilePath,
+      if (targetPositionMs != null) 'target_position_ms': targetPositionMs,
+      if (startedAtMs != null) 'started_at_ms': startedAtMs,
+      if (endedAtMs != null) 'ended_at_ms': endedAtMs,
+      if (utcOffsetMinutes != null) 'utc_offset_minutes': utcOffsetMinutes,
+      if (speed != null) 'speed': speed,
+      if (reason != null) 'reason': reason,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ListeningJournalCompanion copyWith({
+    Value<String>? id,
+    Value<String>? bookId,
+    Value<String>? kind,
+    Value<String>? bookTitle,
+    Value<String?>? chapterTitle,
+    Value<String>? filePath,
+    Value<int>? startMs,
+    Value<int>? endMs,
+    Value<String?>? targetFilePath,
+    Value<int?>? targetPositionMs,
+    Value<int>? startedAtMs,
+    Value<int>? endedAtMs,
+    Value<int>? utcOffsetMinutes,
+    Value<double>? speed,
+    Value<String?>? reason,
+    Value<int>? rowid,
+  }) {
+    return ListeningJournalCompanion(
+      id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
+      kind: kind ?? this.kind,
+      bookTitle: bookTitle ?? this.bookTitle,
+      chapterTitle: chapterTitle ?? this.chapterTitle,
+      filePath: filePath ?? this.filePath,
+      startMs: startMs ?? this.startMs,
+      endMs: endMs ?? this.endMs,
+      targetFilePath: targetFilePath ?? this.targetFilePath,
+      targetPositionMs: targetPositionMs ?? this.targetPositionMs,
+      startedAtMs: startedAtMs ?? this.startedAtMs,
+      endedAtMs: endedAtMs ?? this.endedAtMs,
+      utcOffsetMinutes: utcOffsetMinutes ?? this.utcOffsetMinutes,
+      speed: speed ?? this.speed,
+      reason: reason ?? this.reason,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (bookTitle.present) {
+      map['book_title'] = Variable<String>(bookTitle.value);
+    }
+    if (chapterTitle.present) {
+      map['chapter_title'] = Variable<String>(chapterTitle.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (startMs.present) {
+      map['start_ms'] = Variable<int>(startMs.value);
+    }
+    if (endMs.present) {
+      map['end_ms'] = Variable<int>(endMs.value);
+    }
+    if (targetFilePath.present) {
+      map['target_file_path'] = Variable<String>(targetFilePath.value);
+    }
+    if (targetPositionMs.present) {
+      map['target_position_ms'] = Variable<int>(targetPositionMs.value);
+    }
+    if (startedAtMs.present) {
+      map['started_at_ms'] = Variable<int>(startedAtMs.value);
+    }
+    if (endedAtMs.present) {
+      map['ended_at_ms'] = Variable<int>(endedAtMs.value);
+    }
+    if (utcOffsetMinutes.present) {
+      map['utc_offset_minutes'] = Variable<int>(utcOffsetMinutes.value);
+    }
+    if (speed.present) {
+      map['speed'] = Variable<double>(speed.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ListeningJournalCompanion(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('kind: $kind, ')
+          ..write('bookTitle: $bookTitle, ')
+          ..write('chapterTitle: $chapterTitle, ')
+          ..write('filePath: $filePath, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs, ')
+          ..write('targetFilePath: $targetFilePath, ')
+          ..write('targetPositionMs: $targetPositionMs, ')
+          ..write('startedAtMs: $startedAtMs, ')
+          ..write('endedAtMs: $endedAtMs, ')
+          ..write('utcOffsetMinutes: $utcOffsetMinutes, ')
+          ..write('speed: $speed, ')
+          ..write('reason: $reason, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PlaybackQueueTable extends PlaybackQueue
     with TableInfo<$PlaybackQueueTable, PlaybackQueueData> {
   @override
@@ -4185,6 +5053,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PlaybackCoverageTable playbackCoverage = $PlaybackCoverageTable(
     this,
   );
+  late final $ListeningJournalTable listeningJournal = $ListeningJournalTable(
+    this,
+  );
   late final $PlaybackQueueTable playbackQueue = $PlaybackQueueTable(this);
   late final $RemoteLinksTable remoteLinks = $RemoteLinksTable(this);
   @override
@@ -4199,6 +5070,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     listeningHistory,
     playedPassages,
     playbackCoverage,
+    listeningJournal,
     playbackQueue,
     remoteLinks,
   ];
@@ -4245,6 +5117,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('playback_coverage', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'books',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('listening_journal', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -4417,6 +5296,26 @@ final class $$BooksTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _playbackCoverageRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ListeningJournalTable, List<JournalRecord>>
+  _listeningJournalRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.listeningJournal,
+    aliasName: $_aliasNameGenerator(db.books.id, db.listeningJournal.bookId),
+  );
+
+  $$ListeningJournalTableProcessedTableManager get listeningJournalRefs {
+    final manager = $$ListeningJournalTableTableManager(
+      $_db,
+      $_db.listeningJournal,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _listeningJournalRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -4694,6 +5593,31 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
           }) => $$PlaybackCoverageTableFilterComposer(
             $db: $db,
             $table: $db.playbackCoverage,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> listeningJournalRefs(
+    Expression<bool> Function($$ListeningJournalTableFilterComposer f) f,
+  ) {
+    final $$ListeningJournalTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.listeningJournal,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ListeningJournalTableFilterComposer(
+            $db: $db,
+            $table: $db.listeningJournal,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5081,6 +6005,31 @@ class $$BooksTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> listeningJournalRefs<T extends Object>(
+    Expression<T> Function($$ListeningJournalTableAnnotationComposer a) f,
+  ) {
+    final $$ListeningJournalTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.listeningJournal,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ListeningJournalTableAnnotationComposer(
+            $db: $db,
+            $table: $db.listeningJournal,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> playbackQueueRefs<T extends Object>(
     Expression<T> Function($$PlaybackQueueTableAnnotationComposer a) f,
   ) {
@@ -5152,6 +6101,7 @@ class $$BooksTableTableManager
             bool listeningHistoryRefs,
             bool playedPassagesRefs,
             bool playbackCoverageRefs,
+            bool listeningJournalRefs,
             bool playbackQueueRefs,
             bool remoteLinksRefs,
           })
@@ -5261,6 +6211,7 @@ class $$BooksTableTableManager
                 listeningHistoryRefs = false,
                 playedPassagesRefs = false,
                 playbackCoverageRefs = false,
+                listeningJournalRefs = false,
                 playbackQueueRefs = false,
                 remoteLinksRefs = false,
               }) {
@@ -5273,6 +6224,7 @@ class $$BooksTableTableManager
                     if (listeningHistoryRefs) db.listeningHistory,
                     if (playedPassagesRefs) db.playedPassages,
                     if (playbackCoverageRefs) db.playbackCoverage,
+                    if (listeningJournalRefs) db.listeningJournal,
                     if (playbackQueueRefs) db.playbackQueue,
                     if (remoteLinksRefs) db.remoteLinks,
                   ],
@@ -5393,6 +6345,27 @@ class $$BooksTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (listeningJournalRefs)
+                        await $_getPrefetchedData<
+                          Book,
+                          $BooksTable,
+                          JournalRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._listeningJournalRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).listeningJournalRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (playbackQueueRefs)
                         await $_getPrefetchedData<
                           Book,
@@ -5462,6 +6435,7 @@ typedef $$BooksTableProcessedTableManager =
         bool listeningHistoryRefs,
         bool playedPassagesRefs,
         bool playbackCoverageRefs,
+        bool listeningJournalRefs,
         bool playbackQueueRefs,
         bool remoteLinksRefs,
       })
@@ -7599,6 +8573,533 @@ typedef $$PlaybackCoverageTableProcessedTableManager =
       CoverageRange,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$ListeningJournalTableCreateCompanionBuilder =
+    ListeningJournalCompanion Function({
+      required String id,
+      required String bookId,
+      required String kind,
+      Value<String> bookTitle,
+      Value<String?> chapterTitle,
+      required String filePath,
+      required int startMs,
+      required int endMs,
+      Value<String?> targetFilePath,
+      Value<int?> targetPositionMs,
+      required int startedAtMs,
+      required int endedAtMs,
+      required int utcOffsetMinutes,
+      Value<double> speed,
+      Value<String?> reason,
+      Value<int> rowid,
+    });
+typedef $$ListeningJournalTableUpdateCompanionBuilder =
+    ListeningJournalCompanion Function({
+      Value<String> id,
+      Value<String> bookId,
+      Value<String> kind,
+      Value<String> bookTitle,
+      Value<String?> chapterTitle,
+      Value<String> filePath,
+      Value<int> startMs,
+      Value<int> endMs,
+      Value<String?> targetFilePath,
+      Value<int?> targetPositionMs,
+      Value<int> startedAtMs,
+      Value<int> endedAtMs,
+      Value<int> utcOffsetMinutes,
+      Value<double> speed,
+      Value<String?> reason,
+      Value<int> rowid,
+    });
+
+final class $$ListeningJournalTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $ListeningJournalTable, JournalRecord> {
+  $$ListeningJournalTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) => db.books.createAlias(
+    $_aliasNameGenerator(db.listeningJournal.bookId, db.books.id),
+  );
+
+  $$BooksTableProcessedTableManager get bookId {
+    final $_column = $_itemColumn<String>('book_id')!;
+
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ListeningJournalTableFilterComposer
+    extends Composer<_$AppDatabase, $ListeningJournalTable> {
+  $$ListeningJournalTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookTitle => $composableBuilder(
+    column: $table.bookTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chapterTitle => $composableBuilder(
+    column: $table.chapterTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetFilePath => $composableBuilder(
+    column: $table.targetFilePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetPositionMs => $composableBuilder(
+    column: $table.targetPositionMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAtMs => $composableBuilder(
+    column: $table.startedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAtMs => $composableBuilder(
+    column: $table.endedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get utcOffsetMinutes => $composableBuilder(
+    column: $table.utcOffsetMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get speed => $composableBuilder(
+    column: $table.speed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ListeningJournalTableOrderingComposer
+    extends Composer<_$AppDatabase, $ListeningJournalTable> {
+  $$ListeningJournalTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookTitle => $composableBuilder(
+    column: $table.bookTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chapterTitle => $composableBuilder(
+    column: $table.chapterTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetFilePath => $composableBuilder(
+    column: $table.targetFilePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetPositionMs => $composableBuilder(
+    column: $table.targetPositionMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAtMs => $composableBuilder(
+    column: $table.startedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAtMs => $composableBuilder(
+    column: $table.endedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get utcOffsetMinutes => $composableBuilder(
+    column: $table.utcOffsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get speed => $composableBuilder(
+    column: $table.speed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ListeningJournalTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ListeningJournalTable> {
+  $$ListeningJournalTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get bookTitle =>
+      $composableBuilder(column: $table.bookTitle, builder: (column) => column);
+
+  GeneratedColumn<String> get chapterTitle => $composableBuilder(
+    column: $table.chapterTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<int> get startMs =>
+      $composableBuilder(column: $table.startMs, builder: (column) => column);
+
+  GeneratedColumn<int> get endMs =>
+      $composableBuilder(column: $table.endMs, builder: (column) => column);
+
+  GeneratedColumn<String> get targetFilePath => $composableBuilder(
+    column: $table.targetFilePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get targetPositionMs => $composableBuilder(
+    column: $table.targetPositionMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startedAtMs => $composableBuilder(
+    column: $table.startedAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endedAtMs =>
+      $composableBuilder(column: $table.endedAtMs, builder: (column) => column);
+
+  GeneratedColumn<int> get utcOffsetMinutes => $composableBuilder(
+    column: $table.utcOffsetMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get speed =>
+      $composableBuilder(column: $table.speed, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ListeningJournalTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ListeningJournalTable,
+          JournalRecord,
+          $$ListeningJournalTableFilterComposer,
+          $$ListeningJournalTableOrderingComposer,
+          $$ListeningJournalTableAnnotationComposer,
+          $$ListeningJournalTableCreateCompanionBuilder,
+          $$ListeningJournalTableUpdateCompanionBuilder,
+          (JournalRecord, $$ListeningJournalTableReferences),
+          JournalRecord,
+          PrefetchHooks Function({bool bookId})
+        > {
+  $$ListeningJournalTableTableManager(
+    _$AppDatabase db,
+    $ListeningJournalTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ListeningJournalTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ListeningJournalTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ListeningJournalTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> bookTitle = const Value.absent(),
+                Value<String?> chapterTitle = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<int> startMs = const Value.absent(),
+                Value<int> endMs = const Value.absent(),
+                Value<String?> targetFilePath = const Value.absent(),
+                Value<int?> targetPositionMs = const Value.absent(),
+                Value<int> startedAtMs = const Value.absent(),
+                Value<int> endedAtMs = const Value.absent(),
+                Value<int> utcOffsetMinutes = const Value.absent(),
+                Value<double> speed = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ListeningJournalCompanion(
+                id: id,
+                bookId: bookId,
+                kind: kind,
+                bookTitle: bookTitle,
+                chapterTitle: chapterTitle,
+                filePath: filePath,
+                startMs: startMs,
+                endMs: endMs,
+                targetFilePath: targetFilePath,
+                targetPositionMs: targetPositionMs,
+                startedAtMs: startedAtMs,
+                endedAtMs: endedAtMs,
+                utcOffsetMinutes: utcOffsetMinutes,
+                speed: speed,
+                reason: reason,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String bookId,
+                required String kind,
+                Value<String> bookTitle = const Value.absent(),
+                Value<String?> chapterTitle = const Value.absent(),
+                required String filePath,
+                required int startMs,
+                required int endMs,
+                Value<String?> targetFilePath = const Value.absent(),
+                Value<int?> targetPositionMs = const Value.absent(),
+                required int startedAtMs,
+                required int endedAtMs,
+                required int utcOffsetMinutes,
+                Value<double> speed = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ListeningJournalCompanion.insert(
+                id: id,
+                bookId: bookId,
+                kind: kind,
+                bookTitle: bookTitle,
+                chapterTitle: chapterTitle,
+                filePath: filePath,
+                startMs: startMs,
+                endMs: endMs,
+                targetFilePath: targetFilePath,
+                targetPositionMs: targetPositionMs,
+                startedAtMs: startedAtMs,
+                endedAtMs: endedAtMs,
+                utcOffsetMinutes: utcOffsetMinutes,
+                speed: speed,
+                reason: reason,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ListeningJournalTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookId,
+                                referencedTable:
+                                    $$ListeningJournalTableReferences
+                                        ._bookIdTable(db),
+                                referencedColumn:
+                                    $$ListeningJournalTableReferences
+                                        ._bookIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ListeningJournalTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ListeningJournalTable,
+      JournalRecord,
+      $$ListeningJournalTableFilterComposer,
+      $$ListeningJournalTableOrderingComposer,
+      $$ListeningJournalTableAnnotationComposer,
+      $$ListeningJournalTableCreateCompanionBuilder,
+      $$ListeningJournalTableUpdateCompanionBuilder,
+      (JournalRecord, $$ListeningJournalTableReferences),
+      JournalRecord,
+      PrefetchHooks Function({bool bookId})
+    >;
 typedef $$PlaybackQueueTableCreateCompanionBuilder =
     PlaybackQueueCompanion Function({
       required String bookId,
@@ -8182,6 +9683,8 @@ class $AppDatabaseManager {
       $$PlayedPassagesTableTableManager(_db, _db.playedPassages);
   $$PlaybackCoverageTableTableManager get playbackCoverage =>
       $$PlaybackCoverageTableTableManager(_db, _db.playbackCoverage);
+  $$ListeningJournalTableTableManager get listeningJournal =>
+      $$ListeningJournalTableTableManager(_db, _db.listeningJournal);
   $$PlaybackQueueTableTableManager get playbackQueue =>
       $$PlaybackQueueTableTableManager(_db, _db.playbackQueue);
   $$RemoteLinksTableTableManager get remoteLinks =>

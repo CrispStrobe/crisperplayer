@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import '../../models/book_preferences.dart';
+import '../../models/listening_journal.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
@@ -111,6 +112,30 @@ class PlaybackCoverage extends Table {
   IntColumn get endMs => integer()();
 }
 
+/// Optional unbounded timestamped evidence and explicit player actions.
+@DataClassName('JournalRecord')
+class ListeningJournal extends Table {
+  TextColumn get id => text()();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
+  TextColumn get kind => text()();
+  TextColumn get bookTitle => text().withDefault(const Constant(''))();
+  TextColumn get chapterTitle => text().nullable()();
+  TextColumn get filePath => text()();
+  IntColumn get startMs => integer()();
+  IntColumn get endMs => integer()();
+  TextColumn get targetFilePath => text().nullable()();
+  IntColumn get targetPositionMs => integer().nullable()();
+  IntColumn get startedAtMs => integer()();
+  IntColumn get endedAtMs => integer()();
+  IntColumn get utcOffsetMinutes => integer()();
+  RealColumn get speed => real().withDefault(const Constant(1.0))();
+  TextColumn get reason => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 class PlaybackQueue extends Table {
   TextColumn get bookId => text().customConstraint(
     'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
@@ -141,6 +166,7 @@ class RemoteLinks extends Table {
     ListeningHistory,
     PlayedPassages,
     PlaybackCoverage,
+    ListeningJournal,
     PlaybackQueue,
     RemoteLinks,
   ],
@@ -149,13 +175,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'crisperplayer'));
   AppDatabase.forTesting(super.e);
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await _createPlayedPassageIndex();
       await _createCoverageIndex();
+      await _createJournalIndexes();
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) await m.createTable(bookTracks);
@@ -188,6 +215,12 @@ class AppDatabase extends _$AppDatabase {
           }
         }
       }
+      if (from < 7) {
+        await m.createTable(listeningJournal);
+        await _createJournalIndexes();
+        // Existing session endpoints and timeless coverage cannot supply
+        // historical timestamped physical evidence. Do not backfill them.
+      }
     },
     beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
   );
@@ -201,6 +234,90 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS playback_coverage_book_file_start '
     'ON playback_coverage (book_id, file_path, start_ms)',
   );
+
+  Future<void> _createJournalIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS listening_journal_time '
+      'ON listening_journal (started_at_ms DESC, id DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS listening_journal_book_time '
+      'ON listening_journal (book_id, started_at_ms DESC, id DESC)',
+    );
+  }
+
+  Future<void> saveJournalEntry(
+    ListeningJournalEntry input, {
+    bool restoring = false,
+  }) async {
+    final entry = ListeningJournalEntry.fromJson(input.toJson());
+    await transaction(() async {
+      if (await getBook(entry.bookId) == null) {
+        throw const FormatException('Journal book is missing');
+      }
+      final existing = await (select(
+        listeningJournal,
+      )..where((row) => row.id.equals(entry.id))).getSingleOrNull();
+      if (existing == null) {
+        await into(
+          listeningJournal,
+        ).insert(JournalRecord.fromJson(entry.toJson()).toCompanion(true));
+        return;
+      }
+      final previous = ListeningJournalEntry.fromJson(existing.toJson());
+      if (previous.samePlayedOrigin(entry)) {
+        if (entry.endMs >= previous.endMs &&
+            entry.endedAtMs >= previous.endedAtMs) {
+          if (entry.endMs == previous.endMs &&
+              entry.endedAtMs == previous.endedAtMs) {
+            return;
+          }
+          await (update(
+            listeningJournal,
+          )..where((row) => row.id.equals(entry.id))).write(
+            ListeningJournalCompanion(
+              endMs: Value(entry.endMs),
+              endedAtMs: Value(entry.endedAtMs),
+            ),
+          );
+          return;
+        }
+        if ((entry.endMs <= previous.endMs &&
+                entry.endedAtMs <= previous.endedAtMs) ||
+            restoring) {
+          return;
+        }
+        throw StateError(
+          'A journal checkpoint must advance position and time together',
+        );
+      }
+      if (previous.sameEvent(entry)) return;
+      // A restore merges stable UUIDs. Preserve an existing identity, captured
+      // timestamps and locally remapped paths. Only compatible played
+      // checkpoints above may extend the existing record.
+      if (restoring) return;
+      throw StateError(
+        'A journal ID cannot be reused for a different event or passage',
+      );
+    });
+  }
+
+  Future<void> remapJournalFile(
+    String bookId,
+    String oldPath,
+    String newPath,
+  ) => transaction(() async {
+    if (oldPath == newPath) return;
+    await (update(listeningJournal)..where(
+          (row) => row.bookId.equals(bookId) & row.filePath.equals(oldPath),
+        ))
+        .write(ListeningJournalCompanion(filePath: Value(newPath)));
+    await (update(listeningJournal)..where(
+          (row) =>
+              row.bookId.equals(bookId) & row.targetFilePath.equals(oldPath),
+        ))
+        .write(ListeningJournalCompanion(targetFilePath: Value(newPath)));
+  });
 
   Future<List<CoverageRange>> coverageFor(String bookId) =>
       (select(playbackCoverage)
@@ -436,6 +553,7 @@ class AppDatabase extends _$AppDatabase {
     await delete(listeningHistory).go();
     await delete(playedPassages).go();
     await delete(playbackCoverage).go();
+    await delete(listeningJournal).go();
   });
   Future<void> clearAllBookmarks() => delete(bookmarks).go();
   Future<void> clearHistoryForBook(String bookId) => transaction(() async {
@@ -445,6 +563,9 @@ class AppDatabase extends _$AppDatabase {
     await (delete(playedPassages)..where((t) => t.bookId.equals(bookId))).go();
     await (delete(
       playbackCoverage,
+    )..where((t) => t.bookId.equals(bookId))).go();
+    await (delete(
+      listeningJournal,
     )..where((t) => t.bookId.equals(bookId))).go();
   });
   Future<void> clearBookmarksForBook(String bookId) =>
@@ -457,6 +578,7 @@ class AppDatabase extends _$AppDatabase {
     final tracks = await select(bookTracks).get();
     final passages = await select(playedPassages).get();
     final coverage = await select(playbackCoverage).get();
+    final journal = await select(listeningJournal).get();
     return {
       'version': schemaVersion,
       'queue': (await queue()).map((e) => e.toJson()).toList(),
@@ -466,6 +588,7 @@ class AppDatabase extends _$AppDatabase {
       'tracks': tracks.map((t) => t.toJson()).toList(),
       'playedPassages': passages.map((p) => p.toJson()).toList(),
       'playbackCoverage': coverage.map((range) => range.toJson()).toList(),
+      'listeningJournal': journal.map((entry) => entry.toJson()).toList(),
       'exportedAt': DateTime.now().toIso8601String(),
       'books': bks
           .map(
@@ -552,6 +675,7 @@ class AppDatabase extends _$AppDatabase {
       'remoteLinks',
       'playedPassages',
       'playbackCoverage',
+      'listeningJournal',
     ]) {
       if (data[key] != null && data[key] is! List) {
         throw FormatException('Invalid $key');
@@ -605,6 +729,17 @@ class AppDatabase extends _$AppDatabase {
           endMs: row['endMs'] as int,
         ),
       );
+    }
+    final journal = <ListeningJournalEntry>[];
+    for (final row in data['listeningJournal'] as List? ?? []) {
+      if (row is! Map) throw const FormatException('Invalid listening journal');
+      try {
+        journal.add(
+          ListeningJournalEntry.fromJson(row.cast<String, dynamic>()),
+        );
+      } on TypeError {
+        throw const FormatException('Invalid listening journal');
+      }
     }
     await transaction(() async {
       final booksJson = (data['books'] as List?) ?? [];
@@ -761,6 +896,9 @@ class AppDatabase extends _$AppDatabase {
           startMs: range.startMs.value,
           endMs: range.endMs.value,
         );
+      }
+      for (final entry in journal) {
+        await saveJournalEntry(entry, restoring: true);
       }
     });
   }

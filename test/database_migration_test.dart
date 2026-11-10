@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  for (final prior in [1, 2, 3, 4, 5]) {
+  for (final prior in [1, 2, 3, 4, 5, 6]) {
     test(
       'version-$prior library upgrades without losing books or bookmarks',
       () async {
@@ -37,7 +37,10 @@ void main() {
             ),
           );
           // Reconstruct the actual older schema, including pre-coverage v5.
-          await db.customStatement('DROP TABLE playback_coverage');
+          await db.customStatement('DROP TABLE listening_journal');
+          if (prior < 6) {
+            await db.customStatement('DROP TABLE playback_coverage');
+          }
           if (prior < 5) await db.customStatement('DROP TABLE played_passages');
           if (prior < 4) await db.customStatement('DROP TABLE remote_links');
           if (prior < 3) {
@@ -68,7 +71,8 @@ void main() {
           final version = await db
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(version.read<int>('user_version'), 6);
+          expect(version.read<int>('user_version'), 7);
+          expect(await db.select(db.listeningJournal).get(), isEmpty);
           expect(await db.playedPassagesFor('a'), isEmpty);
           expect(await db.coverageFor('a'), isEmpty);
           final indexes = await db
@@ -133,6 +137,7 @@ void main() {
                 ),
               );
         }
+        await db.customStatement('DROP TABLE listening_journal');
         await db.customStatement('DROP TABLE playback_coverage');
         await db.customStatement('PRAGMA user_version = 5');
         await db.close();
@@ -145,6 +150,7 @@ void main() {
         );
         expect((await db.getBook('a'))!.lastPositionMs, 90000);
         expect(await db.historyFor('a'), hasLength(1));
+        expect(await db.select(db.listeningJournal).get(), isEmpty);
       } finally {
         await db.close();
         await dir.delete(recursive: true);

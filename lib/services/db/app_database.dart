@@ -83,6 +83,20 @@ class ListeningHistory extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Physical audio intervals observed while playing, without seek gaps.
+/// The newest 200 ranges per book are retained for local Return Trail replays.
+@DataClassName('PlayedPassage')
+class PlayedPassages extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
+  TextColumn get filePath => text()();
+  IntColumn get startMs => integer()();
+  IntColumn get endMs => integer()();
+  IntColumn get heardAtMs => integer()();
+}
+
 class PlaybackQueue extends Table {
   TextColumn get bookId => text().customConstraint(
     'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
@@ -111,6 +125,7 @@ class RemoteLinks extends Table {
     Chapters,
     Bookmarks,
     ListeningHistory,
+    PlayedPassages,
     PlaybackQueue,
     RemoteLinks,
   ],
@@ -119,10 +134,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'crisperplayer'));
   AppDatabase.forTesting(super.e);
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) => m.createAll(),
+    onCreate: (m) async {
+      await m.createAll();
+      await _createPlayedPassageIndex();
+    },
     onUpgrade: (m, from, to) async {
       if (from < 2) await m.createTable(bookTracks);
       if (from < 3) {
@@ -134,8 +152,34 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(playbackQueue);
       }
       if (from < 4) await m.createTable(remoteLinks);
+      if (from < 5) {
+        await m.createTable(playedPassages);
+        await _createPlayedPassageIndex();
+      }
     },
     beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
+  );
+
+  Future<void> _createPlayedPassageIndex() => customStatement(
+    'CREATE INDEX IF NOT EXISTS played_passages_book_recency '
+    'ON played_passages (book_id, heard_at_ms DESC, id DESC)',
+  );
+
+  Future<List<PlayedPassage>> playedPassagesFor(String bookId) =>
+      (select(playedPassages)
+            ..where((p) => p.bookId.equals(bookId))
+            ..orderBy([
+              (p) => OrderingTerm.desc(p.heardAtMs),
+              (p) => OrderingTerm.desc(p.id),
+            ])
+            ..limit(200))
+          .get();
+
+  Future<void> prunePlayedPassages(String bookId) => customStatement(
+    'DELETE FROM played_passages WHERE book_id = ? AND id NOT IN '
+    '(SELECT id FROM played_passages WHERE book_id = ? '
+    'ORDER BY heard_at_ms DESC, id DESC LIMIT 200)',
+    [bookId, bookId],
   );
   Future<List<BookTrack>> tracksFor(String bookId) =>
       (select(bookTracks)
@@ -246,10 +290,17 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<void> clearAllHistory() => delete(listeningHistory).go();
+  Future<void> clearAllHistory() => transaction(() async {
+    await delete(listeningHistory).go();
+    await delete(playedPassages).go();
+  });
   Future<void> clearAllBookmarks() => delete(bookmarks).go();
-  Future<void> clearHistoryForBook(String bookId) =>
-      (delete(listeningHistory)..where((t) => t.bookId.equals(bookId))).go();
+  Future<void> clearHistoryForBook(String bookId) => transaction(() async {
+    await (delete(
+      listeningHistory,
+    )..where((t) => t.bookId.equals(bookId))).go();
+    await (delete(playedPassages)..where((t) => t.bookId.equals(bookId))).go();
+  });
   Future<void> clearBookmarksForBook(String bookId) =>
       (delete(bookmarks)..where((t) => t.bookId.equals(bookId))).go();
   Future<Map<String, dynamic>> exportAllJson() async {
@@ -258,6 +309,7 @@ class AppDatabase extends _$AppDatabase {
     final bms = await select(bookmarks).get();
     final hist = await select(listeningHistory).get();
     final tracks = await select(bookTracks).get();
+    final passages = await select(playedPassages).get();
     return {
       'version': schemaVersion,
       'queue': (await queue()).map((e) => e.toJson()).toList(),
@@ -265,6 +317,7 @@ class AppDatabase extends _$AppDatabase {
         remoteLinks,
       ).get()).map((e) => e.toJson()).toList(),
       'tracks': tracks.map((t) => t.toJson()).toList(),
+      'playedPassages': passages.map((p) => p.toJson()).toList(),
       'exportedAt': DateTime.now().toIso8601String(),
       'books': bks
           .map(
@@ -349,10 +402,38 @@ class AppDatabase extends _$AppDatabase {
       'history',
       'queue',
       'remoteLinks',
+      'playedPassages',
     ]) {
       if (data[key] != null && data[key] is! List) {
         throw FormatException('Invalid $key');
       }
+    }
+    final passages = <PlayedPassagesCompanion>[];
+    for (final row in data['playedPassages'] as List? ?? []) {
+      if (row is! Map ||
+          row['bookId'] is! String ||
+          (row['bookId'] as String).isEmpty ||
+          row['filePath'] is! String ||
+          (row['filePath'] as String).isEmpty ||
+          row['startMs'] is! int ||
+          row['endMs'] is! int ||
+          row['heardAtMs'] is! int ||
+          (row['startMs'] as int) < 0 ||
+          (row['endMs'] as int) <= (row['startMs'] as int) ||
+          (row['heardAtMs'] as int) < 0) {
+        throw const FormatException('Invalid played passage');
+      }
+      // Integer row IDs belong to this database, not the backup. Importing
+      // them could overwrite an unrelated book's local passage.
+      passages.add(
+        PlayedPassagesCompanion.insert(
+          bookId: row['bookId'] as String,
+          filePath: row['filePath'] as String,
+          startMs: row['startMs'] as int,
+          endMs: row['endMs'] as int,
+          heardAtMs: row['heardAtMs'] as int,
+        ),
+      );
     }
     await transaction(() async {
       final booksJson = (data['books'] as List?) ?? [];
@@ -464,6 +545,30 @@ class AppDatabase extends _$AppDatabase {
             speed: Value((mm['speed'] as num?)?.toDouble() ?? 1.0),
           ),
         );
+      }
+      final passageBooks = <String>{};
+      for (final passage in passages) {
+        final bookId = passage.bookId.value;
+        if (!passageBooks.contains(bookId) && await getBook(bookId) == null) {
+          throw const FormatException('Played passage book is missing');
+        }
+        passageBooks.add(bookId);
+        final existing =
+            await (select(playedPassages)
+                  ..where(
+                    (p) =>
+                        p.bookId.equals(bookId) &
+                        p.filePath.equals(passage.filePath.value) &
+                        p.startMs.equals(passage.startMs.value) &
+                        p.endMs.equals(passage.endMs.value) &
+                        p.heardAtMs.equals(passage.heardAtMs.value),
+                  )
+                  ..limit(1))
+                .getSingleOrNull();
+        if (existing == null) await into(playedPassages).insert(passage);
+      }
+      for (final bookId in passageBooks) {
+        await prunePlayedPassages(bookId);
       }
     });
   }

@@ -2903,6 +2903,403 @@ class ListeningHistoryCompanion extends UpdateCompanion<ListeningHistoryData> {
   }
 }
 
+class $PlayedPassagesTable extends PlayedPassages
+    with TableInfo<$PlayedPassagesTable, PlayedPassage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlayedPassagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startMsMeta = const VerificationMeta(
+    'startMs',
+  );
+  @override
+  late final GeneratedColumn<int> startMs = GeneratedColumn<int>(
+    'start_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endMsMeta = const VerificationMeta('endMs');
+  @override
+  late final GeneratedColumn<int> endMs = GeneratedColumn<int>(
+    'end_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _heardAtMsMeta = const VerificationMeta(
+    'heardAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> heardAtMs = GeneratedColumn<int>(
+    'heard_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bookId,
+    filePath,
+    startMs,
+    endMs,
+    heardAtMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'played_passages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PlayedPassage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('start_ms')) {
+      context.handle(
+        _startMsMeta,
+        startMs.isAcceptableOrUnknown(data['start_ms']!, _startMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startMsMeta);
+    }
+    if (data.containsKey('end_ms')) {
+      context.handle(
+        _endMsMeta,
+        endMs.isAcceptableOrUnknown(data['end_ms']!, _endMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endMsMeta);
+    }
+    if (data.containsKey('heard_at_ms')) {
+      context.handle(
+        _heardAtMsMeta,
+        heardAtMs.isAcceptableOrUnknown(data['heard_at_ms']!, _heardAtMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_heardAtMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PlayedPassage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlayedPassage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      startMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_ms'],
+      )!,
+      endMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_ms'],
+      )!,
+      heardAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}heard_at_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $PlayedPassagesTable createAlias(String alias) {
+    return $PlayedPassagesTable(attachedDatabase, alias);
+  }
+}
+
+class PlayedPassage extends DataClass implements Insertable<PlayedPassage> {
+  final int id;
+  final String bookId;
+  final String filePath;
+  final int startMs;
+  final int endMs;
+  final int heardAtMs;
+  const PlayedPassage({
+    required this.id,
+    required this.bookId,
+    required this.filePath,
+    required this.startMs,
+    required this.endMs,
+    required this.heardAtMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['book_id'] = Variable<String>(bookId);
+    map['file_path'] = Variable<String>(filePath);
+    map['start_ms'] = Variable<int>(startMs);
+    map['end_ms'] = Variable<int>(endMs);
+    map['heard_at_ms'] = Variable<int>(heardAtMs);
+    return map;
+  }
+
+  PlayedPassagesCompanion toCompanion(bool nullToAbsent) {
+    return PlayedPassagesCompanion(
+      id: Value(id),
+      bookId: Value(bookId),
+      filePath: Value(filePath),
+      startMs: Value(startMs),
+      endMs: Value(endMs),
+      heardAtMs: Value(heardAtMs),
+    );
+  }
+
+  factory PlayedPassage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PlayedPassage(
+      id: serializer.fromJson<int>(json['id']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      startMs: serializer.fromJson<int>(json['startMs']),
+      endMs: serializer.fromJson<int>(json['endMs']),
+      heardAtMs: serializer.fromJson<int>(json['heardAtMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bookId': serializer.toJson<String>(bookId),
+      'filePath': serializer.toJson<String>(filePath),
+      'startMs': serializer.toJson<int>(startMs),
+      'endMs': serializer.toJson<int>(endMs),
+      'heardAtMs': serializer.toJson<int>(heardAtMs),
+    };
+  }
+
+  PlayedPassage copyWith({
+    int? id,
+    String? bookId,
+    String? filePath,
+    int? startMs,
+    int? endMs,
+    int? heardAtMs,
+  }) => PlayedPassage(
+    id: id ?? this.id,
+    bookId: bookId ?? this.bookId,
+    filePath: filePath ?? this.filePath,
+    startMs: startMs ?? this.startMs,
+    endMs: endMs ?? this.endMs,
+    heardAtMs: heardAtMs ?? this.heardAtMs,
+  );
+  PlayedPassage copyWithCompanion(PlayedPassagesCompanion data) {
+    return PlayedPassage(
+      id: data.id.present ? data.id.value : this.id,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      startMs: data.startMs.present ? data.startMs.value : this.startMs,
+      endMs: data.endMs.present ? data.endMs.value : this.endMs,
+      heardAtMs: data.heardAtMs.present ? data.heardAtMs.value : this.heardAtMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlayedPassage(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('filePath: $filePath, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs, ')
+          ..write('heardAtMs: $heardAtMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, bookId, filePath, startMs, endMs, heardAtMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PlayedPassage &&
+          other.id == this.id &&
+          other.bookId == this.bookId &&
+          other.filePath == this.filePath &&
+          other.startMs == this.startMs &&
+          other.endMs == this.endMs &&
+          other.heardAtMs == this.heardAtMs);
+}
+
+class PlayedPassagesCompanion extends UpdateCompanion<PlayedPassage> {
+  final Value<int> id;
+  final Value<String> bookId;
+  final Value<String> filePath;
+  final Value<int> startMs;
+  final Value<int> endMs;
+  final Value<int> heardAtMs;
+  const PlayedPassagesCompanion({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.startMs = const Value.absent(),
+    this.endMs = const Value.absent(),
+    this.heardAtMs = const Value.absent(),
+  });
+  PlayedPassagesCompanion.insert({
+    this.id = const Value.absent(),
+    required String bookId,
+    required String filePath,
+    required int startMs,
+    required int endMs,
+    required int heardAtMs,
+  }) : bookId = Value(bookId),
+       filePath = Value(filePath),
+       startMs = Value(startMs),
+       endMs = Value(endMs),
+       heardAtMs = Value(heardAtMs);
+  static Insertable<PlayedPassage> custom({
+    Expression<int>? id,
+    Expression<String>? bookId,
+    Expression<String>? filePath,
+    Expression<int>? startMs,
+    Expression<int>? endMs,
+    Expression<int>? heardAtMs,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookId != null) 'book_id': bookId,
+      if (filePath != null) 'file_path': filePath,
+      if (startMs != null) 'start_ms': startMs,
+      if (endMs != null) 'end_ms': endMs,
+      if (heardAtMs != null) 'heard_at_ms': heardAtMs,
+    });
+  }
+
+  PlayedPassagesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? bookId,
+    Value<String>? filePath,
+    Value<int>? startMs,
+    Value<int>? endMs,
+    Value<int>? heardAtMs,
+  }) {
+    return PlayedPassagesCompanion(
+      id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
+      filePath: filePath ?? this.filePath,
+      startMs: startMs ?? this.startMs,
+      endMs: endMs ?? this.endMs,
+      heardAtMs: heardAtMs ?? this.heardAtMs,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (startMs.present) {
+      map['start_ms'] = Variable<int>(startMs.value);
+    }
+    if (endMs.present) {
+      map['end_ms'] = Variable<int>(endMs.value);
+    }
+    if (heardAtMs.present) {
+      map['heard_at_ms'] = Variable<int>(heardAtMs.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlayedPassagesCompanion(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('filePath: $filePath, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs, ')
+          ..write('heardAtMs: $heardAtMs')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PlaybackQueueTable extends PlaybackQueue
     with TableInfo<$PlaybackQueueTable, PlaybackQueueData> {
   @override
@@ -3441,6 +3838,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ListeningHistoryTable listeningHistory = $ListeningHistoryTable(
     this,
   );
+  late final $PlayedPassagesTable playedPassages = $PlayedPassagesTable(this);
   late final $PlaybackQueueTable playbackQueue = $PlaybackQueueTable(this);
   late final $RemoteLinksTable remoteLinks = $RemoteLinksTable(this);
   @override
@@ -3453,6 +3851,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     chapters,
     bookmarks,
     listeningHistory,
+    playedPassages,
     playbackQueue,
     remoteLinks,
   ];
@@ -3485,6 +3884,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('listening_history', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'books',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('played_passages', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -3620,6 +4026,24 @@ final class $$BooksTableReferences
     final cache = $_typedResult.readTableOrNull(
       _listeningHistoryRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PlayedPassagesTable, List<PlayedPassage>>
+  _playedPassagesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.playedPassages,
+    aliasName: $_aliasNameGenerator(db.books.id, db.playedPassages.bookId),
+  );
+
+  $$PlayedPassagesTableProcessedTableManager get playedPassagesRefs {
+    final manager = $$PlayedPassagesTableTableManager(
+      $_db,
+      $_db.playedPassages,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_playedPassagesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -3846,6 +4270,31 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
           }) => $$ListeningHistoryTableFilterComposer(
             $db: $db,
             $table: $db.listeningHistory,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> playedPassagesRefs(
+    Expression<bool> Function($$PlayedPassagesTableFilterComposer f) f,
+  ) {
+    final $$PlayedPassagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playedPassages,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlayedPassagesTableFilterComposer(
+            $db: $db,
+            $table: $db.playedPassages,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4183,6 +4632,31 @@ class $$BooksTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> playedPassagesRefs<T extends Object>(
+    Expression<T> Function($$PlayedPassagesTableAnnotationComposer a) f,
+  ) {
+    final $$PlayedPassagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playedPassages,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlayedPassagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playedPassages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> playbackQueueRefs<T extends Object>(
     Expression<T> Function($$PlaybackQueueTableAnnotationComposer a) f,
   ) {
@@ -4252,6 +4726,7 @@ class $$BooksTableTableManager
             bool chaptersRefs,
             bool bookmarksRefs,
             bool listeningHistoryRefs,
+            bool playedPassagesRefs,
             bool playbackQueueRefs,
             bool remoteLinksRefs,
           })
@@ -4359,6 +4834,7 @@ class $$BooksTableTableManager
                 chaptersRefs = false,
                 bookmarksRefs = false,
                 listeningHistoryRefs = false,
+                playedPassagesRefs = false,
                 playbackQueueRefs = false,
                 remoteLinksRefs = false,
               }) {
@@ -4369,6 +4845,7 @@ class $$BooksTableTableManager
                     if (chaptersRefs) db.chapters,
                     if (bookmarksRefs) db.bookmarks,
                     if (listeningHistoryRefs) db.listeningHistory,
+                    if (playedPassagesRefs) db.playedPassages,
                     if (playbackQueueRefs) db.playbackQueue,
                     if (remoteLinksRefs) db.remoteLinks,
                   ],
@@ -4447,6 +4924,27 @@ class $$BooksTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (playedPassagesRefs)
+                        await $_getPrefetchedData<
+                          Book,
+                          $BooksTable,
+                          PlayedPassage
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._playedPassagesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).playedPassagesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (playbackQueueRefs)
                         await $_getPrefetchedData<
                           Book,
@@ -4514,6 +5012,7 @@ typedef $$BooksTableProcessedTableManager =
         bool chaptersRefs,
         bool bookmarksRefs,
         bool listeningHistoryRefs,
+        bool playedPassagesRefs,
         bool playbackQueueRefs,
         bool remoteLinksRefs,
       })
@@ -5992,6 +6491,344 @@ typedef $$ListeningHistoryTableProcessedTableManager =
       ListeningHistoryData,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$PlayedPassagesTableCreateCompanionBuilder =
+    PlayedPassagesCompanion Function({
+      Value<int> id,
+      required String bookId,
+      required String filePath,
+      required int startMs,
+      required int endMs,
+      required int heardAtMs,
+    });
+typedef $$PlayedPassagesTableUpdateCompanionBuilder =
+    PlayedPassagesCompanion Function({
+      Value<int> id,
+      Value<String> bookId,
+      Value<String> filePath,
+      Value<int> startMs,
+      Value<int> endMs,
+      Value<int> heardAtMs,
+    });
+
+final class $$PlayedPassagesTableReferences
+    extends BaseReferences<_$AppDatabase, $PlayedPassagesTable, PlayedPassage> {
+  $$PlayedPassagesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) => db.books.createAlias(
+    $_aliasNameGenerator(db.playedPassages.bookId, db.books.id),
+  );
+
+  $$BooksTableProcessedTableManager get bookId {
+    final $_column = $_itemColumn<String>('book_id')!;
+
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PlayedPassagesTableFilterComposer
+    extends Composer<_$AppDatabase, $PlayedPassagesTable> {
+  $$PlayedPassagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get heardAtMs => $composableBuilder(
+    column: $table.heardAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlayedPassagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlayedPassagesTable> {
+  $$PlayedPassagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get heardAtMs => $composableBuilder(
+    column: $table.heardAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlayedPassagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlayedPassagesTable> {
+  $$PlayedPassagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<int> get startMs =>
+      $composableBuilder(column: $table.startMs, builder: (column) => column);
+
+  GeneratedColumn<int> get endMs =>
+      $composableBuilder(column: $table.endMs, builder: (column) => column);
+
+  GeneratedColumn<int> get heardAtMs =>
+      $composableBuilder(column: $table.heardAtMs, builder: (column) => column);
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlayedPassagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlayedPassagesTable,
+          PlayedPassage,
+          $$PlayedPassagesTableFilterComposer,
+          $$PlayedPassagesTableOrderingComposer,
+          $$PlayedPassagesTableAnnotationComposer,
+          $$PlayedPassagesTableCreateCompanionBuilder,
+          $$PlayedPassagesTableUpdateCompanionBuilder,
+          (PlayedPassage, $$PlayedPassagesTableReferences),
+          PlayedPassage,
+          PrefetchHooks Function({bool bookId})
+        > {
+  $$PlayedPassagesTableTableManager(
+    _$AppDatabase db,
+    $PlayedPassagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlayedPassagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlayedPassagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlayedPassagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<int> startMs = const Value.absent(),
+                Value<int> endMs = const Value.absent(),
+                Value<int> heardAtMs = const Value.absent(),
+              }) => PlayedPassagesCompanion(
+                id: id,
+                bookId: bookId,
+                filePath: filePath,
+                startMs: startMs,
+                endMs: endMs,
+                heardAtMs: heardAtMs,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String bookId,
+                required String filePath,
+                required int startMs,
+                required int endMs,
+                required int heardAtMs,
+              }) => PlayedPassagesCompanion.insert(
+                id: id,
+                bookId: bookId,
+                filePath: filePath,
+                startMs: startMs,
+                endMs: endMs,
+                heardAtMs: heardAtMs,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PlayedPassagesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookId,
+                                referencedTable: $$PlayedPassagesTableReferences
+                                    ._bookIdTable(db),
+                                referencedColumn:
+                                    $$PlayedPassagesTableReferences
+                                        ._bookIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PlayedPassagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlayedPassagesTable,
+      PlayedPassage,
+      $$PlayedPassagesTableFilterComposer,
+      $$PlayedPassagesTableOrderingComposer,
+      $$PlayedPassagesTableAnnotationComposer,
+      $$PlayedPassagesTableCreateCompanionBuilder,
+      $$PlayedPassagesTableUpdateCompanionBuilder,
+      (PlayedPassage, $$PlayedPassagesTableReferences),
+      PlayedPassage,
+      PrefetchHooks Function({bool bookId})
+    >;
 typedef $$PlaybackQueueTableCreateCompanionBuilder =
     PlaybackQueueCompanion Function({
       required String bookId,
@@ -6571,6 +7408,8 @@ class $AppDatabaseManager {
       $$BookmarksTableTableManager(_db, _db.bookmarks);
   $$ListeningHistoryTableTableManager get listeningHistory =>
       $$ListeningHistoryTableTableManager(_db, _db.listeningHistory);
+  $$PlayedPassagesTableTableManager get playedPassages =>
+      $$PlayedPassagesTableTableManager(_db, _db.playedPassages);
   $$PlaybackQueueTableTableManager get playbackQueue =>
       $$PlaybackQueueTableTableManager(_db, _db.playbackQueue);
   $$RemoteLinksTableTableManager get remoteLinks =>

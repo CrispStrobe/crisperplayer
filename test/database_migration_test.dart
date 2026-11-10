@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  for (final prior in [1, 2, 3]) {
+  for (final prior in [1, 2, 3, 4]) {
     test(
       'version-$prior library upgrades without losing books or bookmarks',
       () async {
@@ -36,8 +36,9 @@ void main() {
               createdAtMs: 1,
             ),
           );
-          // Remove v3 additions to reconstruct the actual older schema.
-          await db.customStatement('DROP TABLE remote_links');
+          // Reconstruct the actual older schema, including pre-trail v4.
+          await db.customStatement('DROP TABLE played_passages');
+          if (prior < 4) await db.customStatement('DROP TABLE remote_links');
           if (prior < 3) {
             await db.customStatement('DROP TABLE playback_queue');
             for (final column in [
@@ -66,7 +67,15 @@ void main() {
           final version = await db
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(version.read<int>('user_version'), 4);
+          expect(version.read<int>('user_version'), 5);
+          expect(await db.playedPassagesFor('a'), isEmpty);
+          final indexes = await db
+              .customSelect("PRAGMA index_list('played_passages')")
+              .get();
+          expect(
+            indexes.map((row) => row.read<String>('name')),
+            contains('played_passages_book_recency'),
+          );
         } finally {
           await db.close();
           await dir.delete(recursive: true);

@@ -13,6 +13,24 @@ class SettingsService extends ChangeNotifier {
       (_p.getDouble('playback_speed') ?? 1.0).clamp(0.5, 3.0);
   set playbackSpeed(double v) =>
       _changed(_p.setDouble('playback_speed', v.clamp(0.5, 3.0)));
+  bool get listeningJournalEnabled =>
+      _p.getBool('listening_journal_enabled') ?? false;
+  set listeningJournalEnabled(bool value) =>
+      _changed(_p.setBool('listening_journal_enabled', value));
+  String get desktopSpeedProcessing {
+    final value = _p.getString('desktop_speed_processing') ?? 'automatic';
+    return ['automatic', 'legacyScaletempo'].contains(value)
+        ? value
+        : 'automatic';
+  }
+
+  set desktopSpeedProcessing(String value) {
+    if (!['automatic', 'legacyScaletempo'].contains(value)) {
+      throw const FormatException('Unknown desktop speed processing mode');
+    }
+    _changed(_p.setString('desktop_speed_processing', value));
+  }
+
   bool get showWaveform => _p.getBool('show_waveform') ?? true;
   set showWaveform(bool value) => _changed(_p.setBool('show_waveform', value));
   double get volume => (_p.getDouble('volume') ?? 1.0).clamp(0.0, 1.0);

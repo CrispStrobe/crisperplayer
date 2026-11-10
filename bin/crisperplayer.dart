@@ -55,6 +55,10 @@ Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
   mute / unmute          Mute or restore the last audible level
   waveform               Generate/read measured peaks for the current track
   coverage [BOOK_ID]      Show recorded played intervals and gaps (JSON)
+  journal [BOOK_ID]       Read dated listening and player actions (paged JSON)
+  call journal JSON      Filter by fromUtcMs/beforeUtcMs, bookId, limit, cursor
+  call journal-open JSON Open an entry paused (id, point: start/end/target)
+  call clear-journal JSON Clear the journal (confirm: true; optional bookId)
   call coverage-seek JSON Jump to a map position, paused (bookId,filePath,positionMs)
   trail-plan [SECONDS]   Inspect Return Trail (15–300 listening seconds; default 60)
   trail-start [SECONDS]  Revisit played passages while protecting your place
@@ -241,6 +245,7 @@ Future<void> main(List<String> arguments) async {
         result = await client.command(command, {'bookId': args.single});
       case 'play' ||
           'coverage' ||
+          'journal' ||
           'bookmarks' ||
           'chapters' ||
           'history' ||

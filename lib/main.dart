@@ -27,6 +27,7 @@ import 'services/server/remote_library_service.dart';
 import 'services/db/app_database.dart';
 import 'services/audio/audio_handler.dart';
 import 'services/audio/playback_service.dart';
+import 'services/audio/speed_processing.dart';
 import 'services/library_service.dart';
 import 'services/bookmark_service.dart';
 import 'services/history_service.dart';
@@ -61,9 +62,6 @@ Future<void> main() async {
   AudioPlayer? player;
   DesktopControlService? control;
   try {
-    if (Platform.isWindows || Platform.isLinux) {
-      JustAudioMediaKit.ensureInitialized();
-    }
     final prefs = await SharedPreferences.getInstance();
     // Earlier versions stored simulated sign-ins. They are not real accounts.
     for (final key
@@ -71,6 +69,10 @@ Future<void> main() async {
       await prefs.remove(key);
     }
     final settings = SettingsService(prefs);
+    if (Platform.isWindows || Platform.isLinux) {
+      SpeedProcessing.configureForStartup(settings.desktopSpeedProcessing);
+      JustAudioMediaKit.ensureInitialized();
+    }
     final database = db = AppDatabase();
     player = AudioPlayer(handleInterruptions: false);
     final library = LibraryService(database);

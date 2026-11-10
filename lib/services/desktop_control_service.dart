@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'listening_stats.dart';
+import 'listening_journal_service.dart';
 import 'package:path/path.dart' as p;
 import 'audio/playback_service.dart';
 import 'library_service.dart';
@@ -580,13 +581,68 @@ class DesktopControlService {
                   : await playback.history.forBook(_string(args, 'bookId')))
             row.toJson(),
         ];
+      case 'journal':
+        String? optionalText(String key) {
+          final value = args[key];
+          if (value == null) return null;
+          if (value is! String) throw FormatException('$key must be a string');
+          return value;
+        }
+        int? optionalInteger(String key) {
+          final value = args[key];
+          if (value == null) return null;
+          if (value is! int) throw FormatException('$key must be an integer');
+          return value;
+        }
+        return (await playback.listeningJournal(
+          bookId: optionalText('bookId'),
+          fromUtcMs: optionalInteger('fromUtcMs'),
+          beforeUtcMs: optionalInteger('beforeUtcMs'),
+          cursor: optionalText('cursor'),
+          limit: optionalInteger('limit') ?? 50,
+        )).toJson();
+      case 'journal-open':
+        final entry = await ListeningJournalService(
+          library.db,
+        ).getEntry(_string(args, 'id'));
+        if (entry == null) throw const FormatException('Unknown journal entry');
+        final point = args['point'] ?? 'end';
+        if (!['start', 'end', 'target'].contains(point)) {
+          throw const FormatException('point must be start, end, or target');
+        }
+        if (point == 'target' && entry.targetFilePath == null) {
+          throw const FormatException('This entry has no jump destination');
+        }
+        final bookmark = await playback.resumeJournalPosition(
+          bookId: entry.bookId,
+          filePath: point == 'target' ? entry.targetFilePath! : entry.filePath,
+          positionMs: point == 'target'
+              ? entry.targetPositionMs!
+              : point == 'start'
+              ? entry.startMs
+              : entry.endMs,
+        );
+        return {
+          'opened': entry.id,
+          'paused': true,
+          'savedBookmarkId': bookmark,
+        };
+      case 'clear-journal':
+        if (args['confirm'] != true) {
+          throw const FormatException('Explicit confirmation is required');
+        }
+        final requestedBook = args['bookId'];
+        if (requestedBook != null && requestedBook is! String) {
+          throw const FormatException('bookId must be a string');
+        }
+        await playback.clearListeningJournal(bookId: requestedBook as String?);
+        return {'cleared': 'journal'};
       case 'clear-history' || 'clear-bookmarks':
         if (args['confirm'] != true) {
           throw const FormatException('Explicit confirmation is required');
         }
         if (command == 'clear-history') {
-          await playback.pause();
-          await library.db.clearAllHistory();
+          await playback.clearListeningHistory();
         } else {
           await library.db.clearAllBookmarks();
         }
@@ -605,7 +661,15 @@ class DesktopControlService {
       case 'settings':
         final settings = playback.settings;
         if (settings == null) throw StateError('Settings are unavailable');
-        if (args.containsKey('key')) _setSetting(settings, args);
+        if (args['key'] == 'listeningJournalEnabled') {
+          final value = args['value'];
+          if (value is! bool) {
+            throw const FormatException('Expected true or false');
+          }
+          await playback.setListeningJournalEnabled(value);
+        } else if (args.containsKey('key')) {
+          _setSetting(settings, args);
+        }
         return _settings(settings);
       case 'waveform':
         final state = playback.state;
@@ -806,6 +870,8 @@ class DesktopControlService {
 
   Map<String, Object> _settings(SettingsService s) => {
     'playbackSpeed': s.playbackSpeed,
+    'desktopSpeedProcessing': s.desktopSpeedProcessing,
+    'listeningJournalEnabled': s.listeningJournalEnabled,
     'volume': s.volume,
     'unmutedVolume': s.unmutedVolume,
     'skipSilence': s.skipSilence,
@@ -830,6 +896,11 @@ class DesktopControlService {
     switch (key) {
       case 'playbackSpeed':
         s.playbackSpeed = _number(args, 'value', .5, 3);
+      case 'desktopSpeedProcessing':
+        if (value is! String) {
+          throw const FormatException('Expected a processing mode');
+        }
+        s.desktopSpeedProcessing = value;
       case 'boostDb':
         s.boostDb = _number(args, 'value', 0, 12);
       case 'equalizer':

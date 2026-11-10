@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/widgets.dart';
@@ -15,10 +15,13 @@ import '../bookmark_service.dart';
 import '../settings_service.dart';
 import '../return_trail_service.dart';
 import '../listening_coverage_service.dart';
+import '../listening_journal_service.dart';
+import '../../models/listening_journal.dart';
 import 'audio_backend.dart';
 import 'android_audio_effects.dart';
 import 'audio_handler.dart';
 import 'played_range_recorder.dart';
+import 'listening_journal_recorder.dart';
 
 /// Owns playback commands, persistence and listening sessions. UI and remote
 /// controls both enter through this coordinator. Commands execute in order.
@@ -43,6 +46,13 @@ class PlaybackService with WidgetsBindingObserver {
   bool _backendReady = false;
   int? _capturedTrackIndex;
   final _playedRanges = PlayedRangeRecorder();
+  final _journalSamples = PlayedRangeRecorder(retainPending: false);
+  final _journalPassages = ListeningJournalRecorder();
+  final List<_JournalEvent> _journalEvents = [];
+  bool _journalEnabled = false;
+  bool _journalClearing = false;
+  int? _journalTrackIndex;
+  int? _journalUtcOffsetMinutes;
   ReturnTrailPlan? _returnTrailPlan;
   ReturnTrailPlan? get returnTrailPlan => _returnTrailPlan;
   bool get isReturnTrailActive => _returnTrailPlan != null;
@@ -179,9 +189,16 @@ class PlaybackService with WidgetsBindingObserver {
           if (_loading) return;
           if (ps.processingState == ProcessingState.completed) {
             _capturePlayedPosition(completed: true);
+            if (state.status != m.PlaybackStatus.completed &&
+                !_trailTransitioning) {
+              _recordJournalEvent('complete');
+            }
           }
           _backendReady = ps.processingState == ProcessingState.ready;
           if (ps.playing && _backendReady) {
+            if (!state.isPlaying && !_seeking && !_trailTransitioning) {
+              _recordJournalEvent('play');
+            }
             _capturePlayedPosition();
           } else {
             _resetPlayedCapture();
@@ -232,6 +249,7 @@ class PlaybackService with WidgetsBindingObserver {
           );
         },
         onError: (Object e) {
+          _recordJournalEvent('interruption', reason: 'decoder_error');
           _backendReady = false;
           _resetPlayedCapture();
           _returnTrailTimer?.cancel();
@@ -253,7 +271,16 @@ class PlaybackService with WidgetsBindingObserver {
             _wasPlayingBeforeInterruption = _backend!.playing;
             _trailResumeRequested = false;
             _returnTrailTimer?.cancel();
-            if (_wasPlayingBeforeInterruption) _background(_command(_pause));
+            if (_wasPlayingBeforeInterruption) {
+              _background(
+                _command(
+                  () => _pause(
+                    journalKind: 'interruption',
+                    reason: 'audio_interruption',
+                  ),
+                ),
+              );
+            }
           } else {
             if (_wasPlayingBeforeInterruption &&
                 event.type != AudioInterruptionType.unknown) {
@@ -264,7 +291,19 @@ class PlaybackService with WidgetsBindingObserver {
         }),
       );
       _subscriptions.add(
-        session.becomingNoisyEventStream.listen((_) => _background(pause())),
+        session.becomingNoisyEventStream.listen((_) {
+          _wasPlayingBeforeInterruption = false;
+          _trailResumeRequested = false;
+          _returnTrailTimer?.cancel();
+          _background(
+            _command(
+              () => _pause(
+                journalKind: 'interruption',
+                reason: 'audio_output_changed',
+              ),
+            ),
+          );
+        }),
       );
     }
     await _applySettings();
@@ -279,9 +318,15 @@ class PlaybackService with WidgetsBindingObserver {
     _observing = true;
   }
 
-  void _settingsChanged() => _background(_command(_applySettings));
+  void _settingsChanged() {
+    // Apply consent at the notification boundary, before queued audio work.
+    _syncJournalPreference();
+    _background(_command(_applySettings));
+  }
+
   Future<void> _applySettings() async {
     if (settings == null || _backend == null) return;
+    _syncJournalPreference();
     final speed =
         (_bookPreferences['speed'] as num?)?.toDouble() ??
         settings!.playbackSpeed;
@@ -379,6 +424,7 @@ class PlaybackService with WidgetsBindingObserver {
     if (tracks.isEmpty) throw StateError('Book has no files');
     if (isReturnTrailActive) await _finishReturnTrail();
     _capturePlayedPosition();
+    _recordJournalEvent('close', reason: 'book_changed');
     await _backend!.pause();
     await _persistProgress();
     await _endSession();
@@ -442,6 +488,8 @@ class PlaybackService with WidgetsBindingObserver {
     // Loading suppresses backend position events; publish the selected track once
     // loading has ended, including for a paused load with no later audio event.
     _publishPosition();
+    _recordJournalEvent('open');
+    await _flushListeningJournal();
     if (autoPlay) await _play();
   }
 
@@ -456,10 +504,13 @@ class PlaybackService with WidgetsBindingObserver {
     _pausedAt = null;
     if (_currentBookId == null || _backend == null) return;
     if (bookDuration != null && bookPosition >= bookDuration!) {
-      await _seekBook(Duration.zero);
+      await _seekBook(Duration.zero, journalReason: 'restart');
     }
     if (pausedAt != null && shouldSmartRewind(pausedAt)) {
-      await _seekBook(applySmartRewind(bookPosition));
+      await _seekBook(
+        applySmartRewind(bookPosition),
+        journalReason: 'smart_rewind',
+      );
     }
     if (_audioSession != null && !await _audioSession!.setActive(true)) {
       throw StateError('Audio session unavailable');
@@ -487,10 +538,17 @@ class PlaybackService with WidgetsBindingObserver {
     return _command(_pause);
   }
 
-  Future<void> _pause() async {
+  Future<void> _pause({
+    String journalKind = 'pause',
+    String? reason,
+    bool recordWhilePaused = false,
+  }) async {
     _trailResumeRequested = false;
     _returnTrailTimer?.cancel();
     _capturePlayedPosition();
+    if (_backend?.playing == true || recordWhilePaused) {
+      _recordJournalEvent(journalKind, reason: reason);
+    }
     _resetPlayedCapture();
     _pausedAt = now();
     await _backend?.pause();
@@ -502,7 +560,7 @@ class PlaybackService with WidgetsBindingObserver {
 
   Future<void> stop() => _command(() async {
     if (isReturnTrailActive) await _finishReturnTrail();
-    await _pause();
+    await _pause(journalKind: 'stop', recordWhilePaused: true);
     await _backend?.stop();
     cancelSleepTimer();
     await _audioSession?.setActive(false);
@@ -510,7 +568,7 @@ class PlaybackService with WidgetsBindingObserver {
   });
   Future<void> unload() => _command(() async {
     if (isReturnTrailActive) await _finishReturnTrail();
-    await _pause();
+    await _pause(journalKind: 'close', recordWhilePaused: true);
     await _backend?.stop();
     _currentBookId = null;
     _tracks = [];
@@ -554,7 +612,11 @@ class PlaybackService with WidgetsBindingObserver {
   });
   Future<void> seekTrack(int index, [Duration position = Duration.zero]) =>
       _command(() => _seekTrack(index, position));
-  Future<void> _seekTrack(int index, Duration position) async {
+  Future<void> _seekTrack(
+    int index,
+    Duration position, {
+    String journalReason = 'seek',
+  }) async {
     if (index < 0 || index >= _tracks.length) {
       throw RangeError.index(index, _tracks);
     }
@@ -570,6 +632,7 @@ class PlaybackService with WidgetsBindingObserver {
       return;
     }
     _capturePlayedPosition();
+    final from = _journalAnchor();
     _resetPlayedCapture();
     _seeking = true;
     try {
@@ -583,24 +646,40 @@ class PlaybackService with WidgetsBindingObserver {
     }
     _capturePlayedPosition();
     _publishPosition();
+    if (from != null &&
+        (from.filePath != _tracks[_index].filePath ||
+            from.positionMs != _position.inMilliseconds)) {
+      _recordJournalEvent(
+        'seek',
+        anchor: from,
+        targetFilePath: _tracks[_index].filePath,
+        targetPositionMs: _position.inMilliseconds,
+        reason: journalReason,
+      );
+    }
     await _persistProgress();
   }
 
   Future<void> seekBook(Duration position) =>
       _command(() => _seekBook(position));
-  Future<void> _seekBook(Duration position) async {
+  Future<void> _seekBook(
+    Duration position, {
+    String journalReason = 'seek',
+  }) async {
     if (_tracks.isEmpty) return;
     if (position < Duration.zero) position = Duration.zero;
     var offset = Duration.zero;
     for (var i = 0; i < _tracks.length; i++) {
       final duration = _tracks[i].durationMs;
       if (duration == null) {
-        if (position == offset) return _seekTrack(i, Duration.zero);
+        if (position == offset) {
+          return _seekTrack(i, Duration.zero, journalReason: journalReason);
+        }
         throw StateError('Track duration is unknown; select a track directly');
       }
       final end = offset + Duration(milliseconds: duration);
       if (position < end || i == _tracks.length - 1) {
-        return _seekTrack(i, position - offset);
+        return _seekTrack(i, position - offset, journalReason: journalReason);
       }
       offset = end;
     }
@@ -608,7 +687,10 @@ class PlaybackService with WidgetsBindingObserver {
 
   Future<void> seekChapter(Chapter chapter) =>
       _command(() => _seekChapter(chapter));
-  Future<void> _seekChapter(Chapter chapter) async {
+  Future<void> _seekChapter(
+    Chapter chapter, {
+    String journalReason = 'chapter',
+  }) async {
     if (_currentBookId != chapter.bookId) await _loadBook(chapter.bookId);
     var index = _tracks.indexWhere((t) => t.filePath == chapter.filePath);
     if (index < 0) index = chapter.trackIndex;
@@ -629,6 +711,7 @@ class PlaybackService with WidgetsBindingObserver {
       onePerFile
           ? Duration.zero
           : Duration(milliseconds: chapter.startMs - offset),
+      journalReason: journalReason,
     );
   }
 
@@ -658,12 +741,18 @@ class PlaybackService with WidgetsBindingObserver {
     if (isReturnTrailActive) return _advanceReturnTrail();
     if (_chapters.isEmpty) {
       if (_index + 1 < _tracks.length) {
-        await _seekTrack(_index + 1, Duration.zero);
+        await _seekTrack(
+          _index + 1,
+          Duration.zero,
+          journalReason: 'next_chapter',
+        );
       }
       return;
     }
     final next = _chapterIndex + 1;
-    if (next < _chapters.length) await _seekChapter(_chapters[next]);
+    if (next < _chapters.length) {
+      await _seekChapter(_chapters[next], journalReason: 'next_chapter');
+    }
   });
 
   /// Restart the current chapter after three seconds; otherwise go back one.
@@ -678,7 +767,13 @@ class PlaybackService with WidgetsBindingObserver {
       );
     }
     if (_chapters.isEmpty) {
-      if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
+      if (_index > 0) {
+        await _seekTrack(
+          _index - 1,
+          Duration.zero,
+          journalReason: 'previous_chapter',
+        );
+      }
       return;
     }
     var index = _chapterIndex;
@@ -686,7 +781,7 @@ class PlaybackService with WidgetsBindingObserver {
         index > 0) {
       index--;
     }
-    await _seekChapter(_chapters[index]);
+    await _seekChapter(_chapters[index], journalReason: 'previous_chapter');
   });
 
   Future<void> updateBookPreferences(
@@ -717,7 +812,7 @@ class PlaybackService with WidgetsBindingObserver {
       await _pause();
       cancelSleepTimer();
       if (status == 'unread' && _tracks.isNotEmpty) {
-        await _seekTrack(0, Duration.zero);
+        await _seekTrack(0, Duration.zero, journalReason: 'mark_unread');
       }
     }
     final stored = (await db.getBook(id))!;
@@ -787,7 +882,11 @@ class PlaybackService with WidgetsBindingObserver {
     if (index < 0) {
       throw StateError('Bookmark file is missing from this book');
     }
-    await _seekTrack(index, Duration(milliseconds: bookmark.positionMs));
+    await _seekTrack(
+      index,
+      Duration(milliseconds: bookmark.positionMs),
+      journalReason: 'bookmark',
+    );
   });
   int get seekSeconds =>
       _bookPreferences['seekSeconds'] as int? ?? settings?.seekSeconds ?? 30;
@@ -797,19 +896,30 @@ class PlaybackService with WidgetsBindingObserver {
     if (_tracks.isEmpty) return;
     final delta = Duration(seconds: seconds);
     if (isReturnTrailActive) {
-      await _seekTrack(_index, _position + delta);
+      await _seekTrack(
+        _index,
+        _position + delta,
+        journalReason: seconds >= 0 ? 'skip_forward' : 'skip_back',
+      );
       return;
     }
     if (bookDuration == null) {
-      await _seekTrack(_index, _position + delta);
+      await _seekTrack(
+        _index,
+        _position + delta,
+        journalReason: seconds >= 0 ? 'skip_forward' : 'skip_back',
+      );
     } else {
-      await _seekBook(bookPosition + delta);
+      await _seekBook(
+        bookPosition + delta,
+        journalReason: seconds >= 0 ? 'skip_forward' : 'skip_back',
+      );
     }
   });
   Future<void> nextTrack() => _command(() async {
     if (isReturnTrailActive) return _advanceReturnTrail();
     if (_index + 1 < _tracks.length) {
-      await _seekTrack(_index + 1, Duration.zero);
+      await _seekTrack(_index + 1, Duration.zero, journalReason: 'next_track');
     }
   });
   Future<void> previousTrack() => _command(() async {
@@ -822,25 +932,38 @@ class PlaybackService with WidgetsBindingObserver {
         play: _trailResumeRequested && _backend!.playing,
       );
     }
-    if (_index > 0) await _seekTrack(_index - 1, Duration.zero);
-  });
-  Future<void> setSpeed(double speed) => _command(() async {
-    _capturePlayedPosition();
-    _resetPlayedCapture();
-    speed = speed.clamp(0.5, 3.0);
-    await _endSession();
-    await _backend?.setSpeed(speed);
-    _emit(state.copyWith(speed: speed));
-    if (_currentBookId != null) {
-      await library.setPreferences(_currentBookId!, {'speed': speed});
-      _bookPreferences = await library.preferences(_currentBookId!);
-    } else {
-      settings?.playbackSpeed = speed;
+    if (_index > 0) {
+      await _seekTrack(
+        _index - 1,
+        Duration.zero,
+        journalReason: 'previous_track',
+      );
     }
-    if (_backend?.playing == true) await _startSession();
-    _capturePlayedPosition();
-    _scheduleReturnTrailEnd();
   });
+  Future<void> setSpeed(double speed, {String? expectedBookId}) =>
+      _command(() async {
+        if (expectedBookId != null && expectedBookId != _currentBookId) {
+          throw StateError(
+            'The playing book changed. Reopen its speed controls.',
+          );
+        }
+        if (!speed.isFinite) throw ArgumentError.value(speed, 'speed');
+        _capturePlayedPosition();
+        _resetPlayedCapture();
+        speed = speed.clamp(0.5, 3.0);
+        await _endSession();
+        await _backend?.setSpeed(speed);
+        _emit(state.copyWith(speed: speed));
+        if (_currentBookId != null) {
+          await library.setPreferences(_currentBookId!, {'speed': speed});
+          _bookPreferences = await library.preferences(_currentBookId!);
+        } else {
+          settings?.playbackSpeed = speed;
+        }
+        if (_backend?.playing == true) await _startSession();
+        _capturePlayedPosition();
+        _scheduleReturnTrailEnd();
+      });
   Future<void> setVolume(double volume) => _command(() async {
     volume = volume.clamp(0.0, 1.0);
     await _backend?.setVolume(volume);
@@ -949,12 +1072,358 @@ class PlaybackService with WidgetsBindingObserver {
     );
   }
 
-  void _resetPlayedCapture() {
+  void _syncJournalPreference() {
+    final enabled = settings?.listeningJournalEnabled ?? false;
+    if (enabled == _journalEnabled) return;
+    // End the old consent window at an observed position. Starting a new
+    // window always takes a new baseline, including while audio is playing.
+    if (_journalEnabled) _captureJournalPosition();
+    _resetJournalCapture();
+    _journalEnabled = enabled;
+    if (enabled) _captureJournalPosition();
+  }
+
+  void _resetJournalCapture() {
+    _journalSamples.reset();
+    _journalPassages.reset();
+    _journalTrackIndex = null;
+    _journalUtcOffsetMinutes = null;
+  }
+
+  String? _journalChapterTitle(int index, int positionMs) {
+    if (index < 0 || index >= _tracks.length) return null;
+    final track = _tracks[index];
+    final candidates = _chapters
+        .where(
+          (chapter) =>
+              chapter.filePath == track.filePath ||
+              (chapter.filePath == null &&
+                  chapter.trackIndex == track.trackIndex),
+        )
+        .toList();
+    if (candidates.isEmpty) return null;
+    if (candidates.length == 1 && _tracks.length > 1) {
+      return candidates.single.title;
+    }
+    if (_tracks.take(index).any((track) => track.durationMs == null)) {
+      return null;
+    }
+    final offset = _tracks
+        .take(index)
+        .fold<int>(0, (sum, track) => sum + track.durationMs!);
+    final position = offset + positionMs;
+    return candidates
+        .where(
+          (chapter) => chapter.startMs <= position && position < chapter.endMs,
+        )
+        .firstOrNull
+        ?.title;
+  }
+
+  void _sampleJournal(int index, int positionMs, DateTime observedAt) {
+    final offset = observedAt.timeZoneOffset.inMinutes;
+    if (_journalUtcOffsetMinutes != offset) {
+      // Do not attach a new time-zone offset to an older observation. UTC
+      // timestamps remain authoritative; a changed offset starts a new pair.
+      _journalSamples.reset();
+      _journalPassages.reset();
+      _journalUtcOffsetMinutes = offset;
+    }
+    final track = _tracks[index];
+    final range = _journalSamples.sample(
+      bookId: _currentBookId!,
+      filePath: track.filePath,
+      positionMs: positionMs,
+      observedAtMs: observedAt.millisecondsSinceEpoch,
+      speed: state.speed,
+    );
+    if (range == null) return;
+    _journalPassages.record(
+      range,
+      speed: state.speed,
+      utcOffsetMinutes: offset,
+      chapterTitle: _journalChapterTitle(index, range.startMs),
+      reason: isReturnTrailActive ? 'return_trail' : null,
+    );
+  }
+
+  void _captureJournalPosition({bool completed = false}) {
+    if (!_journalEnabled ||
+        _journalClearing ||
+        _loading ||
+        _seeking ||
+        _trailTransitioning ||
+        !_backendReady ||
+        (_backend?.playing != true && !(completed && state.isPlaying)) ||
+        _currentBookId == null ||
+        _index < 0 ||
+        _index >= _tracks.length) {
+      return;
+    }
+    final observedAt = now();
+    final previous = _journalTrackIndex;
+    if (previous != null && previous != _index) {
+      if (!isReturnTrailActive &&
+          _index == previous + 1 &&
+          previous >= 0 &&
+          previous < _tracks.length) {
+        final duration = _tracks[previous].durationMs;
+        if (duration != null) _sampleJournal(previous, duration, observedAt);
+        _resetJournalCapture();
+        _sampleJournal(_index, 0, observedAt);
+      } else {
+        _resetJournalCapture();
+      }
+    }
+    _journalTrackIndex = _index;
+    _sampleJournal(_index, _position.inMilliseconds, observedAt);
+  }
+
+  _JournalAnchor? _journalAnchor() {
+    if (!_journalEnabled ||
+        _journalClearing ||
+        _currentBookId == null ||
+        _index < 0 ||
+        _index >= _tracks.length) {
+      return null;
+    }
+    final observedAt = now();
+    return _JournalAnchor(
+      bookId: _currentBookId!,
+      filePath: _tracks[_index].filePath,
+      positionMs: _position.inMilliseconds,
+      atMs: observedAt.millisecondsSinceEpoch,
+      utcOffsetMinutes: observedAt.timeZoneOffset.inMinutes,
+      speed: state.speed,
+      chapterTitle: _journalChapterTitle(_index, _position.inMilliseconds),
+    );
+  }
+
+  void _recordJournalEvent(
+    String kind, {
+    _JournalAnchor? anchor,
+    String? targetFilePath,
+    int? targetPositionMs,
+    String? reason,
+  }) {
+    if (!_journalEnabled || _journalClearing) return;
+    final source = anchor ?? _journalAnchor();
+    if (source == null) return;
+    _journalEvents.add(
+      _JournalEvent(
+        id: const Uuid().v4(),
+        kind: kind,
+        anchor: source,
+        targetFilePath: targetFilePath,
+        targetPositionMs: targetPositionMs,
+        reason: reason ?? (isReturnTrailActive ? 'return_trail' : null),
+      ),
+    );
+  }
+
+  void _recordJournalSeek(_JournalAnchor? from, String reason) {
+    if (from == null || _tracks.isEmpty || _index >= _tracks.length) return;
+    if (from.filePath == _tracks[_index].filePath &&
+        from.positionMs == _position.inMilliseconds) {
+      return;
+    }
+    _recordJournalEvent(
+      'seek',
+      anchor: from,
+      targetFilePath: _tracks[_index].filePath,
+      targetPositionMs: _position.inMilliseconds,
+      reason: reason,
+    );
+  }
+
+  Future<void> _flushListeningJournal() async {
+    final journal = ListeningJournalService(db);
+    for (final passage in _journalPassages.pending) {
+      await journal.recordPlayed(
+        id: passage.id,
+        bookId: passage.bookId,
+        filePath: passage.filePath,
+        startMs: passage.startMs,
+        endMs: passage.endMs,
+        startedAtMs: passage.startedAtMs,
+        endedAtMs: passage.endedAtMs,
+        utcOffsetMinutes: passage.utcOffsetMinutes,
+        speed: passage.speed,
+        chapterTitle: passage.chapterTitle,
+        reason: passage.reason,
+      );
+      _journalPassages.acknowledge(passage);
+    }
+    for (final event in List<_JournalEvent>.of(_journalEvents)) {
+      final source = event.anchor;
+      await journal.recordEvent(
+        id: event.id,
+        bookId: source.bookId,
+        kind: event.kind,
+        filePath: source.filePath,
+        positionMs: source.positionMs,
+        atMs: source.atMs,
+        utcOffsetMinutes: source.utcOffsetMinutes,
+        speed: source.speed,
+        chapterTitle: source.chapterTitle,
+        targetFilePath: event.targetFilePath,
+        targetPositionMs: event.targetPositionMs,
+        reason: event.reason,
+      );
+      _journalEvents.remove(event);
+    }
+  }
+
+  Future<void> setListeningJournalEnabled(bool enabled) => _command(() async {
+    if (settings == null) throw StateError('Settings are unavailable');
+    settings!.listeningJournalEnabled = enabled;
+    _syncJournalPreference();
+    await _flushListeningJournal();
+  });
+
+  Future<void> clearListeningJournal({String? bookId}) => _command(() async {
+    _journalClearing = true;
+    try {
+      _capturePlayedPosition(); // Keep ordinary coverage independent.
+      _journalPassages.clear(bookId: bookId);
+      _journalEvents.removeWhere(
+        (event) => bookId == null || event.anchor.bookId == bookId,
+      );
+      _resetJournalCapture();
+      await ListeningJournalService(db).clear(bookId: bookId);
+    } finally {
+      _journalClearing = false;
+      _resetJournalCapture();
+      _captureJournalPosition();
+    }
+  });
+
+  /// All history stores share this serialized clear boundary. Pausing and
+  /// discarding pending captures prevents a later checkpoint recreating rows
+  /// that the listener just removed.
+  Future<void> clearListeningHistory() => _command(() async {
+    _journalClearing = true;
+    try {
+      // These buffers are part of the requested deletion, even if their last
+      // database write failed. Do not require saving them before removing them.
+      _playedRanges.clear();
+      _journalPassages.clear();
+      _journalEvents.clear();
+      _resetPlayedCapture();
+      if (isReturnTrailActive) await _finishReturnTrail();
+      await _pause(reason: 'history_cleared');
+      await db.clearAllHistory();
+    } finally {
+      _journalClearing = false;
+      _resetPlayedCapture();
+    }
+  });
+
+  Future<JournalPage> listeningJournal({
+    String? bookId,
+    int? fromUtcMs,
+    int? beforeUtcMs,
+    int limit = 50,
+    String? cursor,
+  }) async {
+    late JournalPage page;
+    await _command(() async {
+      _captureJournalPosition();
+      await _flushListeningJournal();
+      page = await ListeningJournalService(db).page(
+        bookId: bookId,
+        fromUtcMs: fromUtcMs,
+        beforeUtcMs: beforeUtcMs,
+        limit: limit,
+        cursor: cursor,
+      );
+    });
+    return page;
+  }
+
+  /// Open historical evidence paused, with a durable bookmark for the previous
+  /// place. Validate stale/missing destinations before changing active audio.
+  Future<String?> resumeJournalPosition({
+    required String bookId,
+    required String filePath,
+    required int positionMs,
+  }) async {
+    String? savedBookmark;
+    await _command(() async {
+      final book = await db.getBook(bookId);
+      if (book == null) throw StateError('This journal book is unavailable.');
+      final tracks = await db.tracksFor(bookId);
+      final targetIndex = tracks.indexWhere(
+        (track) => track.filePath == filePath,
+      );
+      if (targetIndex < 0) {
+        throw StateError('This journal track is unavailable.');
+      }
+      final duration = tracks[targetIndex].durationMs;
+      if (positionMs < 0 || (duration != null && positionMs > duration)) {
+        throw RangeError.range(positionMs, 0, duration, 'positionMs');
+      }
+      if (duration == null && positionMs > 0) {
+        final evidence =
+            await (db.select(db.listeningJournal)
+                  ..where(
+                    (entry) =>
+                        entry.bookId.equals(bookId) &
+                        ((entry.filePath.equals(filePath) &
+                                entry.endMs.isBiggerOrEqualValue(positionMs)) |
+                            (entry.targetFilePath.equals(filePath) &
+                                entry.targetPositionMs.isBiggerOrEqualValue(
+                                  positionMs,
+                                ))),
+                  )
+                  ..limit(1))
+                .getSingleOrNull();
+        if (evidence == null) {
+          throw StateError(
+            'No journal position exists at this unknown track offset.',
+          );
+        }
+      }
+      _wasPlayingBeforeInterruption = false;
+      _trailResumeRequested = false;
+      _returnTrailTimer?.cancel();
+      if (isReturnTrailActive) await _finishReturnTrail();
+      if (_currentBookId != null &&
+          _tracks.isNotEmpty &&
+          (_currentBookId != bookId ||
+              _tracks[_index].filePath != filePath ||
+              _position.inMilliseconds != positionMs)) {
+        savedBookmark = await bookmarks.addManual(
+          bookId: _currentBookId!,
+          filePath: _tracks[_index].filePath,
+          position: _position,
+          bookPosition: bookPosition,
+          title: 'Before journal jump',
+          note: 'Saved before opening a position from the listening journal.',
+        );
+      }
+      await _pause(reason: 'journal_resume');
+      if (_currentBookId != bookId) await _loadBook(bookId);
+      final index = _tracks.indexWhere((track) => track.filePath == filePath);
+      if (index < 0) throw StateError('This journal track is unavailable.');
+      await _seekTrack(
+        index,
+        Duration(milliseconds: positionMs),
+        journalReason: 'journal_resume',
+      );
+      _pausedAt = null;
+    });
+    return savedBookmark;
+  }
+
+  void _resetPlayedCapture({bool journal = true}) {
     _playedRanges.reset();
     _capturedTrackIndex = null;
+    if (journal) _resetJournalCapture();
   }
 
   void _capturePlayedPosition({bool completed = false}) {
+    _captureJournalPosition(completed: completed);
     if (_loading ||
         _seeking ||
         isReturnTrailActive ||
@@ -1003,7 +1472,7 @@ class PlaybackService with WidgetsBindingObserver {
         speed: state.speed,
       );
     }
-    _resetPlayedCapture();
+    _resetPlayedCapture(journal: false);
     _capturedTrackIndex = nextIndex;
     _playedRanges.sample(
       bookId: _currentBookId!,
@@ -1026,6 +1495,7 @@ class PlaybackService with WidgetsBindingObserver {
       );
       _playedRanges.acknowledge(range);
     }
+    await _flushListeningJournal();
   }
 
   /// Return unique recorded coverage, including the latest pending samples.
@@ -1076,7 +1546,11 @@ class PlaybackService with WidgetsBindingObserver {
     _returnTrailTimer?.cancel();
     if (isReturnTrailActive) await _finishReturnTrail();
     await _pause();
-    await _seekTrack(index, Duration(milliseconds: positionMs));
+    await _seekTrack(
+      index,
+      Duration(milliseconds: positionMs),
+      journalReason: 'coverage_jump',
+    );
     _pausedAt = null; // Explicit map jumps should not smart-rewind on Play.
   });
 
@@ -1206,6 +1680,9 @@ class PlaybackService with WidgetsBindingObserver {
     final plan = _returnTrailPlan;
     if (plan == null) return;
     final clip = plan.clips[index];
+    _captureJournalPosition();
+    final from = _journalAnchor();
+    _resetJournalCapture();
     _returnTrailTimer?.cancel();
     _trailGeneration++;
     _trailAdvancePending = false;
@@ -1222,6 +1699,7 @@ class PlaybackService with WidgetsBindingObserver {
         ),
         index: clip.trackIndex,
       );
+      _recordJournalSeek(from, 'return_trail');
     } finally {
       _trailTransitioning = false;
       _publishPosition();
@@ -1338,6 +1816,12 @@ class PlaybackService with WidgetsBindingObserver {
   Future<void> _finishReturnTrail({bool continueHere = false}) async {
     final plan = _returnTrailPlan;
     if (plan == null) return;
+    _captureJournalPosition();
+    final from = _journalAnchor();
+    if (_backend!.playing) {
+      _recordJournalEvent('pause', reason: 'return_trail_ended');
+    }
+    _resetJournalCapture();
     _trailGeneration++;
     _trailResumeRequested = false;
     _trailAdvancePending = false;
@@ -1365,6 +1849,10 @@ class PlaybackService with WidgetsBindingObserver {
         index: clip.trackIndex,
       );
     }
+    _recordJournalSeek(
+      from,
+      continueHere ? 'return_trail_continue' : 'return_trail_return',
+    );
     _returnTrailPlan = null;
     _returnTrailClipIndex = 0;
     _pausedAt = null;
@@ -1525,6 +2013,8 @@ class PlaybackService with WidgetsBindingObserver {
     _autoBookmarkTimer?.cancel();
     _returnTrailTimer?.cancel();
     if (_currentBookId != null) {
+      _capturePlayedPosition();
+      _recordJournalEvent('close', reason: 'app_closed');
       await _backend?.pause();
       await _persistProgress();
       await _endSession();
@@ -1534,4 +2024,42 @@ class PlaybackService with WidgetsBindingObserver {
     await _audioHandler?.dispose();
     await _stateCtrl.close();
   }
+}
+
+class _JournalAnchor {
+  final String bookId;
+  final String filePath;
+  final int positionMs;
+  final int atMs;
+  final int utcOffsetMinutes;
+  final double speed;
+  final String? chapterTitle;
+
+  const _JournalAnchor({
+    required this.bookId,
+    required this.filePath,
+    required this.positionMs,
+    required this.atMs,
+    required this.utcOffsetMinutes,
+    required this.speed,
+    this.chapterTitle,
+  });
+}
+
+class _JournalEvent {
+  final String id;
+  final String kind;
+  final _JournalAnchor anchor;
+  final String? targetFilePath;
+  final int? targetPositionMs;
+  final String? reason;
+
+  const _JournalEvent({
+    required this.id,
+    required this.kind,
+    required this.anchor,
+    this.targetFilePath,
+    this.targetPositionMs,
+    this.reason,
+  });
 }

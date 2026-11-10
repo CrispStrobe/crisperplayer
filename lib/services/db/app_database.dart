@@ -570,7 +570,9 @@ class AppDatabase extends _$AppDatabase {
   });
   Future<void> clearBookmarksForBook(String bookId) =>
       (delete(bookmarks)..where((t) => t.bookId.equals(bookId))).go();
-  Future<Map<String, dynamic>> exportAllJson() async {
+  // Keep the related tables at one point in time even while the library or
+  // playback journal is changing in another operation.
+  Future<Map<String, dynamic>> exportAllJson() => transaction(() async {
     final bks = await select(books).get();
     final chs = await select(chapters).get();
     final bms = await select(bookmarks).get();
@@ -657,7 +659,7 @@ class AppDatabase extends _$AppDatabase {
           )
           .toList(),
     };
-  }
+  });
 
   Future<void> importAllJson(Map<String, dynamic> data) async {
     final version = data['version'] as int? ?? 1;

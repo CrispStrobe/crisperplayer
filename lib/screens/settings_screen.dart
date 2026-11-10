@@ -8,9 +8,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/providers.dart';
+import '../services/audio/playback_service.dart';
 import '../services/db/app_database.dart';
 import '../utils/platform_utils.dart';
 import '../widgets/about_app_dialog.dart';
+import '../widgets/listening_journal_view.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -173,6 +175,17 @@ class SettingsScreen extends ConsumerWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
+          ListeningJournalRecordingControl(
+            playback: ref.watch(playbackProvider),
+            settings: settings,
+          ),
+          ListTile(
+            leading: const Icon(Icons.event_note_outlined),
+            title: const Text('Open listening journal'),
+            subtitle: const Text('Browse dated playback, stops, and jumps'),
+            trailing: const Icon(Icons.chevron_right, size: 16),
+            onTap: () => context.push('/history'),
+          ),
           SwitchListTile(
             title: const Text('Auto-bookmark'),
             subtitle: const Text('Save position every 5 min & on pause'),
@@ -191,9 +204,12 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.history, size: 20),
             title: const Text('Clear listening history'),
-            subtitle: const Text('Remove all history entries'),
+            subtitle: const Text(
+              'Remove sessions, listening map, Return Trail & journal',
+            ),
             trailing: const Icon(Icons.chevron_right, size: 16),
-            onTap: () => _confirmClearHistory(context, db),
+            onTap: () =>
+                _confirmClearHistory(context, ref.read(playbackProvider)),
           ),
           ListTile(
             leading: const Icon(Icons.bookmark_remove, size: 20),
@@ -211,7 +227,7 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.upload_file, size: 20),
             title: const Text('Export library (JSON)'),
             subtitle: const Text(
-              'Books, chapters, bookmarks & history → .json',
+              'Books, bookmarks, listening map & journal → .json',
             ),
             trailing: const Icon(Icons.chevron_right, size: 16),
             onTap: () => _exportDb(context, db),
@@ -314,14 +330,17 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _confirmClearHistory(
     BuildContext context,
-    AppDatabase db,
+    PlaybackService playback,
   ) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear history?'),
+        scrollable: true,
+        title: const Text('Clear listening history?'),
         content: const Text(
-          'This will permanently delete all listening history. This cannot be undone.',
+          'Playback will pause. Permanently delete all listening sessions, '
+          'the listening map, Return Trail passages, and the optional dated '
+          'journal? Your books and bookmarks are kept. This cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -336,11 +355,21 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
     if (ok == true) {
-      await db.clearAllHistory();
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('History cleared')));
+      try {
+        await playback.clearListeningHistory();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Listening history cleared')),
+          );
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not clear listening history: $error'),
+            ),
+          );
+        }
       }
     }
   }
@@ -385,6 +414,7 @@ class SettingsScreen extends ConsumerWidget {
       final countBooks = (data['books'] as List).length;
       final countBms = (data['bookmarks'] as List).length;
       final countHist = (data['history'] as List).length;
+      final countJournal = (data['listeningJournal'] as List? ?? []).length;
       if (kIsWeb) {
         if (!context.mounted) return;
         await showDialog<void>(
@@ -397,7 +427,8 @@ class SettingsScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Books: $countBooks • Bookmarks: $countBms • History: $countHist',
+                    'Books: $countBooks • Bookmarks: $countBms • Sessions: $countHist '
+                    '• Journal entries: $countJournal',
                   ),
                   const SizedBox(height: 8),
                   SelectableText(
@@ -466,13 +497,15 @@ class SettingsScreen extends ConsumerWidget {
       final books = (data['books'] as List).length;
       final bookmarks = (data['bookmarks'] as List? ?? []).length;
       final history = (data['history'] as List? ?? []).length;
+      final journal = (data['listeningJournal'] as List? ?? []).length;
       if (!context.mounted) return;
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Import library?'),
           content: Text(
-            'Merge $books books, $bookmarks bookmarks and $history history entries? '
+            'Merge $books books, $bookmarks bookmarks, $history listening sessions, '
+            'and $journal journal entries? '
             'Matching IDs will be updated. Audio files must still be accessible on this device.',
           ),
           actions: [

@@ -492,7 +492,7 @@
         },
         {
           "path": ".github/workflows/android-audio.yml",
-          "sha256": "0a11025d2d15c7f0c3758ce5aebe6ebc85f9f90ab3d3f47d037dae5695379f8a",
+          "sha256": "dc007eb3867c08ae392f98150059936d05827f427c3eca902023bdd87f8d496f",
           "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
         }
       ],
@@ -549,17 +549,17 @@
         },
         {
           "path": ".github/workflows/android-audio.yml",
-          "sha256": "0a11025d2d15c7f0c3758ce5aebe6ebc85f9f90ab3d3f47d037dae5695379f8a",
+          "sha256": "dc007eb3867c08ae392f98150059936d05827f427c3eca902023bdd87f8d496f",
           "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "cc8b7df45101cabb2dbc2acdab565c2221724d923a605c090c4a79977696edc2",
+          "sha256": "a2ea8a5b026ed3a06528e69614f32f15a5020b1cbeaac4402c15648c7fc59cb8",
           "note": "Manual Android build prepares exact notices and audits the three-ABI release APK before artifact publication."
         },
         {
           "path": ".github/workflows/release.yml",
-          "sha256": "f24cdc028ee605494cc206624f1a83f431b2cb5e8525a2c98b79458af29bee15",
+          "sha256": "0f1257e8649443f1f047c65b351990b4b72837659f9b8df1bb5bc7b18d668694",
           "note": "Source policy enforcement precedes generated notices. The final staged signed three-ABI APK is audited before release artifacts are published; signing and release authority remain unchanged."
         }
       ],

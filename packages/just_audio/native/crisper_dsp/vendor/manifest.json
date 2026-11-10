@@ -1,0 +1,1081 @@
+{
+  "schema_version": 1,
+  "scope": "Selected unmodified native core sources; no command-line tools, GPL Eigen modules, Speedy, proprietary Bungee Pro, external FFT backends or runtime downloads. EIGEN_MPL2_ONLY is enforced. Sonic C is a host comparison baseline; Android default uses Media3 Sonic.",
+  "components": [
+    {
+      "id": "sonic",
+      "repository": "waywardgeek/sonic",
+      "revision": "b93885dcb70aae50c6f76b0fe4e0868f029a077e",
+      "archive_url": "https://api.github.com/repos/waywardgeek/sonic/tarball/b93885dcb70aae50c6f76b0fe4e0868f029a077e",
+      "archive_sha256": "7a56d118e8e011c3dbe678b08a3f4870f2b039691e4bcbc351673d5f6066bb66",
+      "license_expression": "Apache-2.0",
+      "upstream_modified": false,
+      "files": [
+        {
+          "path": "sonic/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "sonic/sonic.c",
+          "sha256": "4a21d8086f844e3e68cb4f85961623a69d35da8ca93cf6ea704ccd125e64eaf5"
+        },
+        {
+          "path": "sonic/sonic.h",
+          "sha256": "a2fc087b68c25141e2fb7ab56e71b111bee79cf311fcc850d492eb574c0eeffe"
+        }
+      ]
+    },
+    {
+      "id": "signalsmith-stretch",
+      "repository": "Signalsmith-Audio/signalsmith-stretch",
+      "revision": "88061fd4eda56a2353c5d65c74aa3f4ccf76f9da",
+      "archive_url": "https://api.github.com/repos/Signalsmith-Audio/signalsmith-stretch/tarball/88061fd4eda56a2353c5d65c74aa3f4ccf76f9da",
+      "archive_sha256": "fa35575c38636449864e230398fee84e512b98f81ab08a88688f9ecdeca4d78d",
+      "license_expression": "MIT",
+      "upstream_modified": false,
+      "files": [
+        {
+          "path": "signalsmith-stretch/LICENSE.txt",
+          "sha256": "ee2ef82481ffb445ecdd4b3a4c1f82c0cddb2da8fe39d8e8dc384fffb3e7f06f"
+        },
+        {
+          "path": "signalsmith-stretch/signalsmith-stretch.h",
+          "sha256": "1188667959ac19dd40c0a6abbce694e44705615ec4f0e8db8af0f1cfb4c5dea7"
+        }
+      ]
+    },
+    {
+      "id": "signalsmith-linear",
+      "repository": "Signalsmith-Audio/linear",
+      "revision": "7bb1c8f36794d6980080ce817c91f8da8fe56a66",
+      "archive_url": "https://api.github.com/repos/Signalsmith-Audio/linear/tarball/7bb1c8f36794d6980080ce817c91f8da8fe56a66",
+      "archive_sha256": "55619ee678de67d4c76d46191d524bc36b1b5db19d11621eb2fe6ee67be4352f",
+      "license_expression": "MIT",
+      "upstream_modified": false,
+      "files": [
+        {
+          "path": "signalsmith-linear/LICENSE.txt",
+          "sha256": "072b5e9eb5b22880bdf6256324654cf3ce53dba828edb911921121e1be09d9c3"
+        },
+        {
+          "path": "signalsmith-linear/fft.h",
+          "sha256": "fb55f69ac14cdbac66b9c76053069ff63bc36d18af20d8c028b9acc0aad6516a"
+        },
+        {
+          "path": "signalsmith-linear/linear.h",
+          "sha256": "bf0d23a37efd4d89e5baf2b2969374748f23690697a5158774feb0d00cf9502b"
+        },
+        {
+          "path": "signalsmith-linear/stft.h",
+          "sha256": "20f3695bb8d162cf4b3f1aacdca477f0c8a301ffebd6fec53b437e9ce623462b"
+        }
+      ]
+    },
+    {
+      "id": "bungee",
+      "repository": "bungee-audio-stretch/bungee",
+      "revision": "61f52bf34be577d189d388772ddfa3696dee77d8",
+      "archive_url": "https://api.github.com/repos/bungee-audio-stretch/bungee/tarball/61f52bf34be577d189d388772ddfa3696dee77d8",
+      "archive_sha256": "f08e72f65c494bbe0ed3064f2582435c3aa6f12275fc199fea182fce8f17565f",
+      "license_expression": "MPL-2.0",
+      "upstream_modified": false,
+      "files": [
+        {
+          "path": "bungee/LICENSE",
+          "sha256": "86cf9656479f1edb82245b985f4a2cc0d503b945766ebeda4269c60b307699ae"
+        },
+        {
+          "path": "bungee/bungee/Bungee.h",
+          "sha256": "91ac529c35f527401add72030290ab65639d28f3a0cedd3c85ca361692b3d514"
+        },
+        {
+          "path": "bungee/bungee/Modes.h",
+          "sha256": "0decb8cb03119a092e1a3808963947219f652970921920a96c9db2c193ba40b1"
+        },
+        {
+          "path": "bungee/src/Assert.cpp",
+          "sha256": "6619b05b94600b19198a9e773ed46b711863bdcd1c2e628650af82c79aa7b7b7"
+        },
+        {
+          "path": "bungee/src/Assert.h",
+          "sha256": "48e4e17bf68e66379e6632c1f0b534caa0c15fbf5e1820d3b8819cfa8db32561"
+        },
+        {
+          "path": "bungee/src/Dispatch.h",
+          "sha256": "c9848e85ae75b2a3ece01efa67d6b4cd8816636a38b9a96c205f7d1daa92dcf3"
+        },
+        {
+          "path": "bungee/src/Fourier.cpp",
+          "sha256": "bdd5828d83f5b9d8db290847d3b38e350829f874ab9c1b28fc12c6c21ae89eaf"
+        },
+        {
+          "path": "bungee/src/Fourier.h",
+          "sha256": "c9e28522d41c910446c6c878a3bfb3c4778b6d29def60e69d4e7ed6118cc834f"
+        },
+        {
+          "path": "bungee/src/Grain.cpp",
+          "sha256": "a9df2e7719669c007e9abbe0e4d8300b711772b7739e1b8668c3fd39d295fd0e"
+        },
+        {
+          "path": "bungee/src/Grain.h",
+          "sha256": "4d4c9028308f7c3a46e3d6c49b6f3484dbf534ff9bc411f9b485f72dd19c1050"
+        },
+        {
+          "path": "bungee/src/Grains.cpp",
+          "sha256": "90d5606f2d5b8050c0004fc42c793c4fcb0ca3446c44c1ad2a3c72af29714593"
+        },
+        {
+          "path": "bungee/src/Grains.h",
+          "sha256": "ad169a9eeb94763e460768b1d62e2213cfb93e7c4b5c8d2f5bd757b21e510875"
+        },
+        {
+          "path": "bungee/src/Input.cpp",
+          "sha256": "a02d2ca71fb1a0ec53352f8b5b4cc39eb15534dc647e8166bc9d1ba84caec6cb"
+        },
+        {
+          "path": "bungee/src/Input.h",
+          "sha256": "00bc7cb8411ffb349d4e566e4553a8dbaea190edb41f123c93278d8d6c1c702d"
+        },
+        {
+          "path": "bungee/src/Instrumentation.cpp",
+          "sha256": "f33b280b82aad1ae0ba75431e42a35ae0b10e9603e08aa08467b4d91a75ca194"
+        },
+        {
+          "path": "bungee/src/Instrumentation.h",
+          "sha256": "a6d4a5fc5e5e6bccc2787beda71b297311edd5c5b16a7a2898c415426695076d"
+        },
+        {
+          "path": "bungee/src/Modes.h",
+          "sha256": "9b5772c44eacae70dc95c973c1a608df2a9dc7f273584b8f1adad7c071f8ae1b"
+        },
+        {
+          "path": "bungee/src/Output.cpp",
+          "sha256": "9440b8ce2c2e97defccbf9b4b7e2b2e54d750ee0880ee4fd9f69db575a632d0a"
+        },
+        {
+          "path": "bungee/src/Output.h",
+          "sha256": "8057c82043a37b097cabbbc6c81763453e7f0337412fe4b9e6407817b82efff7"
+        },
+        {
+          "path": "bungee/src/Partials.cpp",
+          "sha256": "666dc3adbff816aa0f42d5f050d5ff58cfed7a726642dfe7cfbbda3f7c5792c5"
+        },
+        {
+          "path": "bungee/src/Partials.h",
+          "sha256": "350a28d17a76d418005e508da07aa6234aa0cbc2d0b39094059c07ff3a4bb397"
+        },
+        {
+          "path": "bungee/src/Phase.h",
+          "sha256": "0bae47616b0597a0f9f4a15b2f73ea1df6dab69f3873971af57b133c5ca96201"
+        },
+        {
+          "path": "bungee/src/Resample.h",
+          "sha256": "32a323bc1782397a3b583f37e4d2006b1efa9b5236d0a0b5cf2b488706378a0e"
+        },
+        {
+          "path": "bungee/src/Stretch.cpp",
+          "sha256": "79f90152759555acd6b6b2c71e1f432b9b9ddfbe4657b8c5e1934d6f0a6fa81d"
+        },
+        {
+          "path": "bungee/src/Stretch.h",
+          "sha256": "908bba164b9feda129075497ec1a91ac57a24d6f20687ce5f997126f5bd046bf"
+        },
+        {
+          "path": "bungee/src/Stretcher.cpp",
+          "sha256": "2ea181936b167fb5a3159ebc93f41a91788ec2bc2840aae04eb772c98a704881"
+        },
+        {
+          "path": "bungee/src/Stretcher.h",
+          "sha256": "6eb4a48f78a87f06e2a6befee75bcf0850a4a639ada17337f3d3ed45849f81aa"
+        },
+        {
+          "path": "bungee/src/Synthesis.cpp",
+          "sha256": "d2d342775bc20c3ec5fdbd5b1b95473c2eeec0764bfe9df83dfe1762f2044065"
+        },
+        {
+          "path": "bungee/src/Synthesis.h",
+          "sha256": "09e3c5e80510ce77479a7914dbac664c113884b8bf8460275485a01d19eefbf5"
+        },
+        {
+          "path": "bungee/src/Timing.cpp",
+          "sha256": "55f4d292e9d94f7d0368dbafc18d295cd418a296d8f6f6155d0b728864a19dcb"
+        },
+        {
+          "path": "bungee/src/Timing.h",
+          "sha256": "0b4ff979fccba1cb36e8ccd3cc5c8c96a58cee670642fd3bbcc553b0e2e56182"
+        },
+        {
+          "path": "bungee/src/Window.cpp",
+          "sha256": "6fbc5df2d54c2508f561fb00aa52a0ff1b8cbbcacbebb5c795b2076bb95d6cc9"
+        },
+        {
+          "path": "bungee/src/Window.h",
+          "sha256": "040940070ddd230ccda8c33c894c56e9fc21e3f1b46d3748842d4f24b333049b"
+        },
+        {
+          "path": "bungee/src/log2.h",
+          "sha256": "1d83e4d34eba351889559723286c9ec9d9c41eb4ce3c8b5c1441aaf502f251a7"
+        },
+        {
+          "path": "bungee/src/version.cpp",
+          "sha256": "7cb7ea46adad5abd06286e51e74c94f843bcfeb7dc8c3900c743e7f2f4368e47"
+        }
+      ]
+    },
+    {
+      "id": "eigen",
+      "repository": "https://github.com/eigenteam/eigen-git-mirror",
+      "revision": "c29c800126982c561e8d0b9255dc65474cd98de3",
+      "archive_url": "https://api.github.com/repos/eigenteam/eigen-git-mirror/tarball/c29c800126982c561e8d0b9255dc65474cd98de3",
+      "archive_sha256": "545a3278d9cd8d46099e4d7f9bb263b716086db6bd6f40bb278d67af8c0a1b13",
+      "license_expression": "MPL-2.0 AND BSD-3-Clause AND Apache-2.0",
+      "upstream_modified": false,
+      "files": [
+        {
+          "path": "eigen/COPYING.APACHE",
+          "sha256": "03379001a7b12a2ec997a25554247d985270b353c10d5bafee9ac8d6519820b7"
+        },
+        {
+          "path": "eigen/COPYING.BSD",
+          "sha256": "51928dce36213c5333ba3172e847d735d4c6e9b7ff2722a326c49067155b82eb"
+        },
+        {
+          "path": "eigen/COPYING.MPL2",
+          "sha256": "66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172"
+        },
+        {
+          "path": "eigen/COPYING.README",
+          "sha256": "db640ff2bd90c6abd6a4d3fbb351e0ee4d555417cf840492054d1cbb2ea85644"
+        },
+        {
+          "path": "eigen/Eigen/Core",
+          "sha256": "68500cac187836840da9ad4e72510368f9f8ea643ae1f741a702315319ecb760"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/ArithmeticSequence.h",
+          "sha256": "7bdb3900384e698f212b8bfeb2f65412b973c9c0173f43f22291718000836044"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Array.h",
+          "sha256": "c55c55b00039411c9119cf3ca488c74a90ad6f2c52cef6b2cac8d79c70e0b8dc"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/ArrayBase.h",
+          "sha256": "22aefd31ce93ed9777c2c395806403d882660034277d4f1cce46996d7a39111d"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/ArrayWrapper.h",
+          "sha256": "7120ae92d3d5789637b3946cdc997d1d5e245346c44f069a768c19777c9cd066"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Assign.h",
+          "sha256": "e528b4a5acd3c393430a4811c53c2a679b74784a86bdfdf65d21cb5d12d0a28a"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/AssignEvaluator.h",
+          "sha256": "5e5ec9f10c3640bcb5d19cce50d6e0656fbda2d49ed62b10e07bb3d95fe8d00b"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Assign_MKL.h",
+          "sha256": "ebf3af1160b927e8a88eb0466abe5dc6909f7007c362f2f464c53591994dc937"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/BandMatrix.h",
+          "sha256": "ca3e7ae5c9e437ba478ac21434919f3cc12210fe64f17d637e095826c09dbc2e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Block.h",
+          "sha256": "b178be1dfc88aa9316009104dbc6a1c9aeee5ddca4218546be02d4381c25713a"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CommaInitializer.h",
+          "sha256": "86991e51cc3edb966c42c7f99705f8bebb6d063ccb4ba567f0f841f760a92a4c"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/ConditionEstimator.h",
+          "sha256": "cb30224e872c1f7cc863e21d5f100335ff9a39d4476a5763a041d81701870114"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CoreEvaluators.h",
+          "sha256": "594e326d9298998be8234328dfe38f4c2ef155a8bb4e4e7358d8d875f3d6c0c8"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CoreIterators.h",
+          "sha256": "ff41e2079e445d6f69cea4960ae30fd5e2398c02720ac522f7a8c9aada510adb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CwiseBinaryOp.h",
+          "sha256": "230fb24241245fbcb9888343d46b0be72720ee55fb5ccaf32e8c9aa30f47ff51"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CwiseNullaryOp.h",
+          "sha256": "a97ec957067d0b95884a4c97fed8cac43b129a5a6af011cfad297f7e616dee88"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CwiseTernaryOp.h",
+          "sha256": "576f0b5a214a2246001935384e0fa9fe1d2bf05c2db71be43abc26d126b6c4fd"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CwiseUnaryOp.h",
+          "sha256": "bc10cc32cacda27467edb75252c3a2a4a211a3f3ea9bb7ea6cb49608bec28416"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/CwiseUnaryView.h",
+          "sha256": "82d6e9a69a9a531d3dbc78121417e94ed7dabd8a5ca2c9ac923907973da9d858"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/DenseBase.h",
+          "sha256": "a2175e467d501a0652372ffd1c2e589e07d6c71528b38d0e731268dd37904146"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/DenseCoeffsBase.h",
+          "sha256": "b5b47b6fdf6909478963af51524ba575c43218023b69b65c64238a89410e0d2e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/DenseStorage.h",
+          "sha256": "fef9f478442cb02e5659e69d7923906f4a9ab8b004ec721f410d209e4b796b28"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/DeviceWrapper.h",
+          "sha256": "53c8be5b6600a82e4ae80bdcf52ac5cc66c50b5166a918948e350a1b5e63fed1"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Diagonal.h",
+          "sha256": "5b51841d4dc75113e31a9f527d7017363dd4388a53e999a60a484b37320ea621"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/DiagonalMatrix.h",
+          "sha256": "43ca5697078df9337e8df7c05dd4194704a8e96598d30ad3ddbf0ea656250220"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/DiagonalProduct.h",
+          "sha256": "f5a6596cb5f29e9238a052412210b4ac6ca1d107469ac7f5df6f13edfa1a3eff"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Dot.h",
+          "sha256": "fb3269b3e762bd590917ddb0c22d2f999b76dcbb380d7ae56efa2e53457f2358"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/EigenBase.h",
+          "sha256": "f33efeaeb99619cbf0a85baa8d6f142d2b208667674d9efbb20f02d02aa2fe09"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/ForceAlignedAccess.h",
+          "sha256": "c729c3f796ee5f7af65918957edbbcd2be17443396d1fe0534cd103a0dcfe5c7"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Fuzzy.h",
+          "sha256": "08728e99d0b8c2cc0fb1a8f9b7c7e2c90053905c323905dd769affab2ccdc894"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/GeneralProduct.h",
+          "sha256": "7f2dcf129ec05ed46b534f0a75a792e9cd362bcb563da640aa700e5a756f7cb2"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/GenericPacketMath.h",
+          "sha256": "82ff6605a33249f8d6f111e97e85a3573b5574b951acf19bc3aec99f7607aa2e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/GlobalFunctions.h",
+          "sha256": "1ab35f01673a3038ab4c8e72b6ad429549b0e685b11feb8a4e7d07b57c700901"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/IO.h",
+          "sha256": "097222865a0160d04782737f252be80e5939ad398aececb41ef45b728283ecfb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/IndexedView.h",
+          "sha256": "5ba13d60dadb24e97ce49568c2cffa82f08c61dfd7fb28c4abe751a6f41b7b32"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/InternalHeaderCheck.h",
+          "sha256": "47e7f47aae4fe6be7760d635bd430ab5f607484fc53efd76bef72e776d1e42c9"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Inverse.h",
+          "sha256": "563026dc9522c9f74383d21d0e1991b21afbd40fe6c47d9f1b9000d056abc909"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Map.h",
+          "sha256": "a22e54f77e6c4bb17eb7768619a54ff0af21efd42a1d90ced30975e60689f140"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/MapBase.h",
+          "sha256": "d2b3bc881a2d25d7dad834089f933b43dee947f09b300ff29cb28aa919f9bebc"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/MathFunctions.h",
+          "sha256": "e703d65db868294c207cdd05272bdc43eb859ba7937c4845a4f989da0f1385d9"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/MathFunctionsImpl.h",
+          "sha256": "7001bf820db0b23b9839821eb593ceb675b1a6ca6e9094b02fef23e6f1b85f88"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Matrix.h",
+          "sha256": "f2e0857e3862cf8a842471b237ed2750b451b9c48a414b654ad23788275c0a30"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/MatrixBase.h",
+          "sha256": "ae96d4fd0bdf47697bccd5dd4a23240e55c24fb566701e4b06a86e76c9fb3432"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/NestByValue.h",
+          "sha256": "f0dd1be393ef73d1eca6477acefc256d151cc4f9797812e378ea043393b2185c"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/NoAlias.h",
+          "sha256": "feea147b1b377e22510f028f86faceeff6e6e771915bb03891df3f3302f56039"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/NumTraits.h",
+          "sha256": "2e7acd584a0055e3374e50bdc677101bec76db5c41e24d6d9205d9b9152df74c"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/PartialReduxEvaluator.h",
+          "sha256": "ceb6397f9641ca7e885951e1ce5670e8f97bd4cb2236ee1cb9dd6c557410738f"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/PermutationMatrix.h",
+          "sha256": "74d291c358b9a75822a713376605fe8e47d84647313050c80d9113339186b604"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/PlainObjectBase.h",
+          "sha256": "3c1c73f94b5e3895af95144a1ac19ae981334637d4b85e31d8ed40d3504da94c"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Product.h",
+          "sha256": "496aac6f96ab74c6f6463482d35492a10810e3e58a0a2540431fe67070f0bafc"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/ProductEvaluators.h",
+          "sha256": "538b1636ada928ab7ff7d323bec0c3a82f3ae943b902e52cd7f9f613dc056719"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Random.h",
+          "sha256": "43daa8714c18e98870992287ddbeabe5346b6584c9a9b665fe8e6fe61a986805"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/RandomImpl.h",
+          "sha256": "5a5f51fa0954b80807663af9a30d95c212dc37cc38b838d123dfb7225918c8e0"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Redux.h",
+          "sha256": "1b2fb8bf78b9b0a0c2ed086c1b3311ee76ca2a184337e50db5382c92f9e6539b"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Ref.h",
+          "sha256": "bc00e3e9d56e1776cbafbfb79871a1d4646480c30fe3a9f346fa05d479dfd5a9"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Replicate.h",
+          "sha256": "3e810a28b223378a03260d6f18dac42bdbfd7cbb191c1ad0566047d12ce9d089"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Reshaped.h",
+          "sha256": "d2b7eeb5638ad4b58c4d31f941a4ad8519dade8482c2ad7786344cda36a2d120"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/ReturnByValue.h",
+          "sha256": "f1d858e20250ce753f8f9e77505ea60413447f20bc9d3fce9f9e7ac1cd6044b7"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Reverse.h",
+          "sha256": "b97aa2dab374be73683ae092add762fbab1c943b0dd055902eb479fc612fe9e7"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Select.h",
+          "sha256": "98544be2ebe89b3d0da806eafb6c513afa1e0b2df6ce21b769da6f7c50672769"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/SelfAdjointView.h",
+          "sha256": "292b2d6420125e2e2f7452b1bd10fc9627a7d4e2a687f1b52cdd596d83333add"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/SelfCwiseBinaryOp.h",
+          "sha256": "6b14961097708ebb2339e626b5b1bc9280ef6b01a83fd21fda0f13e59cee0bb9"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/SkewSymmetricMatrix3.h",
+          "sha256": "afb3a8e26ea61f5d8a795478bdd8b9d64c8c7222b9c7309d824ec1de88e6ed5a"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Solve.h",
+          "sha256": "6813c669accaa4513b5e547019e6911e1e80f9efa1a2dd722f94d62b4ba62bc5"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/SolveTriangular.h",
+          "sha256": "4c25cff20695046c38603e31ceec059389a11e265e43f57f6af821f4a6484447"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/SolverBase.h",
+          "sha256": "6de64f9c4d4cd20e08c733fd4439834217ae8d42ecc7bec9a3e910f6dfbe68ee"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/StableNorm.h",
+          "sha256": "1369e618a954cfc35f3d90805c62a64654fbf02827ad3410ebc527242d82c751"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/StlIterators.h",
+          "sha256": "48e1bc0d179d9f817c32e713b4bbe958308f2004d01b725c82e1a0cdda0b2f78"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Stride.h",
+          "sha256": "84c311588a688c85e41e19e0ca0fe510d2765ac09787de9cac01c489d3b806f1"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Swap.h",
+          "sha256": "459eb068e95dcd7976b315447cab501113f120802dfd5f7d98322c7cf9065eec"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Transpose.h",
+          "sha256": "183d9f72a4fd404583995c2702a1e721f8d276599ee0a84d888602f4d09cd17b"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Transpositions.h",
+          "sha256": "e00477f2bcea33d318cafd16aa6a6b3a0fcd4153845d4b0c84e33a7a094735fa"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/TriangularMatrix.h",
+          "sha256": "bb1168d3efb1542dc922f0ae4ebddf7defaed305768eb84de355c9dedf96dff6"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/VectorBlock.h",
+          "sha256": "df5d6f252c70a6b5df9ec2c4a13455fbd6556a3891615b563b4902afa701b380"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/VectorwiseOp.h",
+          "sha256": "c7acad4c5e80dfdb77302a72a4929a9d74ccbd7d1205d200811fcfe15bb2cb74"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/Visitor.h",
+          "sha256": "3bce843779e65a24bcb0ca8c7718bafb0d67d2f81d269feb97ed0ec6cb07166d"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX/Complex.h",
+          "sha256": "d41712e3e59b6a494e5367004238272f9dd4807c66645bfedc8d0e20ad14bc8e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX/MathFunctions.h",
+          "sha256": "c0ce21feead536dcd55836ad58ac0e0f243aad17c68a5c682b34d0967cf7a692"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX/PacketMath.h",
+          "sha256": "d8d7cd606cfd90b6b741cd0e4ca45025c98810d30f4e1d49f3a0c5614bb41fed"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX/TypeCasting.h",
+          "sha256": "4a854b01a1ef09383456222c3e53577a3f076d1bca788774a2ccec6c15a1b8d0"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/Complex.h",
+          "sha256": "173733860468099eef43f972cd042babf1f4237a4e8c97a0cc28647bf03ecb59"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/GemmKernel.h",
+          "sha256": "270a653332c78c1bde2c5ef6d1b027d8d881faf42e8a6f4ece8f2b06567e8b92"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/MathFunctions.h",
+          "sha256": "31b4c5fc5e4f6fd547abcee9cd126710ed4e10f188d0a9c6f5819da118e73d0a"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/PacketMath.h",
+          "sha256": "5380ab4289d6399302ee2a27dcec225b5e8ad2799d7ed108df269b56e83f443e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/PacketMathFP16.h",
+          "sha256": "6dd07345336a30bfe1e9154c040021b5b6fad7c55f7671902c34d0cd04569132"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/TrsmKernel.h",
+          "sha256": "b3df0cb72d1811b6dc064e40f1bf4df5ec6c7836c8908f322fcef1f3a2fcf359"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/TrsmUnrolls.inc",
+          "sha256": "c92436f090efb9014fdf3591a51da22d5bebb3e65342d2e1282b7802d8456a1e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AVX512/TypeCasting.h",
+          "sha256": "d946384362ac70e21aedd4539ea4e9bb37b6d48ebf81a898660ed8980ecfedaa"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/Complex.h",
+          "sha256": "c978c44807e64fa1fe10c902bf899cf47c7afb3a7f0bfb126b1f64b0c009ee9b"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/MathFunctions.h",
+          "sha256": "ba3223dd995929c2ddebcbd9e5452987288ffc55c9b33e4b2a5ed318b42f1984"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/MatrixProduct.h",
+          "sha256": "eb7778c25a452286078cd9d91d6af08b83032b02307e1399dda61bd051ca2ef0"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/MatrixProductCommon.h",
+          "sha256": "0855497a3c21762cb6659c08c9abeeff6b88f49c6432b60fbefba3799edbc738"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/MatrixProductMMA.h",
+          "sha256": "89834f3f7b625303622237f13b93486ed33d5ea59a4e9c3fe1122276ccda9037"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/MatrixProductMMAbfloat16.h",
+          "sha256": "9d4ac58847b215e80e6e97b079805298c0cbacb58573229f7c978c22592a3091"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/MatrixVectorProduct.h",
+          "sha256": "a96cd9fc5ceaa5d0b4fd6ffff11ad4a2146a394245fdc7cef777fafa5f9e9d80"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/PacketMath.h",
+          "sha256": "aaa27f76a5233f9f09d4446f8c82449b771785f33a4ab397c56f023fced7facb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/AltiVec/TypeCasting.h",
+          "sha256": "4af682f542d1ff99dc57200f9cbf1fb8c03d986d7640fac0328ed9cb45898d08"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/Default/BFloat16.h",
+          "sha256": "c5ad83d7f70fe7f7a086d8176a1a6c1f74d7a6ccbae3834847da677821778722"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/Default/ConjHelper.h",
+          "sha256": "3d9ebaa131cf7035145d781f7530ec7791899ce68362774f41826aaab73e4662"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/Default/GenericPacketMathFunctions.h",
+          "sha256": "bd162436e62e2c7b2e4b4d7bbd986faea3180ab764493f832245a0c9903261ec"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/Default/GenericPacketMathFunctionsFwd.h",
+          "sha256": "fe639df55aaeece41a3974832a1472c4e9567bdfeb1f7d6b3dbbeef78a4acfd1"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/Default/Half.h",
+          "sha256": "1ce0bb0ab51fc2a2e3f3fd662a33f51636faeef1e37530a72ac2e8b6cb285e75"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/Default/Settings.h",
+          "sha256": "d827e0889cf6d0bf88b0135e9526c558712877b851b55d4a84dc576d715c6613"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/GPU/Complex.h",
+          "sha256": "49c20be64de4321a601790c263e81ebb4520dd5553ef456aa819e67b09694660"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/GPU/MathFunctions.h",
+          "sha256": "cd12189a52c4a75c2e72411d895903126e92a5c76cd04b5b96d3a643d952849e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/GPU/PacketMath.h",
+          "sha256": "71eb7483fdc2bc8e9df6a5f288b44d2ec9909957adb9d9f8230ec5e849b0d498"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/GPU/Tuple.h",
+          "sha256": "cbe540058906eb23b1adddb66425d430c8e86750ee0c841fe69e98479bb49f86"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/GPU/TypeCasting.h",
+          "sha256": "006d27587c6a90b8d1adc3dc7360bf4e49b526477e8b459da8c2b6da23960ab6"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/HIP/hcc/math_constants.h",
+          "sha256": "e078f0b0e75f280aa6cedb2487d5e119ed7eca03efe40eb781e6f3bcbef764fa"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/HVX/PacketMath.h",
+          "sha256": "4dc707e3ff4ffb8cb77a0076bfc09580c49d5acf3d68b4e356595bcfab18cb0e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/MSA/Complex.h",
+          "sha256": "bf39aef76d1701f5f6b80f9e37fce1b1d5edaed558339e1684908847194ef549"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/MSA/MathFunctions.h",
+          "sha256": "ff51c0e9627896fc1a24e4cc0239a24fc58200b758567020c2bff63e5d992448"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/MSA/PacketMath.h",
+          "sha256": "d47773917f2370de6b0513f6a3f48f00b2b315a737167cbcdb30cf530706231a"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/NEON/Complex.h",
+          "sha256": "1155581b68f43c030676a68ad4bdde83b2378bc426296f824d90d8aa711dccdd"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/NEON/GeneralBlockPanelKernel.h",
+          "sha256": "09d21465c0546603b48315a811cc8edd1db7652a6761d5c59727c50abb84ce1b"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/NEON/MathFunctions.h",
+          "sha256": "b32dba77eb1d26d1b749ece301cfc3ce0c2265d88824c0a78a0e83fdd7cbafb9"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/NEON/PacketMath.h",
+          "sha256": "1797c306b34fe39afa221f3e5cd5d0f0476052897a2438f254bf35e3b25bee05"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/NEON/TypeCasting.h",
+          "sha256": "568e521d83bbd4192ca92ae5f8c184076e0811263276453740e376c1773454c2"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/NEON/UnaryFunctors.h",
+          "sha256": "65c5ebbd55d34848180e01432a0e7ce13b5167c475f896726d45cb3fb9f03c05"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SSE/Complex.h",
+          "sha256": "ac42c2bb7d212a23e2f69c7c9131d589358653f0b36b38f8f00b0b8c4ff8de8e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SSE/MathFunctions.h",
+          "sha256": "23f5658cd7866c716cc797528579ce7259dae9c23c5706d317886a759e94b684"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SSE/PacketMath.h",
+          "sha256": "c7f42c7cc1730bd34482852ef28806fb77ea700b3f87e234a0360a80255ebceb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SSE/TypeCasting.h",
+          "sha256": "68dd208b715e51bab69d2e878a406b3bc18716626fa14bedd810b55e10f970d8"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SVE/MathFunctions.h",
+          "sha256": "88ef86e2f9d59af32e173e1ba5ae481b07aaa8cefdeb72d24d07cb06855e01c1"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SVE/PacketMath.h",
+          "sha256": "7584ab42ac4d2c72783b743f07e8657d24a09647429ab815d2aa78255cae4ec0"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SVE/TypeCasting.h",
+          "sha256": "cd67fdd2d14516a386c60b05aec3079868605304267459ffdc23ec0645254427"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SYCL/InteropHeaders.h",
+          "sha256": "fc5d2aee45b05a981a418e860f844ddbd9439530c0ce5397917a561222ca2cb8"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SYCL/MathFunctions.h",
+          "sha256": "012a5d076075d3d23988e1b48e8b55b9916a3b0c1309a123debbca591e12a699"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SYCL/PacketMath.h",
+          "sha256": "09a0d19a77e331bb16997dd48a0399fc8817e72728872badd1cf65601ebe64a1"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/SYCL/TypeCasting.h",
+          "sha256": "b897565fdd520e404242956ffc1807fae095ac7a80e9e9e606f7ce05ae745d6b"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/ZVector/Complex.h",
+          "sha256": "0433eba27f57158f9021975c496741e3a61c45fd1cb1eee40035efbe712c4aa7"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/ZVector/MathFunctions.h",
+          "sha256": "7ccfdd9cbdfe8f1feccf70ac1e5a8aca2d537d1ee5d9d8ff0f04b22fe9e2b2ba"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/arch/ZVector/PacketMath.h",
+          "sha256": "491c984ffe93ebc10291477f0f16d1f8c25ad94a12cd4182a5293ea70cb6a4c9"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/functors/AssignmentFunctors.h",
+          "sha256": "9015c7fda41bd98d8824df943f395d9fa486f9d19e82a8941855e74414901757"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/functors/BinaryFunctors.h",
+          "sha256": "421432820828e07cd65ac1610fc993849f66153fb30ef25a5f1be364706d1ef8"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/functors/NullaryFunctors.h",
+          "sha256": "a46a6b63382b403c6e0df99107ce569bf35e726bb7aecd1e4705dbad69140449"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/functors/StlFunctors.h",
+          "sha256": "ea2e03a15a2fa0f0d3b0fad830fb2c7a1680373311567bb447879036ed12aa97"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/functors/TernaryFunctors.h",
+          "sha256": "1dfb135af8b48ddaccf4e04d0962cb086041a241399efb9a2a233d49470d6634"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/functors/UnaryFunctors.h",
+          "sha256": "2b1f41131f6d45d3c30701d254fdd784f3971c4763296b313860bf5e4b6b2ec0"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/GeneralBlockPanelKernel.h",
+          "sha256": "98fe371233c6e5f74fc3bbfbba8ac96be0b35d90d7575975657580f18a37ceb6"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/GeneralMatrixMatrix.h",
+          "sha256": "c6f7f18c09574ca360892dd92358aa84eec709e88f0252270771190293e9a6c7"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h",
+          "sha256": "da3808d9338ae9e22b3271f640c51e3c146334230a072d3abbc7cec73d46d38e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/GeneralMatrixMatrixTriangular_BLAS.h",
+          "sha256": "8115e129f17fc6cd3858452d443a288ce19b4b351b0ecf7dbebfe7d094409399"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/GeneralMatrixMatrix_BLAS.h",
+          "sha256": "958fcece85f57135b956250888365b7761ac674eef611f2d2cb94aa3e0c20f0d"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/GeneralMatrixVector.h",
+          "sha256": "09d8d77568a900b4520f52c4007e5b35c6f70bfcb6fac240ea29eed5607c549f"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/GeneralMatrixVector_BLAS.h",
+          "sha256": "b5c1b369ea53822f21ae4376fe0536e0c507c7a8e56b977aad44c125ac4096f4"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/Parallelizer.h",
+          "sha256": "8ac7a0a3924eaa7629dfa05e67abc1e0f5d1d881fbaf7ea9a3ab560d92955462"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/SelfadjointMatrixMatrix.h",
+          "sha256": "095d777d55b4272da0cf1d3830aa3a723989626db4a73de2e191680af8e47bdc"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/SelfadjointMatrixMatrix_BLAS.h",
+          "sha256": "dd8b01cfb7572973277142ec12f655ddb600df7971acbf6a47beb5cf4d905518"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/SelfadjointMatrixVector.h",
+          "sha256": "7fa3eb99550c805feebb370319e90da8e8027d0fd6960de7db140d3b218fcac6"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/SelfadjointMatrixVector_BLAS.h",
+          "sha256": "96469d5ca70c0848afe4d004c6dcfcd9d0f7ddad630b74200be6d1602b86f7fb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/SelfadjointProduct.h",
+          "sha256": "7a9f44350f9550787a0e381b392b47aa649416c46d9114081be4af25af74046b"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/SelfadjointRank2Update.h",
+          "sha256": "b7a4e012084c15460e0b09d5d73a49c11f77ca5de2af39839607ce1e3749bc15"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/TriangularMatrixMatrix.h",
+          "sha256": "5706301758107788fcb78d4bf2500bfc7af95b777e3475a514ba889df6ab6ca6"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/TriangularMatrixMatrix_BLAS.h",
+          "sha256": "2b43a586effef4cfd8f7ea2cda420cbfb18aec1ea7fda2493fa86b94724556d7"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/TriangularMatrixVector.h",
+          "sha256": "1d2dd9e6fa77e1f7532b734577b6d3c16966e166f6085c6298b14f36f9c42a0f"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/TriangularMatrixVector_BLAS.h",
+          "sha256": "569f4768db3ed08046ccfc232e1ec4ff8944d3e8f4ae439d5fcdc556c7f131ce"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/TriangularSolverMatrix.h",
+          "sha256": "8a4bdfc4274f3a83f9d5bbffa398b5c17fe7836b090fbdd1647d454282b645a2"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/TriangularSolverMatrix_BLAS.h",
+          "sha256": "7816252f8942a21a349e70b30994b076045077099666d91a6d8877ad8e40131e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/products/TriangularSolverVector.h",
+          "sha256": "05a4eae5215a890d34d09861d8af35e7a0af621339c3a771af9d08243e8fefdb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/Assert.h",
+          "sha256": "99ce6b5dc49c4f5233b5fd6c240235f3d7d2235b1aca2870e5c1f772b09d2319"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/BlasUtil.h",
+          "sha256": "f4c19b5eaad6faa6e31c596da59ea53f2d385c0e2f92102dfadbe1a2de611909"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/ConfigureVectorization.h",
+          "sha256": "ce08f47c75ed193d15635150565d94e4ad93c524ae301a79baa02d7fec527894"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/Constants.h",
+          "sha256": "09e9365a700cbb9d31986d5a025acb9b6a00c8313515739a201426ade810384f"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/DisableStupidWarnings.h",
+          "sha256": "d5d438819aa1ce8ae613fab33e838e10f2b7ee82975bdeab092493e703d1d193"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/EmulateArray.h",
+          "sha256": "873187573e4c980f1ded27bb7f488d3dd9ad21f59ed127ca64c5fe32d332221d"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/ForwardDeclarations.h",
+          "sha256": "4b499fc0f7240fcbe0e7327ef612d4e5d7c6ee28553c6f9618daea6be49e9cb7"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/IndexedViewHelper.h",
+          "sha256": "35e74c7e4e43687d2e0e354a2c71766cc98a2770df70e3214e30f1ea52e9fd16"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/IntegralConstant.h",
+          "sha256": "9efc9129fbcd6ecbb77e532529073fc0365c8fd40c865d8b4a61c0ca3e9eb874"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/MKL_support.h",
+          "sha256": "5dba2a1cbf645e81ac982ba12a0fd3cfebdb6528264220269a76c1323dbcb7ad"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/Macros.h",
+          "sha256": "4a02e79330a6f3bb9d999fa493c55537773242414e9c5e531278683514f29520"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/MaxSizeVector.h",
+          "sha256": "342b2e0e14bcebe90c30b0602e2774e6d0a2cbaa1cd9ee03e21f9850f3da4651"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/Memory.h",
+          "sha256": "5512ed3a3d678c0c23fee86f0acf6d802d9883db9e1fa12b0a9d2d312be95bcb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/Meta.h",
+          "sha256": "0d131361edbfdca8a7f1d6d22059e1e92a85bed18f4ddbab056c40da9b09ab76"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/MoreMeta.h",
+          "sha256": "eb5ae208890eed6729cc39710276c3ceec19f302f8df00e83137549d56b1eb1e"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/ReenableStupidWarnings.h",
+          "sha256": "8a5cb605b24185f102a11b47c3b7b2bf05becf6c238d241005203bf20b9e8424"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/ReshapedHelper.h",
+          "sha256": "c370fe870608169223be6128c2e48fa6d444bf8b64e334d1e41e9201942478ee"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/Serializer.h",
+          "sha256": "ac2164b6cfdc7495adb98de1d0e54b01f4f0d4414344ae79f73b3d24066efb7d"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/StaticAssert.h",
+          "sha256": "2e8295703b5a3181ac8f0d8d1f5b424a673cfb571b30175b3cc6d80f7556829c"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/SymbolicIndex.h",
+          "sha256": "02c66ad22f174692f99a4b1bc102fdab3f345b6d2dd612eddcd4f7dcaaf26ccb"
+        },
+        {
+          "path": "eigen/Eigen/src/Core/util/XprHelper.h",
+          "sha256": "6864171422e945293d3aa71a994efe166336108b7c57f60fa1f3803273b3b57b"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/Image.h",
+          "sha256": "3f55e8f5a048a98402bb46872dd359ebf8cb74550fccf811ff43f4e94191a46c"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/InternalHeaderCheck.h",
+          "sha256": "47e7f47aae4fe6be7760d635bd430ab5f607484fc53efd76bef72e776d1e42c9"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/Kernel.h",
+          "sha256": "b897c8b693a4c8cee297351d60ac5b5b1178e8eedff002ee3c13d6492d01ae7c"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/RealSvd2x2.h",
+          "sha256": "050e1016e88e2e50ee0f4f0139f6d50a85d100e334aa446d8544b699735ac014"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/blas.h",
+          "sha256": "77cc4de338cdf0fe87e6d4aead726f95dd43fb6b5da4a509ae6dc0f7e98dc3e3"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/lapacke.h",
+          "sha256": "39a29aa4a8981951ca19ccde4fa387f8c9f96eda7e9cc1744cbc3e10d3692e97"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/lapacke_helpers.h",
+          "sha256": "6ff4493f0a06f4b4e6d5049a625b1df09daa38fee502cdcb4994bafca5d75bc4"
+        },
+        {
+          "path": "eigen/Eigen/src/misc/lapacke_mangling.h",
+          "sha256": "345062b779b6d1fe5c017e6973be459b3e9e4617cad5612d8adf2a584f3bb04b"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/ArrayCwiseBinaryOps.inc",
+          "sha256": "96a188c0a7bd2293aeaebbf255ffebf2eb521c01b7ba0da005313301c5f9126c"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/ArrayCwiseUnaryOps.inc",
+          "sha256": "a6b6be9bec3b84e7b9d56d05cdbf92ee5ed66493ecee199ff8cf399bd94bc6e8"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/BlockMethods.inc",
+          "sha256": "a0a85699e52cdbb128589e4fd37b2f49d95f011aea610bc3103bfbe1c34ee4d3"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/CommonCwiseBinaryOps.inc",
+          "sha256": "7800c45fa6f499e479928c0acda3317988c22266e6c9a48646b1aca17a33ccc8"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/CommonCwiseUnaryOps.inc",
+          "sha256": "a2b7cf3dd3b91f572048eb96c83ee8f25e0abf009bd584f124ca7cf789209378"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/IndexedViewMethods.inc",
+          "sha256": "a3df8689c729b8a580bbd08ec23f540c8b4873f05a39df3fff4b0160acfb2d2d"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/InternalHeaderCheck.inc",
+          "sha256": "9d0feb2bf8f1125813294895db4cd341637ab602e7126d16a94cfdb138f74954"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/MatrixCwiseBinaryOps.inc",
+          "sha256": "1d2466e50d5167bd139f77255244537bb8e06842fcf209720a17d8bd765652d9"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/MatrixCwiseUnaryOps.inc",
+          "sha256": "37bb2fd8f5be1f2587945aee1281a5034084f311347f129d3122899967141abb"
+        },
+        {
+          "path": "eigen/Eigen/src/plugins/ReshapedMethods.inc",
+          "sha256": "4e40e72b23857affbd0c4a199ae98a1905bacf88e5b5f5d0bf4e84eced1ea7bf"
+        }
+      ]
+    },
+    {
+      "id": "pffft",
+      "repository": "https://bitbucket.org/jpommier/pffft",
+      "revision": "02fe7715a5bf8bfd914681c53429600f94e0f536",
+      "archive_url": "https://bitbucket.org/jpommier/pffft/get/02fe7715a5bf8bfd914681c53429600f94e0f536.tar.gz",
+      "archive_sha256": "9adeb18ac7bb52e9fb921c31c0c6a4e9ae150cc6fcb20a899d4b3a2275176ded",
+      "license_expression": "LicenseRef-PFFFT-FFTPACK",
+      "upstream_modified": false,
+      "files": [
+        {
+          "path": "pffft/fftpack.c",
+          "sha256": "bf75921337a784d117c868dcf2d30b3f148f970eaef08a9acbd8d8571f6ab8c7"
+        },
+        {
+          "path": "pffft/fftpack.h",
+          "sha256": "e06b12c73aeef28d714519071a45175fe1df5899d12ff26df4f30c99a35f032d"
+        },
+        {
+          "path": "pffft/pffft.c",
+          "sha256": "7c7bfc62d5d4e2354220d963c1d95e02643041692ddbe2bc3f821e54d17c1bc7"
+        },
+        {
+          "path": "pffft/pffft.h",
+          "sha256": "f07a580d03403ead8c4fbd10eb56ce1125b2a4bbd5a5eb628a58290f2f4881df"
+        },
+        {
+          "path": "pffft/LICENSE.txt",
+          "sha256": "deffd5aa43d83be2e0818b5c5b8b21425bb769df9c585a45f633e6f979015fde",
+          "note": "Verbatim license/copyright extracted from pffft.c; original header retained."
+        }
+      ]
+    }
+  ]
+}

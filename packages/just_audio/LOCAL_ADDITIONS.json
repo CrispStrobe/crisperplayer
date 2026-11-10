@@ -1,0 +1,22 @@
+[
+  "android/consumer-rules.pro",
+  "android/src/androidTest/java/com/ryanheise/just_audio/CrisperDspJniTest.java",
+  "android/src/main/cpp/CMakeLists.txt",
+  "android/src/main/cpp/crisper_audio_jni.cpp",
+  "android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessor.java",
+  "android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessorChain.java",
+  "android/src/main/java/com/ryanheise/just_audio/CrisperDspEngine.java",
+  "android/src/main/java/com/ryanheise/just_audio/CrisperPcmAudioSink.java",
+  "android/src/main/java/com/ryanheise/just_audio/CrisperRenderersFactory.java",
+  "android/src/main/java/com/ryanheise/just_audio/JniCrisperDspEngine.java",
+  "android/src/test/java/com/ryanheise/just_audio/CrisperAudioProcessorTest.java",
+  "native/crisper_dsp/CMakeLists.txt",
+  "native/crisper_dsp/LICENSE",
+  "native/crisper_dsp/README.md",
+  "native/crisper_dsp/crisper_dsp.cpp",
+  "native/crisper_dsp/crisper_dsp.h",
+  "native/crisper_dsp/tools/build_host.py",
+  "native/crisper_dsp/tools/dsp.py",
+  "native/crisper_dsp/tools/render_ab.py",
+  "native/crisper_dsp/tools/test_streaming.py"
+]

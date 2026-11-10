@@ -42,9 +42,28 @@ tasks.withType<JavaCompile>().configureEach {
 android {
     namespace = "com.ryanheise.just_audio"
     compileSdk = 35
+    ndkVersion = "28.2.13676358"
 
     defaultConfig {
-        minSdk = 16
+        minSdk = 21
+        consumerProguardFiles("consumer-rules.pro")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments += "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
 
     compileOptions {
@@ -73,4 +92,7 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-dash:$exoplayerVersion")
     implementation("androidx.media3:media3-exoplayer-hls:$exoplayerVersion")
     implementation("androidx.media3:media3-exoplayer-smoothstreaming:$exoplayerVersion")
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 }

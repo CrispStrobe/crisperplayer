@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/providers.dart';
 import '../services/audio/playback_service.dart';
+import '../services/audio/speed_processing.dart';
 import '../services/db/app_database.dart';
 import '../utils/platform_utils.dart';
 import '../widgets/about_app_dialog.dart';
@@ -20,6 +21,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final db = ref.watch(appDatabaseProvider);
+    final supportsSkipSilence = ref.watch(playbackProvider).supportsSkipSilence;
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
@@ -93,10 +95,17 @@ class SettingsScreen extends ConsumerWidget {
               child: Text(ref.watch(playbackProvider).audioEffectsError!),
             ),
           SwitchListTile(
+            key: const ValueKey('settings-skip-silence'),
             title: const Text('Skip silence'),
-            subtitle: isAndroid ? null : const Text('Available on Android'),
-            value: isAndroid && settings.skipSilence,
-            onChanged: isAndroid
+            subtitle: supportsSkipSilence
+                ? null
+                : Text(
+                    SpeedProcessing.supportsAndroidChoice()
+                        ? 'Available with Sonic. Your saved preference is kept.'
+                        : 'Available on Android',
+                  ),
+            value: supportsSkipSilence && settings.skipSilence,
+            onChanged: supportsSkipSilence
                 ? (v) {
                     settings.skipSilence = v;
                   }

@@ -318,6 +318,7 @@ class _SpeedProcessingPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final canChooseDesktop = SpeedProcessing.supportsDesktopChoice();
     final canChooseApple = SpeedProcessing.supportsAppleChoice();
+    final canChooseAndroid = SpeedProcessing.supportsAndroidChoice();
     final selected = DesktopSpeedProcessing.parse(
       svc.settings?.desktopSpeedProcessing ?? 'automatic',
     );
@@ -326,6 +327,10 @@ class _SpeedProcessingPanel extends StatelessWidget {
       svc.settings?.appleSpeedProcessing ?? 'timeDomain',
     );
     final appleCurrent = SpeedProcessing.activeAppleMode;
+    final androidSelected = AndroidSpeedProcessing.parse(
+      svc.settings?.androidSpeedProcessing ?? 'sonic',
+    );
+    final androidCurrent = SpeedProcessing.activeAndroidMode;
     return ExpansionTile(
       key: const ValueKey('speed-processing-panel'),
       tilePadding: EdgeInsets.zero,
@@ -334,6 +339,43 @@ class _SpeedProcessingPanel extends StatelessWidget {
       subtitle: Text(SpeedProcessing.processorLabel()),
       children: [
         Text(SpeedProcessing.description()),
+        if (canChooseAndroid && svc.settings != null) ...[
+          const SizedBox(height: 8),
+          RadioGroup<AndroidSpeedProcessing>(
+            groupValue: androidSelected,
+            onChanged: (value) {
+              if (value != null) {
+                svc.settings!.androidSpeedProcessing = value.id;
+              }
+            },
+            child: Column(
+              children: [
+                for (final mode in AndroidSpeedProcessing.values)
+                  RadioListTile<AndroidSpeedProcessing>(
+                    key: ValueKey('speed-processing-android-${mode.id}'),
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(mode.label),
+                    subtitle: Text(switch (mode) {
+                      AndroidSpeedProcessing.sonic =>
+                        'Speech · current app default · supports skip silence.',
+                      AndroidSpeedProcessing.bungee =>
+                        'Experimental · mixed audio · may use more CPU.',
+                      AndroidSpeedProcessing.signalsmith =>
+                        'Experimental · recommended for 0.75×–1.5× · may use more CPU.',
+                    }),
+                    value: mode,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            androidSelected == androidCurrent
+                ? 'In use: ${androidCurrent.label}. Changes apply after restarting CrisperPlayer and affect all books.'
+                : 'Saved for next launch: ${androidSelected.label}. Restart CrisperPlayer to apply. Currently using ${androidCurrent.label}.',
+            key: const ValueKey('speed-processing-android-restart'),
+          ),
+        ],
         if (canChooseDesktop && svc.settings != null) ...[
           const SizedBox(height: 8),
           RadioGroup<DesktopSpeedProcessing>(

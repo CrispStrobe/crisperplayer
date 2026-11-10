@@ -70,6 +70,7 @@ Future<void> main() async {
     }
     final settings = SettingsService(prefs);
     SpeedProcessing.configureAppleForStartup(settings.appleSpeedProcessing);
+    SpeedProcessing.configureAndroidForStartup(settings.androidSpeedProcessing);
     if (Platform.isWindows || Platform.isLinux) {
       SpeedProcessing.configureForStartup(settings.desktopSpeedProcessing);
       JustAudioMediaKit.ensureInitialized();
@@ -77,7 +78,7 @@ Future<void> main() async {
     final database = db = AppDatabase();
     player = AudioPlayer(
       handleInterruptions: false,
-      audioLoadConfiguration: SpeedProcessing.appleLoadConfiguration,
+      audioLoadConfiguration: SpeedProcessing.audioLoadConfiguration,
     );
     final library = LibraryService(database);
     final remote = RemoteLibraryService(library);

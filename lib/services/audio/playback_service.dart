@@ -22,6 +22,7 @@ import 'android_audio_effects.dart';
 import 'audio_handler.dart';
 import 'played_range_recorder.dart';
 import 'listening_journal_recorder.dart';
+import 'speed_processing.dart';
 
 /// Owns playback commands, persistence and listening sessions. UI and remote
 /// controls both enter through this coordinator. Commands execute in order.
@@ -136,7 +137,11 @@ class PlaybackService with WidgetsBindingObserver {
   Future<void> init() => _initializing ??= _init();
   Future<void> _init() async {
     _backend ??= JustAudioBackend(
-      _externalPlayer ?? AudioPlayer(handleInterruptions: false),
+      _externalPlayer ??
+          AudioPlayer(
+            handleInterruptions: false,
+            audioLoadConfiguration: SpeedProcessing.audioLoadConfiguration,
+          ),
     );
     _subscriptions.add(
       _backend!.positions.listen((_) {
@@ -355,6 +360,8 @@ class PlaybackService with WidgetsBindingObserver {
     _scheduleReturnTrailEnd();
     _startAutoBookmark();
   }
+
+  bool get supportsSkipSilence => _backend?.supportsSkipSilence ?? false;
 
   bool get supportsAudioEffects =>
       _backend is AudioEffectsBackend &&

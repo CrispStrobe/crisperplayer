@@ -1,0 +1,2 @@
+# Blank context lines are required by unified-diff syntax.
+packages/just_audio/UPSTREAM.patch whitespace=-blank-at-eol

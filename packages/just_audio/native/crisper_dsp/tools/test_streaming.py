@@ -97,6 +97,13 @@ class StreamingTests(unittest.TestCase):
                         self.assertLess(abs(center - expected) / sr, .08)
 
 
+    def test_sub_lookahead_tone_clips_remain_audible(self):
+        for engine in ENGINES:
+            for frames in (64, 511, 2048):
+                with self.subTest(engine=engine, frames=frames), LIBRARY.create(engine, 48000, 1, 1.5) as p:
+                    result = render(p, tone(48000, frames))
+                    self.assertGreater(max(map(abs, result), default=0), .005)
+
     def test_boundary_tones_are_not_replaced_by_priming_or_padding(self):
         sr, frames = 48000, 96000
         samples = array('f', [0]) * frames

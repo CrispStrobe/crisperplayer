@@ -29,17 +29,48 @@ enum AppleSpeedProcessing {
       value == spectral.id ? spectral : timeDomain;
 }
 
-/// The installed app's supported speed processors. A desktop selection applies
+enum AndroidSpeedProcessing {
+  sonic('sonic', 'Sonic', AndroidSpeedProcessor.sonic),
+  bungee('bungee', 'Bungee Basic', AndroidSpeedProcessor.bungee),
+  signalsmith(
+    'signalsmith',
+    'Signalsmith Stretch',
+    AndroidSpeedProcessor.signalsmith,
+  );
+
+  final String id;
+  final String label;
+  final AndroidSpeedProcessor processor;
+
+  const AndroidSpeedProcessing(this.id, this.label, this.processor);
+
+  bool get supportsSkipSilence => this == sonic;
+
+  static AndroidSpeedProcessing parse(String value) => switch (value) {
+    'bungee' => bungee,
+    'signalsmith' => signalsmith,
+    _ => sonic,
+  };
+}
+
+/// The installed app's supported speed processors. A selection applies
 /// before constructing the audio player, never to an already running player.
 abstract final class SpeedProcessing {
+  // The vendored native core and Media3/JNI bridges pass their host integration
+  // checks. These alternatives remain an explicit experimental opt-in; host
+  // checks do not establish audio quality or performance on every Android device.
+  static const experimentalAndroidProcessorsAvailable = true;
   // Match the adapter's upstream default until startup explicitly configures it.
   static DesktopSpeedProcessing _activeDesktopMode =
       DesktopSpeedProcessing.legacyScaletempo;
   static AppleSpeedProcessing _activeAppleMode =
       AppleSpeedProcessing.timeDomain;
+  static AndroidSpeedProcessing _activeAndroidMode =
+      AndroidSpeedProcessing.sonic;
 
   static DesktopSpeedProcessing get activeDesktopMode => _activeDesktopMode;
   static AppleSpeedProcessing get activeAppleMode => _activeAppleMode;
+  static AndroidSpeedProcessing get activeAndroidMode => _activeAndroidMode;
 
   static bool supportsDesktopChoice({TargetPlatform? platform, bool? isWeb}) =>
       !(isWeb ?? kIsWeb) &&
@@ -55,9 +86,20 @@ abstract final class SpeedProcessing {
         _ => false,
       };
 
+  static bool supportsAndroidChoice({TargetPlatform? platform, bool? isWeb}) =>
+      experimentalAndroidProcessorsAvailable &&
+      !(isWeb ?? kIsWeb) &&
+      (platform ?? defaultTargetPlatform) == TargetPlatform.android;
+
+  static bool supportsSkipSilence({TargetPlatform? platform, bool? isWeb}) =>
+      !(isWeb ?? kIsWeb) &&
+      (platform ?? defaultTargetPlatform) == TargetPlatform.android &&
+      activeAndroidMode.supportsSkipSilence;
+
   static bool supportsChoice({TargetPlatform? platform, bool? isWeb}) =>
       supportsDesktopChoice(platform: platform, isWeb: isWeb) ||
-      supportsAppleChoice(platform: platform, isWeb: isWeb);
+      supportsAppleChoice(platform: platform, isWeb: isWeb) ||
+      supportsAndroidChoice(platform: platform, isWeb: isWeb);
 
   static void configureForStartup(
     String savedMode, {
@@ -85,6 +127,38 @@ abstract final class SpeedProcessing {
     _activeAppleMode = AppleSpeedProcessing.parse(savedMode);
   }
 
+  static void configureAndroidForStartup(
+    String savedMode, {
+    TargetPlatform? platform,
+    bool? isWeb,
+  }) {
+    if ((isWeb ?? kIsWeb) ||
+        (platform ?? defaultTargetPlatform) != TargetPlatform.android) {
+      return;
+    }
+    final mode = AndroidSpeedProcessing.parse(savedMode);
+    if (mode != AndroidSpeedProcessing.sonic &&
+        !experimentalAndroidProcessorsAvailable) {
+      throw StateError('Experimental Android audio processors are unavailable');
+    }
+    _activeAndroidMode = mode;
+  }
+
+  /// Each player keeps its startup configuration even if a preference changes.
+  /// Android's Sonic default leaves the upstream configuration unchanged.
+  static AudioLoadConfiguration? get audioLoadConfiguration {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return activeAndroidMode == AndroidSpeedProcessing.sonic
+          ? null
+          : AudioLoadConfiguration(
+              androidLoadControl: AndroidLoadControl(
+                speedProcessor: activeAndroidMode.processor,
+              ),
+            );
+    }
+    return appleLoadConfiguration;
+  }
+
   /// Pass this immutable configuration when creating the shared audio player.
   /// Other platforms keep their existing native configuration.
   static AudioLoadConfiguration? get appleLoadConfiguration =>
@@ -99,7 +173,7 @@ abstract final class SpeedProcessing {
   static String processorLabel({TargetPlatform? platform, bool? isWeb}) {
     if (isWeb ?? kIsWeb) return 'Browser audio processing';
     return switch (platform ?? defaultTargetPlatform) {
-      TargetPlatform.android => 'Android · Sonic',
+      TargetPlatform.android => 'Android · ${activeAndroidMode.label}',
       TargetPlatform.iOS ||
       TargetPlatform.macOS => 'Apple · ${activeAppleMode.label}',
       TargetPlatform.linux ||
@@ -114,8 +188,14 @@ abstract final class SpeedProcessing {
     }
     return switch (platform ?? defaultTargetPlatform) {
       TargetPlatform.android =>
-        'Sonic changes playback speed while preserving the narrator’s pitch. '
-            'This Android player does not expose a choice of algorithm.',
+        experimentalAndroidProcessorsAvailable
+            ? 'Sonic is the default for speech. Bungee Basic and Signalsmith Stretch '
+                  'are experimental alternatives that may use more CPU and '
+                  'increase battery use. They support mono and stereo audio. '
+                  'Results depend on the recording and '
+                  'speed. Skip silence is available only with Sonic.'
+            : 'Sonic changes playback speed while preserving the narrator’s '
+                  'pitch. Additional processors are not available in this build.',
       TargetPlatform.iOS || TargetPlatform.macOS =>
         'Both Apple processors preserve pitch when speed changes. Time Domain '
             'is designed for voice. Spectral is an alternative for music and '

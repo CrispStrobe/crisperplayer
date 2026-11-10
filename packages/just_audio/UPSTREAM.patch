@@ -6,6 +6,140 @@
      unawaited_futures: false
 +    # Keep upstream constructors unchanged in this small compatibility patch.
 +    use_super_parameters: false
+--- a/android/build.gradle.kts
++++ b/android/build.gradle.kts
+@@ -42,9 +42,28 @@
+ android {
+     namespace = "com.ryanheise.just_audio"
+     compileSdk = 35
++    ndkVersion = "28.2.13676358"
+ 
+     defaultConfig {
+-        minSdk = 16
++        minSdk = 21
++        consumerProguardFiles("consumer-rules.pro")
++        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
++        externalNativeBuild {
++            cmake {
++                arguments += "-DANDROID_STL=c++_shared"
++            }
++        }
++    }
++
++    externalNativeBuild {
++        cmake {
++            path = file("src/main/cpp/CMakeLists.txt")
++            version = "3.22.1"
++        }
++    }
++
++    testOptions {
++        unitTests.isReturnDefaultValues = true
+     }
+ 
+     compileOptions {
+@@ -73,4 +92,7 @@
+     implementation("androidx.media3:media3-exoplayer-dash:$exoplayerVersion")
+     implementation("androidx.media3:media3-exoplayer-hls:$exoplayerVersion")
+     implementation("androidx.media3:media3-exoplayer-smoothstreaming:$exoplayerVersion")
++    testImplementation("junit:junit:4.13.2")
++    androidTestImplementation("androidx.test.ext:junit:1.2.1")
++    androidTestImplementation("androidx.test:runner:1.6.2")
+ }
+--- a/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java
++++ b/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java
+@@ -95,6 +95,8 @@
+     private IcyHeaders icyHeaders;
+     private AudioAttributes pendingAudioAttributes;
+     private LoadControl loadControl;
++    // CrisperPlayer: Sonic retains the untouched upstream playback pipeline.
++    private int crisperSpeedProcessor;
+     private boolean offloadSchedulingEnabled;
+     private AudioOffloadPreferences audioOffloadPreferences;
+     private boolean useLazyPreparation;
+@@ -180,6 +182,10 @@
+         if (audioLoadConfiguration != null) {
+             Map<?, ?> loadControlMap = (Map<?, ?>)audioLoadConfiguration.get("androidLoadControl");
+             if (loadControlMap != null) {
++                Object speedProcessor = loadControlMap.get("speedProcessor");
++                crisperSpeedProcessor = speedProcessor == null || "sonic".equals(speedProcessor) ? 0
++                    : "bungee".equals(speedProcessor) ? 1
++                    : "signalsmith".equals(speedProcessor) ? 2 : -1;
+                 DefaultLoadControl.Builder builder = new DefaultLoadControl.Builder()
+                     .setBufferDurationsMs(
+                         (int)((getLong(loadControlMap.get("minBufferDuration")))/1000),
+@@ -206,6 +212,13 @@
+                     .setMinPossibleLiveOffsetSmoothingFactor((float)((double)((Double)livePlaybackSpeedControlMap.get("minPossibleLiveOffsetSmoothingFactor"))));
+                 livePlaybackSpeedControl = builder.build();
+             }
++        }
++        if (crisperSpeedProcessor != 0) {
++            // Offload and encoded passthrough never visit the PCM processor.
++            this.offloadSchedulingEnabled = false;
++            this.audioOffloadPreferences = new AudioOffloadPreferences.Builder()
++                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
++                .build();
+         }
+     }
+ 
+@@ -432,9 +445,8 @@
+ 
+     @Override
+     public void onMethodCall(final MethodCall call, final Result result) {
+-        ensurePlayerInitialized();
+-
+         try {
++            ensurePlayerInitialized();
+             switch (call.method) {
+             case "load":
+                 Long initialPosition = getLong(call.argument("initialPosition"));
+@@ -776,8 +788,14 @@
+ 
+     private void ensurePlayerInitialized() {
+         if (player == null) {
++            if (crisperSpeedProcessor < 0) {
++                throw new IllegalArgumentException("Unknown native speed processor configuration");
++            }
++            final DefaultRenderersFactory audioRenderers = crisperSpeedProcessor == 0
++                ? new DefaultRenderersFactory(context)
++                : new CrisperRenderersFactory(context, crisperSpeedProcessor);
+             RenderersFactory renderersFactory = (eventHandler, videoListener, audioListener, textOutput, metadataOutput) -> {
+-                Renderer[] defaultRenderers = new DefaultRenderersFactory(context)
++                Renderer[] defaultRenderers = audioRenderers
+                     .createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput);
+                 Renderer[] allRenderers = Arrays.copyOf(defaultRenderers, defaultRenderers.length + 1);
+                 allRenderers[defaultRenderers.length] = new ObserverRenderer();
+@@ -1001,6 +1019,10 @@
+     }
+ 
+     public void setSpeed(final float speed) {
++        if (crisperSpeedProcessor != 0
++                && (Float.isNaN(speed) || Float.isInfinite(speed) || speed < 0.5f || speed > 3.0f)) {
++            throw new IllegalArgumentException("Native playback speed must be between 0.5 and 3.0");
++        }
+         PlaybackParameters params = player.getPlaybackParameters();
+         if (params.speed == speed) return;
+         player.setPlaybackParameters(new PlaybackParameters(speed, params.pitch));
+@@ -1010,6 +1032,9 @@
+     }
+ 
+     public void setPitch(final float pitch) {
++        if (crisperSpeedProcessor != 0 && pitch != 1.0f) {
++            throw new IllegalArgumentException("The selected native speed processor preserves the original pitch");
++        }
+         PlaybackParameters params = player.getPlaybackParameters();
+         if (params.pitch == pitch) return;
+         player.setPlaybackParameters(new PlaybackParameters(params.speed, pitch));
+@@ -1017,6 +1042,9 @@
+     }
+ 
+     public void setSkipSilenceEnabled(final boolean enabled) {
++        if (crisperSpeedProcessor != 0 && enabled) {
++            throw new IllegalArgumentException("Silence skipping is unavailable with the selected native speed processor");
++        }
+         player.setSkipSilenceEnabled(enabled);
+     }
+ 
 --- a/darwin/just_audio/Sources/just_audio/AudioPlayer.m
 +++ b/darwin/just_audio/Sources/just_audio/AudioPlayer.m
 @@ -99,6 +99,8 @@
@@ -77,7 +211,7 @@
  class DarwinLoadControl {
    /// (iOS/macOS) Whether the player will wait for sufficient data to be
    /// buffered before starting playback to avoid the likelihood of stalling.
-@@ -2246,22 +2260,51 @@
+@@ -2246,25 +2260,62 @@
    /// (iOS/macOS) If specified, limits the download bandwidth in bits per
    /// second.
    final double? preferredPeakBitRate;
@@ -107,8 +241,9 @@
          preferredPeakBitRate: preferredPeakBitRate,
 +        audioTimePitchAlgorithm: audioTimePitchAlgorithm,
        );
-+}
-+
+ }
+ 
+-/// Buffering and loading options for Android.
 +/// Extend the public message serialization without a second platform-interface
 +/// fork. Other backends ignore this extra Darwin-only configuration key.
 +class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
@@ -127,17 +262,2294 @@
 +        ...super.toMap(),
 +        'audioTimePitchAlgorithm': audioTimePitchAlgorithm.name,
 +      };
++}
++
++/// Immutable Android speed processor selection.
++///
++/// Sonic preserves the upstream speech-oriented processing path. The other
++/// options use CrisperPlayer's native PCM processor and require its Android
++/// library. They support 0.5x-3.0x, mono/stereo, and preserve pitch; independent
++/// pitch changes and silence skipping are not supported by those options.
++enum AndroidSpeedProcessor { sonic, bungee, signalsmith }
++
++/// Buffering, loading and speed-processing options for Android.
+ class AndroidLoadControl {
+   /// (Android) The minimum duration of audio that should be buffered ahead of
+   /// the current position.
+@@ -2291,6 +2342,10 @@
+ 
+   /// (Android) The back buffer duration.
+   final Duration backBufferDuration;
++
++  /// Processor selected when the native player is created. Changing this
++  /// requires a new player; it never changes an active processing chain.
++  final AndroidSpeedProcessor speedProcessor;
+ 
+   const AndroidLoadControl({
+     this.minBufferDuration = const Duration(seconds: 50),
+@@ -2300,9 +2355,10 @@
+     this.targetBufferBytes,
+     this.prioritizeTimeOverSizeThresholds = false,
+     this.backBufferDuration = Duration.zero,
++    this.speedProcessor = AndroidSpeedProcessor.sonic,
+   });
+ 
+-  AndroidLoadControlMessage _toMessage() => AndroidLoadControlMessage(
++  AndroidLoadControlMessage _toMessage() => _AndroidSpeedLoadControlMessage(
+         minBufferDuration: minBufferDuration,
+         maxBufferDuration: maxBufferDuration,
+         bufferForPlaybackDuration: bufferForPlaybackDuration,
+@@ -2311,7 +2367,29 @@
+         targetBufferBytes: targetBufferBytes,
+         prioritizeTimeOverSizeThresholds: prioritizeTimeOverSizeThresholds,
+         backBufferDuration: backBufferDuration,
++        speedProcessor: speedProcessor,
+       );
++}
++
++class _AndroidSpeedLoadControlMessage extends AndroidLoadControlMessage {
++  final AndroidSpeedProcessor speedProcessor;
++
++  _AndroidSpeedLoadControlMessage({
++    required super.minBufferDuration,
++    required super.maxBufferDuration,
++    required super.bufferForPlaybackDuration,
++    required super.bufferForPlaybackAfterRebufferDuration,
++    required super.targetBufferBytes,
++    required super.prioritizeTimeOverSizeThresholds,
++    required super.backBufferDuration,
++    required this.speedProcessor,
++  });
++
++  @override
++  Map<dynamic, dynamic> toMap() => {
++        ...super.toMap(),
++        'speedProcessor': speedProcessor.name,
++      };
  }
  
- /// Buffering and loading options for Android.
+ /// Speed control for live streams on Android.
 --- a/pubspec.yaml
 +++ b/pubspec.yaml
 @@ -1,6 +1,7 @@
  name: just_audio
  description: A feature-rich audio player for Flutter. Loop, clip and sequence any sound from any source (asset/file/URL/stream) in gapless playlists.
 -version: 0.10.6
-+version: 0.10.6+crisper.1
++version: 0.10.6+crisper.2
 +publish_to: none
  repository: https://github.com/ryanheise/just_audio/tree/minor/just_audio
  issue_tracker: https://github.com/ryanheise/just_audio/issues
  topics:
+--- /dev/null
++++ b/android/consumer-rules.pro
+@@ -0,0 +1,3 @@
++# Native JNI entry points use these class and method names. Keep them in R8
++# release builds; renaming would break only the opt-in DSP loading path.
++-keep class com.ryanheise.just_audio.JniCrisperDspEngine { *; }
+--- /dev/null
++++ b/android/src/androidTest/java/com/ryanheise/just_audio/CrisperDspJniTest.java
+@@ -0,0 +1,162 @@
++// SPDX-License-Identifier: MIT
++package com.ryanheise.just_audio;
++
++import static org.junit.Assert.*;
++
++import androidx.media3.common.C;
++import androidx.media3.common.audio.AudioProcessingPipeline;
++import androidx.media3.common.audio.AudioProcessor;
++import com.google.common.collect.ImmutableList;
++import java.nio.ByteBuffer;
++import java.nio.ByteOrder;
++import java.util.ArrayList;
++import java.util.List;
++import org.junit.Test;
++
++/** Runs the packaged ABI and real DSP through JNI; no mock engine or audio device. */
++public class CrisperDspJniTest {
++    @Test public void realMedia3PipelineHandlesNativeBackpressureAndFiniteDrain() throws Exception {
++        for (int engineId : new int[] {1, 2}) {
++            CrisperAudioProcessor processor = new CrisperAudioProcessor(engineId, new JniCrisperDspEngine());
++            processor.setRate(2.0);
++            AudioProcessingPipeline pipeline = new AudioProcessingPipeline(ImmutableList.of(processor));
++            pipeline.configure(new AudioProcessor.AudioFormat(48000, 1, C.ENCODING_PCM_16BIT));
++            pipeline.flush();
++            ByteBuffer input = pcm(tone(48000, 48000, 440));
++            int delivered = 0;
++            for (int retry = 0; input.hasRemaining() && retry < 10000; retry++) {
++                pipeline.queueInput(input);
++                ByteBuffer output = pipeline.getOutput();
++                delivered += output.remaining() / 2;
++                output.position(output.limit());
++            }
++            assertFalse("pipeline consumes every input frame", input.hasRemaining());
++            pipeline.queueEndOfStream();
++            for (int retry = 0; !pipeline.isEnded() && retry < 10000; retry++) {
++                ByteBuffer output = pipeline.getOutput();
++                delivered += output.remaining() / 2;
++                output.position(output.limit());
++            }
++            assertTrue("pipeline EOS is finite", pipeline.isEnded());
++            assertEquals(24000, delivered);
++            assertEquals(1000000, processor.getMediaDuration(500000));
++            pipeline.flush();
++            assertFalse(pipeline.getOutput().hasRemaining());
++            assertEquals(2000000, processor.getMediaDuration(1000000));
++            pipeline.reset();
++        }
++    }
++
++    @Test public void bothEnginesStretchGeneratedToneAndPreservePitch() {
++        for (int engineId : new int[] {1, 2}) {
++            JniCrisperDspEngine engine = new JniCrisperDspEngine();
++            long handle = engine.create(engineId, 48000, 1, 1.5);
++            try {
++                List<Short> output = process(engine, handle, tone(96000, 48000, 440), 1);
++                assertEquals("finite tail length", 64000, output.size());
++                assertEquals(96000, engine.sourceFrames(handle));
++                assertEquals(64000, engine.outputFrames(handle));
++                assertTrue(engine.ended(handle));
++                // Ignore boundary transients. A speed-up without pitch correction
++                // would be near 660 Hz; these actual native modes remain near 440.
++                int first = 5000, last = output.size() - 5000, rising = 0;
++                for (int i = first + 1; i < last; i++) {
++                    if (output.get(i - 1) <= 0 && output.get(i) > 0) rising++;
++                }
++                double hertz = rising * 48000.0 / (last - first);
++                assertEquals("original tone pitch for engine " + engineId, 440, hertz, 12);
++            } finally {
++                engine.destroy(handle);
++            }
++        }
++    }
++
++    @Test public void unityStereoIsExactAndNewHandleDropsOldLookahead() {
++        for (int engineId : new int[] {1, 2}) {
++            JniCrisperDspEngine engine = new JniCrisperDspEngine();
++            long old = engine.create(engineId, 44100, 2, 2.0);
++            ByteBuffer abandoned = pcm(new short[] {111, -111, 222, -222, 333, -333});
++            engine.write(old, abandoned, 0, 3);
++            engine.destroy(old); // The processor's seek/flush path replaces the handle.
++            long fresh = engine.create(engineId, 44100, 2, 1.0);
++            try {
++                short[] expected = new short[] {7, -7, 15, -15, 0, 0, 32767, -32768};
++                List<Short> result = process(engine, fresh, expected, 2);
++                assertEquals(expected.length, result.size());
++                for (int i = 0; i < expected.length; i++) assertEquals(expected[i], (short) result.get(i));
++                assertEquals(4, engine.sourceFrames(fresh));
++                assertEquals(4, engine.outputFrames(fresh));
++            } finally {
++                engine.destroy(fresh);
++            }
++        }
++    }
++
++    @Test public void jniRejectsInvalidBufferRangesAndZeroHandles() {
++        JniCrisperDspEngine engine = new JniCrisperDspEngine();
++        long handle = engine.create(1, 48000, 2, 1.5);
++        try {
++            assertThrows(IllegalStateException.class,
++                () -> engine.write(handle, ByteBuffer.allocate(8), 0, 2));
++            assertThrows(IllegalStateException.class,
++                () -> engine.write(handle, ByteBuffer.allocateDirect(8), 0, 3));
++            assertThrows(IllegalStateException.class,
++                () -> engine.write(handle, ByteBuffer.allocateDirect(8), -1, 1));
++            assertThrows(IllegalStateException.class,
++                () -> engine.read(handle, ByteBuffer.allocateDirect(8), Integer.MAX_VALUE));
++            assertThrows(IllegalStateException.class, () -> engine.sourceFrames(0));
++        } finally {
++            engine.destroy(handle);
++        }
++        assertThrows(IllegalStateException.class, () -> engine.create(1, 48000, 6, 1.5));
++        assertThrows(IllegalStateException.class, () -> engine.create(2, 48000, 1, Double.NaN));
++    }
++
++    private static List<Short> process(JniCrisperDspEngine engine, long handle, short[] samples, int channels) {
++        ByteBuffer input = pcm(samples);
++        ByteBuffer output = ByteBuffer.allocateDirect(257 * channels * 2).order(ByteOrder.nativeOrder());
++        List<Short> received = new ArrayList<>();
++        int frames = samples.length / channels, consumed = 0, attempts = 0;
++        while (consumed < frames) {
++            assertTrue("bounded streaming progress", attempts++ < frames + 10000);
++            int requested = Math.min(701, frames - consumed);
++            int written = engine.write(handle, input, consumed * channels * 2, requested);
++            assertTrue(written >= 0 && written <= requested);
++            consumed += written;
++            drainAvailable(engine, handle, output, channels, received);
++        }
++        engine.finish(handle);
++        engine.finish(handle);
++        for (int retry = 0; !engine.ended(handle) && retry < 10000; retry++) {
++            drainAvailable(engine, handle, output, channels, received);
++        }
++        assertTrue("finite end-of-stream drain", engine.ended(handle));
++        return received;
++    }
++
++    private static void drainAvailable(JniCrisperDspEngine engine, long handle, ByteBuffer output,
++            int channels, List<Short> received) {
++        for (int retry = 0; retry < 1000; retry++) {
++            int read = engine.read(handle, output, 257);
++            assertTrue(read >= 0 && read <= 257);
++            if (read == 0) return;
++            for (int i = 0; i < read * channels; i++) received.add(output.getShort(i * 2));
++        }
++        fail("Native drain did not return control");
++    }
++
++    private static ByteBuffer pcm(short[] samples) {
++        ByteBuffer result = ByteBuffer.allocateDirect(samples.length * 2).order(ByteOrder.nativeOrder());
++        for (short sample : samples) result.putShort(sample);
++        result.flip();
++        return result;
++    }
++
++    private static short[] tone(int frames, int sampleRate, int frequency) {
++        short[] samples = new short[frames];
++        for (int i = 0; i < frames; i++) {
++            samples[i] = (short) Math.round(12000 * Math.sin(2 * Math.PI * frequency * i / sampleRate));
++        }
++        return samples;
++    }
++}
+--- /dev/null
++++ b/android/src/main/cpp/CMakeLists.txt
+@@ -0,0 +1,13 @@
++# SPDX-License-Identifier: MIT
++cmake_minimum_required(VERSION 3.22.1)
++project(crisper_audio_dsp LANGUAGES C CXX)
++
++add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../../../native/crisper_dsp"
++                 "${CMAKE_CURRENT_BINARY_DIR}/crisper_dsp")
++add_library(crisper_audio_dsp SHARED crisper_audio_jni.cpp)
++target_compile_features(crisper_audio_dsp PRIVATE cxx_std_17)
++target_compile_options(crisper_audio_dsp PRIVATE -Wall -Wextra -Werror)
++target_link_libraries(crisper_audio_dsp PRIVATE crisper_dsp)
++# Support Android devices configured with 16 KB memory pages, including when
++# this library is built with an NDK whose default is still 4 KB.
++target_link_options(crisper_audio_dsp PRIVATE "-Wl,-z,max-page-size=16384")
+--- /dev/null
++++ b/android/src/main/cpp/crisper_audio_jni.cpp
+@@ -0,0 +1,155 @@
++// SPDX-License-Identifier: MIT
++// CrisperPlayer's JNI transport; DSP source provenance is in native/crisper_dsp.
++#include <jni.h>
++#include <cstdint>
++#include <exception>
++#include <new>
++#include "crisper_dsp.h"
++
++namespace {
++struct Handle {
++    cp_dsp *processor;
++    int channels;
++};
++
++void fail(JNIEnv *env, const char *message) {
++    if (env->ExceptionCheck()) return;
++    jclass type = env->FindClass("java/lang/IllegalStateException");
++    if (type) env->ThrowNew(type, message && *message ? message : "Native audio processor failed");
++}
++
++Handle *handle(JNIEnv *env, jlong value) {
++    if (!value) {
++        fail(env, "Native audio processor is closed");
++        return nullptr;
++    }
++    return reinterpret_cast<Handle *>(static_cast<intptr_t>(value));
++}
++
++int16_t *buffer(JNIEnv *env, jobject value, jint offset, jint frames, int channels) {
++    if (!value || offset < 0 || frames < 0 || (offset % sizeof(int16_t)) != 0) {
++        fail(env, "Invalid native PCM buffer range");
++        return nullptr;
++    }
++    auto *base = static_cast<uint8_t *>(env->GetDirectBufferAddress(value));
++    const jlong capacity = env->GetDirectBufferCapacity(value);
++    const int64_t bytes = static_cast<int64_t>(frames) * channels * sizeof(int16_t);
++    if (!base || capacity < 0 || static_cast<int64_t>(offset) + bytes > capacity) {
++        fail(env, "PCM buffer must be direct and contain complete frames");
++        return nullptr;
++    }
++    return reinterpret_cast<int16_t *>(base + offset);
++}
++
++template <typename Result, typename Callback>
++Result guarded(JNIEnv *env, Result errorResult, Callback callback) {
++    try {
++        return callback();
++    } catch (const std::exception &error) {
++        fail(env, error.what());
++    } catch (...) {
++        fail(env, "Unexpected native audio processor failure");
++    }
++    return errorResult;
++}
++}  // namespace
++
++extern "C" {
++JNIEXPORT jlong JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_create(
++    JNIEnv *env, jobject, jint engine, jint sampleRate, jint channels, jdouble rate) {
++    return guarded<jlong>(env, 0, [&]() -> jlong {
++        cp_dsp *processor = cp_dsp_create(engine, sampleRate, channels, rate);
++        if (!processor) { fail(env, cp_dsp_last_error()); return 0; }
++        auto *value = new (std::nothrow) Handle{processor, channels};
++        if (!value) {
++            cp_dsp_destroy(processor);
++            fail(env, "Unable to allocate native audio processor handle");
++            return 0;
++        }
++        return static_cast<jlong>(reinterpret_cast<intptr_t>(value));
++    });
++}
++
++JNIEXPORT void JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_destroy(JNIEnv *env, jobject, jlong value) {
++    guarded<int>(env, 0, [&]() {
++        if (value) {
++            auto *current = reinterpret_cast<Handle *>(static_cast<intptr_t>(value));
++            cp_dsp_destroy(current->processor);
++            delete current;
++        }
++        return 0;
++    });
++}
++
++JNIEXPORT jint JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_write(
++    JNIEnv *env, jobject, jlong value, jobject input, jint offset, jint frames) {
++    return guarded<jint>(env, 0, [&]() -> jint {
++        Handle *current = handle(env, value);
++        if (!current) return 0;
++        int16_t *samples = buffer(env, input, offset, frames, current->channels);
++        if (!samples) return 0;
++        int consumed = cp_dsp_write_s16(current->processor, samples, frames);
++        if (consumed < 0) fail(env, cp_dsp_last_error());
++        return consumed;
++    });
++}
++
++JNIEXPORT jint JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_read(
++    JNIEnv *env, jobject, jlong value, jobject output, jint frames) {
++    return guarded<jint>(env, 0, [&]() -> jint {
++        Handle *current = handle(env, value);
++        if (!current) return 0;
++        int16_t *samples = buffer(env, output, 0, frames, current->channels);
++        if (!samples) return 0;
++        int delivered = cp_dsp_read_s16(current->processor, samples, frames);
++        if (delivered < 0) fail(env, cp_dsp_last_error());
++        return delivered;
++    });
++}
++
++JNIEXPORT void JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_finish(JNIEnv *env, jobject, jlong value) {
++    guarded<int>(env, 0, [&]() {
++        Handle *current = handle(env, value);
++        if (current && cp_dsp_finish(current->processor) < 0) fail(env, cp_dsp_last_error());
++        return 0;
++    });
++}
++
++JNIEXPORT jboolean JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_ended(JNIEnv *env, jobject, jlong value) {
++    return guarded<jboolean>(env, JNI_FALSE, [&]() -> jboolean {
++        Handle *current = handle(env, value);
++        if (!current) return JNI_FALSE;
++        int result = cp_dsp_ended(current->processor);
++        if (result < 0) fail(env, cp_dsp_last_error());
++        return result > 0 ? JNI_TRUE : JNI_FALSE;
++    });
++}
++
++JNIEXPORT jlong JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_sourceFrames(JNIEnv *env, jobject, jlong value) {
++    return guarded<jlong>(env, 0, [&]() -> jlong {
++        Handle *current = handle(env, value);
++        if (!current) return 0;
++        int64_t result = cp_dsp_source_frames(current->processor);
++        if (result < 0) fail(env, cp_dsp_last_error());
++        return result;
++    });
++}
++
++JNIEXPORT jlong JNICALL
++Java_com_ryanheise_just_1audio_JniCrisperDspEngine_outputFrames(JNIEnv *env, jobject, jlong value) {
++    return guarded<jlong>(env, 0, [&]() -> jlong {
++        Handle *current = handle(env, value);
++        if (!current) return 0;
++        int64_t result = cp_dsp_output_frames(current->processor);
++        if (result < 0) fail(env, cp_dsp_last_error());
++        return result;
++    });
++}
++}  // extern "C"
+--- /dev/null
++++ b/android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessor.java
+@@ -0,0 +1,142 @@
++// SPDX-License-Identifier: MIT
++// CrisperPlayer addition. Distributed under the package's MIT license.
++package com.ryanheise.just_audio;
++
++import androidx.media3.common.C;
++import androidx.media3.common.audio.AudioProcessor;
++import androidx.media3.common.util.UnstableApi;
++import java.nio.ByteBuffer;
++import java.nio.ByteOrder;
++
++/** A bounded PCM16 streaming processor. All methods belong to Media3's audio thread. */
++@UnstableApi
++final class CrisperAudioProcessor implements AudioProcessor {
++    private static final int OUTPUT_CHUNK_FRAMES = 4096;
++    private static final int MIN_CLOCK_FRAMES = 1024;
++    private final int engineId;
++    private final CrisperDspEngine engine;
++    private AudioFormat pendingFormat = AudioFormat.NOT_SET;
++    private AudioFormat format = AudioFormat.NOT_SET;
++    private double pendingRate = 1.0;
++    private double appliedRate = 1.0;
++    private long handle;
++    private boolean finishing;
++    private ByteBuffer output = EMPTY_BUFFER;
++
++    CrisperAudioProcessor(int engineId, CrisperDspEngine engine) {
++        if (engineId != 1 && engineId != 2) {
++            throw new IllegalArgumentException("Unknown native speed processor");
++        }
++        this.engineId = engineId;
++        this.engine = engine;
++    }
++
++    void setRate(double rate) {
++        if (Double.isNaN(rate) || Double.isInfinite(rate) || rate < 0.5 || rate > 3.0) {
++            throw new IllegalArgumentException("Native playback speed must be between 0.5 and 3.0");
++        }
++        // Media3 drains the previous stream before applying and flushing this.
++        pendingRate = rate;
++    }
++
++    long getMediaDuration(long playoutDuration) {
++        if (handle != 0) {
++            long delivered = engine.outputFrames(handle);
++            long source = engine.sourceFrames(handle);
++            if (delivered >= MIN_CLOCK_FRAMES && source > 0) {
++                return Math.round(playoutDuration * ((double) source / delivered));
++            }
++        }
++        return Math.round(playoutDuration * appliedRate);
++    }
++
++    @Override public long getDurationAfterProcessorApplied(long durationUs) {
++        return Math.round(durationUs / appliedRate);
++    }
++
++    @Override public AudioFormat configure(AudioFormat input) throws UnhandledAudioFormatException {
++        if (input.encoding != C.ENCODING_PCM_16BIT || input.sampleRate <= 0
++                || input.channelCount < 1 || input.channelCount > 2) {
++            throw new UnhandledAudioFormatException(input);
++        }
++        pendingFormat = input;
++        return input;
++    }
++
++    @Override public boolean isActive() { return pendingFormat != AudioFormat.NOT_SET; }
++
++    @Override public void queueInput(ByteBuffer input) {
++        // AudioProcessingPipeline polls with EMPTY_BUFFER while draining EOS.
++        if (!input.hasRemaining()) return;
++        if (handle == 0 || finishing) throw new IllegalStateException("Processor is not accepting input");
++        if (!input.isDirect() || input.order() != ByteOrder.nativeOrder()) {
++            throw new IllegalArgumentException("PCM input must be direct and use native byte order");
++        }
++        int frameBytes = format.channelCount * 2;
++        if (input.remaining() % frameBytes != 0) throw new IllegalArgumentException("Incomplete PCM frame");
++        int frames = input.remaining() / frameBytes;
++        if (frames == 0) return;
++        int consumed = engine.write(handle, input, input.position(), frames);
++        if (consumed < 0 || consumed > frames) throw new IllegalStateException("Invalid native input count");
++        // Partial writes are intentional backpressure; the sink retries the remainder.
++        input.position(input.position() + consumed * frameBytes);
++    }
++
++    @Override public void queueEndOfStream() {
++        if (handle != 0 && !finishing) engine.finish(handle);
++        finishing = true;
++    }
++
++    @Override public ByteBuffer getOutput() {
++        if (handle == 0) return EMPTY_BUFFER;
++        // The sink owns the returned view until it advances its position. Never
++        // overwrite partially consumed PCM, even if getOutput is called again.
++        if (output.hasRemaining()) return output;
++        output.clear();
++        int frames = engine.read(handle, output, OUTPUT_CHUNK_FRAMES);
++        if (frames < 0 || frames > OUTPUT_CHUNK_FRAMES) throw new IllegalStateException("Invalid native output count");
++        output.limit(frames * format.channelCount * 2);
++        return output;
++    }
++
++    @Override public boolean isEnded() {
++        return finishing && !output.hasRemaining() && (handle == 0 || engine.ended(handle));
++    }
++
++    @Override public void flush() {
++        releaseHandle();
++        format = pendingFormat;
++        appliedRate = pendingRate;
++        finishing = false;
++        if (format == AudioFormat.NOT_SET) {
++            output = EMPTY_BUFFER;
++            return;
++        }
++        int outputBytes = OUTPUT_CHUNK_FRAMES * format.channelCount * 2;
++        if (output.capacity() < outputBytes) {
++            output = ByteBuffer.allocateDirect(outputBytes).order(ByteOrder.nativeOrder());
++        }
++        output.clear();
++        output.limit(0);
++        handle = engine.create(engineId, format.sampleRate, format.channelCount, appliedRate);
++        if (handle == 0) throw new IllegalStateException("Native audio processor initialization failed");
++    }
++
++    @Override public void reset() {
++        releaseHandle();
++        pendingFormat = AudioFormat.NOT_SET;
++        format = AudioFormat.NOT_SET;
++        finishing = false;
++        pendingRate = 1.0;
++        appliedRate = 1.0;
++        output = EMPTY_BUFFER;
++    }
++
++    private void releaseHandle() {
++        if (handle != 0) {
++            long previous = handle;
++            handle = 0;
++            engine.destroy(previous);
++        }
++    }
++}
+--- /dev/null
++++ b/android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessorChain.java
+@@ -0,0 +1,36 @@
++// SPDX-License-Identifier: MIT
++// CrisperPlayer addition. Distributed under the package's MIT license.
++package com.ryanheise.just_audio;
++
++import androidx.media3.common.PlaybackParameters;
++import androidx.media3.common.audio.AudioProcessor;
++import androidx.media3.common.audio.AudioProcessorChain;
++import androidx.media3.common.util.UnstableApi;
++
++/** Owns the only speed stage; never appends the default Sonic stage. */
++@UnstableApi
++final class CrisperAudioProcessorChain implements AudioProcessorChain {
++    private final CrisperAudioProcessor processor;
++    private final AudioProcessor[] processors;
++
++    CrisperAudioProcessorChain(int engineId, CrisperDspEngine engine) {
++        processor = new CrisperAudioProcessor(engineId, engine);
++        processors = new AudioProcessor[] { processor };
++    }
++
++    @Override public AudioProcessor[] getAudioProcessors() { return processors; }
++
++    @Override public PlaybackParameters applyPlaybackParameters(PlaybackParameters parameters) {
++        if (parameters.pitch != 1.0f) {
++            throw new IllegalArgumentException("Native speed processors preserve pitch at 1.0");
++        }
++        processor.setRate(parameters.speed);
++        return parameters;
++    }
++
++    @Override public boolean applySkipSilenceEnabled(boolean enabled) { return false; }
++    @Override public long getMediaDuration(long playoutDuration) {
++        return processor.getMediaDuration(playoutDuration);
++    }
++    @Override public long getSkippedOutputFrameCount() { return 0; }
++}
+--- /dev/null
++++ b/android/src/main/java/com/ryanheise/just_audio/CrisperDspEngine.java
+@@ -0,0 +1,17 @@
++// SPDX-License-Identifier: MIT
++// CrisperPlayer addition. Distributed under the package's MIT license.
++package com.ryanheise.just_audio;
++
++import java.nio.ByteBuffer;
++
++/** Narrow native boundary, also used to verify the Media3 lifecycle independently. */
++interface CrisperDspEngine {
++    long create(int engine, int sampleRate, int channels, double rate);
++    void destroy(long handle);
++    int write(long handle, ByteBuffer input, int offsetBytes, int frames);
++    int read(long handle, ByteBuffer output, int maxFrames);
++    void finish(long handle);
++    boolean ended(long handle);
++    long sourceFrames(long handle);
++    long outputFrames(long handle);
++}
+--- /dev/null
++++ b/android/src/main/java/com/ryanheise/just_audio/CrisperPcmAudioSink.java
+@@ -0,0 +1,33 @@
++// SPDX-License-Identifier: MIT
++// CrisperPlayer addition. Distributed under the package's MIT license.
++package com.ryanheise.just_audio;
++
++import androidx.media3.common.Format;
++import androidx.media3.common.MimeTypes;
++import androidx.media3.common.util.UnstableApi;
++import androidx.media3.exoplayer.audio.AudioOffloadSupport;
++import androidx.media3.exoplayer.audio.AudioSink;
++import androidx.media3.exoplayer.audio.ForwardingAudioSink;
++
++/** Forces decoding to PCM; encoded passthrough/offload would bypass our processor. */
++@UnstableApi
++final class CrisperPcmAudioSink extends ForwardingAudioSink {
++    CrisperPcmAudioSink(AudioSink sink) { super(sink); }
++
++    @Override public boolean supportsFormat(Format format) {
++        return MimeTypes.AUDIO_RAW.equals(format.sampleMimeType) && super.supportsFormat(format);
++    }
++
++    @Override public int getFormatSupport(Format format) {
++        return MimeTypes.AUDIO_RAW.equals(format.sampleMimeType)
++            ? super.getFormatSupport(format) : SINK_FORMAT_UNSUPPORTED;
++    }
++
++    @Override public AudioOffloadSupport getFormatOffloadSupport(Format format) {
++        return AudioOffloadSupport.DEFAULT_UNSUPPORTED;
++    }
++
++    @Override public void setOffloadMode(int mode) {
++        super.setOffloadMode(OFFLOAD_MODE_DISABLED);
++    }
++}
+--- /dev/null
++++ b/android/src/main/java/com/ryanheise/just_audio/CrisperRenderersFactory.java
+@@ -0,0 +1,29 @@
++// SPDX-License-Identifier: MIT
++// CrisperPlayer addition. Distributed under the package's MIT license.
++package com.ryanheise.just_audio;
++
++import android.content.Context;
++import androidx.media3.common.util.UnstableApi;
++import androidx.media3.exoplayer.DefaultRenderersFactory;
++import androidx.media3.exoplayer.audio.AudioSink;
++import androidx.media3.exoplayer.audio.DefaultAudioSink;
++
++@UnstableApi
++final class CrisperRenderersFactory extends DefaultRenderersFactory {
++    private final int engineId;
++
++    CrisperRenderersFactory(Context context, int engineId) {
++        super(context);
++        JniCrisperDspEngine.ensureLoaded();
++        this.engineId = engineId;
++    }
++
++    @Override protected AudioSink buildAudioSink(
++            Context context, boolean enableFloatOutput, boolean enableAudioTrackPlaybackParams) {
++        return new CrisperPcmAudioSink(new DefaultAudioSink.Builder(context)
++            .setAudioProcessorChain(new CrisperAudioProcessorChain(engineId, new JniCrisperDspEngine()))
++            .setEnableFloatOutput(false)
++            .setEnableAudioTrackPlaybackParams(false)
++            .build());
++    }
++}
+--- /dev/null
++++ b/android/src/main/java/com/ryanheise/just_audio/JniCrisperDspEngine.java
+@@ -0,0 +1,31 @@
++// SPDX-License-Identifier: MIT
++// CrisperPlayer addition. Distributed under the package's MIT license.
++package com.ryanheise.just_audio;
++
++import java.nio.ByteBuffer;
++
++/** Loaded only when a native alternative is selected; Sonic never loads this library. */
++final class JniCrisperDspEngine implements CrisperDspEngine {
++    private static boolean loaded;
++
++    static synchronized void ensureLoaded() {
++        if (loaded) return;
++        try {
++            System.loadLibrary("crisper_audio_dsp");
++            loaded = true;
++        } catch (LinkageError error) {
++            throw new IllegalStateException("The selected native audio processor could not be loaded", error);
++        }
++    }
++
++    JniCrisperDspEngine() { ensureLoaded(); }
++
++    @Override public native long create(int engine, int sampleRate, int channels, double rate);
++    @Override public native void destroy(long handle);
++    @Override public native int write(long handle, ByteBuffer input, int offsetBytes, int frames);
++    @Override public native int read(long handle, ByteBuffer output, int maxFrames);
++    @Override public native void finish(long handle);
++    @Override public native boolean ended(long handle);
++    @Override public native long sourceFrames(long handle);
++    @Override public native long outputFrames(long handle);
++}
+--- /dev/null
++++ b/android/src/test/java/com/ryanheise/just_audio/CrisperAudioProcessorTest.java
+@@ -0,0 +1,284 @@
++// SPDX-License-Identifier: MIT
++package com.ryanheise.just_audio;
++
++import static org.junit.Assert.*;
++
++import androidx.media3.common.C;
++import androidx.media3.common.Format;
++import androidx.media3.common.MimeTypes;
++import androidx.media3.common.PlaybackParameters;
++import androidx.media3.common.audio.AudioProcessingPipeline;
++import androidx.media3.common.audio.AudioProcessor;
++import androidx.media3.exoplayer.audio.AudioOffloadSupport;
++import androidx.media3.exoplayer.audio.AudioSink;
++import com.google.common.collect.ImmutableList;
++import java.lang.reflect.Proxy;
++import java.nio.ByteBuffer;
++import java.nio.ByteOrder;
++import java.util.ArrayDeque;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import org.junit.Test;
++
++/** Media3 lifecycle tests. The deterministic engine models backpressure, not DSP quality. */
++public class CrisperAudioProcessorTest {
++    private static final AudioProcessor.AudioFormat MONO =
++        new AudioProcessor.AudioFormat(48000, 1, C.ENCODING_PCM_16BIT);
++
++    @Test public void partialInputWritesLeaveTheUnconsumedFramesInTheCallerBuffer() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        engine.maxWriteFrames = 3;
++        CrisperAudioProcessor processor = ready(engine);
++        ByteBuffer input = pcm(10, 11, 12, 13, 14);
++        processor.queueInput(input);
++        assertEquals(6, input.position());
++        assertEquals(4, input.remaining());
++        assertArrayEquals(new short[] {10, 11, 12}, consume(processor.getOutput()));
++        processor.queueInput(input);
++        assertFalse(input.hasRemaining());
++        assertArrayEquals(new short[] {13, 14}, consume(processor.getOutput()));
++        processor.reset();
++    }
++
++    @Test public void unreadOutputIsNotOverwrittenOrCountedTwice() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        engine.maxReadFrames = 2;
++        CrisperAudioProcessor processor = ready(engine);
++        processor.queueInput(pcm(100, 200, 300, 400));
++        ByteBuffer first = processor.getOutput();
++        assertEquals(100, first.getShort());
++        assertSame(first, processor.getOutput());
++        assertEquals(2, first.position());
++        assertEquals(1, engine.readCalls);
++        assertEquals(200, first.getShort());
++        assertArrayEquals(new short[] {300, 400}, consume(processor.getOutput()));
++        assertEquals(2, engine.readCalls);
++        processor.reset();
++    }
++
++    @Test public void realMedia3PipelineDrainsPendingFramesAndEmptyEosPolls() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        engine.maxWriteFrames = 3;
++        engine.maxReadFrames = 2;
++        CrisperAudioProcessor processor = new CrisperAudioProcessor(1, engine);
++        AudioProcessingPipeline pipeline = new AudioProcessingPipeline(ImmutableList.of(processor));
++        pipeline.configure(MONO);
++        pipeline.flush();
++        ByteBuffer input = pcm(1, 2, 3, 4, 5, 6, 7, 8);
++        List<Short> received = new ArrayList<>();
++        for (int retries = 0; input.hasRemaining() && retries < 30; retries++) {
++            pipeline.queueInput(input);
++            collect(pipeline.getOutput(), received);
++        }
++        assertFalse(input.hasRemaining());
++        pipeline.queueEndOfStream();
++        for (int retries = 0; !pipeline.isEnded() && retries < 30; retries++) {
++            collect(pipeline.getOutput(), received);
++        }
++        assertTrue(pipeline.isEnded());
++        assertEquals(List.of((short) 1, (short) 2, (short) 3, (short) 4,
++            (short) 5, (short) 6, (short) 7, (short) 8), received);
++        assertEquals(1, engine.finishCalls);
++        pipeline.reset();
++        assertTrue(engine.streams.isEmpty());
++    }
++
++    @Test public void endWaitsForTheReturnedOutputAndFinishIsIdempotent() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        CrisperAudioProcessor processor = ready(engine);
++        processor.queueInput(pcm(8, 9));
++        processor.queueEndOfStream();
++        processor.queueEndOfStream();
++        processor.queueInput(AudioProcessor.EMPTY_BUFFER);
++        ByteBuffer output = processor.getOutput();
++        assertFalse(processor.isEnded());
++        assertArrayEquals(new short[] {8, 9}, consume(output));
++        assertTrue(processor.isEnded());
++        assertEquals(1, engine.finishCalls);
++        assertThrows(IllegalStateException.class, () -> processor.queueInput(pcm(1)));
++        processor.reset();
++    }
++
++    @Test public void sourceClockUsesDeliveredFramesAndExcludesQueuedLookahead() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        CrisperAudioProcessor processor = ready(engine);
++        FakeEngine.Stream stream = engine.latest();
++        stream.acceptedFrames = 100000;
++        stream.deliveredFrames = 2000;
++        stream.sourceFrames = 3000;
++        assertEquals(1500000, processor.getMediaDuration(1000000));
++        // Pending input grows, but it does not represent audio sent to the sink.
++        stream.acceptedFrames += 100000;
++        assertEquals(1500000, processor.getMediaDuration(1000000));
++        processor.reset();
++    }
++
++    @Test public void rateChangeUsesOldClockUntilFlushThenStartsANewCheckpoint() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        CrisperAudioProcessorChain chain = new CrisperAudioProcessorChain(2, engine);
++        CrisperAudioProcessor processor = (CrisperAudioProcessor) chain.getAudioProcessors()[0];
++        processor.configure(MONO);
++        chain.applyPlaybackParameters(new PlaybackParameters(1.5f));
++        processor.flush();
++        long oldHandle = engine.lastHandle;
++        assertEquals(1500000, chain.getMediaDuration(1000000));
++        chain.applyPlaybackParameters(new PlaybackParameters(2.0f));
++        assertEquals(1500000, chain.getMediaDuration(1000000));
++        processor.queueEndOfStream();
++        processor.flush();
++        assertFalse(engine.streams.containsKey(oldHandle));
++        assertEquals(2.0, engine.latest().rate, 0.0);
++        assertEquals(2000000, chain.getMediaDuration(1000000));
++        assertEquals(500000, processor.getDurationAfterProcessorApplied(1000000));
++        assertEquals(0, engine.latest().deliveredFrames);
++        processor.reset();
++    }
++
++    @Test public void seekFlushDropsPendingInputOutputAndOldClock() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        engine.maxReadFrames = 1;
++        CrisperAudioProcessor processor = ready(engine);
++        processor.queueInput(pcm(111, 222, 333));
++        processor.getOutput(); // Deliberately leave this old output unread.
++        long oldHandle = engine.lastHandle;
++        processor.flush();
++        assertFalse(engine.streams.containsKey(oldHandle));
++        assertFalse(processor.getOutput().hasRemaining());
++        processor.queueInput(pcm(999));
++        assertArrayEquals(new short[] {999}, consume(processor.getOutput()));
++        assertEquals(1, engine.latest().acceptedFrames);
++        processor.reset();
++        processor.reset();
++        assertTrue(engine.streams.isEmpty());
++        assertFalse(processor.isActive());
++    }
++
++    @Test public void configurationIsPendingUntilFlushAndRejectsUnsupportedPcm() throws Exception {
++        FakeEngine engine = new FakeEngine();
++        CrisperAudioProcessor processor = ready(engine);
++        AudioProcessor.AudioFormat stereo = new AudioProcessor.AudioFormat(44100, 2, C.ENCODING_PCM_16BIT);
++        processor.configure(stereo);
++        assertEquals(1, engine.latest().channels);
++        processor.flush();
++        assertEquals(2, engine.latest().channels);
++        assertEquals(44100, engine.latest().sampleRate);
++        assertThrows(AudioProcessor.UnhandledAudioFormatException.class,
++            () -> processor.configure(new AudioProcessor.AudioFormat(48000, 6, C.ENCODING_PCM_16BIT)));
++        assertThrows(AudioProcessor.UnhandledAudioFormatException.class,
++            () -> processor.configure(new AudioProcessor.AudioFormat(48000, 2, C.ENCODING_PCM_FLOAT)));
++        processor.reset();
++    }
++
++    @Test public void nativeChainHasOnlyOneSpeedStageAndNoSilenceSkip() {
++        CrisperAudioProcessorChain chain = new CrisperAudioProcessorChain(1, new FakeEngine());
++        assertEquals(1, chain.getAudioProcessors().length);
++        assertTrue(chain.getAudioProcessors()[0] instanceof CrisperAudioProcessor);
++        assertFalse(chain.applySkipSilenceEnabled(true));
++        assertFalse(chain.applySkipSilenceEnabled(false));
++        assertEquals(0, chain.getSkippedOutputFrameCount());
++        assertThrows(IllegalArgumentException.class,
++            () -> chain.applyPlaybackParameters(new PlaybackParameters(1.5f, 1.2f)));
++        CrisperAudioProcessor processor = (CrisperAudioProcessor) chain.getAudioProcessors()[0];
++        assertThrows(IllegalArgumentException.class, () -> processor.setRate(Double.NaN));
++        assertThrows(IllegalArgumentException.class, () -> processor.setRate(0.49));
++        assertThrows(IllegalArgumentException.class, () -> processor.setRate(3.01));
++    }
++
++    @Test public void pcmSinkDisablesEncodedPassthroughAndOffload() {
++        int[] lastOffload = {-1};
++        AudioSink delegate = (AudioSink) Proxy.newProxyInstance(
++            AudioSink.class.getClassLoader(), new Class<?>[] {AudioSink.class}, (proxy, method, args) -> {
++                switch (method.getName()) {
++                    case "supportsFormat": return true;
++                    case "getFormatSupport": return AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY;
++                    case "setOffloadMode": lastOffload[0] = (Integer) args[0]; return null;
++                    default: throw new AssertionError("Unexpected delegate call: " + method.getName());
++                }
++            });
++        CrisperPcmAudioSink sink = new CrisperPcmAudioSink(delegate);
++        Format encoded = new Format.Builder().setSampleMimeType(MimeTypes.AUDIO_AC3).build();
++        Format pcm = new Format.Builder().setSampleMimeType(MimeTypes.AUDIO_RAW)
++            .setChannelCount(2).setSampleRate(48000).setPcmEncoding(C.ENCODING_PCM_16BIT).build();
++        assertFalse(sink.supportsFormat(encoded));
++        assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, sink.getFormatSupport(encoded));
++        assertTrue(sink.supportsFormat(pcm));
++        assertEquals(AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY, sink.getFormatSupport(pcm));
++        assertSame(AudioOffloadSupport.DEFAULT_UNSUPPORTED, sink.getFormatOffloadSupport(encoded));
++        sink.setOffloadMode(AudioSink.OFFLOAD_MODE_ENABLED_GAPLESS_NOT_REQUIRED);
++        assertEquals(AudioSink.OFFLOAD_MODE_DISABLED, lastOffload[0]);
++    }
++
++    private static CrisperAudioProcessor ready(FakeEngine engine) throws Exception {
++        CrisperAudioProcessor processor = new CrisperAudioProcessor(1, engine);
++        processor.configure(MONO);
++        processor.flush();
++        return processor;
++    }
++
++    private static ByteBuffer pcm(int... samples) {
++        ByteBuffer buffer = ByteBuffer.allocateDirect(samples.length * 2).order(ByteOrder.nativeOrder());
++        for (int sample : samples) buffer.putShort((short) sample);
++        buffer.flip();
++        return buffer;
++    }
++
++    private static short[] consume(ByteBuffer buffer) {
++        short[] result = new short[buffer.remaining() / 2];
++        for (int i = 0; i < result.length; i++) result[i] = buffer.getShort();
++        return result;
++    }
++
++    private static void collect(ByteBuffer buffer, List<Short> result) {
++        while (buffer.hasRemaining()) result.add(buffer.getShort());
++    }
++
++    private static final class FakeEngine implements CrisperDspEngine {
++        static final class Stream {
++            final int sampleRate, channels;
++            final double rate;
++            final ArrayDeque<Short> samples = new ArrayDeque<>();
++            long acceptedFrames, deliveredFrames, sourceFrames;
++            boolean finished;
++            Stream(int sampleRate, int channels, double rate) {
++                this.sampleRate = sampleRate; this.channels = channels; this.rate = rate;
++            }
++        }
++        final Map<Long, Stream> streams = new HashMap<>();
++        long lastHandle;
++        int maxWriteFrames = Integer.MAX_VALUE, maxReadFrames = Integer.MAX_VALUE;
++        int finishCalls, readCalls;
++        Stream latest() { return streams.get(lastHandle); }
++        @Override public long create(int engine, int sampleRate, int channels, double rate) {
++            streams.put(++lastHandle, new Stream(sampleRate, channels, rate));
++            return lastHandle;
++        }
++        @Override public void destroy(long handle) { assertNotNull(streams.remove(handle)); }
++        @Override public int write(long handle, ByteBuffer input, int offsetBytes, int frames) {
++            Stream stream = streams.get(handle);
++            int consumed = Math.min(maxWriteFrames, frames);
++            for (int i = 0; i < consumed * stream.channels; i++) {
++                stream.samples.add(input.getShort(offsetBytes + i * 2));
++            }
++            stream.acceptedFrames += consumed;
++            return consumed;
++        }
++        @Override public int read(long handle, ByteBuffer output, int maxFrames) {
++            readCalls++;
++            Stream stream = streams.get(handle);
++            int frames = Math.min(Math.min(maxReadFrames, maxFrames), stream.samples.size() / stream.channels);
++            for (int i = 0; i < frames * stream.channels; i++) output.putShort(i * 2, stream.samples.remove());
++            stream.deliveredFrames += frames;
++            stream.sourceFrames = Math.round(stream.deliveredFrames * stream.rate);
++            return frames;
++        }
++        @Override public void finish(long handle) { finishCalls++; streams.get(handle).finished = true; }
++        @Override public boolean ended(long handle) {
++            Stream stream = streams.get(handle);
++            return stream.finished && stream.samples.isEmpty();
++        }
++        @Override public long sourceFrames(long handle) { return streams.get(handle).sourceFrames; }
++        @Override public long outputFrames(long handle) { return streams.get(handle).deliveredFrames; }
++    }
++}
+--- /dev/null
++++ b/native/crisper_dsp/CMakeLists.txt
+@@ -0,0 +1,41 @@
++# SPDX-License-Identifier: MIT
++cmake_minimum_required(VERSION 3.22)
++project(crisper_dsp LANGUAGES C CXX)
++
++# Offline, explicit source list: no FetchContent and no optional/proprietary DSP.
++set(BUNGEE_SOURCES
++  vendor/bungee/src/Assert.cpp
++  vendor/bungee/src/Fourier.cpp
++  vendor/bungee/src/Grain.cpp
++  vendor/bungee/src/Grains.cpp
++  vendor/bungee/src/Input.cpp
++  vendor/bungee/src/Instrumentation.cpp
++  vendor/bungee/src/Output.cpp
++  vendor/bungee/src/Partials.cpp
++  vendor/bungee/src/Stretch.cpp
++  vendor/bungee/src/Stretcher.cpp
++  vendor/bungee/src/Synthesis.cpp
++  vendor/bungee/src/Timing.cpp
++  vendor/bungee/src/Window.cpp
++  vendor/bungee/src/version.cpp)
++add_library(crisper_dsp STATIC crisper_dsp.cpp ${BUNGEE_SOURCES}
++  vendor/pffft/pffft.c vendor/pffft/fftpack.c vendor/sonic/sonic.c)
++set_target_properties(crisper_dsp PROPERTIES POSITION_INDEPENDENT_CODE ON)
++target_compile_features(crisper_dsp PUBLIC cxx_std_20)
++target_include_directories(crisper_dsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
++target_include_directories(crisper_dsp PRIVATE
++  vendor/bungee vendor/eigen vendor/pffft vendor/sonic
++  vendor/signalsmith-stretch vendor)
++target_compile_definitions(crisper_dsp PRIVATE
++  EIGEN_MPL2_ONLY=1 EIGEN_DONT_PARALLELIZE=1 BUNGEE_SELF_TEST=0
++  BUNGEE_VISIBILITY= BUNGEE_VERSION="61f52bf34be577d189d388772ddfa3696dee77d8"
++  eigen_assert=BUNGEE_ASSERT1)
++# Native audio processing needs optimization even in Flutter Debug builds.
++target_compile_options(crisper_dsp PRIVATE
++  $<$<C_COMPILER_ID:GNU,Clang>:-O2>
++  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fwrapv>)
++if(ANDROID)
++  target_link_libraries(crisper_dsp PRIVATE log)
++elseif(UNIX)
++  target_link_libraries(crisper_dsp PRIVATE m)
++endif()
+--- /dev/null
++++ b/native/crisper_dsp/LICENSE
+@@ -0,0 +1,24 @@
++MIT License
++
++Copyright (c) 2026 CrisperPlayer contributors
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
++
++This license covers the CrisperPlayer adapter and its build/test harness.
++Vendored upstream code retains the separate licenses listed in vendor/manifest.json.
+--- /dev/null
++++ b/native/crisper_dsp/README.md
+@@ -0,0 +1,134 @@
++# CrisperPlayer native time-stretch adapter
++
++This is a real streaming PCM processor used by the optional Android quality
++modes. It compiles Bungee Basic and Signalsmith Stretch from pinned, unmodified
++sources. The same core can be built on Linux for deterministic tests and WAV
++comparisons. The adapter is MIT licensed; each upstream implementation keeps its
++own license, recorded in [vendor/manifest.json](vendor/manifest.json).
++
++Android's default remains Media3's Sonic processor. The native Sonic C processor
++is included for the host comparison harness; that comparison is **not** a
++bit-exact replica of Media3 Sonic. Bungee and Signalsmith are optional listening
++choices, not a claim that either wins for every voice or speed. Signalsmith's
++upstream guidance concentrates on moderate time stretch, roughly 0.75–1.5×.
++The adapter's tested functional range is 0.5–3×.
++
++## Build and test without downloading dependencies
++
++From the application repository root:
++
++```sh
++python3 packages/just_audio/native/crisper_dsp/tools/build_host.py --jobs 2
++python3 packages/just_audio/native/crisper_dsp/tools/test_streaming.py \
++  --library build/native-dsp/libcrisper_dsp.so \
++  --report build/native-dsp/test-report.json
++python3 packages/just_audio/native/crisper_dsp/tools/render_ab.py \
++  --output-dir build/dsp-ab --rate 1.5
++```
++
++The host build needs Python 3, a C compiler and a C++20 compiler. It verifies every
++vendored file against the manifest, compiles exactly the CMake source closure and
++writes the compiler arguments, source hashes and binary hash to
++`build/native-dsp/build-report.json`. It uses no FFmpeg, MPV, downloaded runtime
++binary or build-time dependency fetch. Android adds this directory through CMake
++and links target `crisper_dsp`. DSP optimization remains enabled in debug builds.
++
++The host tests exercise the actual compiled library, including:
++
++- 44.1/48 kHz mono/stereo at 0.5, 1, 1.25, 1.5, 2 and 3×; exact output frame totals,
++  source clock accounting and retained tone pitch.
++- Empty input and clips of 1, 2, 7, 127, 511, 512, 513, 1,000 and 4,097 frames;
++  tiny input chunks and finite repeated end-of-stream calls.
++- Start, middle and end transients; first/last tone bursts; arbitrary input/read
++  chunk sizes producing identical results; 8/192 kHz corner configurations.
++- PCM16 output, bit-exact unity playback, reset isolation, invalid arguments and
++  non-finite input, bounded backpressure, and clocks that exclude queued audio.
++
++Sonic can discard an isolated impulse at high speed when it removes a pitch
++period. The report keeps that baseline measurement; it does not hide it or turn
++it into a claim about intelligibility. The two new engines must preserve these
++markers in the test. All three must preserve boundary tone bursts. Synthetic
++signals test timing and signal handling, not human speech quality, battery use
++or a particular Android device's real-time reliability.
++
++## Compare the same spoken passage
++
++Use your own uncompressed mono/stereo signed PCM16 WAV:
++
++```sh
++python3 packages/just_audio/native/crisper_dsp/tools/render_ab.py \
++  --input /absolute/path/passage.wav \
++  --output-dir build/my-dsp-comparison --rate 1.5
++```
++
++It streams the same source through all three processors and writes separate WAVs
++plus `render-report.json`. That report records input/binary/output hashes, input
++and output frame counts, peak and saturated PCM samples, and host render time.
++Without `--input`, the tool generates six seconds of harmonic bursts, silence
++and transient markers, explicitly labeled as synthetic. It never presents those
++sounds as speech or a perceptual benchmark.
++
++Listen at equal perceived loudness. Compare consonants, breath sounds, first and
++last words, pauses, background music and stereo image at the speeds you use.
++Host timing includes Python I/O and is not an Android CPU or battery result.
++
++## Streaming contract
++
++The public C ABI is [crisper_dsp.h](crisper_dsp.h). All counts are **frames**, with
++one or two interleaved channels and an unchanged 8–192 kHz sample rate. Pitch
++stays at 1.0. Rates outside 0.5–3.0 are rejected. A 1.0 rate bypasses DSP exactly.
++Handles are confined to one audio thread.
++
++`write_*` consumes at most the returned count, and can return zero when the
++caller must read output first. A caller must retain all unconsumed input. The
++input/output rings have fixed capacities of 131,072/65,536 frames; algorithm
++lookahead and scratch buffers are bounded at configuration. There is no
++whole-book buffering. Errors return -1 (or null for create), with a thread-local
++message available immediately through `cp_dsp_last_error`.
++
++`finish` marks the end of real input. The caller continues reading until `ended`
++returns true. The output is exactly `round(real_input_frames / rate)` frames.
++Bungee removes preroll using the source positions attached to each grain and
++feeds zero-valued lookahead at the end. Signalsmith uses upstream `outputSeek`
++and `flush` to preserve the beginning and drain the end. Sonic's short residual
++rounding is padded through its processor and trimmed to the same duration.
++
++`source_frames` counts the original frames represented by **output already
++read**, capped at accepted input. Queued output, input lookahead, preroll and
++padding do not advance that clock. `output_frames` counts delivered frames.
++Neither is a counter of decoded input. `latency_frames` is a conservative
++configured lookahead bound, not a device latency measurement or clock offset.
++
++A reset validates and constructs the replacement processor first, then drops all
++old input, lookahead, output and counters. Android drains before a speed change,
++and resets on seek/flush. The app selects a different algorithm at startup. The
++native modes do not implement silence skipping or pitch shifting.
++
++Bungee uses its granular interface with a rebased input origin for every grain.
++It does not use the cumulative 32-bit `Stream` input position, so a long audiobook
++can pass the 2³¹-frame boundary without that counter wrapping.
++
++## Exact upstream closure and distribution
++
++| Component | Revision | Selected license |
++| --- | --- | --- |
++| Sonic | `b93885dcb70aae50c6f76b0fe4e0868f029a077e` | Apache-2.0 |
++| Signalsmith Stretch | `88061fd4eda56a2353c5d65c74aa3f4ccf76f9da` | MIT |
++| Signalsmith Linear | `7bb1c8f36794d6980080ce817c91f8da8fe56a66` | MIT |
++| Bungee Basic | `61f52bf34be577d189d388772ddfa3696dee77d8` | MPL-2.0 |
++| Eigen Core | `c29c800126982c561e8d0b9255dc65474cd98de3` | MPL-2.0; included BSD/Apache notices retained |
++| PFFFT/FFTPACK | `02fe7715a5bf8bfd914681c53429600f94e0f536` | Permissive NCAR/UCAR FFTPACK notice |
++
++Eigen is limited to `Core`, its internal core headers, plugins and miscellaneous
++support. `EIGEN_MPL2_ONLY` is always defined. Unsupported modules, GPL-only
++modules, Bungee Pro, CLI code/cxxopts, Sonic's experimental Speedy integration and
++optional external FFT backends are excluded. Upstream license/copyright headers
++are unchanged, and every selected file has a SHA-256 entry in the manifest.
++PFFFT's exact notice is retained under a local `LicenseRef-PFFFT-FFTPACK` instead
++of substituting an inaccurately named standard license.
++
++The app's Android DSP notice includes these license texts and the corresponding
++source location. Distribution must preserve notices and make the MPL-covered
++source and modifications available under MPL-2.0. Neither passing these signal
++tests nor finding a permissive wrapper license certifies the entire APK's native
++and Maven dependency closure; those remain separate release checks.
+--- /dev/null
++++ b/native/crisper_dsp/crisper_dsp.cpp
+@@ -0,0 +1,419 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++// Third-party implementations retain their licenses; see vendor/manifest.json.
++#include "crisper_dsp.h"
++
++#include "bungee/Bungee.h"
++#include "signalsmith-stretch.h"
++#include "sonic.h"
++
++#include <algorithm>
++#include <cmath>
++#include <cstring>
++#include <limits>
++#include <memory>
++#include <stdexcept>
++#include <string>
++#include <vector>
++
++namespace {
++constexpr int kBlock = 512;
++constexpr int kInputCapacity = 131072;
++constexpr int kOutputCapacity = 65536;
++thread_local std::string last_error;
++
++void require(bool ok, const char *message) {
++    if (!ok) throw std::invalid_argument(message);
++}
++void validate(int engine, int sample_rate, int channels, double rate) {
++    require(engine >= CP_DSP_SONIC && engine <= CP_DSP_SIGNALSMITH, "Unknown DSP engine");
++    require(sample_rate >= 8000 && sample_rate <= 192000, "Sample rate must be 8000..192000 Hz");
++    require(channels == 1 || channels == 2, "Only mono and stereo PCM are supported");
++    require(std::isfinite(rate) && rate >= 0.5 && rate <= 3.0, "Rate must be finite and 0.5..3.0");
++}
++
++// Fixed-capacity rings make backpressure explicit, including during EOS drain.
++class Ring {
++public:
++    Ring(int frames, int channels) : capacity(frames), channels(channels), data(frames * channels) {}
++    int size() const { return count; }
++    int free() const { return capacity - count; }
++    float at(int frame, int channel) const {
++        return data[((head + frame) % capacity) * channels + channel];
++    }
++    void append(const float *interleaved, int frames) {
++        require(frames >= 0 && frames <= free(), "Output/input ring overflow");
++        for (int f = 0; f < frames; ++f)
++            for (int c = 0; c < channels; ++c)
++                data[((head + count + f) % capacity) * channels + c] = interleaved[f * channels + c];
++        count += frames;
++    }
++    void appendPlanar(const float *planar, int stride, int offset, int frames) {
++        require(frames >= 0 && frames <= free(), "Output ring overflow");
++        for (int f = 0; f < frames; ++f)
++            for (int c = 0; c < channels; ++c) {
++                const float sample = planar[c * stride + offset + f];
++                require(std::isfinite(sample), "Processor returned non-finite PCM");
++                data[((head + count + f) % capacity) * channels + c] = sample;
++            }
++        count += frames;
++    }
++    void copy(float *interleaved, int frames) const {
++        for (int f = 0; f < frames; ++f)
++            for (int c = 0; c < channels; ++c)
++                interleaved[f * channels + c] = at(f, c);
++    }
++    void discard(int frames) {
++        require(frames >= 0 && frames <= count, "Input/output ring underflow");
++        head = (head + frames) % capacity;
++        count -= frames;
++    }
++    void clear() { head = count = 0; }
++private:
++    const int capacity, channels;
++    std::vector<float> data;
++    int head = 0, count = 0;
++};
++class Engine {
++public:
++    virtual ~Engine() = default;
++    virtual bool pump(cp_dsp &) = 0;
++    virtual int latency() const = 0;
++};
++}
++
++struct cp_dsp {
++    cp_dsp(int id, int sr, int ch, double r) : engine_id(id), sample_rate(sr), channels(ch), rate(r),
++        input(kInputCapacity, ch), output(kOutputCapacity, ch), scratch(kBlock * ch) {}
++    int engine_id, sample_rate, channels;
++    double rate;
++    Ring input, output;
++    std::vector<float> scratch;
++    std::unique_ptr<Engine> processor;
++    int64_t accepted = 0, input_base = 0, generated = 0, delivered = 0;
++    bool finishing = false, done = false;
++    int64_t limit() const {
++        const double exact = double(accepted) / rate;
++        return finishing ? std::llround(exact) : int64_t(std::floor(exact));
++    }
++    int room() const {
++        return int(std::min<int64_t>(output.free(), std::max<int64_t>(0, limit() - generated)));
++    }
++    void consume(int frames) { input.discard(frames); input_base += frames; }
++    void emit(const float *planar, int stride, int offset, int frames) {
++        const int n = std::min(room(), frames);
++        output.appendPlanar(planar, stride, offset, n);
++        generated += n;
++    }
++    void pump() {
++        if (done) return;
++        if (finishing && generated >= limit()) { done = true; return; }
++        if (rate == 1.0) {
++            const int n = std::min({input.size(), output.free(), kBlock});
++            input.copy(scratch.data(), n);
++            output.append(scratch.data(), n);
++            consume(n);
++            generated += n;
++            if (finishing && input.size() == 0) done = true;
++            return;
++        }
++        // One call does bounded work. Subsequent reads/writes keep pumping.
++        for (int i = 0; i < 128 && !done; ++i) {
++            if (finishing && generated >= limit()) { done = true; break; }
++            if (!processor->pump(*this)) break;
++        }
++    }
++};
++
++namespace {
++class SonicEngine final : public Engine {
++public:
++    SonicEngine(int sr, int ch, double rate) : stream(sonicCreateStream(sr, ch)), channels(ch), sample_rate(sr), buffer(8192 * ch) {
++        if (!stream) throw std::bad_alloc();
++        sonicSetSpeed(stream, float(rate));
++        sonicSetPitch(stream, 1.f);
++        sonicSetRate(stream, 1.f);
++        sonicSetQuality(stream, 1);
++    }
++    ~SonicEngine() override { sonicDestroyStream(stream); }
++    int latency() const override { return 2 * sample_rate / 65; }
++    bool pump(cp_dsp &h) override {
++        const int available = sonicSamplesAvailable(stream);
++        const int n = std::min({available, h.room(), 8192});
++        if (n > 0) {
++            const int read = sonicReadFloatFromStream(stream, buffer.data(), n);
++            require(read == n, "Sonic failed to provide available PCM");
++            h.output.append(buffer.data(), n);
++            h.generated += n;
++            return true;
++        }
++        if (h.output.free() < 8192) return false;
++        if (h.input.size() >= kBlock || (h.finishing && h.input.size())) {
++            const int frames = std::min(kBlock, h.input.size());
++            h.input.copy(buffer.data(), frames);
++            require(sonicWriteFloatToStream(stream, buffer.data(), frames), "Sonic could not accept PCM");
++            h.consume(frames);
++            return true;
++        }
++        if (h.finishing && !flushed) {
++            require(sonicFlushStream(stream), "Sonic could not flush PCM");
++            flushed = true;
++            return true;
++        }
++        if (h.finishing && h.generated < h.limit() && available == 0) {
++            // Sonic's pitch-period rounding can leave a short residual. Process
++            // silence through the same filter, never fabricate a repeated sample.
++            require(padded < sample_rate, "Sonic drain exceeded its bounded tail");
++            std::fill(buffer.begin(), buffer.end(), 0.f);
++            require(sonicWriteFloatToStream(stream, buffer.data(), kBlock), "Sonic tail padding failed");
++            padded += kBlock;
++            require(sonicFlushStream(stream), "Sonic tail flush failed");
++            return true;
++        }
++        return false;
++    }
++private:
++    sonicStream stream;
++    int channels, sample_rate, padded = 0;
++    bool flushed = false;
++    std::vector<float> buffer;
++};
++
++class SignalsmithEngine final : public Engine {
++public:
++    SignalsmithEngine(int sr, int ch, double rate) : stretch(0), channels(ch), rate(rate) {
++        stretch.presetDefault(ch, float(sr));
++        stretch.setTransposeFactor(1.f);
++        prime_frames = stretch.outputSeekLength(float(rate));
++        require(prime_frames < kInputCapacity, "Signalsmith lookahead exceeds the input bound");
++        stride = std::max(prime_frames, kBlock);
++        planar.resize(stride * ch);
++        const int max_tail = int(std::ceil(prime_frames / rate)) + 8;
++        output_stride = std::max(2 * kBlock + 8, max_tail);
++        require(output_stride < kOutputCapacity, "Signalsmith tail exceeds the output bound");
++        rendered.resize(output_stride * ch);
++        for (int c = 0; c < ch; ++c) {
++            inputs[c] = planar.data() + c * stride;
++            outputs[c] = rendered.data() + c * output_stride;
++        }
++    }
++    int latency() const override { return prime_frames; }
++    bool pump(cp_dsp &h) override {
++        if (!primed) {
++            if (h.input.size() < prime_frames && !h.finishing) return false;
++            std::fill(planar.begin(), planar.end(), 0.f);
++            const int n = std::min(prime_frames, h.input.size());
++            copy(h, n);
++            stretch.outputSeek(inputs, prime_frames);
++            h.consume(n);
++            primed = true;
++            return true;
++        }
++        if (h.input.size() >= kBlock || (h.finishing && h.input.size())) {
++            const int n = std::min(kBlock, h.input.size());
++            const int64_t total = std::llround(double(processed + n) / rate);
++            const int out = int(total - rendered_frames);
++            if (h.output.free() < out) return false;
++            copy(h, n);
++            stretch.process(inputs, n, outputs, out);
++            h.consume(n);
++            processed += n;
++            rendered_frames = total;
++            h.emit(rendered.data(), output_stride, 0, out);
++            return true;
++        }
++        if (h.finishing && !flushed) {
++            const int out = int(h.limit() - h.generated);
++            require(out <= output_stride, "Signalsmith tail exceeds its planned bound");
++            if (h.output.free() < out) return false;
++            // outputSeek removes preroll. Flush includes the real last samples,
++            // then zero-pad internally and trim to the original source duration.
++            stretch.flush(outputs, out, float(rate));
++            h.emit(rendered.data(), output_stride, 0, out);
++            flushed = true;
++            h.done = true;
++            return true;
++        }
++        return false;
++    }
++private:
++    void copy(const cp_dsp &h, int n) {
++        for (int c = 0; c < channels; ++c)
++            for (int f = 0; f < n; ++f) planar[c * stride + f] = h.input.at(f, c);
++    }
++    signalsmith::stretch::SignalsmithStretch<float> stretch;
++    int channels, prime_frames, stride, output_stride;
++    double rate;
++    int64_t processed = 0, rendered_frames = 0;
++    bool primed = false, flushed = false;
++    std::vector<float> planar, rendered;
++    const float *inputs[2]{};
++    float *outputs[2]{};
++};
++
++class BungeeEngine final : public Engine {
++public:
++    BungeeEngine(int sr, int ch, double rate) : stretcher({sr, sr}, ch), channels(ch), rate(rate) {
++        stride = stretcher.maxInputFrameCount();
++        planar.resize(stride * ch);
++        request.position = 0.;
++        request.speed = rate;
++        request.pitch = 1.;
++        stretcher.preroll(request);
++    }
++    int latency() const override { return stride / 2; }
++    bool pump(cp_dsp &h) override {
++        // At unit pitch each grain is considerably smaller than maxInputFrameCount.
++        // Reserve a complete grain's output before advancing the native state.
++        if (h.output.free() < std::max(4096, stride / 8 + 1)) return false;
++        if (!specified) {
++            // Rebase input indices for every grain. Unlike Stream's int cumulative
++            // positions, this remains safe for audiobooks longer than 2^31 frames.
++            const auto chunk = stretcher.specifyGrain(request, double(h.input_base));
++            begin = h.input_base + chunk.begin;
++            end = h.input_base + chunk.end;
++            specified = true;
++        }
++        if (!h.finishing && end > h.accepted) return false;
++        const int n = int(end - begin);
++        require(n >= 0 && n <= stride, "Bungee requested an invalid input span");
++        std::fill(planar.begin(), planar.end(), 0.f);
++        const int head = int(std::min<int64_t>(n, std::max<int64_t>(0, -begin)));
++        const int tail = int(std::min<int64_t>(n - head, std::max<int64_t>(0, end - h.accepted)));
++        for (int c = 0; c < channels; ++c)
++            for (int f = head; f < n - tail; ++f) {
++                const int64_t index = begin + f - h.input_base;
++                require(index >= 0 && index < h.input.size(), "Bungee requested discarded input");
++                planar[c * stride + f] = h.input.at(int(index), c);
++            }
++        stretcher.analyseGrain(planar.data(), stride, head, tail);
++        Bungee::OutputChunk output{};
++        stretcher.synthesiseGrain(output);
++        stretcher.next(request);
++        specified = false;
++        if (output.frameCount > 0 && output.request[0] && output.request[1]) {
++            const double start = output.request[0]->position;
++            const double stop = output.request[1]->position;
++            if (std::isfinite(start) && std::isfinite(stop) && stop > start) {
++                const double step = (stop - start) / output.frameCount;
++                const int skip = int(std::clamp(std::ceil(-start / step - 1e-8), 0., double(output.frameCount)));
++                h.emit(output.data, int(output.channelStride), skip, output.frameCount - skip);
++            }
++        }
++        const int discard = int(std::clamp<int64_t>(begin - h.input_base, 0, h.input.size()));
++        h.consume(discard);
++        return true;
++    }
++private:
++    Bungee::Stretcher<Bungee::Basic> stretcher;
++    Bungee::Request request{};
++    int channels, stride;
++    double rate;
++    int64_t begin = 0, end = 0;
++    bool specified = false;
++    std::vector<float> planar;
++};
++
++std::unique_ptr<Engine> make_engine(int id, int sr, int ch, double rate) {
++    if (rate == 1.) return {};
++    switch (id) {
++    case CP_DSP_SONIC: return std::make_unique<SonicEngine>(sr, ch, rate);
++    case CP_DSP_BUNGEE_BASIC: return std::make_unique<BungeeEngine>(sr, ch, rate);
++    case CP_DSP_SIGNALSMITH: return std::make_unique<SignalsmithEngine>(sr, ch, rate);
++    default: throw std::invalid_argument("Unknown DSP engine");
++    }
++}
++
++template<typename F> int guarded(F &&f) {
++    try { last_error.clear(); return f(); }
++    catch (const std::exception &e) { last_error = e.what(); return -1; }
++    catch (...) { last_error = "Unknown native DSP error"; return -1; }
++}
++int write(cp_dsp *h, const void *input, int frames, bool pcm16) {
++    return guarded([&] {
++        require(h && frames >= 0 && (input || frames == 0), "Invalid DSP input");
++        require(!h->finishing, "Cannot write after finish; reset first");
++        h->pump();
++        const int n = std::min({frames, h->input.free(), kBlock});
++        require(h->accepted < (int64_t(1) << 50) - n, "Stream duration exceeds precise frame counters");
++        for (int i = 0; i < n * h->channels; ++i) {
++            const float sample = pcm16 ? static_cast<const int16_t *>(input)[i] / 32768.f : static_cast<const float *>(input)[i];
++            require(std::isfinite(sample), "Input contains non-finite PCM");
++            h->scratch[i] = sample;
++        }
++        h->input.append(h->scratch.data(), n);
++        h->accepted += n;
++        h->pump();
++        return n;
++    });
++}
++int read(cp_dsp *h, void *output, int frames, bool pcm16) {
++    return guarded([&] {
++        require(h && frames >= 0 && (output || frames == 0), "Invalid DSP output");
++        h->pump();
++        const int n = std::min(frames, h->output.size());
++        for (int f = 0; f < n; ++f)
++            for (int c = 0; c < h->channels; ++c) {
++                const float sample = h->output.at(f, c);
++                if (pcm16) {
++                    const double clamped = std::clamp(double(sample), -1., 32767. / 32768.);
++                    static_cast<int16_t *>(output)[f * h->channels + c] = int16_t(std::lrint(clamped * 32768.));
++                } else static_cast<float *>(output)[f * h->channels + c] = sample;
++            }
++        h->output.discard(n);
++        h->delivered += n;
++        h->pump();
++        return n;
++    });
++}
++}
++
++extern "C" {
++cp_dsp *cp_dsp_create(int engine, int sample_rate, int channels, double rate) {
++    try {
++        last_error.clear();
++        validate(engine, sample_rate, channels, rate);
++        auto h = std::make_unique<cp_dsp>(engine, sample_rate, channels, rate);
++        h->processor = make_engine(engine, sample_rate, channels, rate);
++        return h.release();
++    } catch (const std::exception &e) { last_error = e.what(); return nullptr; }
++    catch (...) { last_error = "Unknown native DSP creation error"; return nullptr; }
++}
++void cp_dsp_destroy(cp_dsp *h) { delete h; }
++int cp_dsp_write_s16(cp_dsp *h, const int16_t *p, int frames) { return write(h, p, frames, true); }
++int cp_dsp_read_s16(cp_dsp *h, int16_t *p, int frames) { return read(h, p, frames, true); }
++int cp_dsp_write_f32(cp_dsp *h, const float *p, int frames) { return write(h, p, frames, false); }
++int cp_dsp_read_f32(cp_dsp *h, float *p, int frames) { return read(h, p, frames, false); }
++int cp_dsp_available(cp_dsp *h) {
++    return guarded([&] { require(h, "Null DSP handle"); h->pump(); return h->output.size(); });
++}
++int cp_dsp_finish(cp_dsp *h) {
++    return guarded([&] { require(h, "Null DSP handle"); h->finishing = true; h->pump(); return 0; });
++}
++int cp_dsp_ended(cp_dsp *h) {
++    return guarded([&] { require(h, "Null DSP handle"); h->pump(); return int(h->done && h->output.size() == 0); });
++}
++int cp_dsp_reset(cp_dsp *h, double rate) {
++    return guarded([&] {
++        require(h, "Null DSP handle");
++        validate(h->engine_id, h->sample_rate, h->channels, rate);
++        // Construct before replacing so invalid/failed reconfiguration preserves state.
++        auto replacement = make_engine(h->engine_id, h->sample_rate, h->channels, rate);
++        h->processor = std::move(replacement);
++        h->rate = rate;
++        h->input.clear(); h->output.clear();
++        h->accepted = h->input_base = h->generated = h->delivered = 0;
++        h->finishing = h->done = false;
++        return 0;
++    });
++}
++int64_t cp_dsp_source_frames(const cp_dsp *h) {
++    if (!h) return -1;
++    if (h->done && h->delivered == h->limit()) return h->accepted;
++    return std::min(h->accepted, int64_t(std::floor(h->delivered * h->rate)));
++}
++int64_t cp_dsp_output_frames(const cp_dsp *h) { return h ? h->delivered : -1; }
++int64_t cp_dsp_input_frames(const cp_dsp *h) { return h ? h->accepted : -1; }
++int cp_dsp_latency_frames(const cp_dsp *h) { return h ? (h->processor ? h->processor->latency() : 0) : -1; }
++const char *cp_dsp_last_error(void) { return last_error.c_str(); }
++}
+--- /dev/null
++++ b/native/crisper_dsp/crisper_dsp.h
+@@ -0,0 +1,63 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++// Third-party processor licenses and exact source pins are in vendor/manifest.json.
++#ifndef CRISPER_DSP_H
++#define CRISPER_DSP_H
++
++#include <stdint.h>
++
++#if defined(_WIN32)
++#define CP_DSP_EXPORT __declspec(dllexport)
++#else
++#define CP_DSP_EXPORT __attribute__((visibility("default")))
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++typedef struct cp_dsp cp_dsp;
++enum cp_dsp_engine {
++    CP_DSP_SONIC = 0,
++    CP_DSP_BUNGEE_BASIC = 1,
++    CP_DSP_SIGNALSMITH = 2,
++};
++
++// A handle belongs to one audio thread. Units are FRAMES, not individual samples.
++// Buffers are interleaved, with one or two channels and an unchanged sample rate.
++// Supported rate: 0.5..3.0; pitch stays 1.0. At rate 1.0, samples pass through.
++CP_DSP_EXPORT cp_dsp *cp_dsp_create(int engine, int sample_rate, int channels, double rate);
++CP_DSP_EXPORT void cp_dsp_destroy(cp_dsp *handle);
++
++// Return consumed/delivered frame counts, or -1 on error. Writes may be partial
++// or return zero when output must be read first. Do not drop unconsumed input.
++CP_DSP_EXPORT int cp_dsp_write_s16(cp_dsp *handle, const int16_t *input, int frames);
++CP_DSP_EXPORT int cp_dsp_read_s16(cp_dsp *handle, int16_t *output, int max_frames);
++CP_DSP_EXPORT int cp_dsp_write_f32(cp_dsp *handle, const float *input, int frames);
++CP_DSP_EXPORT int cp_dsp_read_f32(cp_dsp *handle, float *output, int max_frames);
++CP_DSP_EXPORT int cp_dsp_available(cp_dsp *handle);
++
++// finish starts a finite drain; continue reading until ended is true. Priming
++// audio is removed and final output is rounded to accepted_input_frames/rate.
++// Repeated finish calls are harmless; writing after finish is an error.
++CP_DSP_EXPORT int cp_dsp_finish(cp_dsp *handle);
++CP_DSP_EXPORT int cp_dsp_ended(cp_dsp *handle);
++
++// Reset drops old input/output/lookahead and all counters. Validate the new rate
++// before use. No old audio may appear after a seek/reset.
++CP_DSP_EXPORT int cp_dsp_reset(cp_dsp *handle, double rate);
++
++// Source frames represented by output ALREADY READ, never total queued input.
++// Pending output, input lookahead, initial priming and end padding are excluded.
++CP_DSP_EXPORT int64_t cp_dsp_source_frames(const cp_dsp *handle);
++CP_DSP_EXPORT int64_t cp_dsp_output_frames(const cp_dsp *handle);
++CP_DSP_EXPORT int64_t cp_dsp_input_frames(const cp_dsp *handle);
++// Conservative configured input-lookahead bound, not a clock offset or a
++// measured device latency. Use source_frames/output_frames for media timing.
++CP_DSP_EXPORT int cp_dsp_latency_frames(const cp_dsp *handle);
++CP_DSP_EXPORT const char *cp_dsp_last_error(void);
++
++#ifdef __cplusplus
++}
++#endif
++#endif
+--- /dev/null
++++ b/native/crisper_dsp/tools/build_host.py
+@@ -0,0 +1,97 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: MIT
++"""Compile exactly the offline native DSP source closure using a host C/C++ compiler."""
++import argparse
++import concurrent.futures
++import hashlib
++import json
++import os
++from pathlib import Path
++import re
++import shutil
++import subprocess
++import sys
++
++CORE = Path(__file__).resolve().parents[1]
++REPO = CORE.parents[3]
++
++
++def verify_vendor():
++    vendor = CORE / 'vendor'
++    manifest = json.loads((vendor / 'manifest.json').read_text())
++    expected = set()
++    for component in manifest['components']:
++        if not component['revision'] or not component['archive_sha256']:
++            raise RuntimeError('Missing upstream source pin')
++        for item in component['files']:
++            path = vendor / item['path']
++            expected.add(item['path'])
++            if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item['sha256']:
++                raise RuntimeError(f'Unreviewed/missing vendored file: {path}')
++    actual = {str(p.relative_to(vendor)) for p in vendor.rglob('*') if p.is_file()} - {'manifest.json'}
++    if actual != expected:
++        raise RuntimeError(f'Unreviewed source closure: {sorted(actual ^ expected)}')
++    if (vendor / 'eigen/unsupported').exists():
++        raise RuntimeError('Unsupported Eigen modules are not part of the reviewed closure')
++    return manifest
++
++
++def run(command):
++    process = subprocess.run(command, capture_output=True, text=True)
++    if process.returncode:
++        raise RuntimeError(' '.join(command) + '\n' + process.stdout + process.stderr)
++    return process
++
++
++def build(out, cc, cxx, jobs):
++    verify_vendor()
++    out.mkdir(parents=True, exist_ok=True)
++    c_sources = ['vendor/sonic/sonic.c', 'vendor/pffft/pffft.c', 'vendor/pffft/fftpack.c']
++    cpp_sources = ['crisper_dsp.cpp'] + [str(p.relative_to(CORE)) for p in sorted((CORE / 'vendor/bungee/src').glob('*.cpp'))]
++    cmake = (CORE / 'CMakeLists.txt').read_text()
++    for source in c_sources + cpp_sources:
++        if source not in cmake:
++            raise RuntimeError(f'Host/Android CMake source lists differ: {source}')
++    includes = [str(CORE / d) for d in ('.', 'vendor/bungee', 'vendor/eigen', 'vendor/pffft', 'vendor/sonic', 'vendor/signalsmith-stretch', 'vendor')]
++    definitions = ['-DEIGEN_MPL2_ONLY=1', '-DEIGEN_DONT_PARALLELIZE=1', '-DBUNGEE_SELF_TEST=0', '-DBUNGEE_VISIBILITY=', '-DBUNGEE_VERSION="61f52bf34be577d189d388772ddfa3696dee77d8"', '-Deigen_assert=BUNGEE_ASSERT1']
++    commands = []
++    objects = []
++    for source in c_sources + cpp_sources:
++        obj = out / (source.replace('/', '_') + '.o')
++        objects.append(str(obj))
++        compiler = cc if source.endswith('.c') else cxx
++        flags = [] if source.endswith('.c') else ['-std=c++20', '-fwrapv']
++        command = [compiler, '-O2', '-g', '-fPIC', '-fvisibility=hidden', *flags, *definitions, *['-I' + i for i in includes], '-c', str(CORE / source), '-o', str(obj)]
++        commands.append(command)
++    with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as pool:
++        list(pool.map(run, commands))
++    library = out / 'libcrisper_dsp.so'
++    link = [cxx, '-shared', '-Wl,--no-undefined', *objects, '-lm', '-o', str(library)]
++    run(link)
++    report = {
++        'scope': 'Linux host build; not an Android ABI or device validation',
++        'compiler_c': run([cc, '--version']).stdout.splitlines()[0],
++        'compiler_cxx': run([cxx, '--version']).stdout.splitlines()[0],
++        'source_manifest_sha256': hashlib.sha256((CORE / 'vendor/manifest.json').read_bytes()).hexdigest(),
++        'adapter_sha256': hashlib.sha256((CORE / 'crisper_dsp.cpp').read_bytes()).hexdigest(),
++        'library': str(library),
++        'library_sha256': hashlib.sha256(library.read_bytes()).hexdigest(),
++        'commands': commands + [link],
++    }
++    (out / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
++    print(json.dumps({k: report[k] for k in ('scope', 'compiler_cxx', 'library', 'library_sha256')}, indent=2))
++    return library
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--build-dir', type=Path, default=REPO / 'build/native-dsp')
++    parser.add_argument('--cc', default=os.environ.get('CC', 'gcc'))
++    parser.add_argument('--cxx', default=os.environ.get('CXX', 'g++'))
++    parser.add_argument('--jobs', type=int, default=2)
++    args = parser.parse_args()
++    try:
++        build(args.build_dir.resolve(), args.cc, args.cxx, args.jobs)
++    except Exception as error:
++        print(str(error), file=sys.stderr)
++        sys.exit(1)
+--- /dev/null
++++ b/native/crisper_dsp/tools/dsp.py
+@@ -0,0 +1,113 @@
++# SPDX-License-Identifier: MIT
++"""Small ctypes binding shared by the deterministic tests and WAV renderer."""
++from array import array
++import ctypes as C
++from pathlib import Path
++
++ENGINES = {'sonic': 0, 'bungee': 1, 'signalsmith': 2}
++DEFAULT_LIBRARY = Path(__file__).resolve().parents[5] / 'build/native-dsp/libcrisper_dsp.so'
++
++
++class Library:
++    def __init__(self, path=DEFAULT_LIBRARY):
++        self.path = Path(path)
++        self.lib = C.CDLL(str(self.path))
++        self.lib.cp_dsp_create.argtypes = [C.c_int, C.c_int, C.c_int, C.c_double]
++        self.lib.cp_dsp_create.restype = C.c_void_p
++        self.lib.cp_dsp_destroy.argtypes = [C.c_void_p]
++        self.lib.cp_dsp_destroy.restype = None
++        self.lib.cp_dsp_last_error.restype = C.c_char_p
++        for name in ('available', 'finish', 'ended', 'latency_frames'):
++            fun = getattr(self.lib, 'cp_dsp_' + name)
++            fun.argtypes, fun.restype = [C.c_void_p], C.c_int
++        for name in ('source_frames', 'output_frames', 'input_frames'):
++            fun = getattr(self.lib, 'cp_dsp_' + name)
++            fun.argtypes, fun.restype = [C.c_void_p], C.c_int64
++        self.lib.cp_dsp_reset.argtypes = [C.c_void_p, C.c_double]
++        self.lib.cp_dsp_reset.restype = C.c_int
++        for name, typ in (('f32', C.c_float), ('s16', C.c_int16)):
++            for verb in ('read', 'write'):
++                fun = getattr(self.lib, 'cp_dsp_' + verb + '_' + name)
++                fun.argtypes = [C.c_void_p, C.POINTER(typ), C.c_int]
++                fun.restype = C.c_int
++
++    def check(self, result):
++        if result is None or result == -1:
++            raise RuntimeError(self.lib.cp_dsp_last_error().decode())
++        return result
++
++    def create(self, engine, sample_rate, channels, rate):
++        return Processor(self, engine, sample_rate, channels, rate)
++
++
++class Processor:
++    def __init__(self, library, engine, sample_rate, channels, rate):
++        self.library, self.channels, self.rate = library, channels, rate
++        self.handle = library.check(library.lib.cp_dsp_create(ENGINES.get(engine, engine), sample_rate, channels, rate))
++
++    def close(self):
++        if self.handle:
++            self.library.lib.cp_dsp_destroy(self.handle)
++            self.handle = None
++
++    def __enter__(self):
++        return self
++
++    def __exit__(self, *args):
++        self.close()
++
++    def stat(self, name):
++        return self.library.check(getattr(self.library.lib, 'cp_dsp_' + name)(self.handle))
++
++    def write(self, samples, start=0, frames=None):
++        typ = C.c_int16 if samples.typecode == 'h' else C.c_float
++        if samples.typecode not in ('f', 'h'):
++            raise TypeError('Expected an array of PCM floats or signed int16')
++        if frames is None:
++            frames = len(samples) // self.channels - start
++        raw = (typ * len(samples)).from_buffer(samples)
++        pointer = C.cast(C.byref(raw, start * self.channels * C.sizeof(typ)), C.POINTER(typ))
++        suffix = 's16' if samples.typecode == 'h' else 'f32'
++        return self.library.check(getattr(self.library.lib, 'cp_dsp_write_' + suffix)(self.handle, pointer, frames))
++
++    def read(self, frames=4096, pcm16=False):
++        typ, code = (C.c_int16, 'h') if pcm16 else (C.c_float, 'f')
++        raw = (typ * (frames * self.channels))()
++        suffix = 's16' if pcm16 else 'f32'
++        n = self.library.check(getattr(self.library.lib, 'cp_dsp_read_' + suffix)(self.handle, raw, frames))
++        result = array(code)
++        result.frombytes(C.string_at(raw, n * self.channels * C.sizeof(typ)))
++        return result
++
++    def finish(self):
++        self.library.check(self.library.lib.cp_dsp_finish(self.handle))
++
++    def reset(self, rate):
++        self.library.check(self.library.lib.cp_dsp_reset(self.handle, rate))
++        self.rate = rate
++
++
++def render(processor, samples, chunks=(1, 7, 31, 511, 4096, 2, 257), read_sizes=(17, 1024, 4096)):
++    """Drive partial writes and arbitrary reads without losing accepted frames."""
++    frames, offset, index = len(samples) // processor.channels, 0, 0
++    result = array(samples.typecode)
++    while offset < frames:
++        requested = min(chunks[index % len(chunks)], frames - offset)
++        consumed = processor.write(samples, offset, requested)
++        offset += consumed
++        result.extend(processor.read(read_sizes[index % len(read_sizes)], samples.typecode == 'h'))
++        if consumed == 0 and processor.stat('available') == 0:
++            raise RuntimeError('Native input/output deadlock')
++        index += 1
++        if index > frames * 2 + 1000:
++            raise RuntimeError('Input consumption failed to converge')
++    processor.finish()
++    processor.finish()
++    for _ in range(frames * 2 + 1000):
++        if processor.stat('ended'):
++            break
++        result.extend(processor.read(read_sizes[index % len(read_sizes)], samples.typecode == 'h'))
++        index += 1
++    else:
++        raise RuntimeError('EOS drain failed to converge')
++    return result
+--- /dev/null
++++ b/native/crisper_dsp/tools/render_ab.py
+@@ -0,0 +1,143 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: MIT
++"""Render the same PCM16 WAV through pinned Sonic, Bungee Basic and Signalsmith.
++
++The outputs share one source; adjust listening loudness equally when comparing. Synthetic input
++is a reproducible engineering fixture, not a speech-quality benchmark. This tool
++uses the actual streaming adapter and has no FFmpeg or codec dependency.
++"""
++from array import array
++import argparse
++import hashlib
++import json
++import math
++from pathlib import Path
++import sys
++import time
++import wave
++
++from dsp import DEFAULT_LIBRARY, ENGINES, Library
++
++
++def make_fixture(path):
++    sr, seconds = 48000, 6
++    samples = array('h')
++    # Alternating harmonic bursts, isolated transient markers and silence expose
++    # onset/tail behavior. These are generated tones, not synthesized speech.
++    for i in range(sr * seconds):
++        t = i / sr
++        envelope = .45 * max(0, math.sin(2 * math.pi * 2.7 * t)) ** 2
++        fundamental = 150 + 35 * math.sin(2 * math.pi * .3 * t)
++        value = envelope * (math.sin(2 * math.pi * fundamental * t) + .25 * math.sin(4 * math.pi * fundamental * t))
++        if 2 < t < 2.4 or 4 < t < 4.3:
++            value = 0
++        if i in (20, sr * 3, sr * seconds - 21):
++            value = .8
++        samples.append(round(32767 * value))
++    if sys.byteorder != 'little':
++        samples.byteswap()
++    with wave.open(str(path), 'wb') as target:
++        target.setparams((1, 2, sr, 0, 'NONE', 'not compressed'))
++        target.writeframes(samples.tobytes())
++
++
++def render_file(library, source, target, engine, rate):
++    started = time.perf_counter()
++    peak = clipped = output_frames = input_frames = 0
++    with wave.open(str(source), 'rb') as original:
++        if original.getsampwidth() != 2 or original.getcomptype() != 'NONE':
++            raise ValueError('Input must be uncompressed signed PCM16 WAV')
++        channels, sr = original.getnchannels(), original.getframerate()
++        with library.create(engine, sr, channels, rate) as processor, wave.open(str(target), 'wb') as result:
++            result.setparams((channels, 2, sr, 0, 'NONE', 'not compressed'))
++
++            def drain():
++                nonlocal peak, clipped, output_frames
++                values = processor.read(4096, pcm16=True)
++                if not values:
++                    return 0
++                output_frames += len(values) // channels
++                peak = max(peak, max(map(abs, values)))
++                clipped += sum(v in (-32768, 32767) for v in values)
++                if sys.byteorder != 'little':
++                    values.byteswap()
++                result.writeframesraw(values.tobytes())
++                return len(values) // channels
++
++            while data := original.readframes(4096):
++                values = array('h')
++                values.frombytes(data)
++                if sys.byteorder != 'little':
++                    values.byteswap()
++                offset = 0
++                frames = len(values) // channels
++                while offset < frames:
++                    count = processor.write(values, offset)
++                    offset += count
++                    input_frames += count
++                    delivered = drain()
++                    if not count and not delivered:
++                        raise RuntimeError('Native stream stopped making progress')
++            processor.finish()
++            for _ in range(4096):
++                if processor.stat('ended'):
++                    break
++                drain()
++            else:
++                raise RuntimeError('Native end-of-stream drain did not finish')
++            source_frames = processor.stat('source_frames')
++    expected = math.floor(input_frames / rate + .5)
++    if output_frames != expected or source_frames != input_frames:
++        raise RuntimeError('Native frame accounting did not preserve source duration')
++    return {
++        'engine': engine, 'rate': rate, 'sample_rate': sr, 'channels': channels,
++        'input_frames': input_frames, 'output_frames': output_frames,
++        'output_seconds': output_frames / sr,
++        'render_seconds': time.perf_counter() - started,
++        'peak_pcm16': peak, 'saturated_samples': clipped,
++        'file': target.name, 'sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
++    }
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--library', type=Path, default=DEFAULT_LIBRARY)
++    parser.add_argument('--input', type=Path, help='Your uncompressed mono/stereo PCM16 WAV; otherwise generate a synthetic fixture')
++    parser.add_argument('--output-dir', type=Path, required=True)
++    parser.add_argument('--rate', type=float, default=1.5)
++    parser.add_argument('--engine', choices=list(ENGINES), action='append')
++    args = parser.parse_args()
++    if not math.isfinite(args.rate) or not .5 <= args.rate <= 3:
++        parser.error('--rate must be 0.5..3.0')
++    args.output_dir.mkdir(parents=True, exist_ok=True)
++    source = args.input
++    generated = source is None
++    if generated:
++        source = args.output_dir / 'synthetic-input.wav'
++        make_fixture(source)
++    library = Library(args.library)
++    results = []
++    for engine in args.engine or ENGINES:
++        name = f'{source.stem}-{engine}-{args.rate:g}x.wav'
++        target = args.output_dir / name
++        if target.resolve() == source.resolve():
++            raise ValueError('Output would overwrite the input')
++        results.append(render_file(library, source, target, engine, args.rate))
++    report = {
++        'scope': 'Same-input actual native DSP render; no automatic perceptual ranking',
++        'input_kind': 'synthetic tones/transients; not speech' if generated else 'user-supplied PCM16 WAV',
++        'input': str(source), 'input_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
++        'library_sha256': hashlib.sha256(args.library.read_bytes()).hexdigest(),
++        'notes': [
++            'Sonic C comparison is not a bit-exact replica of Android Media3 Sonic.',
++            'Signalsmith is recommended upstream mainly for moderate time stretch; inspect speech at your chosen rate.',
++            'Listen at equal loudness, including first/last words, consonants, breaths, music, stereo image and rapid speed changes.',
++        ],
++        'results': results,
++    }
++    (args.output_dir / 'render-report.json').write_text(json.dumps(report, indent=2) + '\n')
++    print(json.dumps(report, indent=2))
++
++
++if __name__ == '__main__':
++    main()
+--- /dev/null
++++ b/native/crisper_dsp/tools/test_streaming.py
+@@ -0,0 +1,214 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: MIT
++"""Actual native functional tests; synthetic signals are not a listening-quality verdict."""
++from array import array
++import argparse
++import hashlib
++import json
++import math
++from pathlib import Path
++import sys
++import time
++import unittest
++
++from dsp import DEFAULT_LIBRARY, ENGINES, Library, render
++
++LIBRARY = None
++METRICS = []
++IMPULSE_METRICS = []
++
++
++def tone(sr, frames, channels=1, frequencies=(440, 880)):
++    return array('f', (0.2 * math.sin(2 * math.pi * frequencies[c] * i / sr) for i in range(frames) for c in range(channels)))
++
++
++def frequency(samples, sr, channels, channel):
++    values = samples[int(0.15 * sr) * channels + channel:len(samples) - int(0.15 * sr) * channels:channels]
++    crossings = [i for i in range(1, len(values)) if values[i - 1] < 0 <= values[i]]
++    return (len(crossings) - 1) * sr / (crossings[-1] - crossings[0]) if len(crossings) > 2 else 0
++
++
++class StreamingTests(unittest.TestCase):
++    def test_duration_pitch_and_source_timing_matrix(self):
++        for engine in ENGINES:
++            for sr in (44100, 48000):
++                for channels in (1, 2):
++                    samples = tone(sr, sr * 2 + 137, channels)
++                    for rate in (0.5, 1, 1.25, 1.5, 2, 3):
++                        with self.subTest(engine=engine, sr=sr, channels=channels, rate=rate):
++                            started = time.monotonic()
++                            with LIBRARY.create(engine, sr, channels, rate) as p:
++                                result = render(p, samples)
++                                expected = math.floor((len(samples) // channels) / rate + 0.5)
++                                self.assertEqual(len(result) // channels, expected)
++                                self.assertEqual(p.stat('source_frames'), len(samples) // channels)
++                                self.assertEqual(p.stat('output_frames'), expected)
++                                self.assertEqual(p.stat('input_frames'), len(samples) // channels)
++                                self.assertTrue(all(math.isfinite(v) for v in result))
++                                self.assertLess(max(map(abs, result), default=0), 1)
++                                frequencies = [frequency(result, sr, channels, c) for c in range(channels)]
++                                for c, observed in enumerate(frequencies):
++                                    self.assertAlmostEqual(observed, (440, 880)[c], delta=8)
++                                METRICS.append({'engine': engine, 'sample_rate': sr, 'channels': channels, 'rate': rate, 'input_frames': p.stat('input_frames'), 'output_frames': expected, 'frequency_hz': frequencies, 'seconds': time.monotonic() - started, 'latency_source_frames': p.stat('latency_frames')})
++
++    def test_unit_rate_is_bit_exact_for_float_and_pcm16(self):
++        for engine in ENGINES:
++            for channels in (1, 2):
++                for code, samples in [('f', tone(48000, 9001, channels)), ('h', array('h', ((i * 977) % 65536 - 32768 for i in range(9001 * channels))))]:
++                    with self.subTest(engine=engine, channels=channels, code=code), LIBRARY.create(engine, 48000, channels, 1) as p:
++                        self.assertEqual(render(p, samples), samples)
++
++    def test_short_inputs_empty_inputs_and_tiny_chunks(self):
++        for engine in ENGINES:
++            for rate in (0.5, 1.25, 3):
++                for frames in (0, 1, 2, 7, 127, 511, 512, 513, 1000, 4097):
++                    with self.subTest(engine=engine, rate=rate, frames=frames), LIBRARY.create(engine, 48000, 1, rate) as p:
++                        result = render(p, tone(48000, frames), chunks=(1, 2, 7), read_sizes=(1, 13, 103))
++                        self.assertEqual(len(result), math.floor(frames / rate + 0.5))
++                        self.assertEqual(p.stat('source_frames'), frames)
++                        self.assertTrue(all(math.isfinite(v) for v in result))
++                        with self.assertRaises(RuntimeError):
++                            p.write(array('f', [0]))
++
++    def test_start_middle_and_end_impulses_survive_at_their_timestamps(self):
++        sr, frames = 48000, 96000
++        positions = (20, frames // 2, frames - 21)
++        for engine in ENGINES:
++            for rate in (0.5, 1.25, 1.5, 2, 3):
++                with self.subTest(engine=engine, rate=rate), LIBRARY.create(engine, sr, 1, rate) as p:
++                    samples = array('f', [0]) * frames
++                    for position in positions:
++                        samples[position] = 0.8
++                    result = render(p, samples)
++                    for position in positions:
++                        expected = position / rate
++                        begin, end = max(0, int(expected - sr * .08)), min(len(result), int(expected + sr * .08) + 1)
++                        region = result[begin:end]
++                        peak = max(map(abs, region), default=0)
++                        IMPULSE_METRICS.append({'engine': engine, 'rate': rate, 'source_frame': position, 'peak': peak})
++                        # Sonic can delete isolated samples in skipped pitch periods.
++                        # Retain this baseline measurement; require preservation for
++                        # the two new native alternatives, not a false Sonic claim.
++                        if engine == 'sonic' and peak <= .005:
++                            continue
++                        self.assertGreater(peak, 0.005)
++                        energy = sum(x * x for x in region)
++                        center = sum((begin + i) * x * x for i, x in enumerate(region)) / energy
++                        self.assertLess(abs(center - expected) / sr, .08)
++
++
++    def test_sub_lookahead_tone_clips_remain_audible(self):
++        for engine in ENGINES:
++            for frames in (64, 511, 2048):
++                with self.subTest(engine=engine, frames=frames), LIBRARY.create(engine, 48000, 1, 1.5) as p:
++                    result = render(p, tone(48000, frames))
++                    self.assertGreater(max(map(abs, result), default=0), .005)
++
++    def test_boundary_tones_are_not_replaced_by_priming_or_padding(self):
++        sr, frames = 48000, 96000
++        samples = array('f', [0]) * frames
++        for i in range(int(.15 * sr)):
++            samples[i] = .2 * math.sin(2 * math.pi * 440 * i / sr)
++            samples[frames - 1 - i] = .2 * math.sin(2 * math.pi * 880 * i / sr)
++        for engine in ENGINES:
++            for rate in (.5, 1.25, 1.5, 2, 3):
++                with self.subTest(engine=engine, rate=rate), LIBRARY.create(engine, sr, 1, rate) as p:
++                    result = render(p, samples)
++                    window = int(.10 * sr / rate)
++                    for region in (result[:window], result[-window:]):
++                        rms = math.sqrt(sum(v * v for v in region) / len(region))
++                        self.assertGreater(rms, .03)
++
++    def test_arbitrary_chunks_have_identical_native_results(self):
++        samples = tone(48000, 48379, 2)
++        for engine in ENGINES:
++            with self.subTest(engine=engine):
++                with LIBRARY.create(engine, 48000, 2, 1.5) as p:
++                    tiny = render(p, samples, chunks=(1, 7, 19), read_sizes=(1, 97))
++                with LIBRARY.create(engine, 48000, 2, 1.5) as p:
++                    large = render(p, samples, chunks=(32768,), read_sizes=(32768,))
++                self.assertEqual(tiny, large)
++
++    def test_partial_writes_backpressure_and_only_delivered_source_time(self):
++        samples = tone(48000, 48000 * 10)
++        for engine in ENGINES:
++            with self.subTest(engine=engine), LIBRARY.create(engine, 48000, 1, 1.5) as p:
++                accepted = 0
++                for _ in range(2000):
++                    n = p.write(samples, accepted)
++                    accepted += n
++                    if n == 0:
++                        break
++                else:
++                    self.fail('Writer did not apply bounded backpressure')
++                self.assertLess(accepted, len(samples))
++                self.assertEqual(p.stat('source_frames'), 0)
++                self.assertEqual(p.stat('output_frames'), 0)
++                result = p.read(37)
++                self.assertEqual(len(result), 37)
++                self.assertEqual(p.stat('source_frames'), 55)
++                self.assertEqual(p.stat('output_frames'), 37)
++                # Native processing advances by a block/grain, not every sample.
++                p.read(16384)
++                self.assertGreater(p.write(samples, accepted), 0)
++
++    def test_reset_removes_buffered_old_audio_and_invalid_reset_preserves_state(self):
++        for engine in ENGINES:
++            with self.subTest(engine=engine), LIBRARY.create(engine, 48000, 2, 1.5) as p:
++                old = tone(48000, 20000, 2)
++                offset = 0
++                while offset < len(old) // 2:
++                    offset += p.write(old, offset)
++                self.assertGreater(p.stat('available'), 0)
++                with self.assertRaises(RuntimeError):
++                    p.reset(float('nan'))
++                self.assertEqual(p.stat('input_frames'), 20000)
++                p.reset(.75)
++                self.assertEqual(p.stat('input_frames'), 0)
++                self.assertEqual(p.stat('source_frames'), 0)
++                self.assertEqual(p.stat('output_frames'), 0)
++                fresh = render(p, array('f', [0]) * (48000 * 2))
++                self.assertLess(max(map(abs, fresh), default=0), 1e-6)
++
++    def test_invalid_arguments_and_nonfinite_input_are_rejected(self):
++        for args in [(99, 48000, 1, 1), ('bungee', 0, 1, 1), ('bungee', 48000, 3, 1), ('signalsmith', 48000, 1, .49), ('signalsmith', 48000, 1, 3.01)]:
++            with self.subTest(args=args), self.assertRaises((RuntimeError, TypeError)):
++                LIBRARY.create(*args)
++        for engine in ENGINES:
++            with LIBRARY.create(engine, 48000, 1, 1.5) as p:
++                with self.assertRaises(RuntimeError):
++                    p.write(array('f', [0, float('nan')]))
++                self.assertEqual(p.stat('input_frames'), 0)
++                with self.assertRaises(RuntimeError):
++                    p.write(array('f', [float('inf')]))
++                self.assertEqual(p.stat('input_frames'), 0)
++
++    def test_pcm16_native_output_and_high_sample_rate(self):
++        for engine in ENGINES:
++            with LIBRARY.create(engine, 48000, 2, 1.5) as p:
++                samples = array('h', (round(v * 32767) for v in tone(48000, 48000, 2)))
++                result = render(p, samples)
++                self.assertEqual(len(result), 64000)
++                self.assertGreater(max(result), 1000)
++                self.assertLess(max(result), 32767)
++            for sr in (8000, 192000):
++                for rate in (.5, .75, 3):
++                    with self.subTest(engine=engine, sr=sr, rate=rate), LIBRARY.create(engine, sr, 2, rate) as p:
++                        result = render(p, tone(sr, 32000, 2))
++                        self.assertEqual(len(result), 2 * math.floor(32000 / rate + .5))
++
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--library', type=Path, default=DEFAULT_LIBRARY)
++    parser.add_argument('--report', type=Path)
++    args, tests = parser.parse_known_args()
++    LIBRARY = Library(args.library)
++    started = time.monotonic()
++    suite = unittest.defaultTestLoader.loadTestsFromNames(tests, sys.modules[__name__]) if tests else unittest.defaultTestLoader.loadTestsFromTestCase(StreamingTests)
++    result = unittest.TextTestRunner(verbosity=2).run(suite)
++    report = {'scope': 'Host streaming correctness and synthetic signal measurements; not perceptual quality or Android device certification', 'library_sha256': hashlib.sha256(args.library.read_bytes()).hexdigest(), 'test_methods': result.testsRun, 'failures': len(result.failures), 'errors': len(result.errors), 'seconds': time.monotonic() - started, 'measurements': METRICS, 'isolated_impulse_measurements': IMPULSE_METRICS}
++    if args.report:
++        args.report.parent.mkdir(parents=True, exist_ok=True)
++        args.report.write_text(json.dumps(report, indent=2) + '\n')
++    sys.exit(0 if result.wasSuccessful() else 1)

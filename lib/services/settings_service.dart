@@ -43,6 +43,18 @@ class SettingsService extends ChangeNotifier {
     _changed(_p.setString('apple_speed_processing', value));
   }
 
+  String get androidSpeedProcessing {
+    final value = _p.getString('android_speed_processing') ?? 'sonic';
+    return ['sonic', 'bungee', 'signalsmith'].contains(value) ? value : 'sonic';
+  }
+
+  set androidSpeedProcessing(String value) {
+    if (!['sonic', 'bungee', 'signalsmith'].contains(value)) {
+      throw const FormatException('Unknown Android speed processing mode');
+    }
+    _changed(_p.setString('android_speed_processing', value));
+  }
+
   bool get showWaveform => _p.getBool('show_waveform') ?? true;
   set showWaveform(bool value) => _changed(_p.setBool('show_waveform', value));
   double get volume => (_p.getDouble('volume') ?? 1.0).clamp(0.0, 1.0);

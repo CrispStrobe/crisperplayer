@@ -2307,7 +2307,15 @@ class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
       };
 }
 
-/// Buffering and loading options for Android.
+/// Immutable Android speed processor selection.
+///
+/// Sonic preserves the upstream speech-oriented processing path. The other
+/// options use CrisperPlayer's native PCM processor and require its Android
+/// library. They support 0.5x-3.0x, mono/stereo, and preserve pitch; independent
+/// pitch changes and silence skipping are not supported by those options.
+enum AndroidSpeedProcessor { sonic, bungee, signalsmith }
+
+/// Buffering, loading and speed-processing options for Android.
 class AndroidLoadControl {
   /// (Android) The minimum duration of audio that should be buffered ahead of
   /// the current position.
@@ -2335,6 +2343,10 @@ class AndroidLoadControl {
   /// (Android) The back buffer duration.
   final Duration backBufferDuration;
 
+  /// Processor selected when the native player is created. Changing this
+  /// requires a new player; it never changes an active processing chain.
+  final AndroidSpeedProcessor speedProcessor;
+
   const AndroidLoadControl({
     this.minBufferDuration = const Duration(seconds: 50),
     this.maxBufferDuration = const Duration(seconds: 50),
@@ -2343,9 +2355,10 @@ class AndroidLoadControl {
     this.targetBufferBytes,
     this.prioritizeTimeOverSizeThresholds = false,
     this.backBufferDuration = Duration.zero,
+    this.speedProcessor = AndroidSpeedProcessor.sonic,
   });
 
-  AndroidLoadControlMessage _toMessage() => AndroidLoadControlMessage(
+  AndroidLoadControlMessage _toMessage() => _AndroidSpeedLoadControlMessage(
         minBufferDuration: minBufferDuration,
         maxBufferDuration: maxBufferDuration,
         bufferForPlaybackDuration: bufferForPlaybackDuration,
@@ -2354,7 +2367,29 @@ class AndroidLoadControl {
         targetBufferBytes: targetBufferBytes,
         prioritizeTimeOverSizeThresholds: prioritizeTimeOverSizeThresholds,
         backBufferDuration: backBufferDuration,
+        speedProcessor: speedProcessor,
       );
+}
+
+class _AndroidSpeedLoadControlMessage extends AndroidLoadControlMessage {
+  final AndroidSpeedProcessor speedProcessor;
+
+  _AndroidSpeedLoadControlMessage({
+    required super.minBufferDuration,
+    required super.maxBufferDuration,
+    required super.bufferForPlaybackDuration,
+    required super.bufferForPlaybackAfterRebufferDuration,
+    required super.targetBufferBytes,
+    required super.prioritizeTimeOverSizeThresholds,
+    required super.backBufferDuration,
+    required this.speedProcessor,
+  });
+
+  @override
+  Map<dynamic, dynamic> toMap() => {
+        ...super.toMap(),
+        'speedProcessor': speedProcessor.name,
+      };
 }
 
 /// Speed control for live streams on Android.

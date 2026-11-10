@@ -1,0 +1,134 @@
+# CrisperPlayer native time-stretch adapter
+
+This is a real streaming PCM processor used by the optional Android quality
+modes. It compiles Bungee Basic and Signalsmith Stretch from pinned, unmodified
+sources. The same core can be built on Linux for deterministic tests and WAV
+comparisons. The adapter is MIT licensed; each upstream implementation keeps its
+own license, recorded in [vendor/manifest.json](vendor/manifest.json).
+
+Android's default remains Media3's Sonic processor. The native Sonic C processor
+is included for the host comparison harness; that comparison is **not** a
+bit-exact replica of Media3 Sonic. Bungee and Signalsmith are optional listening
+choices, not a claim that either wins for every voice or speed. Signalsmith's
+upstream guidance concentrates on moderate time stretch, roughly 0.75–1.5×.
+The adapter's tested functional range is 0.5–3×.
+
+## Build and test without downloading dependencies
+
+From the application repository root:
+
+```sh
+python3 packages/just_audio/native/crisper_dsp/tools/build_host.py --jobs 2
+python3 packages/just_audio/native/crisper_dsp/tools/test_streaming.py \
+  --library build/native-dsp/libcrisper_dsp.so \
+  --report build/native-dsp/test-report.json
+python3 packages/just_audio/native/crisper_dsp/tools/render_ab.py \
+  --output-dir build/dsp-ab --rate 1.5
+```
+
+The host build needs Python 3, a C compiler and a C++20 compiler. It verifies every
+vendored file against the manifest, compiles exactly the CMake source closure and
+writes the compiler arguments, source hashes and binary hash to
+`build/native-dsp/build-report.json`. It uses no FFmpeg, MPV, downloaded runtime
+binary or build-time dependency fetch. Android adds this directory through CMake
+and links target `crisper_dsp`. DSP optimization remains enabled in debug builds.
+
+The host tests exercise the actual compiled library, including:
+
+- 44.1/48 kHz mono/stereo at 0.5, 1, 1.25, 1.5, 2 and 3×; exact output frame totals,
+  source clock accounting and retained tone pitch.
+- Empty input and clips of 1, 2, 7, 127, 511, 512, 513, 1,000 and 4,097 frames;
+  tiny input chunks and finite repeated end-of-stream calls.
+- Start, middle and end transients; first/last tone bursts; arbitrary input/read
+  chunk sizes producing identical results; 8/192 kHz corner configurations.
+- PCM16 output, bit-exact unity playback, reset isolation, invalid arguments and
+  non-finite input, bounded backpressure, and clocks that exclude queued audio.
+
+Sonic can discard an isolated impulse at high speed when it removes a pitch
+period. The report keeps that baseline measurement; it does not hide it or turn
+it into a claim about intelligibility. The two new engines must preserve these
+markers in the test. All three must preserve boundary tone bursts. Synthetic
+signals test timing and signal handling, not human speech quality, battery use
+or a particular Android device's real-time reliability.
+
+## Compare the same spoken passage
+
+Use your own uncompressed mono/stereo signed PCM16 WAV:
+
+```sh
+python3 packages/just_audio/native/crisper_dsp/tools/render_ab.py \
+  --input /absolute/path/passage.wav \
+  --output-dir build/my-dsp-comparison --rate 1.5
+```
+
+It streams the same source through all three processors and writes separate WAVs
+plus `render-report.json`. That report records input/binary/output hashes, input
+and output frame counts, peak and saturated PCM samples, and host render time.
+Without `--input`, the tool generates six seconds of harmonic bursts, silence
+and transient markers, explicitly labeled as synthetic. It never presents those
+sounds as speech or a perceptual benchmark.
+
+Listen at equal perceived loudness. Compare consonants, breath sounds, first and
+last words, pauses, background music and stereo image at the speeds you use.
+Host timing includes Python I/O and is not an Android CPU or battery result.
+
+## Streaming contract
+
+The public C ABI is [crisper_dsp.h](crisper_dsp.h). All counts are **frames**, with
+one or two interleaved channels and an unchanged 8–192 kHz sample rate. Pitch
+stays at 1.0. Rates outside 0.5–3.0 are rejected. A 1.0 rate bypasses DSP exactly.
+Handles are confined to one audio thread.
+
+`write_*` consumes at most the returned count, and can return zero when the
+caller must read output first. A caller must retain all unconsumed input. The
+input/output rings have fixed capacities of 131,072/65,536 frames; algorithm
+lookahead and scratch buffers are bounded at configuration. There is no
+whole-book buffering. Errors return -1 (or null for create), with a thread-local
+message available immediately through `cp_dsp_last_error`.
+
+`finish` marks the end of real input. The caller continues reading until `ended`
+returns true. The output is exactly `round(real_input_frames / rate)` frames.
+Bungee removes preroll using the source positions attached to each grain and
+feeds zero-valued lookahead at the end. Signalsmith uses upstream `outputSeek`
+and `flush` to preserve the beginning and drain the end. Sonic's short residual
+rounding is padded through its processor and trimmed to the same duration.
+
+`source_frames` counts the original frames represented by **output already
+read**, capped at accepted input. Queued output, input lookahead, preroll and
+padding do not advance that clock. `output_frames` counts delivered frames.
+Neither is a counter of decoded input. `latency_frames` is a conservative
+configured lookahead bound, not a device latency measurement or clock offset.
+
+A reset validates and constructs the replacement processor first, then drops all
+old input, lookahead, output and counters. Android drains before a speed change,
+and resets on seek/flush. The app selects a different algorithm at startup. The
+native modes do not implement silence skipping or pitch shifting.
+
+Bungee uses its granular interface with a rebased input origin for every grain.
+It does not use the cumulative 32-bit `Stream` input position, so a long audiobook
+can pass the 2³¹-frame boundary without that counter wrapping.
+
+## Exact upstream closure and distribution
+
+| Component | Revision | Selected license |
+| --- | --- | --- |
+| Sonic | `b93885dcb70aae50c6f76b0fe4e0868f029a077e` | Apache-2.0 |
+| Signalsmith Stretch | `88061fd4eda56a2353c5d65c74aa3f4ccf76f9da` | MIT |
+| Signalsmith Linear | `7bb1c8f36794d6980080ce817c91f8da8fe56a66` | MIT |
+| Bungee Basic | `61f52bf34be577d189d388772ddfa3696dee77d8` | MPL-2.0 |
+| Eigen Core | `c29c800126982c561e8d0b9255dc65474cd98de3` | MPL-2.0; included BSD/Apache notices retained |
+| PFFFT/FFTPACK | `02fe7715a5bf8bfd914681c53429600f94e0f536` | Permissive NCAR/UCAR FFTPACK notice |
+
+Eigen is limited to `Core`, its internal core headers, plugins and miscellaneous
+support. `EIGEN_MPL2_ONLY` is always defined. Unsupported modules, GPL-only
+modules, Bungee Pro, CLI code/cxxopts, Sonic's experimental Speedy integration and
+optional external FFT backends are excluded. Upstream license/copyright headers
+are unchanged, and every selected file has a SHA-256 entry in the manifest.
+PFFFT's exact notice is retained under a local `LicenseRef-PFFFT-FFTPACK` instead
+of substituting an inaccurately named standard license.
+
+The app's Android DSP notice includes these license texts and the corresponding
+source location. Distribution must preserve notices and make the MPL-covered
+source and modifications available under MPL-2.0. Neither passing these signal
+tests nor finding a permissive wrapper license certifies the entire APK's native
+and Maven dependency closure; those remain separate release checks.

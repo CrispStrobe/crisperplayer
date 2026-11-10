@@ -52,6 +52,8 @@ CP_DSP_EXPORT int cp_dsp_reset(cp_dsp *handle, double rate);
 CP_DSP_EXPORT int64_t cp_dsp_source_frames(const cp_dsp *handle);
 CP_DSP_EXPORT int64_t cp_dsp_output_frames(const cp_dsp *handle);
 CP_DSP_EXPORT int64_t cp_dsp_input_frames(const cp_dsp *handle);
+// Conservative configured input-lookahead bound, not a clock offset or a
+// measured device latency. Use source_frames/output_frames for media timing.
 CP_DSP_EXPORT int cp_dsp_latency_frames(const cp_dsp *handle);
 CP_DSP_EXPORT const char *cp_dsp_last_error(void);
 

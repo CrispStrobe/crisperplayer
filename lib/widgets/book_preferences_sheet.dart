@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/book_preferences.dart';
 import '../providers/providers.dart';
+import '../services/audio/speed_processing.dart';
 import '../services/db/app_database.dart';
 import '../utils/platform_utils.dart';
 
@@ -152,6 +153,7 @@ class _BookPreferencesState extends ConsumerState<_BookPreferences> {
               const SizedBox(height: 12),
             ],
             DropdownButtonFormField<String>(
+              key: const ValueKey('book-skip-silence'),
               initialValue: _values['skipSilence']?.toString() ?? 'inherit',
               decoration: const InputDecoration(labelText: 'Skip silence'),
               items: const [
@@ -162,13 +164,19 @@ class _BookPreferencesState extends ConsumerState<_BookPreferences> {
                 DropdownMenuItem(value: 'true', child: Text('On')),
                 DropdownMenuItem(value: 'false', child: Text('Off')),
               ],
-              onChanged: isAndroid && !_busy
+              onChanged:
+                  ref.watch(playbackProvider).supportsSkipSilence && !_busy
                   ? (value) => _values['skipSilence'] = value == 'inherit'
                         ? null
                         : value == 'true'
                   : null,
             ),
-            if (!isAndroid) const Text('Skip silence is available on Android.'),
+            if (!ref.watch(playbackProvider).supportsSkipSilence)
+              Text(
+                SpeedProcessing.supportsAndroidChoice()
+                    ? 'Available with Sonic. Your saved preference is kept.'
+                    : 'Skip silence is available on Android.',
+              ),
             if (_error != null)
               Text(
                 _error!,

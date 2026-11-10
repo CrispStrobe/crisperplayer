@@ -27,10 +27,20 @@ def main():
                 current.decode().splitlines(keepends=True),
                 fromfile=f'a/{name}', tofile=f'b/{name}',
             ))
+    additions = json.loads((vendor / 'LOCAL_ADDITIONS.json').read_text())
+    for name in additions:
+        if name in manifest or (args.upstream / name).exists():
+            raise SystemExit(f'Local addition shadows an upstream file: {name}')
+        current = (vendor / name).read_text()
+        differences.extend(difflib.unified_diff(
+            [], current.splitlines(keepends=True),
+            fromfile='/dev/null', tofile=f'b/{name}',
+        ))
     actual = ''.join(differences)
     if actual != (vendor / 'UPSTREAM.patch').read_text():
         raise SystemExit('Vendored changes differ from the reviewed UPSTREAM.patch')
-    print(f'Verified {len(manifest)} upstream hashes and {len(modified)} patched files.')
+    print(f'Verified {len(manifest)} upstream hashes, {len(modified)} patched files, '
+          f'and {len(additions)} local additions.')
 
 
 if __name__ == '__main__':

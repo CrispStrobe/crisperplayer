@@ -95,6 +95,8 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
     private IcyHeaders icyHeaders;
     private AudioAttributes pendingAudioAttributes;
     private LoadControl loadControl;
+    // CrisperPlayer: Sonic retains the untouched upstream playback pipeline.
+    private int crisperSpeedProcessor;
     private boolean offloadSchedulingEnabled;
     private AudioOffloadPreferences audioOffloadPreferences;
     private boolean useLazyPreparation;
@@ -180,6 +182,10 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
         if (audioLoadConfiguration != null) {
             Map<?, ?> loadControlMap = (Map<?, ?>)audioLoadConfiguration.get("androidLoadControl");
             if (loadControlMap != null) {
+                Object speedProcessor = loadControlMap.get("speedProcessor");
+                crisperSpeedProcessor = speedProcessor == null || "sonic".equals(speedProcessor) ? 0
+                    : "bungee".equals(speedProcessor) ? 1
+                    : "signalsmith".equals(speedProcessor) ? 2 : -1;
                 DefaultLoadControl.Builder builder = new DefaultLoadControl.Builder()
                     .setBufferDurationsMs(
                         (int)((getLong(loadControlMap.get("minBufferDuration")))/1000),
@@ -206,6 +212,13 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
                     .setMinPossibleLiveOffsetSmoothingFactor((float)((double)((Double)livePlaybackSpeedControlMap.get("minPossibleLiveOffsetSmoothingFactor"))));
                 livePlaybackSpeedControl = builder.build();
             }
+        }
+        if (crisperSpeedProcessor != 0) {
+            // Offload and encoded passthrough never visit the PCM processor.
+            this.offloadSchedulingEnabled = false;
+            this.audioOffloadPreferences = new AudioOffloadPreferences.Builder()
+                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
+                .build();
         }
     }
 
@@ -432,9 +445,8 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
 
     @Override
     public void onMethodCall(final MethodCall call, final Result result) {
-        ensurePlayerInitialized();
-
         try {
+            ensurePlayerInitialized();
             switch (call.method) {
             case "load":
                 Long initialPosition = getLong(call.argument("initialPosition"));
@@ -776,8 +788,14 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
 
     private void ensurePlayerInitialized() {
         if (player == null) {
+            if (crisperSpeedProcessor < 0) {
+                throw new IllegalArgumentException("Unknown native speed processor configuration");
+            }
+            final DefaultRenderersFactory audioRenderers = crisperSpeedProcessor == 0
+                ? new DefaultRenderersFactory(context)
+                : new CrisperRenderersFactory(context, crisperSpeedProcessor);
             RenderersFactory renderersFactory = (eventHandler, videoListener, audioListener, textOutput, metadataOutput) -> {
-                Renderer[] defaultRenderers = new DefaultRenderersFactory(context)
+                Renderer[] defaultRenderers = audioRenderers
                     .createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput);
                 Renderer[] allRenderers = Arrays.copyOf(defaultRenderers, defaultRenderers.length + 1);
                 allRenderers[defaultRenderers.length] = new ObserverRenderer();
@@ -1001,6 +1019,10 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
     }
 
     public void setSpeed(final float speed) {
+        if (crisperSpeedProcessor != 0
+                && (Float.isNaN(speed) || Float.isInfinite(speed) || speed < 0.5f || speed > 3.0f)) {
+            throw new IllegalArgumentException("Native playback speed must be between 0.5 and 3.0");
+        }
         PlaybackParameters params = player.getPlaybackParameters();
         if (params.speed == speed) return;
         player.setPlaybackParameters(new PlaybackParameters(speed, params.pitch));
@@ -1010,6 +1032,9 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
     }
 
     public void setPitch(final float pitch) {
+        if (crisperSpeedProcessor != 0 && pitch != 1.0f) {
+            throw new IllegalArgumentException("The selected native speed processor preserves the original pitch");
+        }
         PlaybackParameters params = player.getPlaybackParameters();
         if (params.pitch == pitch) return;
         player.setPlaybackParameters(new PlaybackParameters(params.speed, pitch));
@@ -1017,6 +1042,9 @@ public class AudioPlayer implements MethodCallHandler, Player.Listener, Metadata
     }
 
     public void setSkipSilenceEnabled(final boolean enabled) {
+        if (crisperSpeedProcessor != 0 && enabled) {
+            throw new IllegalArgumentException("Silence skipping is unavailable with the selected native speed processor");
+        }
         player.setSkipSilenceEnabled(enabled);
     }
 

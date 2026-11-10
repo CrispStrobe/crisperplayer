@@ -152,7 +152,7 @@ void main() {
       );
       expect(
         SpeedProcessing.supportsChoice(platform: TargetPlatform.android),
-        isFalse,
+        SpeedProcessing.experimentalAndroidProcessorsAvailable,
       );
       expect(
         SpeedProcessing.supportsChoice(platform: TargetPlatform.macOS),
@@ -169,6 +169,39 @@ void main() {
       expect(
         SpeedProcessing.processorLabel(platform: TargetPlatform.macOS),
         contains('Time Domain'),
+      );
+    },
+  );
+
+  test(
+    'Android preferences default to Sonic and validate every saved choice',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      var settings = SettingsService(await SharedPreferences.getInstance());
+      expect(settings.androidSpeedProcessing, 'sonic');
+      settings.dispose();
+      SharedPreferences.setMockInitialValues({
+        'android_speed_processing': 'unknown',
+        'skip_silence': true,
+      });
+      settings = SettingsService(await SharedPreferences.getInstance());
+      try {
+        expect(settings.androidSpeedProcessing, 'sonic');
+        expect(
+          () => settings.androidSpeedProcessing = 'rubberband',
+          throwsFormatException,
+        );
+        for (final mode in AndroidSpeedProcessing.values) {
+          settings.androidSpeedProcessing = mode.id;
+          expect(settings.androidSpeedProcessing, mode.id);
+          expect(settings.skipSilence, isTrue);
+        }
+      } finally {
+        settings.dispose();
+      }
+      expect(
+        AndroidSpeedProcessing.parse('unknown'),
+        AndroidSpeedProcessing.sonic,
       );
     },
   );
@@ -374,11 +407,13 @@ void main() {
     },
   );
 
-  testWidgets('Android processor information hides unavailable choices', (
+  testWidgets('Android processor choices preserve active audio until restart', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final previous = SpeedProcessing.activeAndroidMode;
+    SpeedProcessing.configureAndroidForStartup('sonic');
     final h = PlaybackHarness();
     await tester.runAsync(h.init);
     try {
@@ -390,15 +425,70 @@ void main() {
       expect(find.text('Android · Sonic'), findsOneWidget);
       expect(find.byType(RadioListTile<DesktopSpeedProcessing>), findsNothing);
       expect(find.byType(RadioListTile<AppleSpeedProcessing>), findsNothing);
-      expect(
-        find.textContaining('does not expose a choice of algorithm'),
-        findsOneWidget,
-      );
+      if (SpeedProcessing.experimentalAndroidProcessorsAvailable) {
+        expect(
+          find.byType(RadioListTile<AndroidSpeedProcessing>),
+          findsNWidgets(3),
+        );
+        expect(
+          find.textContaining('experimental alternatives'),
+          findsOneWidget,
+        );
+        for (final mode in [
+          AndroidSpeedProcessing.bungee,
+          AndroidSpeedProcessing.signalsmith,
+        ]) {
+          final choice = find.byKey(
+            ValueKey('speed-processing-android-${mode.id}'),
+          );
+          await tester.ensureVisible(choice);
+          await tester.tap(choice);
+          await tester.pumpAndSettle();
+          expect(h.settings.androidSpeedProcessing, mode.id);
+          expect(
+            SpeedProcessing.activeAndroidMode,
+            AndroidSpeedProcessing.sonic,
+          );
+          expect(SpeedProcessing.audioLoadConfiguration, isNull);
+          expect(SpeedProcessing.supportsSkipSilence(), isTrue);
+          expect(
+            find.text(
+              'Saved for next launch: ${mode.label}. Restart CrisperPlayer to apply. Currently using Sonic.',
+            ),
+            findsOneWidget,
+          );
+        }
+        SpeedProcessing.configureAndroidForStartup(
+          h.settings.androidSpeedProcessing,
+        );
+        expect(
+          SpeedProcessing.activeAndroidMode,
+          AndroidSpeedProcessing.signalsmith,
+        );
+        expect(
+          SpeedProcessing
+              .audioLoadConfiguration!
+              .androidLoadControl!
+              .speedProcessor,
+          AndroidSpeedProcessor.signalsmith,
+        );
+        expect(SpeedProcessing.supportsSkipSilence(), isFalse);
+      } else {
+        expect(
+          find.byType(RadioListTile<AndroidSpeedProcessing>),
+          findsNothing,
+        );
+        expect(
+          find.textContaining('not available in this build'),
+          findsOneWidget,
+        );
+      }
       expect(tester.takeException(), isNull);
     } finally {
       try {
         await _close(tester, h.dispose);
       } finally {
+        SpeedProcessing.configureAndroidForStartup(previous.id);
         debugDefaultTargetPlatformOverride = null;
       }
     }

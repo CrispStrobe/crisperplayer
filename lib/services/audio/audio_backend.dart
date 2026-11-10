@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import 'android_audio_effects.dart';
+import 'speed_processing.dart';
 import 'package:flutter/foundation.dart';
 
 /// The player boundary used by playback coordination and its regression tests.
@@ -35,7 +36,9 @@ class JustAudioBackend implements AudioBackend, AudioEffectsBackend {
   StreamSubscription<int?>? _sessionSubscription;
   double _boostDb = 0;
   String _equalizer = 'off';
-  JustAudioBackend(this.player) {
+  final bool _supportsSkipSilence;
+  JustAudioBackend(this.player)
+    : _supportsSkipSilence = SpeedProcessing.supportsSkipSilence() {
     if (supportsAudioEffects) {
       _sessionSubscription = player.androidAudioSessionIdStream.listen((id) {
         unawaited(_effects.configure(id, _boostDb, _equalizer));
@@ -64,8 +67,7 @@ class JustAudioBackend implements AudioBackend, AudioEffectsBackend {
   }
 
   @override
-  bool get supportsSkipSilence =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get supportsSkipSilence => _supportsSkipSilence;
   @override
   Duration get position => player.position;
   @override
@@ -110,6 +112,8 @@ class JustAudioBackend implements AudioBackend, AudioEffectsBackend {
   Future<void> setVolume(double volume) => player.setVolume(volume);
   @override
   Future<void> setSkipSilence(bool enabled) async {
+    // Experimental processors cannot skip silence. Keep the saved preference
+    // intact and leave the native player at its disabled default in this mode.
     if (supportsSkipSilence) await player.setSkipSilenceEnabled(enabled);
   }
 

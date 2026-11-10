@@ -30,6 +30,12 @@ class ReturnTrailService {
       throw ArgumentError('A valid played passage is required');
     }
     await db.transaction(() async {
+      await db.mergeCoverageRange(
+        bookId: bookId,
+        filePath: filePath,
+        startMs: startMs,
+        endMs: endMs,
+      );
       final previous =
           await (db.select(db.playedPassages)
                 ..where(
@@ -72,9 +78,14 @@ class ReturnTrailService {
     });
   }
 
-  Future<void> clearForBook(String bookId) => (db.delete(
-    db.playedPassages,
-  )..where((p) => p.bookId.equals(bookId))).go();
+  Future<void> clearForBook(String bookId) => db.transaction(() async {
+    await (db.delete(
+      db.playedPassages,
+    )..where((p) => p.bookId.equals(bookId))).go();
+    await (db.delete(
+      db.playbackCoverage,
+    )..where((p) => p.bookId.equals(bookId))).go();
+  });
 
   /// [budget] is listening time at [speed]. All excerpts remain at or before
   /// [anchor], even if the listener previously visited later parts of the book.

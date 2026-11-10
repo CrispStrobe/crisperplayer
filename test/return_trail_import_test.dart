@@ -60,6 +60,8 @@ void main() {
           (await db.playedPassagesFor('other')).single.filePath,
           source.path,
         );
+        expect((await db.coverageFor('restored')).single.filePath, managedPath);
+        expect((await db.coverageFor('other')).single.filePath, source.path);
         expect(
           (await db.getBook('restored'))!.lastPositionFilePath,
           managedPath,

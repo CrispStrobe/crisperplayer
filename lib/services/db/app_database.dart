@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import '../../models/book_preferences.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -97,6 +98,19 @@ class PlayedPassages extends Table {
   IntColumn get heardAtMs => integer()();
 }
 
+/// Durable disjoint unions of played audio. Unlike the recent Return Trail,
+/// these intervals are never pruned while a book's history is retained.
+@DataClassName('CoverageRange')
+class PlaybackCoverage extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get bookId => text().customConstraint(
+    'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  )();
+  TextColumn get filePath => text()();
+  IntColumn get startMs => integer()();
+  IntColumn get endMs => integer()();
+}
+
 class PlaybackQueue extends Table {
   TextColumn get bookId => text().customConstraint(
     'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
@@ -126,6 +140,7 @@ class RemoteLinks extends Table {
     Bookmarks,
     ListeningHistory,
     PlayedPassages,
+    PlaybackCoverage,
     PlaybackQueue,
     RemoteLinks,
   ],
@@ -134,12 +149,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'crisperplayer'));
   AppDatabase.forTesting(super.e);
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
       await _createPlayedPassageIndex();
+      await _createCoverageIndex();
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) await m.createTable(bookTracks);
@@ -156,6 +172,22 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(playedPassages);
         await _createPlayedPassageIndex();
       }
+      if (from < 6) {
+        await m.createTable(playbackCoverage);
+        await _createCoverageIndex();
+        // Only the retained physical evidence can seed an older library.
+        // Session endpoints and resume positions do not prove coverage.
+        for (final passage in await select(playedPassages).get()) {
+          if (passage.startMs >= 0 && passage.endMs > passage.startMs) {
+            await mergeCoverageRange(
+              bookId: passage.bookId,
+              filePath: passage.filePath,
+              startMs: passage.startMs,
+              endMs: passage.endMs,
+            );
+          }
+        }
+      }
     },
     beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
   );
@@ -164,6 +196,116 @@ class AppDatabase extends _$AppDatabase {
     'CREATE INDEX IF NOT EXISTS played_passages_book_recency '
     'ON played_passages (book_id, heard_at_ms DESC, id DESC)',
   );
+
+  Future<void> _createCoverageIndex() => customStatement(
+    'CREATE INDEX IF NOT EXISTS playback_coverage_book_file_start '
+    'ON playback_coverage (book_id, file_path, start_ms)',
+  );
+
+  Future<List<CoverageRange>> coverageFor(String bookId) =>
+      (select(playbackCoverage)
+            ..where((range) => range.bookId.equals(bookId))
+            ..orderBy([
+              (range) => OrderingTerm.asc(range.filePath),
+              (range) => OrderingTerm.asc(range.startMs),
+            ]))
+          .get();
+
+  /// Merge exactly overlapping or touching intervals. A seek gap is never
+  /// filled, even when both of its endpoints have been played.
+  Future<void> mergeCoverageRange({
+    required String bookId,
+    required String filePath,
+    required int startMs,
+    required int endMs,
+  }) async {
+    if (bookId.isEmpty || filePath.isEmpty || startMs < 0 || endMs <= startMs) {
+      throw ArgumentError('A valid playback coverage range is required');
+    }
+    await transaction(() async {
+      final overlaps =
+          await (select(playbackCoverage)
+                ..where(
+                  (range) =>
+                      range.bookId.equals(bookId) &
+                      range.filePath.equals(filePath) &
+                      range.startMs.isSmallerOrEqualValue(endMs) &
+                      range.endMs.isBiggerOrEqualValue(startMs),
+                )
+                ..orderBy([(range) => OrderingTerm.asc(range.startMs)]))
+              .get();
+      if (overlaps.isEmpty) {
+        await into(playbackCoverage).insert(
+          PlaybackCoverageCompanion.insert(
+            bookId: bookId,
+            filePath: filePath,
+            startMs: startMs,
+            endMs: endMs,
+          ),
+        );
+        return;
+      }
+      final mergedStart = overlaps.fold(
+        startMs,
+        (start, range) => math.min(start, range.startMs),
+      );
+      final mergedEnd = overlaps.fold(
+        endMs,
+        (end, range) => math.max(end, range.endMs),
+      );
+      final retained = overlaps.first;
+      if (overlaps.length == 1 &&
+          retained.startMs == mergedStart &&
+          retained.endMs == mergedEnd) {
+        return;
+      }
+      await (update(
+        playbackCoverage,
+      )..where((range) => range.id.equals(retained.id))).write(
+        PlaybackCoverageCompanion(
+          startMs: Value(mergedStart),
+          endMs: Value(mergedEnd),
+        ),
+      );
+      if (overlaps.length > 1) {
+        await (delete(playbackCoverage)..where(
+              (range) =>
+                  range.id.isIn(overlaps.skip(1).map((range) => range.id)),
+            ))
+            .go();
+      }
+    });
+  }
+
+  Future<void> remapCoverageFile(
+    String bookId,
+    String oldPath,
+    String newPath,
+  ) async {
+    if (oldPath == newPath) return;
+    await transaction(() async {
+      final previous =
+          await (select(playbackCoverage)..where(
+                (range) =>
+                    range.bookId.equals(bookId) &
+                    range.filePath.equals(oldPath),
+              ))
+              .get();
+      await (delete(playbackCoverage)..where(
+            (range) =>
+                range.bookId.equals(bookId) & range.filePath.equals(oldPath),
+          ))
+          .go();
+      for (final range in previous) {
+        await mergeCoverageRange(
+          bookId: bookId,
+          filePath: newPath,
+          startMs: range.startMs,
+          endMs: range.endMs,
+        );
+      }
+    });
+  }
 
   Future<List<PlayedPassage>> playedPassagesFor(String bookId) =>
       (select(playedPassages)
@@ -293,6 +435,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> clearAllHistory() => transaction(() async {
     await delete(listeningHistory).go();
     await delete(playedPassages).go();
+    await delete(playbackCoverage).go();
   });
   Future<void> clearAllBookmarks() => delete(bookmarks).go();
   Future<void> clearHistoryForBook(String bookId) => transaction(() async {
@@ -300,6 +443,9 @@ class AppDatabase extends _$AppDatabase {
       listeningHistory,
     )..where((t) => t.bookId.equals(bookId))).go();
     await (delete(playedPassages)..where((t) => t.bookId.equals(bookId))).go();
+    await (delete(
+      playbackCoverage,
+    )..where((t) => t.bookId.equals(bookId))).go();
   });
   Future<void> clearBookmarksForBook(String bookId) =>
       (delete(bookmarks)..where((t) => t.bookId.equals(bookId))).go();
@@ -310,6 +456,7 @@ class AppDatabase extends _$AppDatabase {
     final hist = await select(listeningHistory).get();
     final tracks = await select(bookTracks).get();
     final passages = await select(playedPassages).get();
+    final coverage = await select(playbackCoverage).get();
     return {
       'version': schemaVersion,
       'queue': (await queue()).map((e) => e.toJson()).toList(),
@@ -318,6 +465,7 @@ class AppDatabase extends _$AppDatabase {
       ).get()).map((e) => e.toJson()).toList(),
       'tracks': tracks.map((t) => t.toJson()).toList(),
       'playedPassages': passages.map((p) => p.toJson()).toList(),
+      'playbackCoverage': coverage.map((range) => range.toJson()).toList(),
       'exportedAt': DateTime.now().toIso8601String(),
       'books': bks
           .map(
@@ -403,6 +551,7 @@ class AppDatabase extends _$AppDatabase {
       'queue',
       'remoteLinks',
       'playedPassages',
+      'playbackCoverage',
     ]) {
       if (data[key] != null && data[key] is! List) {
         throw FormatException('Invalid $key');
@@ -432,6 +581,28 @@ class AppDatabase extends _$AppDatabase {
           startMs: row['startMs'] as int,
           endMs: row['endMs'] as int,
           heardAtMs: row['heardAtMs'] as int,
+        ),
+      );
+    }
+    final coverage = <PlaybackCoverageCompanion>[];
+    for (final row in data['playbackCoverage'] as List? ?? []) {
+      if (row is! Map ||
+          row['bookId'] is! String ||
+          (row['bookId'] as String).isEmpty ||
+          row['filePath'] is! String ||
+          (row['filePath'] as String).isEmpty ||
+          row['startMs'] is! int ||
+          row['endMs'] is! int ||
+          (row['startMs'] as int) < 0 ||
+          (row['endMs'] as int) <= (row['startMs'] as int)) {
+        throw const FormatException('Invalid playback coverage');
+      }
+      coverage.add(
+        PlaybackCoverageCompanion.insert(
+          bookId: row['bookId'] as String,
+          filePath: row['filePath'] as String,
+          startMs: row['startMs'] as int,
+          endMs: row['endMs'] as int,
         ),
       );
     }
@@ -566,9 +737,30 @@ class AppDatabase extends _$AppDatabase {
                   ..limit(1))
                 .getSingleOrNull();
         if (existing == null) await into(playedPassages).insert(passage);
+        // Version-five backups have retained ranges but no cumulative map.
+        await mergeCoverageRange(
+          bookId: bookId,
+          filePath: passage.filePath.value,
+          startMs: passage.startMs.value,
+          endMs: passage.endMs.value,
+        );
       }
       for (final bookId in passageBooks) {
         await prunePlayedPassages(bookId);
+      }
+      final coverageBooks = <String>{};
+      for (final range in coverage) {
+        final bookId = range.bookId.value;
+        if (!coverageBooks.contains(bookId) && await getBook(bookId) == null) {
+          throw const FormatException('Playback coverage book is missing');
+        }
+        coverageBooks.add(bookId);
+        await mergeCoverageRange(
+          bookId: bookId,
+          filePath: range.filePath.value,
+          startMs: range.startMs.value,
+          endMs: range.endMs.value,
+        );
       }
     });
   }

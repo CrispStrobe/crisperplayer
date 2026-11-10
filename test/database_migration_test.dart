@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  for (final prior in [1, 2, 3, 4]) {
+  for (final prior in [1, 2, 3, 4, 5]) {
     test(
       'version-$prior library upgrades without losing books or bookmarks',
       () async {
@@ -36,8 +36,9 @@ void main() {
               createdAtMs: 1,
             ),
           );
-          // Reconstruct the actual older schema, including pre-trail v4.
-          await db.customStatement('DROP TABLE played_passages');
+          // Reconstruct the actual older schema, including pre-coverage v5.
+          await db.customStatement('DROP TABLE playback_coverage');
+          if (prior < 5) await db.customStatement('DROP TABLE played_passages');
           if (prior < 4) await db.customStatement('DROP TABLE remote_links');
           if (prior < 3) {
             await db.customStatement('DROP TABLE playback_queue');
@@ -67,14 +68,22 @@ void main() {
           final version = await db
               .customSelect('PRAGMA user_version')
               .getSingle();
-          expect(version.read<int>('user_version'), 5);
+          expect(version.read<int>('user_version'), 6);
           expect(await db.playedPassagesFor('a'), isEmpty);
+          expect(await db.coverageFor('a'), isEmpty);
           final indexes = await db
               .customSelect("PRAGMA index_list('played_passages')")
               .get();
           expect(
             indexes.map((row) => row.read<String>('name')),
             contains('played_passages_book_recency'),
+          );
+          final coverageIndexes = await db
+              .customSelect("PRAGMA index_list('playback_coverage')")
+              .get();
+          expect(
+            coverageIndexes.map((row) => row.read<String>('name')),
+            contains('playback_coverage_book_file_start'),
           );
         } finally {
           await db.close();
@@ -83,6 +92,65 @@ void main() {
       },
     );
   }
+  test(
+    'version-five migration seeds only the exact union of retained physical ranges',
+    () async {
+      final dir = await Directory.systemTemp.createTemp(
+        'crisper_coverage_migration_',
+      );
+      final file = File('${dir.path}/library.sqlite');
+      var db = AppDatabase.forTesting(NativeDatabase(file));
+      try {
+        await db.upsertBook(
+          BooksCompanion.insert(
+            id: 'a',
+            title: 'Original',
+            filePathsJson: '["/a.mp3"]',
+            addedAtMs: 1,
+            lastPositionMs: const Value(90000),
+          ),
+        );
+        await db.insertHistory(
+          ListeningHistoryCompanion.insert(
+            id: 'session',
+            bookId: 'a',
+            startedAtMs: 1,
+            startMs: const Value(0),
+            endMs: const Value(90000),
+            listenedMs: const Value(1000),
+          ),
+        );
+        for (final range in [(10000, 20000), (15000, 30000), (40000, 50000)]) {
+          await db
+              .into(db.playedPassages)
+              .insert(
+                PlayedPassagesCompanion.insert(
+                  bookId: 'a',
+                  filePath: '/a.mp3',
+                  startMs: range.$1,
+                  endMs: range.$2,
+                  heardAtMs: 1,
+                ),
+              );
+        }
+        await db.customStatement('DROP TABLE playback_coverage');
+        await db.customStatement('PRAGMA user_version = 5');
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase(file));
+        expect(
+          (await db.coverageFor(
+            'a',
+          )).map((range) => (range.startMs, range.endMs)),
+          [(10000, 30000), (40000, 50000)],
+        );
+        expect((await db.getBook('a'))!.lastPositionMs, 90000);
+        expect(await db.historyFor('a'), hasLength(1));
+      } finally {
+        await db.close();
+        await dir.delete(recursive: true);
+      }
+    },
+  );
   test(
     'export/import roundtrip preserves tracks; repeated import keeps children',
     () async {

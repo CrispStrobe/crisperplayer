@@ -420,6 +420,7 @@ class LibraryService {
                 (t) => t.bookId.equals(book.id) & t.filePath.equals(entry.key),
               ))
               .write(PlayedPassagesCompanion(filePath: Value(entry.value)));
+          await db.remapCoverageFile(book.id, entry.key, entry.value);
         }
       });
     }

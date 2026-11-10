@@ -3300,6 +3300,349 @@ class PlayedPassagesCompanion extends UpdateCompanion<PlayedPassage> {
   }
 }
 
+class $PlaybackCoverageTable extends PlaybackCoverage
+    with TableInfo<$PlaybackCoverageTable, CoverageRange> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlaybackCoverageTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL REFERENCES books(id) ON DELETE CASCADE',
+  );
+  static const VerificationMeta _filePathMeta = const VerificationMeta(
+    'filePath',
+  );
+  @override
+  late final GeneratedColumn<String> filePath = GeneratedColumn<String>(
+    'file_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startMsMeta = const VerificationMeta(
+    'startMs',
+  );
+  @override
+  late final GeneratedColumn<int> startMs = GeneratedColumn<int>(
+    'start_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endMsMeta = const VerificationMeta('endMs');
+  @override
+  late final GeneratedColumn<int> endMs = GeneratedColumn<int>(
+    'end_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, bookId, filePath, startMs, endMs];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'playback_coverage';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CoverageRange> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('file_path')) {
+      context.handle(
+        _filePathMeta,
+        filePath.isAcceptableOrUnknown(data['file_path']!, _filePathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filePathMeta);
+    }
+    if (data.containsKey('start_ms')) {
+      context.handle(
+        _startMsMeta,
+        startMs.isAcceptableOrUnknown(data['start_ms']!, _startMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startMsMeta);
+    }
+    if (data.containsKey('end_ms')) {
+      context.handle(
+        _endMsMeta,
+        endMs.isAcceptableOrUnknown(data['end_ms']!, _endMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CoverageRange map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CoverageRange(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      filePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_path'],
+      )!,
+      startMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_ms'],
+      )!,
+      endMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $PlaybackCoverageTable createAlias(String alias) {
+    return $PlaybackCoverageTable(attachedDatabase, alias);
+  }
+}
+
+class CoverageRange extends DataClass implements Insertable<CoverageRange> {
+  final int id;
+  final String bookId;
+  final String filePath;
+  final int startMs;
+  final int endMs;
+  const CoverageRange({
+    required this.id,
+    required this.bookId,
+    required this.filePath,
+    required this.startMs,
+    required this.endMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['book_id'] = Variable<String>(bookId);
+    map['file_path'] = Variable<String>(filePath);
+    map['start_ms'] = Variable<int>(startMs);
+    map['end_ms'] = Variable<int>(endMs);
+    return map;
+  }
+
+  PlaybackCoverageCompanion toCompanion(bool nullToAbsent) {
+    return PlaybackCoverageCompanion(
+      id: Value(id),
+      bookId: Value(bookId),
+      filePath: Value(filePath),
+      startMs: Value(startMs),
+      endMs: Value(endMs),
+    );
+  }
+
+  factory CoverageRange.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CoverageRange(
+      id: serializer.fromJson<int>(json['id']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      filePath: serializer.fromJson<String>(json['filePath']),
+      startMs: serializer.fromJson<int>(json['startMs']),
+      endMs: serializer.fromJson<int>(json['endMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bookId': serializer.toJson<String>(bookId),
+      'filePath': serializer.toJson<String>(filePath),
+      'startMs': serializer.toJson<int>(startMs),
+      'endMs': serializer.toJson<int>(endMs),
+    };
+  }
+
+  CoverageRange copyWith({
+    int? id,
+    String? bookId,
+    String? filePath,
+    int? startMs,
+    int? endMs,
+  }) => CoverageRange(
+    id: id ?? this.id,
+    bookId: bookId ?? this.bookId,
+    filePath: filePath ?? this.filePath,
+    startMs: startMs ?? this.startMs,
+    endMs: endMs ?? this.endMs,
+  );
+  CoverageRange copyWithCompanion(PlaybackCoverageCompanion data) {
+    return CoverageRange(
+      id: data.id.present ? data.id.value : this.id,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      filePath: data.filePath.present ? data.filePath.value : this.filePath,
+      startMs: data.startMs.present ? data.startMs.value : this.startMs,
+      endMs: data.endMs.present ? data.endMs.value : this.endMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CoverageRange(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('filePath: $filePath, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, bookId, filePath, startMs, endMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CoverageRange &&
+          other.id == this.id &&
+          other.bookId == this.bookId &&
+          other.filePath == this.filePath &&
+          other.startMs == this.startMs &&
+          other.endMs == this.endMs);
+}
+
+class PlaybackCoverageCompanion extends UpdateCompanion<CoverageRange> {
+  final Value<int> id;
+  final Value<String> bookId;
+  final Value<String> filePath;
+  final Value<int> startMs;
+  final Value<int> endMs;
+  const PlaybackCoverageCompanion({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.filePath = const Value.absent(),
+    this.startMs = const Value.absent(),
+    this.endMs = const Value.absent(),
+  });
+  PlaybackCoverageCompanion.insert({
+    this.id = const Value.absent(),
+    required String bookId,
+    required String filePath,
+    required int startMs,
+    required int endMs,
+  }) : bookId = Value(bookId),
+       filePath = Value(filePath),
+       startMs = Value(startMs),
+       endMs = Value(endMs);
+  static Insertable<CoverageRange> custom({
+    Expression<int>? id,
+    Expression<String>? bookId,
+    Expression<String>? filePath,
+    Expression<int>? startMs,
+    Expression<int>? endMs,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookId != null) 'book_id': bookId,
+      if (filePath != null) 'file_path': filePath,
+      if (startMs != null) 'start_ms': startMs,
+      if (endMs != null) 'end_ms': endMs,
+    });
+  }
+
+  PlaybackCoverageCompanion copyWith({
+    Value<int>? id,
+    Value<String>? bookId,
+    Value<String>? filePath,
+    Value<int>? startMs,
+    Value<int>? endMs,
+  }) {
+    return PlaybackCoverageCompanion(
+      id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
+      filePath: filePath ?? this.filePath,
+      startMs: startMs ?? this.startMs,
+      endMs: endMs ?? this.endMs,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (filePath.present) {
+      map['file_path'] = Variable<String>(filePath.value);
+    }
+    if (startMs.present) {
+      map['start_ms'] = Variable<int>(startMs.value);
+    }
+    if (endMs.present) {
+      map['end_ms'] = Variable<int>(endMs.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaybackCoverageCompanion(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('filePath: $filePath, ')
+          ..write('startMs: $startMs, ')
+          ..write('endMs: $endMs')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PlaybackQueueTable extends PlaybackQueue
     with TableInfo<$PlaybackQueueTable, PlaybackQueueData> {
   @override
@@ -3839,6 +4182,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $PlayedPassagesTable playedPassages = $PlayedPassagesTable(this);
+  late final $PlaybackCoverageTable playbackCoverage = $PlaybackCoverageTable(
+    this,
+  );
   late final $PlaybackQueueTable playbackQueue = $PlaybackQueueTable(this);
   late final $RemoteLinksTable remoteLinks = $RemoteLinksTable(this);
   @override
@@ -3852,6 +4198,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     bookmarks,
     listeningHistory,
     playedPassages,
+    playbackCoverage,
     playbackQueue,
     remoteLinks,
   ];
@@ -3891,6 +4238,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('played_passages', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'books',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('playback_coverage', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -4044,6 +4398,26 @@ final class $$BooksTableReferences
     ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_playedPassagesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PlaybackCoverageTable, List<CoverageRange>>
+  _playbackCoverageRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.playbackCoverage,
+    aliasName: $_aliasNameGenerator(db.books.id, db.playbackCoverage.bookId),
+  );
+
+  $$PlaybackCoverageTableProcessedTableManager get playbackCoverageRefs {
+    final manager = $$PlaybackCoverageTableTableManager(
+      $_db,
+      $_db.playbackCoverage,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _playbackCoverageRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4295,6 +4669,31 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
           }) => $$PlayedPassagesTableFilterComposer(
             $db: $db,
             $table: $db.playedPassages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> playbackCoverageRefs(
+    Expression<bool> Function($$PlaybackCoverageTableFilterComposer f) f,
+  ) {
+    final $$PlaybackCoverageTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playbackCoverage,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybackCoverageTableFilterComposer(
+            $db: $db,
+            $table: $db.playbackCoverage,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4657,6 +5056,31 @@ class $$BooksTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> playbackCoverageRefs<T extends Object>(
+    Expression<T> Function($$PlaybackCoverageTableAnnotationComposer a) f,
+  ) {
+    final $$PlaybackCoverageTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.playbackCoverage,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlaybackCoverageTableAnnotationComposer(
+            $db: $db,
+            $table: $db.playbackCoverage,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> playbackQueueRefs<T extends Object>(
     Expression<T> Function($$PlaybackQueueTableAnnotationComposer a) f,
   ) {
@@ -4727,6 +5151,7 @@ class $$BooksTableTableManager
             bool bookmarksRefs,
             bool listeningHistoryRefs,
             bool playedPassagesRefs,
+            bool playbackCoverageRefs,
             bool playbackQueueRefs,
             bool remoteLinksRefs,
           })
@@ -4835,6 +5260,7 @@ class $$BooksTableTableManager
                 bookmarksRefs = false,
                 listeningHistoryRefs = false,
                 playedPassagesRefs = false,
+                playbackCoverageRefs = false,
                 playbackQueueRefs = false,
                 remoteLinksRefs = false,
               }) {
@@ -4846,6 +5272,7 @@ class $$BooksTableTableManager
                     if (bookmarksRefs) db.bookmarks,
                     if (listeningHistoryRefs) db.listeningHistory,
                     if (playedPassagesRefs) db.playedPassages,
+                    if (playbackCoverageRefs) db.playbackCoverage,
                     if (playbackQueueRefs) db.playbackQueue,
                     if (remoteLinksRefs) db.remoteLinks,
                   ],
@@ -4945,6 +5372,27 @@ class $$BooksTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (playbackCoverageRefs)
+                        await $_getPrefetchedData<
+                          Book,
+                          $BooksTable,
+                          CoverageRange
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._playbackCoverageRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).playbackCoverageRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (playbackQueueRefs)
                         await $_getPrefetchedData<
                           Book,
@@ -5013,6 +5461,7 @@ typedef $$BooksTableProcessedTableManager =
         bool bookmarksRefs,
         bool listeningHistoryRefs,
         bool playedPassagesRefs,
+        bool playbackCoverageRefs,
         bool playbackQueueRefs,
         bool remoteLinksRefs,
       })
@@ -6829,6 +7278,327 @@ typedef $$PlayedPassagesTableProcessedTableManager =
       PlayedPassage,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$PlaybackCoverageTableCreateCompanionBuilder =
+    PlaybackCoverageCompanion Function({
+      Value<int> id,
+      required String bookId,
+      required String filePath,
+      required int startMs,
+      required int endMs,
+    });
+typedef $$PlaybackCoverageTableUpdateCompanionBuilder =
+    PlaybackCoverageCompanion Function({
+      Value<int> id,
+      Value<String> bookId,
+      Value<String> filePath,
+      Value<int> startMs,
+      Value<int> endMs,
+    });
+
+final class $$PlaybackCoverageTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $PlaybackCoverageTable, CoverageRange> {
+  $$PlaybackCoverageTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) => db.books.createAlias(
+    $_aliasNameGenerator(db.playbackCoverage.bookId, db.books.id),
+  );
+
+  $$BooksTableProcessedTableManager get bookId {
+    final $_column = $_itemColumn<String>('book_id')!;
+
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PlaybackCoverageTableFilterComposer
+    extends Composer<_$AppDatabase, $PlaybackCoverageTable> {
+  $$PlaybackCoverageTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlaybackCoverageTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlaybackCoverageTable> {
+  $$PlaybackCoverageTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get filePath => $composableBuilder(
+    column: $table.filePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startMs => $composableBuilder(
+    column: $table.startMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endMs => $composableBuilder(
+    column: $table.endMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlaybackCoverageTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlaybackCoverageTable> {
+  $$PlaybackCoverageTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get filePath =>
+      $composableBuilder(column: $table.filePath, builder: (column) => column);
+
+  GeneratedColumn<int> get startMs =>
+      $composableBuilder(column: $table.startMs, builder: (column) => column);
+
+  GeneratedColumn<int> get endMs =>
+      $composableBuilder(column: $table.endMs, builder: (column) => column);
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PlaybackCoverageTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlaybackCoverageTable,
+          CoverageRange,
+          $$PlaybackCoverageTableFilterComposer,
+          $$PlaybackCoverageTableOrderingComposer,
+          $$PlaybackCoverageTableAnnotationComposer,
+          $$PlaybackCoverageTableCreateCompanionBuilder,
+          $$PlaybackCoverageTableUpdateCompanionBuilder,
+          (CoverageRange, $$PlaybackCoverageTableReferences),
+          CoverageRange,
+          PrefetchHooks Function({bool bookId})
+        > {
+  $$PlaybackCoverageTableTableManager(
+    _$AppDatabase db,
+    $PlaybackCoverageTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlaybackCoverageTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlaybackCoverageTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlaybackCoverageTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String> filePath = const Value.absent(),
+                Value<int> startMs = const Value.absent(),
+                Value<int> endMs = const Value.absent(),
+              }) => PlaybackCoverageCompanion(
+                id: id,
+                bookId: bookId,
+                filePath: filePath,
+                startMs: startMs,
+                endMs: endMs,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String bookId,
+                required String filePath,
+                required int startMs,
+                required int endMs,
+              }) => PlaybackCoverageCompanion.insert(
+                id: id,
+                bookId: bookId,
+                filePath: filePath,
+                startMs: startMs,
+                endMs: endMs,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PlaybackCoverageTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookId,
+                                referencedTable:
+                                    $$PlaybackCoverageTableReferences
+                                        ._bookIdTable(db),
+                                referencedColumn:
+                                    $$PlaybackCoverageTableReferences
+                                        ._bookIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PlaybackCoverageTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlaybackCoverageTable,
+      CoverageRange,
+      $$PlaybackCoverageTableFilterComposer,
+      $$PlaybackCoverageTableOrderingComposer,
+      $$PlaybackCoverageTableAnnotationComposer,
+      $$PlaybackCoverageTableCreateCompanionBuilder,
+      $$PlaybackCoverageTableUpdateCompanionBuilder,
+      (CoverageRange, $$PlaybackCoverageTableReferences),
+      CoverageRange,
+      PrefetchHooks Function({bool bookId})
+    >;
 typedef $$PlaybackQueueTableCreateCompanionBuilder =
     PlaybackQueueCompanion Function({
       required String bookId,
@@ -7410,6 +8180,8 @@ class $AppDatabaseManager {
       $$ListeningHistoryTableTableManager(_db, _db.listeningHistory);
   $$PlayedPassagesTableTableManager get playedPassages =>
       $$PlayedPassagesTableTableManager(_db, _db.playedPassages);
+  $$PlaybackCoverageTableTableManager get playbackCoverage =>
+      $$PlaybackCoverageTableTableManager(_db, _db.playbackCoverage);
   $$PlaybackQueueTableTableManager get playbackQueue =>
       $$PlaybackQueueTableTableManager(_db, _db.playbackQueue);
   $$RemoteLinksTableTableManager get remoteLinks =>

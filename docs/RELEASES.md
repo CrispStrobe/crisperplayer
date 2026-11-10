@@ -1,12 +1,12 @@
 # Releases and installation
 
-## Current release hold
+## External dependency review
 
-New binary and TestFlight releases are blocked by the
-[distribution license policy](LICENSE_POLICY.md). The application and resolved
-`crisp_storage` package currently declare AGPL-3.0; those rights must be resolved
-before switching to an allowed license. Native LGPL artifacts also require
-matching-source and distribution evidence. The Windows audio-only DLL's LGPL
+New binary and TestFlight builds enforce the
+[external dependency license policy](LICENSE_POLICY.md). The owner's confirmed
+distribution authority covers CrisperPlayer and `crisp_storage`; their own
+AGPL declarations are not blockers and are not being replaced. External native
+LGPL artifacts require matching-source and distribution evidence. The Windows audio-only DLL's LGPL
 build markers do not remove those obligations, and arbitrary Linux system mpv
 builds are not approved by this policy.
 
@@ -78,9 +78,9 @@ can use `Get-FileHash PATH -Algorithm SHA256` and compare with the manifest.
    source changes are necessary; do not move a published tag.
 5. The same tag triggers `ios-release.yml`: existing App Store identity, profiles,
    entitlement validation, upload, processing, and internal TestFlight group assignment.
-   Do not dispatch another upload of the same build. Distribution-only retries are
-   disabled until review evidence can be tied to the already uploaded IPA; a
-   successful check on a different source checkout cannot approve an old binary.
+   Do not dispatch another upload of the same build. Use the existing
+   distribution-only retry when that exact binary has already been uploaded;
+   it does not build or upload a replacement IPA or change its license evidence.
    See [iOS build](IOS_BUILD.md).
 
 `Release binaries` also supports manual dispatch with an **existing matching tag** to retry

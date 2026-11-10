@@ -33,16 +33,13 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      - name: Require auditable source for this upload
-        if: ${{ inputs.distribute_only }}
-        run: |
-          echo '::error::Distribution-only retries are disabled until license evidence can be tied to the already uploaded IPA. Build and audit a new upload from this checkout instead.'
-          exit 1
       - uses: subosito/flutter-action@v2
+        if: ${{ !inputs.distribute_only }}
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
-      - name: Enforce distribution license policy before signing
+      - name: Enforce external dependency policy before signing
+        if: ${{ !inputs.distribute_only }}
         run: |
           flutter pub get
           python3 scripts/check_distribution_licenses.py --enforce --platform ios

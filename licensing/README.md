@@ -1,9 +1,13 @@
 # Recorded distribution evidence
 
 The project policy is described in [LICENSE_POLICY.md](../docs/LICENSE_POLICY.md).
-The current release is **blocked**, including by the AGPL declarations in the
-application and `crisp_storage`. No file here grants permission to relicense
-someone else's work.
+The external-dependency restriction applies to third-party components. The
+user explicitly confirmed ownership of CrisperPlayer and `crisp_storage`,
+dual-licensing authority, and existing section 7 App Store exemptions. Those two
+exact identities are outside the external GPL/AGPL restriction. Their existing
+license notices remain unchanged, and the inventory records the user's
+instruction as its policy basis, without inventing published exception text.
+External native provenance and distribution requirements remain unresolved.
 
 After resolving the committed dependencies with `flutter pub get`, run:
 
@@ -53,11 +57,27 @@ audit tools and record their results before completing a native review.
 
 The license policy reads explicit SPDX metadata instead of searching legal
 prose for the letters `GPL`. LGPL-3.0 incorporates the GPL-3.0 text; that does
-not make an LGPL-only component a forbidden GPL component. Actual GPL/AGPL
-identifiers are blocked. A dual-license offer containing a forbidden grant must
+not make an LGPL-only component a forbidden GPL component. External GPL/AGPL
+identifiers are blocked. An external dual-license offer containing a forbidden grant must
 have an explicitly reviewed selection of an allowed grant in the inventory;
 the checker does not select one automatically. Unknown licenses and exceptions
 require a policy decision.
+
+## Exact ownership scope
+
+`ownership_authorization` records the explicit user instruction for
+`crisperplayer` at the application root and `crisp_storage` at the recorded
+CrispCloud repository, package path, and commit. The checker matches those
+identities against a narrow policy allowlist. Merely adding a `user_owned`
+label to another inventory row, reusing a package name from a different source,
+or naming an owner namespace does not create an exemption.
+
+Ownership affects only the external GPL/AGPL restriction. Version/source pins,
+metadata and license-file hashes, malformed or missing grants, and every
+external transitive dependency remain checked. The report lists the two
+applied policy exemptions explicitly. This authorization neither inherits to
+their dependencies nor extends to native components. No additional ownership
+confirmation or relicensing action is required for these two components.
 
 ## Updating the evidence
 

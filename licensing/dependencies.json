@@ -3,7 +3,7 @@
   "reviewed_at": "2026-11-10",
   "root_package": "crisperplayer",
   "root_pubspec_sha256": "7d4f854488a6698f557d9315730ebb9e597911d8ebd375693f683c40d835baa6",
-  "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test.",
+  "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test. The exact user-owned CrisperPlayer and crisp_storage identities have an explicit external-license policy exemption; their original license files and every external dependency remain checked.",
   "sdk": {
     "flutter_version": "3.44.4",
     "dart_version": "3.12.2",
@@ -346,7 +346,7 @@
       },
       "pubspec_sha256": "1cbcf54b572f78e8523ca52d2f34ce6a0a0c96a16d3a2b3a850261856a573f30",
       "license_expression": "AGPL-3.0-only",
-      "review_status": "blocked",
+      "review_status": "reviewed",
       "license_files": [
         {
           "package": "crisp_storage",
@@ -355,8 +355,10 @@
         }
       ],
       "notes": [
-        "Current declared AGPL v3 conflicts with the requested distribution policy. No relicensing authority is assumed."
-      ]
+        "Existing AGPL declaration retained. The user explicitly owns this exact component and instructed that it is outside the external-license restriction. Source, metadata, and license hashes remain checked; external dependencies remain in scope. The instruction is recorded as policy authorization, not as new published exception text."
+      ],
+      "license_policy_scope": "user_owned",
+      "ownership_authorization": "user-owned-crisperplayer-crisp-storage-2026-11-10"
     },
     {
       "name": "crisperplayer",
@@ -366,7 +368,7 @@
       },
       "pubspec_sha256": "7d4f854488a6698f557d9315730ebb9e597911d8ebd375693f683c40d835baa6",
       "license_expression": "AGPL-3.0-only",
-      "review_status": "blocked",
+      "review_status": "reviewed",
       "license_files": [
         {
           "package": "crisperplayer",
@@ -375,8 +377,10 @@
         }
       ],
       "notes": [
-        "Current declared AGPL v3 conflicts with the requested distribution policy. No relicensing authority is assumed."
-      ]
+        "Existing AGPL declaration retained. The user explicitly owns this exact component and instructed that it is outside the external-license restriction. Source, metadata, and license hashes remain checked; external dependencies remain in scope. The instruction is recorded as policy authorization, not as new published exception text."
+      ],
+      "license_policy_scope": "user_owned",
+      "ownership_authorization": "user-owned-crisperplayer-crisp-storage-2026-11-10"
     },
     {
       "name": "cross_file",
@@ -4269,5 +4273,27 @@
         "windows"
       ]
     }
-  ]
+  ],
+  "ownership_authorization": {
+    "id": "user-owned-crisperplayer-crisp-storage-2026-11-10",
+    "basis_type": "user_instruction",
+    "basis": "The user explicitly confirmed ownership of CrisperPlayer and crisp_storage, dual-licensing authority, and existing section 7 App Store exemptions, and directed that their own AGPL declarations are outside the external-dependency restriction. This records that user instruction as the policy basis; it does not create, reproduce, or independently verify published exception text. Existing license notices remain unchanged.",
+    "components": [
+      {
+        "name": "crisperplayer",
+        "source": {
+          "type": "root"
+        }
+      },
+      {
+        "name": "crisp_storage",
+        "source": {
+          "type": "git",
+          "url": "https://github.com/CrispStrobe/CrispCloud",
+          "path": "packages/crisp_storage",
+          "resolved-ref": "ac90899f8110dcb266d122208b3b3a879a257eee"
+        }
+      }
+    ]
+  }
 }

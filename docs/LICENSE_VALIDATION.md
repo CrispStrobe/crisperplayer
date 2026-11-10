@@ -15,7 +15,7 @@ was performed.
 | Modified workflow YAML and `git diff --check` | Passed |
 | Actual Flutter Apple processing preview | Inspected at 390 × 844; active and pending modes are distinct and the restart requirement is visible |
 | Real-checkout distribution report | 168 production packages and 10 native components inventoried; result intentionally blocked |
-| Enforce-mode check | Exited 1 for unresolved AGPL declarations and incomplete native evidence; no stale or missing reviewed input errors |
+| Enforce-mode check | Reports incomplete external evidence; project-owned grants are covered by the owner's confirmed distribution authority |
 | Windows audio artifact | Exact archive and DLL hashes checked; LGPL-compatible native configuration/license markers found |
 | Controlled Linux source preparation | Four pinned archives verified and safely unpacked; build plan and negative checks passed |
 
@@ -51,8 +51,10 @@ a controlled candidate here. The app still uses its existing desktop loader;
 no unbuilt candidate is represented as an installed engine.
 
 No target-device listening comparison, CPU/battery measurement, or blanket
-App Store compatibility finding is claimed. Signed distribution still requires
-resolution of the app and `crisp_storage` AGPL grants, plus review of the exact
-native payloads and their corresponding-source, notice and modification rights.
+App Store compatibility finding is claimed. The owner has confirmed authority
+to distribute their own CrisperPlayer and `crisp_storage` code, including App
+Store additional permissions; no relicensing or further confirmation is needed.
+Signed distribution still requires review of the exact external native payloads
+and their corresponding-source, notice and modification rights.
 See [the policy](LICENSE_POLICY.md), [recorded evidence](../licensing/README.md),
 and [desktop artifact findings](DESKTOP_AUDIO_BUILD.md).

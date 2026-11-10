@@ -5,6 +5,9 @@ This is an offline, fail-closed engineering gate, not a legal or App Store
 certification. It checks the complete resolved production dependency graph,
 including transitive dependencies, and the target's recorded native components.
 It does not infer a native payload's license from its Flutter wrapper.
+The external-license restriction excludes only the two exact components the
+user explicitly owns. Their source/license evidence and external dependencies
+remain checked, and their published license notices are not rewritten.
 
 Run `flutter pub get` before checking. Updating a lockfile never approves a new
 license: a reviewer must update licensing/dependencies.json and the native
@@ -33,6 +36,26 @@ ALLOWED_LICENSES = {
 }
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 SPDX_TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+:-]*|[()]")
+OWNERSHIP_AUTHORIZATION_ID = "user-owned-crisperplayer-crisp-storage-2026-11-10"
+# This narrow policy records the user's explicit ownership instruction. It is
+# not a published exception, a new license grant, or a namespace-wide exclusion.
+# Source changes still require inventory review; other packages from the same
+# account are external unless separately and explicitly authorized.
+OWNED_COMPONENT_SOURCES = {
+    "crisperplayer": {"type": "root"},
+    "crisp_storage": {
+        "type": "git",
+        "url": "https://github.com/CrispStrobe/CrispCloud",
+        "path": "packages/crisp_storage",
+        "resolved-ref": "ac90899f8110dcb266d122208b3b3a879a257eee",
+    },
+}
+OWNED_COPYLEFT_LICENSES = {
+    f"{family}-{version}-{suffix}"
+    for family, versions in (("GPL", ("1.0", "2.0", "3.0")), ("AGPL", ("1.0", "3.0")))
+    for version in versions
+    for suffix in ("only", "or-later")
+}
 
 
 def digest(path: Path) -> str:
@@ -144,12 +167,13 @@ def source_pin(lock: dict) -> dict:
     raise ValueError(f"Unrecognized dependency source: {source}")
 
 
-def license_problem(expression: object) -> str | None:
+def license_problem(expression: object, *, user_owned: bool = False) -> str | None:
     """Validate explicit SPDX metadata, never grep the license's legal prose.
 
     A GPL text incorporated by LGPL-3.0 is not a separate GPL component. Actual
-    GPL/AGPL identifiers are forbidden. Mixed dual-license grants need an
-    explicit reviewed selection of an allowed grant in the inventory.
+    GPL/AGPL identifiers are forbidden for external components. The caller may
+    apply the exact user-owned exception after verifying its authorization and
+    source identity; missing or malformed license metadata is never exempt.
     """
     if not isinstance(expression, str) or not expression.strip():
         return "No reviewed license expression is recorded"
@@ -197,9 +221,10 @@ def license_problem(expression: object) -> str | None:
     except ValueError:
         return "Malformed SPDX license expression"
     forbidden = [value for value in identifiers if re.match(r"^(?:AGPL|GPL)(?:-|$)", value, re.IGNORECASE)]
-    if forbidden:
+    if forbidden and not user_owned:
         return "Forbidden license: " + ", ".join(forbidden)
-    unknown = [value for value in identifiers if value not in ALLOWED_LICENSES]
+    allowed = ALLOWED_LICENSES | (OWNED_COPYLEFT_LICENSES if user_owned else set())
+    unknown = [value for value in identifiers if value not in allowed]
     if unknown:
         return "License requires explicit policy review: " + ", ".join(unknown)
     return None
@@ -261,6 +286,7 @@ def audit(root: Path, platform: str = "all") -> dict:
         "scope": "Resolved production Dart graph, exact package/source pins and license-file hashes, plus recorded native evidence for the selected platform. No legal or App Store certification; no inspection of a supplied IPA/APK/executable.",
         "runtime_package_count": 0,
         "native_component_count": 0,
+        "owned_policy_exemptions": [],
         "findings": [],
     }
     findings = report["findings"]
@@ -293,6 +319,21 @@ def audit(root: Path, platform: str = "all") -> dict:
             if name in recorded:
                 raise ValueError(f"Duplicate inventory entry: {name}")
             recorded[name] = entry
+        ownership = inventory.get("ownership_authorization")
+        owned_sources = {}
+        if ownership is not None:
+            if not isinstance(ownership, dict) or ownership.get("id") != OWNERSHIP_AUTHORIZATION_ID or ownership.get("basis_type") != "user_instruction" or not isinstance(ownership.get("basis"), str) or not ownership["basis"].strip():
+                issue("invalid_ownership_authorization", "ownership", "Ownership scope must reference the recorded explicit user instruction")
+            elif not isinstance(ownership.get("components"), list):
+                issue("invalid_ownership_authorization", "ownership", "Ownership authorization must enumerate exact components")
+            else:
+                for authorization in ownership["components"]:
+                    name = authorization.get("name")
+                    expected = OWNED_COMPONENT_SOURCES.get(name)
+                    if expected is None or authorization.get("source") != expected or name in owned_sources:
+                        issue("unauthorized_ownership_scope", str(name), "Ownership instruction does not cover this exact component/source; namespace and inherited exclusions are not allowed")
+                        continue
+                    owned_sources[name] = expected
         for name in sorted(runtime):
             entry = recorded.get(name)
             if entry is None:
@@ -316,7 +357,28 @@ def audit(root: Path, platform: str = "all") -> dict:
                 expected_tree = entry.get("source_tree_sha256")
                 if not isinstance(expected_tree, str) or not SHA256.fullmatch(expected_tree) or tree_digest(package_root) != expected_tree:
                     issue("local_source_changed", name, "Vendored package content differs from its reviewed source tree")
-            problem = license_problem(entry.get("license_expression"))
+            user_owned = False
+            scope = entry.get("license_policy_scope", "external")
+            if scope == "user_owned":
+                authorized_source = owned_sources.get(name)
+                user_owned = (
+                    authorized_source is not None
+                    and actual_pin == authorized_source
+                    and expected_pin == authorized_source
+                    and entry.get("ownership_authorization") == OWNERSHIP_AUTHORIZATION_ID
+                    and (name != "crisperplayer" or (name == root_name and package_root == root.resolve()))
+                )
+                if user_owned:
+                    report["owned_policy_exemptions"].append({
+                        "component": name,
+                        "authorization": OWNERSHIP_AUTHORIZATION_ID,
+                        "scope": "External GPL/AGPL license restriction only; all source/license checks and external dependencies remain in scope",
+                    })
+                else:
+                    issue("unauthorized_ownership_scope", name, "The exact source and user-owned authorization do not match; external license policy still applies")
+            elif scope != "external":
+                issue("invalid_license_scope", name, f"Unknown license policy scope: {scope}")
+            problem = license_problem(entry.get("license_expression"), user_owned=user_owned)
             if problem:
                 issue("license_policy", name, problem)
             if entry.get("review_status") != "reviewed":
@@ -443,6 +505,8 @@ def main(argv=None) -> int:
         args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"Distribution license evidence: {report['result']} ({args.platform})")
     print(f"Checked {report['runtime_package_count']} runtime packages and {report['native_component_count']} native components.")
+    if report["owned_policy_exemptions"]:
+        print("User-owned policy scope: " + ", ".join(item["component"] for item in report["owned_policy_exemptions"]) + ". Existing license notices and external dependencies remain checked.")
     for finding in report["findings"]:
         print(f"BLOCKER [{finding['code']}] {finding['component']}: {finding['message']}")
     print(report["scope"])

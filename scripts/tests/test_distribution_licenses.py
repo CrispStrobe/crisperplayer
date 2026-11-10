@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import io
 import json
 import sys
@@ -82,6 +83,38 @@ class DistributionLicenseTests(unittest.TestCase):
     def recorded(self, name):
         return next(row for row in self.inventory["packages"] if row["name"] == name)
 
+    def authorize_owned_components(self):
+        # Model the two exact identities authorized by the user's instruction,
+        # while keeping the fixture's external dependency graph intact.
+        self.graph["roots"] = ["crisperplayer"]
+        self.graph["packages"][0]["name"] = "crisperplayer"
+        self.graph["packages"][0]["dependencies"].append("crisp_storage")
+        self.config["packages"][0]["name"] = "crisperplayer"
+        self.inventory["root_package"] = "crisperplayer"
+        (self.root / "pubspec.yaml").write_text("name: crisperplayer\nversion: 1.0.0\n")
+        root_entry = self.recorded("app")
+        root_entry["name"] = "crisperplayer"
+        root_entry["pubspec_sha256"] = check.digest(self.root / "pubspec.yaml")
+        self.inventory["root_pubspec_sha256"] = root_entry["pubspec_sha256"]
+        self.add_package("crisp_storage", dependencies=["transitive"])
+        source = copy.deepcopy(check.OWNED_COMPONENT_SOURCES["crisp_storage"])
+        self.locks["crisp_storage"] = source
+        self.recorded("crisp_storage")["source"] = source
+        for name in ("crisperplayer", "crisp_storage"):
+            entry = self.recorded(name)
+            entry["license_expression"] = "AGPL-3.0-only"
+            entry["license_policy_scope"] = "user_owned"
+            entry["ownership_authorization"] = check.OWNERSHIP_AUTHORIZATION_ID
+        self.inventory["ownership_authorization"] = {
+            "id": check.OWNERSHIP_AUTHORIZATION_ID,
+            "basis_type": "user_instruction",
+            "basis": "User explicitly owns these components; external license policy still applies to their dependencies.",
+            "components": [
+                {"name": name, "source": copy.deepcopy(source)}
+                for name, source in check.OWNED_COMPONENT_SOURCES.items()
+            ],
+        }
+
     def save(self):
         for path, value in (
             (".dart_tool/package_graph.json", self.graph),
@@ -121,6 +154,58 @@ class DistributionLicenseTests(unittest.TestCase):
     def test_application_license_is_checked_independently(self):
         self.recorded("app")["license_expression"] = "AGPL-3.0-only"
         self.assertIn("license_policy", self.codes())
+
+    def test_exact_user_owned_agpl_components_pass_without_rewriting_notices(self):
+        self.authorize_owned_components()
+        notices = [(self.root / "LICENSE"), (self.root / "cache/crisp_storage/LICENSE")]
+        before = [path.read_bytes() for path in notices]
+        self.assertEqual(self.findings(), [])
+        report = check.audit(self.root)
+        self.assertEqual({item["component"] for item in report["owned_policy_exemptions"]}, {"crisperplayer", "crisp_storage"})
+        self.assertEqual([path.read_bytes() for path in notices], before)
+
+    def test_external_agpl_under_owned_storage_is_still_blocked(self):
+        self.authorize_owned_components()
+        self.graph["packages"][1]["dependencies"] = []
+        self.recorded("transitive")["license_expression"] = "AGPL-3.0-only"
+        policy_findings = [item for item in self.findings() if item["code"] == "license_policy"]
+        self.assertEqual([item["component"] for item in policy_findings], ["transitive"])
+
+    def test_external_component_cannot_forge_an_owned_scope(self):
+        self.authorize_owned_components()
+        external = self.recorded("transitive")
+        external.update({"license_expression": "AGPL-3.0-only", "license_policy_scope": "user_owned", "ownership_authorization": check.OWNERSHIP_AUTHORIZATION_ID})
+        self.inventory["ownership_authorization"]["components"].append({"name": "transitive", "source": external["source"]})
+        codes = self.codes()
+        self.assertIn("unauthorized_ownership_scope", codes)
+        self.assertIn("license_policy", codes)
+
+    def test_namespace_and_other_source_exemptions_do_not_spread(self):
+        self.authorize_owned_components()
+        self.inventory["ownership_authorization"]["components"].append({"name": "CrispStrobe/*", "source": {"type": "git"}})
+        self.assertIn("unauthorized_ownership_scope", self.codes())
+        source = {**self.locks["crisp_storage"], "url": "https://github.com/CrispStrobe/another-package"}
+        self.locks["crisp_storage"] = source
+        self.recorded("crisp_storage")["source"] = source
+        self.assertTrue(any(item["code"] == "license_policy" and item["component"] == "crisp_storage" for item in self.findings()))
+
+    def test_owned_license_and_source_hash_checks_remain_active(self):
+        self.authorize_owned_components()
+        (self.root / "LICENSE").write_text("Changed published notice")
+        self.assertIn("license_evidence_changed", self.codes())
+        self.locks["crisp_storage"] = {**self.locks["crisp_storage"], "resolved-ref": "1" * 40}
+        codes = self.codes()
+        self.assertTrue({"source_changed", "unauthorized_ownership_scope", "license_policy"}.issubset(codes))
+
+    def test_missing_ownership_instruction_does_not_create_an_exemption(self):
+        self.authorize_owned_components()
+        del self.inventory["ownership_authorization"]
+        self.assertTrue({"unauthorized_ownership_scope", "license_policy"}.issubset(self.codes()))
+
+    def test_owned_package_scope_does_not_exempt_native_components(self):
+        self.authorize_owned_components()
+        self.native["components"][0].update({"license_expression": "AGPL-3.0-only", "license_policy_scope": "user_owned", "ownership_authorization": check.OWNERSHIP_AUTHORIZATION_ID})
+        self.assertIn("native_license_policy", self.codes())
 
     def test_lgpl_is_not_confused_with_the_gpl_text_it_incorporates(self):
         source_root = self.root / "cache/transitive"

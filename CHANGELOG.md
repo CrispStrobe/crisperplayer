@@ -7,10 +7,11 @@ All notable changes to this project will be documented in this file.
 - Added an optional **Apple Spectral** speed processor alongside Time Domain on
   iOS/macOS, using a documented patch to the MIT-licensed just_audio adapter.
   Selection applies after restart and uses the AVFoundation system API.
-- Added a distribution policy excluding GPL-only and AGPL-only dependencies,
-  exact dependency/native evidence checks, and release gates. Existing AGPL
-  declarations remain visible blockers pending a rights-aware resolution;
-  an LGPL wrapper or build flag alone is not treated as binary approval.
+- Added an external dependency policy excluding GPL-only and AGPL-only grants,
+  exact dependency/native evidence checks, and release gates. Project-owned
+  CrisperPlayer and `crisp_storage` are covered by the owner's confirmed
+  distribution authority; their AGPL notices are preserved and do not block
+  the policy. External dependency checks still apply to their complete graph.
 - Added an optional **Listening journal** with persistent dated playback,
   separate replays, stops and explicit source/destination jumps; date and book
   filters; a year-ago shortcut; pagination; and paused historical navigation

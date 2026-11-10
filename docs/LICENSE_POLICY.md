@@ -1,8 +1,8 @@
-# Distribution license policy and audio processors
+# External dependency license policy and audio processors
 
 Reviewed 10 November 2026. The project requirement is an openly distributable
 application that can also be submitted to app stores, without GPL-only or
-AGPL-only application dependencies. MIT, Apache-2.0, BSD and comparable
+AGPL-only **external** dependencies. MIT, Apache-2.0, BSD and comparable
 permissive licenses are preferred. MPL and LGPL are permitted when their
 actual distribution obligations are met.
 
@@ -10,21 +10,30 @@ This is an engineering policy and an evidence record. A package name, a build
 flag, or a passing script does not establish legal compliance or guarantee
 acceptance by an app store.
 
-## Existing conflicts that must be resolved before distribution
+## Project-owned code
+
+The project owner explicitly confirmed on 10 November 2026 that CrisperPlayer
+and `crisp_storage` are their own code, may be dual licensed, and already use
+section 7 additional permissions for App Store distribution. Their AGPL
+declarations are therefore **not blockers under this external dependency
+policy**. No new license choice or further ownership confirmation is required.
+
+The inventory records this owner-provided authorization for the exact application
+and pinned `crisp_storage` source. Their existing license notices remain intact.
+This does not exempt their external dependencies, copied third-party material,
+or arbitrary packages published under the same account. The checker continues
+to traverse the complete production dependency graph and validate source and
+license evidence.
+
+This record describes the owner's distribution authority; it does not invent
+or replace the text of any published additional permission or third-party grant.
+
+## External native components requiring evidence
 
 | Component | Evidence in this checkout | Consequence |
 | --- | --- | --- |
-| CrisperPlayer application | Root `LICENSE`, About notice and store description declare AGPL-3.0. | The current license conflicts with the new policy. A rights holder must authorize a new license for the code they control. |
-| `crisp_storage` | The resolved package at CrispCloud commit `ac90899f8110dcb266d122208b3b3a879a257eee` contains an AGPL-3.0 license. | Relicensing the app alone is insufficient. Obtain an appropriately licensed upstream revision or replace this dependency. |
 | Windows native audio | `media_kit_libs_windows_audio 1.0.9` selects the audio-only `2023-09-24` libmpv/FFmpeg archive. Its build recipes select LGPL configurations. | Verify the exact binary, dependencies, corresponding source and distribution materials. The MIT Flutter wrapper does not license its native payload. |
 | Linux native audio | `media_kit_libs_linux 1.2.1` loads system libmpv; the app does not control the distribution's build options. | An arbitrary system installation cannot support a promise of no GPL components. Use a controlled LGPL build with recorded provenance for the supported release. |
-
-The existing AGPL declarations remain accurate until the necessary rights are
-confirmed. Merely replacing a license file would not remove third-party rights
-or relicense historical copies. The intended target for **code owned by this
-project** is Apache-2.0, subject to that rights confirmation; MPL-2.0 is an
-alternative if file-level source-sharing obligations are preferred. Existing
-third-party MIT, BSD, MPL and LGPL notices must remain in place.
 
 Filen and Internxt are MPL-2.0 components. Their source availability and notice
 requirements continue to apply. `libsmb2` is a separate LGPL native component,
@@ -58,10 +67,10 @@ permissive DSP on Apple platforms to avoid adding this burden to audio.
 | Processor | License or platform basis | Decision |
 | --- | --- | --- |
 | Apple Time Domain / Spectral | AVFoundation system API; the maintained just_audio adapter is MIT. | Offer both on iOS/macOS. Time Domain remains the voice default; Spectral is an optional, more computationally intensive alternative. |
-| Sonic | Apache-2.0 implementation in AndroidX Media3. | Keep the existing Android default. |
+| Sonic | Apache-2.0 native library and implementation in AndroidX Media3. | First choice for audiobook speech, including high rates; keep the existing Android default and use it as the comparison baseline. |
 | mpv scaletempo2 / scaletempo | Available in an appropriately built LGPL libmpv. | Retain the existing choices subject to native artifact verification; processor choice does not waive packaging obligations. |
-| Signalsmith Stretch | MIT; its selected FFT dependencies must also be reviewed. | Preferred candidate for a future common quality mode. Integrate at the decoded PCM stage and test timing, latency, seeking and resource use before exposing it. |
-| Bungee Basic | MPL-2.0, with separately licensed Eigen/PFFFT dependencies. | Another candidate for comparative testing. The proprietary Bungee Pro edition is outside this open dependency plan. |
+| Bungee Basic | MPL-2.0, with separately licensed Eigen/PFFFT dependencies. | First alternative to benchmark for speech mixed with music or ambience. The proprietary Bungee Pro edition is outside this open dependency plan. |
+| Signalsmith Stretch | MIT; its selected FFT dependencies must also be reviewed. | Candidate for moderate rate changes. Upstream describes best time-stretch quality around 0.75×–1.5×; do not assume a 2×–3× speech improvement. |
 | SoundTouch | LGPL-2.1. | A possible alternative with the same source/relinking review needed for LGPL components. It is not assumed better for every voice. |
 | Rubber Band | GPL-2.0-or-later or a separately purchased commercial license. | Excluded from the openly reproducible default dependency set under this policy. A commercial license for one publisher does not give all open-source recipients the same commercial redistribution rights. |
 
@@ -75,8 +84,9 @@ CPU/battery use, seek latency and interruption behavior on target devices.
 The [recorded inventory](../licensing/README.md) identifies exact dependency
 versions, source/license hashes and native build inputs. Routine CI writes a
 nonblocking report; binary-release and TestFlight workflows enforce it before
-signing or uploading. Current AGPL declarations and unresolved native evidence
-are explicit blockers. The Windows build additionally checks the DLL actually
+signing or uploading. External GPL/AGPL grants and unresolved external native
+evidence are blockers; the explicitly authorized project-owned components are
+reported separately. The Windows build additionally checks the DLL actually
 placed in the application against its reviewed SHA-256 and native markers.
 
 See [desktop artifact findings and the Linux candidate recipe](DESKTOP_AUDIO_BUILD.md)
@@ -90,6 +100,7 @@ and [verification results and remaining limits](LICENSE_VALIDATION.md).
 - [Mozilla MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
 - [Apple Developer Program License Agreement](https://developer.apple.com/support/terms/apple-developer-program-license-agreement/)
 - [Apple time-pitch algorithms](https://developer.apple.com/documentation/avfoundation/time-pitch-algorithm-settings)
+- [Sonic speech-oriented processing and Apache-2.0 license](https://github.com/waywardgeek/sonic)
 - [Signalsmith Stretch and its MIT license](https://github.com/Signalsmith-Audio/signalsmith-stretch)
 - [Bungee Basic, dependencies and license](https://github.com/bungee-audio-stretch/bungee)
 - [SoundTouch licensing](https://www.surina.net/soundtouch/license.html)

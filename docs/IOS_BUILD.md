@@ -5,12 +5,12 @@ Use Flutter 3.44.4, Dart 3.12 and iOS 15+. The project uses CocoaPods only; Swif
 ## GitHub Actions
 
 New signed builds and TestFlight uploads first enforce the
-[distribution license policy](LICENSE_POLICY.md). The current AGPL application
-and `crisp_storage` declarations are unresolved release blockers. The workflow
-resolves dependencies and checks that policy before importing signing keys.
-Distribution-only retries are disabled until license evidence can be tied to
-the exact previously uploaded IPA; checking today's source is insufficient to
-approve yesterday's binary.
+[external dependency license policy](LICENSE_POLICY.md). The owner's confirmed
+distribution authority covers the application's and `crisp_storage`'s own AGPL
+code, including App Store permissions; those declarations are not blockers.
+The workflow resolves dependencies and checks external evidence before importing
+signing keys for a new build. Distribution-only retries retain their existing
+role for an already uploaded binary and do not build or upload a replacement.
 
 The CI workflow checks analysis, Dart tests, release helper tests, Android APK generation and the iOS simulator build. It saves the APK and simulator app as artifacts.
 

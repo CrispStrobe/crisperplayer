@@ -115,12 +115,13 @@ desktop audio notices. Native notice texts are also included in release archives
 [assets/licenses](assets/licenses). CrisperPlayer is licensed under [GNU AGPL-3.0](LICENSE), © 2026 Christian Ströbele.
 Third-party components retain their upstream licenses.
 
-The distribution policy now excludes GPL-only and AGPL-only code. The current
-AGPL application license and resolved `crisp_storage` license therefore block a
-new release until the necessary rights and replacement licenses are confirmed.
+The distribution policy excludes GPL-only and AGPL-only **external dependencies**.
+The project owner has confirmed distribution authority for CrisperPlayer and
+`crisp_storage`, including App Store additional permissions and dual licensing;
+their own AGPL declarations do not block this policy.
 The [license audit and processor policy](docs/LICENSE_POLICY.md) records these
-conflicts, native audio provenance, and the checks required before app-store or
-binary distribution. Existing license notices are preserved during that review.
+external dependency evidence, native audio provenance, and the checks required
+before app-store or binary distribution. Existing license notices are preserved.
 
 ## Current scope
 

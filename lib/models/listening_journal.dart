@@ -191,6 +191,132 @@ class ListeningJournalEntry {
       reason == other.reason;
 }
 
+/// An exact source location or half-open source range whose recorded plays
+/// should be shown. This does not establish that a file is still available or
+/// that the location can currently be opened by the player.
+final class JournalPassageFilter {
+  static const _maxPositionMs = 8640000000000000;
+
+  final String bookId;
+  final String filePath;
+  final int startMs;
+  final int? endMs;
+
+  const JournalPassageFilter._({
+    required this.bookId,
+    required this.filePath,
+    required this.startMs,
+    this.endMs,
+  });
+
+  factory JournalPassageFilter.point({
+    required String bookId,
+    required String filePath,
+    required int positionMs,
+  }) {
+    _validateSource(bookId, filePath);
+    _validatePosition(positionMs);
+    return JournalPassageFilter._(
+      bookId: bookId,
+      filePath: filePath,
+      startMs: positionMs,
+    );
+  }
+
+  factory JournalPassageFilter.range({
+    required String bookId,
+    required String filePath,
+    required int startMs,
+    required int endMs,
+  }) {
+    _validateSource(bookId, filePath);
+    _validatePosition(startMs);
+    _validatePosition(endMs);
+    if (endMs <= startMs) {
+      throw ArgumentError(
+        'A journal passage range must have a positive length',
+      );
+    }
+    return JournalPassageFilter._(
+      bookId: bookId,
+      filePath: filePath,
+      startMs: startMs,
+      endMs: endMs,
+    );
+  }
+
+  static void _validateSource(String bookId, String filePath) {
+    if (bookId.isEmpty ||
+        bookId.length > 1024 ||
+        filePath.isEmpty ||
+        filePath.length > 32768) {
+      throw ArgumentError('Invalid journal passage source');
+    }
+  }
+
+  static void _validatePosition(int value) {
+    if (value < 0 || value > _maxPositionMs) {
+      throw ArgumentError('Invalid journal passage position');
+    }
+  }
+
+  bool get isPoint => endMs == null;
+  int? get positionMs => isPoint ? startMs : null;
+
+  Map<String, Object> toJson() => {
+    'bookId': bookId,
+    'filePath': filePath,
+    if (isPoint) 'positionMs': startMs,
+    if (!isPoint) 'startMs': startMs,
+    if (!isPoint) 'endMs': endMs!,
+  };
+
+  factory JournalPassageFilter.fromJson(Map<String, dynamic> json) {
+    final book = json['bookId'];
+    final path = json['filePath'];
+    final hasPoint = json.containsKey('positionMs');
+    final hasRange = json.containsKey('startMs') || json.containsKey('endMs');
+    if (book is! String || path is! String || hasPoint == hasRange) {
+      throw const FormatException('Invalid journal passage filter');
+    }
+    try {
+      if (hasPoint) {
+        final position = json['positionMs'];
+        if (position is! int) throw const FormatException();
+        return JournalPassageFilter.point(
+          bookId: book,
+          filePath: path,
+          positionMs: position,
+        );
+      }
+      final start = json['startMs'];
+      final end = json['endMs'];
+      if (start is! int || end is! int) throw const FormatException();
+      return JournalPassageFilter.range(
+        bookId: book,
+        filePath: path,
+        startMs: start,
+        endMs: end,
+      );
+    } on ArgumentError {
+      throw const FormatException('Invalid journal passage filter');
+    } on FormatException {
+      throw const FormatException('Invalid journal passage filter');
+    }
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is JournalPassageFilter &&
+      bookId == other.bookId &&
+      filePath == other.filePath &&
+      startMs == other.startMs &&
+      endMs == other.endMs;
+
+  @override
+  int get hashCode => Object.hash(bookId, filePath, startMs, endMs);
+}
+
 class JournalPage {
   final List<ListeningJournalEntry> entries;
   final String? nextCursor;

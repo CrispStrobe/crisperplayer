@@ -1,4 +1,5 @@
 import '../cli/control_protocol.dart';
+import '../models/listening_journal.dart';
 import 'sync/folder_progress_service.dart';
 import 'sync/plex_progress_service.dart';
 import 'server/remote_library_service.dart';
@@ -594,10 +595,18 @@ class DesktopControlService {
           if (value is! int) throw FormatException('$key must be an integer');
           return value;
         }
+        final rawPassage = args['passage'];
+        if (rawPassage != null && rawPassage is! Map<String, dynamic>) {
+          throw const FormatException('passage must be a JSON object');
+        }
+        final passage = rawPassage == null
+            ? null
+            : JournalPassageFilter.fromJson(rawPassage as Map<String, dynamic>);
         return (await playback.listeningJournal(
           bookId: optionalText('bookId'),
           fromUtcMs: optionalInteger('fromUtcMs'),
           beforeUtcMs: optionalInteger('beforeUtcMs'),
+          passage: passage,
           cursor: optionalText('cursor'),
           limit: optionalInteger('limit') ?? 50,
         )).toJson();

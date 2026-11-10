@@ -89,6 +89,51 @@ void main() {
   );
 
   test(
+    'journal passage queries expose actual plays at a source point or range',
+    () async {
+      await record();
+      final point = <String, Object>{
+        'bookId': 'a',
+        'filePath': '/a/0.mp3',
+        'positionMs': 10000,
+      };
+      final page = await client.command('journal', {'passage': point}) as Map;
+      final played = (page['entries'] as List).single as Map;
+      expect(played['kind'], 'played');
+      expect((played['startMs'], played['endMs']), (0, 20000));
+      expect(played['filePath'], '/a/0.mp3');
+      final boundary =
+          await client.command('journal', {
+                'passage': {...point, 'positionMs': 20000},
+              })
+              as Map;
+      // The next-track event starts at this endpoint, but is not a play.
+      expect(boundary['entries'], isEmpty);
+      final range =
+          await client.command('journal', {
+                'passage': {
+                  'bookId': 'a',
+                  'filePath': '/a/0.mp3',
+                  'startMs': 19000,
+                  'endMs': 21000,
+                },
+              })
+              as Map;
+      expect((range['entries'] as List).single['id'], played['id']);
+      final destination =
+          await client.command('journal', {
+                'passage': {...point, 'filePath': '/a/1.mp3', 'positionMs': 0},
+              })
+              as Map;
+      expect(destination['entries'], hasLength(1));
+      expect((destination['entries'] as List).single['kind'], 'played');
+      expect(h.backend.currentIndex, 1);
+      expect(h.backend.position.inSeconds, 10);
+      expect(h.backend.playing, isFalse);
+    },
+  );
+
+  test(
     'journal-open validates entry endpoints and creates a return bookmark',
     () async {
       await record();
@@ -131,6 +176,41 @@ void main() {
         {'limit': 0},
         {'fromUtcMs': 20, 'beforeUtcMs': 10},
         {'cursor': 'invalid'},
+        {'passage': 'not-an-object'},
+        {
+          'passage': {'bookId': 'a', 'filePath': '/a/0.mp3'},
+        },
+        {
+          'passage': {'bookId': 'a', 'filePath': '/a/0.mp3', 'positionMs': 1.5},
+        },
+        {
+          'passage': {'bookId': 'a', 'filePath': '/a/0.mp3', 'positionMs': -1},
+        },
+        {
+          'passage': {
+            'bookId': 'a',
+            'filePath': '/a/0.mp3',
+            'startMs': 2000,
+            'endMs': 1000,
+          },
+        },
+        {
+          'passage': {
+            'bookId': 'a',
+            'filePath': '/a/0.mp3',
+            'positionMs': 1000,
+            'startMs': 0,
+            'endMs': 2000,
+          },
+        },
+        {
+          'bookId': 'b',
+          'passage': {
+            'bookId': 'a',
+            'filePath': '/a/0.mp3',
+            'positionMs': 1000,
+          },
+        },
       ]) {
         await expectLater(client.command('journal', args), throwsStateError);
       }

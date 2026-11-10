@@ -1330,6 +1330,7 @@ class PlaybackService with WidgetsBindingObserver {
     String? bookId,
     int? fromUtcMs,
     int? beforeUtcMs,
+    JournalPassageFilter? passage,
     int limit = 50,
     String? cursor,
   }) async {
@@ -1341,11 +1342,34 @@ class PlaybackService with WidgetsBindingObserver {
         bookId: bookId,
         fromUtcMs: fromUtcMs,
         beforeUtcMs: beforeUtcMs,
+        passage: passage,
         limit: limit,
         cursor: cursor,
       );
     });
     return page;
+  }
+
+  /// Capture pending playback evidence and read a complete filtered snapshot in
+  /// the same command. Export formatting and file I/O happen after this returns.
+  Future<List<ListeningJournalEntry>> listeningJournalSnapshot({
+    String? bookId,
+    int? fromUtcMs,
+    int? beforeUtcMs,
+    JournalPassageFilter? passage,
+  }) async {
+    late List<ListeningJournalEntry> snapshot;
+    await _command(() async {
+      _captureJournalPosition();
+      await _flushListeningJournal();
+      snapshot = await ListeningJournalService(db).snapshot(
+        bookId: bookId,
+        fromUtcMs: fromUtcMs,
+        beforeUtcMs: beforeUtcMs,
+        passage: passage,
+      );
+    });
+    return snapshot;
   }
 
   /// Open historical evidence paused, with a durable bookmark for the previous

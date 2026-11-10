@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
@@ -108,25 +109,30 @@ class ListeningJournalService {
 
   /// Date bounds are UTC and half-open. Played intervals overlapping the date
   /// range remain whole; returned timestamps are never clipped or reconstructed.
+  /// A passage selects only actual played intervals from its exact book/file;
+  /// event positions and jump destinations never imply playback.
   Future<JournalPage> page({
     String? bookId,
     int? fromUtcMs,
     int? beforeUtcMs,
+    JournalPassageFilter? passage,
     int limit = 50,
     String? cursor,
   }) async {
-    if (limit < 1 ||
-        limit > 200 ||
-        (bookId != null && (bookId.isEmpty || bookId.length > 1024)) ||
-        (fromUtcMs != null &&
-            (fromUtcMs < 0 || fromUtcMs > 8640000000000000)) ||
-        (beforeUtcMs != null &&
-            (beforeUtcMs < 0 || beforeUtcMs > 8640000000000000)) ||
-        (fromUtcMs != null &&
-            beforeUtcMs != null &&
-            fromUtcMs >= beforeUtcMs)) {
+    if (limit < 1 || limit > 200) {
       throw ArgumentError('Invalid journal filters or page size');
     }
+    final effectiveBookId = _validateFilters(
+      bookId: bookId,
+      fromUtcMs: fromUtcMs,
+      beforeUtcMs: beforeUtcMs,
+      passage: passage,
+    );
+    // Keep cursors bounded even when a valid source path is very long. This
+    // digest binds the complete physical selection, including point vs range.
+    final passageKey = passage == null
+        ? null
+        : sha256.convert(utf8.encode(jsonEncode(passage.toJson()))).toString();
     int? lastTime;
     String? lastId;
     if (cursor != null) {
@@ -137,9 +143,10 @@ class ListeningJournalService {
         );
         if (decoded is! Map ||
             decoded['v'] != 1 ||
-            decoded['book'] != bookId ||
+            decoded['book'] != effectiveBookId ||
             decoded['from'] != fromUtcMs ||
             decoded['before'] != beforeUtcMs ||
+            decoded['passage'] != passageKey ||
             decoded['time'] is! int ||
             (decoded['time'] as int) < 0 ||
             decoded['id'] is! String ||
@@ -154,33 +161,22 @@ class ListeningJournalService {
         );
       }
     }
-    final query = db.select(db.listeningJournal)
-      ..where((entry) {
-        Expression<bool> filter = const Constant(true);
-        if (bookId != null) filter = filter & entry.bookId.equals(bookId);
-        if (fromUtcMs != null) {
-          filter =
-              filter &
-              (entry.endedAtMs.isBiggerThanValue(fromUtcMs) |
-                  entry.startedAtMs.isBiggerOrEqualValue(fromUtcMs));
-        }
-        if (beforeUtcMs != null) {
-          filter = filter & entry.startedAtMs.isSmallerThanValue(beforeUtcMs);
-        }
-        if (lastTime != null) {
-          filter =
-              filter &
-              (entry.startedAtMs.isSmallerThanValue(lastTime) |
-                  (entry.startedAtMs.equals(lastTime) &
-                      entry.id.isSmallerThanValue(lastId!)));
-        }
-        return filter;
-      })
-      ..orderBy([
-        (entry) => OrderingTerm.desc(entry.startedAtMs),
-        (entry) => OrderingTerm.desc(entry.id),
-      ])
-      ..limit(limit + 1);
+    final query = _query(
+      bookId: effectiveBookId,
+      fromUtcMs: fromUtcMs,
+      beforeUtcMs: beforeUtcMs,
+      passage: passage,
+    );
+    final cursorTime = lastTime;
+    if (cursorTime != null) {
+      query.where(
+        (entry) =>
+            entry.startedAtMs.isSmallerThanValue(cursorTime) |
+            (entry.startedAtMs.equals(cursorTime) &
+                entry.id.isSmallerThanValue(lastId!)),
+      );
+    }
+    query.limit(limit + 1);
     final rows = await query.get();
     final entries = rows
         .take(limit)
@@ -196,9 +192,10 @@ class ListeningJournalService {
               utf8.encode(
                 jsonEncode({
                   'v': 1,
-                  'book': bookId,
+                  'book': effectiveBookId,
                   'from': fromUtcMs,
                   'before': beforeUtcMs,
+                  if (passageKey != null) 'passage': passageKey,
                   'time': last.startedAtMs,
                   'id': last.id,
                 }),
@@ -207,10 +204,93 @@ class ListeningJournalService {
     );
   }
 
+  /// One complete database snapshot with the same filters and ordering as
+  /// [page]. It contains whole recorded entries and has no page-size cap.
+  Future<List<ListeningJournalEntry>> snapshot({
+    String? bookId,
+    int? fromUtcMs,
+    int? beforeUtcMs,
+    JournalPassageFilter? passage,
+  }) async {
+    final effectiveBookId = _validateFilters(
+      bookId: bookId,
+      fromUtcMs: fromUtcMs,
+      beforeUtcMs: beforeUtcMs,
+      passage: passage,
+    );
+    final rows = await _query(
+      bookId: effectiveBookId,
+      fromUtcMs: fromUtcMs,
+      beforeUtcMs: beforeUtcMs,
+      passage: passage,
+    ).get();
+    return List<ListeningJournalEntry>.unmodifiable(
+      rows.map((row) => ListeningJournalEntry.fromJson(row.toJson())),
+    );
+  }
+
+  String? _validateFilters({
+    String? bookId,
+    int? fromUtcMs,
+    int? beforeUtcMs,
+    JournalPassageFilter? passage,
+  }) {
+    if ((bookId != null && (bookId.isEmpty || bookId.length > 1024)) ||
+        (fromUtcMs != null &&
+            (fromUtcMs < 0 || fromUtcMs > 8640000000000000)) ||
+        (beforeUtcMs != null &&
+            (beforeUtcMs < 0 || beforeUtcMs > 8640000000000000)) ||
+        (fromUtcMs != null &&
+            beforeUtcMs != null &&
+            fromUtcMs >= beforeUtcMs) ||
+        (bookId != null && passage != null && bookId != passage.bookId)) {
+      throw ArgumentError('Invalid journal filters or page size');
+    }
+    return bookId ?? passage?.bookId;
+  }
+
+  SimpleSelectStatement<$ListeningJournalTable, JournalRecord> _query({
+    required String? bookId,
+    required int? fromUtcMs,
+    required int? beforeUtcMs,
+    required JournalPassageFilter? passage,
+  }) => db.select(db.listeningJournal)
+    ..where((entry) {
+      Expression<bool> filter = const Constant(true);
+      if (bookId != null) filter = filter & entry.bookId.equals(bookId);
+      if (passage != null) {
+        filter =
+            filter &
+            entry.kind.equals('played') &
+            entry.filePath.equals(passage.filePath) &
+            entry.endMs.isBiggerThanValue(passage.startMs);
+        filter =
+            filter &
+            (passage.isPoint
+                ? entry.startMs.isSmallerOrEqualValue(passage.startMs)
+                : entry.startMs.isSmallerThanValue(passage.endMs!));
+      }
+      if (fromUtcMs != null) {
+        filter =
+            filter &
+            (entry.endedAtMs.isBiggerThanValue(fromUtcMs) |
+                entry.startedAtMs.isBiggerOrEqualValue(fromUtcMs));
+      }
+      if (beforeUtcMs != null) {
+        filter = filter & entry.startedAtMs.isSmallerThanValue(beforeUtcMs);
+      }
+      return filter;
+    })
+    ..orderBy([
+      (entry) => OrderingTerm.desc(entry.startedAtMs),
+      (entry) => OrderingTerm.desc(entry.id),
+    ]);
+
   Stream<JournalPage> watch({
     String? bookId,
     int? fromUtcMs,
     int? beforeUtcMs,
+    JournalPassageFilter? passage,
     int limit = 50,
     String? cursor,
   }) => Stream<JournalPage>.multi((output) {
@@ -224,6 +304,7 @@ class ListeningJournalService {
             bookId: bookId,
             fromUtcMs: fromUtcMs,
             beforeUtcMs: beforeUtcMs,
+            passage: passage,
             limit: limit,
             cursor: cursor,
           );

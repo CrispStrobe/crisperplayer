@@ -127,6 +127,45 @@ void main() {
   );
 
   test(
+    'passage reads and complete snapshots capture live evidence without moving playback',
+    () async {
+      await h.playback.setListeningJournalEnabled(true);
+      await h.playback.play();
+      advance(20);
+      final snapshot = await h.playback.listeningJournalSnapshot(
+        passage: JournalPassageFilter.point(
+          bookId: 'a',
+          filePath: '/a/0.mp3',
+          positionMs: 19999,
+        ),
+      );
+      expect(snapshot, hasLength(1));
+      expect(snapshot.single.isPlayed, isTrue);
+      expect((snapshot.single.startMs, snapshot.single.endMs), (0, 20000));
+      expect(() => snapshot.clear(), throwsUnsupportedError);
+      expect(h.backend.playing, isTrue);
+      expect(h.backend.position.inSeconds, 20);
+      advance(5);
+      final page = await h.playback.listeningJournal(
+        passage: JournalPassageFilter.range(
+          bookId: 'a',
+          filePath: '/a/0.mp3',
+          startMs: 22000,
+          endMs: 23000,
+        ),
+      );
+      expect(page.entries.single.id, snapshot.single.id);
+      expect(page.entries.single.endMs, 25000);
+      expect(snapshot.single.endMs, 20000);
+      expect(h.backend.playing, isTrue);
+      expect(h.backend.position.inSeconds, 25);
+      final whole = await h.playback.listeningJournalSnapshot(bookId: 'a');
+      expect(whole.where((entry) => entry.kind == 'play'), hasLength(1));
+      expect(whole.where((entry) => entry.isPlayed), hasLength(1));
+    },
+  );
+
+  test(
     'speed, pause and buffer boundaries preserve separate real intervals',
     () async {
       await h.playback.setListeningJournalEnabled(true);

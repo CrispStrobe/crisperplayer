@@ -7,19 +7,21 @@ was performed.
 | Check | Observed result |
 | --- | --- |
 | Full `flutter analyze --no-pub`, including the maintained adapter | No issues found |
-| Combined playback/journal/map/trail/speed/accessibility regression run, including passage reports | 216 passed; one optional journal screenshot capture skipped |
-| All Python release, evidence and candidate-build checks | 89 passed, including 33 distribution-checker tests and 22 Android APK-audit tests |
-| just_audio provenance verifier | 38 retained upstream hashes, nine modified original files and 20 local adapter additions verified |
+| Combined playback/journal/map/trail/speed/accessibility regression run, including passage reports | 216 passed at the preceding listening-memory checkpoint; one optional journal screenshot capture skipped |
+| Current Android/Apple configuration and speed-control checks | 25 passed, including WSOLA selection at 320 px / 200% text |
+| All Python release, evidence and candidate-build checks | 93 passed, including 37 distribution-checker tests and 22 Android APK-audit tests |
+| just_audio provenance verifier | 38 retained upstream hashes, nine modified original files and 38 local adapter/fork/test additions verified |
 | Compiled CLI and executable help, rerun with passage filtering | Passed |
 | Flutter web build, rerun with passage reports | Passed; this target remains the native app availability notice |
 | Modified workflow YAML and `git diff --check` | Passed |
-| Native C++ streaming core | GCC/G++ 14.2 compile/link passed; 11 test methods passed, including 72 rate/channel/sample-rate combinations |
-| Android plugin Java and Media3 lifecycle | Complete plugin compiled against Media3 1.4.1 and the current Flutter embedding; 10 lifecycle tests passed using the real Media3 pipeline |
-| Actual JNI integration on host JVM | Four tests passed with real Bungee/Signalsmith output, including the native core in the real Media3 pipeline |
-| Native source closure | All 252 selected upstream files verified against the pinned manifest; original notices included in the app |
+| Native C++ streaming core | GCC/G++ 14.2 compile/link passed; 15 test methods passed, including 96 rate/channel/sample-rate combinations |
+| WSOLA search and preserved-original comparison | Eight compiled search checks and 12 original-versus-port test methods passed; independent 300-case boundary review passed |
+| Android plugin Java and Media3 lifecycle | Complete plugin compiled against Media3 1.4.1 and the current Flutter embedding; 11 lifecycle tests passed using the real Media3 pipeline |
+| Actual JNI integration on host JVM | Five tests passed with real Bungee/Signalsmith/WSOLA output, including the native core in the real Media3 pipeline |
+| Native source closure | All 258 selected upstream originals verified against the pinned manifest; derived WSOLA code is separately identified and original notices are included in the app |
 | Android package inspector on synthetic fixtures | 22 checks passed for ELF/DEX/ZIP/JNI/NDK identity and failure cases; this is not an actual APK inspection |
 | Package inspector on the existing actual host JNI ELF | Eight reachable JNI exports and four 16 KB load segments verified; host ELF is not an Android APK |
-| WAV comparison renderer | Six-second synthetic input produced exact four-second output at 1.5× for all three engines; no saturated PCM samples |
+| WAV comparison renderer | Six-second synthetic input produced exact four-second output at 1.5× for all four engines; no saturated PCM samples |
 | Actual Flutter Apple processing preview | Inspected at 390 × 844; active and pending modes are distinct and the restart requirement is visible |
 | Real-checkout distribution report | 168 production packages and 12 native components inventoried; remaining external artifact evidence is reported separately from reviewed DSP source |
 | Enforce-mode check | Reports incomplete external evidence; project-owned grants are covered by the owner's confirmed distribution authority |
@@ -28,7 +30,9 @@ was performed.
 
 The combined Flutter command is in
 [journal and speed validation](JOURNAL_SPEED_VALIDATION.md). The focused runs
-overlap with the 216 total and must not be added to it. Python checks run with:
+overlap with the earlier 216 total and must not be added to it. The latest WSOLA
+implementation and exact native evidence are documented in
+[WSOLA validation](WSOLA_VALIDATION.md). Python checks run with:
 
 ```sh
 python3 -m unittest discover -s scripts/tests -v
@@ -44,7 +48,7 @@ Candidate-build tests cover source-cache tampering, safe extraction, explicit
 build flags, PCM measurements and the app's actual legacy speed-filter mapping.
 
 The final source report verifies 168 production packages, 12 native components
-and 126 explicit native build/evidence inputs. No stale source hash, forbidden
+and 144 explicit native build/evidence inputs. No stale source hash, forbidden
 declared grant or ownership-scope finding was introduced by this slice. Pending
 artifact/provenance reviews remain visible and are not promoted based on script
 fixtures. The generated NDK notice asset is inspected inside actual APKs;
@@ -54,7 +58,7 @@ source gates run before that build-time replacement.
 
 The Android settings and transport tests verify every enum value, native-player
 recreation, active versus pending settings, saved skip-silence preferences and
-the unchanged Sonic default. Both Bungee Basic and Signalsmith Stretch are
+the unchanged Sonic default. Bungee Basic, Signalsmith Stretch and WSOLA are
 explicit experimental opt-ins.
 
 Host JNI execution uses actual Media3 1.4.1 classes and the compiled native core.
@@ -62,7 +66,7 @@ A host-only Android Build constants shim is needed because Android framework
 native methods cannot run on the desktop JVM. Development headers and that shim
 are not part of the application. The tests validate signal/transport invariants,
 not device sound, battery consumption or an algorithm quality ranking. The
-[recorded host evidence](../licensing/evidence/native_dsp_host_2026-11-10.json)
+[recorded WSOLA host evidence](../licensing/evidence/wsola_host_2026-11-10.json)
 retains source hashes and individual synthetic measurements.
 
 The dedicated Android workflow builds arm64/x86-64 APK integration, exercises

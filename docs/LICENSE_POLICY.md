@@ -1,0 +1,82 @@
+# Distribution license policy and audio processors
+
+Reviewed 10 November 2026. The project requirement is an openly distributable
+application that can also be submitted to app stores, without GPL-only or
+AGPL-only application dependencies. MIT, Apache-2.0, BSD and comparable
+permissive licenses are preferred. MPL and LGPL are permitted when their
+actual distribution obligations are met.
+
+This is an engineering policy and an evidence record. A package name, a build
+flag, or a passing script does not establish legal compliance or guarantee
+acceptance by an app store.
+
+## Existing conflicts that must be resolved before distribution
+
+| Component | Evidence in this checkout | Consequence |
+| --- | --- | --- |
+| CrisperPlayer application | Root `LICENSE`, About notice and store description declare AGPL-3.0. | The current license conflicts with the new policy. A rights holder must authorize a new license for the code they control. |
+| `crisp_storage` | The resolved package at CrispCloud commit `ac90899f8110dcb266d122208b3b3a879a257eee` contains an AGPL-3.0 license. | Relicensing the app alone is insufficient. Obtain an appropriately licensed upstream revision or replace this dependency. |
+| Windows native audio | `media_kit_libs_windows_audio 1.0.9` selects the audio-only `2023-09-24` libmpv/FFmpeg archive. Its build recipes select LGPL configurations. | Verify the exact binary, dependencies, corresponding source and distribution materials. The MIT Flutter wrapper does not license its native payload. |
+| Linux native audio | `media_kit_libs_linux 1.2.1` loads system libmpv; the app does not control the distribution's build options. | An arbitrary system installation cannot support a promise of no GPL components. Use a controlled LGPL build with recorded provenance for the supported release. |
+
+The existing AGPL declarations remain accurate until the necessary rights are
+confirmed. Merely replacing a license file would not remove third-party rights
+or relicense historical copies. The intended target for **code owned by this
+project** is Apache-2.0, subject to that rights confirmation; MPL-2.0 is an
+alternative if file-level source-sharing obligations are preferred. Existing
+third-party MIT, BSD, MPL and LGPL notices must remain in place.
+
+Filen and Internxt are MPL-2.0 components. Their source availability and notice
+requirements continue to apply. `libsmb2` is a separate LGPL native component,
+so choosing a permissive audio processor does not by itself finish the app's
+license audit.
+
+## mpv can be LGPL
+
+mpv is GPL-2.0-or-later by default, but its libmpv build can be distributed under
+LGPL-2.1-or-later when GPL-only files are excluded. The upstream option is
+`-Dgpl=false`. mpv explicitly cautions that this flag alone is not a license
+grant: linked dependencies, including FFmpeg, still determine the resulting
+license. mpv's GPL documentation and example files are also separate from an
+LGPL binary and should not be copied into a no-GPL distribution indiscriminately.
+
+For a controlled desktop build, record source revisions and hashes, exclude
+GPL and nonredistributable FFmpeg features, keep native libraries replaceable,
+publish the corresponding source and build instructions, and include all
+required notices. Do not add Rubber Band, x264 or another GPL-only dependency
+to an LGPL build and continue describing the result as LGPL.
+
+An LGPL component is not automatically approved for every store or packaging
+method. Relinking/replacement requirements, the exact LGPL version, signing,
+installation restrictions and applicable distribution terms need to be
+resolved for the actual artifact. Apple's program agreement requires
+compliance with included open-source licenses. Prefer platform playback or
+permissive DSP on Apple platforms to avoid adding this burden to audio.
+
+## Quality options that fit the policy
+
+| Processor | License or platform basis | Decision |
+| --- | --- | --- |
+| Apple Time Domain / Spectral | AVFoundation system API; the maintained just_audio adapter is MIT. | Offer both on iOS/macOS. Time Domain remains the voice default; Spectral is an optional, more computationally intensive alternative. |
+| Sonic | Apache-2.0 implementation in AndroidX Media3. | Keep the existing Android default. |
+| mpv scaletempo2 / scaletempo | Available in an appropriately built LGPL libmpv. | Retain the existing choices subject to native artifact verification; processor choice does not waive packaging obligations. |
+| Signalsmith Stretch | MIT; its selected FFT dependencies must also be reviewed. | Preferred candidate for a future common quality mode. Integrate at the decoded PCM stage and test timing, latency, seeking and resource use before exposing it. |
+| SoundTouch | LGPL-2.1. | A possible alternative with the same source/relinking review needed for LGPL components. It is not assumed better for every voice. |
+| Rubber Band | GPL-2.0-or-later or a separately purchased commercial license. | Excluded from the openly reproducible default dependency set under this policy. A commercial license for one publisher does not give all open-source recipients the same commercial redistribution rights. |
+
+The word “quality” describes an available processing choice, not a measured
+claim that one algorithm beats every other algorithm. Compare the same speech
+and speech-with-music passages at matched level and several speeds, and measure
+CPU/battery use, seek latency and interruption behavior on target devices.
+
+## Primary sources
+
+- [mpv licensing, excluded files and linked-library caveat](https://github.com/mpv-player/mpv/blob/master/Copyright)
+- [FFmpeg licensing and corresponding-source guidance](https://ffmpeg.org/legal.html)
+- [GNU LGPL 2.1, especially section 6](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)
+- [Mozilla MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
+- [Apple Developer Program License Agreement](https://developer.apple.com/support/terms/apple-developer-program-license-agreement/)
+- [Apple time-pitch algorithms](https://developer.apple.com/documentation/avfoundation/time-pitch-algorithm-settings)
+- [Signalsmith Stretch and its MIT license](https://github.com/Signalsmith-Audio/signalsmith-stretch)
+- [SoundTouch licensing](https://www.surina.net/soundtouch/license.html)
+- [Rubber Band licensing](https://breakfastquay.com/rubberband/license.html)

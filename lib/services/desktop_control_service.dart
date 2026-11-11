@@ -1,17 +1,23 @@
+import 'package:crisp_storage/crisp_storage.dart' show parseSmbBackend;
+
 import '../cli/control_protocol.dart';
 import '../models/listening_journal.dart';
 import 'sync/folder_progress_service.dart';
 import 'sync/plex_progress_service.dart';
 import 'server/remote_library_service.dart';
 import 'audio/waveform_service.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'listening_stats.dart';
 import 'listening_journal_service.dart';
+
 import 'package:path/path.dart' as p;
+
 import 'audio/playback_service.dart';
 import 'library_service.dart';
 import 'settings_service.dart';
@@ -353,6 +359,7 @@ class DesktopControlService {
         return {'bookId': await remote!.resume(_string(args, 'downloadId'))};
       case 'servers' ||
           'server-connect' ||
+          'server-settings' ||
           'server-disconnect' ||
           'server-browse' ||
           'server-download':
@@ -362,6 +369,15 @@ class DesktopControlService {
         }
         await service.init();
         switch (command) {
+          case 'server-settings':
+            final id = _string(args, 'connectionId');
+            if (args.containsKey('smbBackend')) {
+              final backend = parseSmbBackend(args['smbBackend']);
+              if (backend == null)
+                throw const FormatException('SMB backend is required.');
+              await service.setSmbBackend(id, backend);
+            }
+            return service.connections.firstWhere((c) => c.id == id).toJson();
           case 'server-connect':
             await service.connect(
               name: _string(args, 'name'),
@@ -371,6 +387,7 @@ class DesktopControlService {
               username: args['username'] as String? ?? '',
               allowLocalHttp: args['allowLocalHttp'] == true,
               requireEncryption: args['requireEncryption'] != false,
+              smbBackend: parseSmbBackend(args['smbBackend']),
               hostKey: args['hostKey'] as String?,
               twoFactorCode: args['twoFactorCode'] as String?,
             );
@@ -611,9 +628,8 @@ class DesktopControlService {
           limit: optionalInteger('limit') ?? 50,
         )).toJson();
       case 'journal-open':
-        final entry = await ListeningJournalService(
-          library.db,
-        ).getEntry(_string(args, 'id'));
+        final entry = await ListeningJournalService(library.db)
+            .getEntry(_string(args, 'id'));
         if (entry == null) throw const FormatException('Unknown journal entry');
         final point = args['point'] ?? 'end';
         if (!['start', 'end', 'target'].contains(point)) {

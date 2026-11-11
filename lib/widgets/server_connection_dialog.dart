@@ -1,4 +1,6 @@
+import 'package:crisp_storage/crisp_storage.dart' show SmbBackend;
 import 'package:flutter/material.dart';
+
 import '../services/server/remote_library_service.dart';
 import '../services/server/sftp_reader.dart';
 
@@ -18,6 +20,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
   String? _error, _hostKey;
   bool _localHttp = false, _connecting = false, _trustHostKey = false;
   bool _requireEncryption = true;
+  SmbBackend _smbBackend = SmbBackend.libsmb2;
   void _clearTrust() {
     _hostKey = null;
     _trustHostKey = false;
@@ -43,6 +46,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
         secret: _secret.text,
         allowLocalHttp: _localHttp,
         requireEncryption: _requireEncryption,
+        smbBackend: _kind == 'smb' ? _smbBackend : null,
         hostKey: _trustHostKey ? _hostKey : null,
         twoFactorCode: _twoFactor.text.isEmpty ? null : _twoFactor.text,
       );
@@ -163,6 +167,34 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
               if (_kind == 'nextcloud')
                 const Text(
                   'Use your Nextcloud account URL and an app password. The WebDAV file endpoint is added automatically.',
+                ),
+              if (_kind == 'smb')
+                DropdownButtonFormField<SmbBackend>(
+                  key: const Key('smb-backend'),
+                  value: _smbBackend,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'SMB transport',
+                    helperText: 'Auto falls back only if Rust cannot load. Rust requires a native-enabled build.',
+                    helperMaxLines: 3,
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: SmbBackend.libsmb2,
+                      child: Text('libsmb2 (compatible)'),
+                    ),
+                    DropdownMenuItem(
+                      value: SmbBackend.rust,
+                      child: Text('Rust (experimental)'),
+                    ),
+                    DropdownMenuItem(
+                      value: SmbBackend.auto,
+                      child: Text('Auto'),
+                    ),
+                  ],
+                  onChanged: _connecting
+                      ? null
+                      : (v) => setState(() => _smbBackend = v!),
                 ),
               if (_kind == 'smb')
                 CheckboxListTile(

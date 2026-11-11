@@ -1,9 +1,9 @@
 name: Shared SMB contract
 on:
   push:
-    paths: ['pubspec.yaml', 'pubspec.lock', 'test/smb_backend_contract_test.dart', 'test/progress_notifications_test.dart', '.github/workflows/smb-storage.yml']
+    paths: ['pubspec.yaml', 'pubspec.lock', 'test/smb_backend_contract_test.dart', 'test/progress_notifications_test.dart', 'test/smb_settings_test.dart', 'test/server_connection_ui_test.dart', 'lib/services/**', 'lib/widgets/server_connection_dialog.dart', 'lib/screens/sync_settings_screen.dart', 'bin/crisperplayer.dart', '.github/workflows/smb-storage.yml']
   pull_request:
-    paths: ['pubspec.yaml', 'pubspec.lock', 'test/smb_backend_contract_test.dart', 'test/progress_notifications_test.dart', '.github/workflows/smb-storage.yml']
+    paths: ['pubspec.yaml', 'pubspec.lock', 'test/smb_backend_contract_test.dart', 'test/progress_notifications_test.dart', 'test/smb_settings_test.dart', 'test/server_connection_ui_test.dart', 'lib/services/**', 'lib/widgets/server_connection_dialog.dart', 'lib/screens/sync_settings_screen.dart', 'bin/crisperplayer.dart', '.github/workflows/smb-storage.yml']
   workflow_dispatch:
 jobs:
   contract:
@@ -16,5 +16,5 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: git diff --exit-code -- pubspec.lock
-      - run: flutter test test/smb_backend_contract_test.dart test/progress_notifications_test.dart
+      - run: flutter test test/smb_backend_contract_test.dart test/progress_notifications_test.dart test/smb_settings_test.dart test/server_connection_ui_test.dart test/remote_library_test.dart
       - run: python3 -m unittest discover -s scripts/tests -p test_distribution_licenses.py

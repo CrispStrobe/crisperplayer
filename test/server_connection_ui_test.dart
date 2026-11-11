@@ -9,6 +9,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'remote_library_test.dart' show MemoryCredentials;
 
 class HostKeyProbe extends RemoteLibraryService {
@@ -29,6 +30,7 @@ class HostKeyProbe extends RemoteLibraryService {
     String username = '',
     bool allowLocalHttp = false,
     bool requireEncryption = true,
+    SmbBackend? smbBackend,
     String? hostKey,
     String? twoFactorCode,
   }) async {
@@ -63,6 +65,7 @@ class SmbProbe extends RemoteLibraryService {
     String username = '',
     bool allowLocalHttp = false,
     bool requireEncryption = true,
+    SmbBackend? smbBackend,
     String? hostKey,
     String? twoFactorCode,
   }) async {
@@ -74,6 +77,7 @@ class SmbProbe extends RemoteLibraryService {
       username: username,
       secret: secret,
       requireEncryption: requireEncryption,
+      smbBackend: smbBackend,
     );
     notifyListeners();
   }
@@ -111,9 +115,15 @@ void main() {
       await tester.ensureVisible(find.text('Require SMB3 encryption'));
       await tester.tap(find.text('Require SMB3 encryption'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('smb-backend')));
+      await tester.tap(find.byKey(const Key('smb-backend')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rust (experimental)').last);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Connect'));
       await tester.pumpAndSettle();
       expect(remote.connected!.kind, 'smb');
+      expect(remote.connected!.smbBackend, SmbBackend.rust);
       expect(remote.connected!.requireEncryption, isFalse);
       expect(remote.connected!.username, r'HOME\reader');
       await tester.pumpWidget(const SizedBox.shrink());

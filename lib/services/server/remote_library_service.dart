@@ -181,6 +181,7 @@ class RemoteLibraryService extends ChangeNotifier {
     String username = '',
     bool allowLocalHttp = false,
     bool requireEncryption = true,
+    SmbBackend? smbBackend,
     String? hostKey,
     String? twoFactorCode,
   }) async {
@@ -202,6 +203,7 @@ class RemoteLibraryService extends ChangeNotifier {
       username: username,
       allowLocalHttp: allowLocalHttp,
       requireEncryption: requireEncryption,
+      smbBackend: smbBackend,
       hostKey: hostKey,
     );
     final client = createClient(connection);
@@ -221,6 +223,32 @@ class RemoteLibraryService extends ChangeNotifier {
         ..clear()
         ..addAll(next);
       _changed();
+    });
+  }
+
+  /// GUI and desktop CLI share this update and credential-store transaction.
+  /// Changing transports never changes an active/queued transfer mid-flight.
+  Future<void> setSmbBackend(String id, SmbBackend backend) async {
+    await init();
+    await _saveConnections((current) {
+      if (busy)
+        throw const RemoteException(
+          'Pause active downloads before changing the SMB transport.',
+        );
+      final index = current.indexWhere((c) => c.id == id);
+      if (index < 0 || current[index].kind != 'smb') {
+        throw const FormatException('Choose an SMB connection.');
+      }
+      return [
+        for (final c in current)
+          if (c.id == id)
+            RemoteConnection.fromJson({
+              ...c.toJson(credentials: true),
+              'smbBackend': backend.name,
+            })
+          else
+            c,
+      ];
     });
   }
 

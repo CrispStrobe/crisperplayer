@@ -229,8 +229,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/crisp_storage"
-      ref: ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2
-      resolved-ref: ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2
+      ref: 4b44dc4d44ef05a18d2da2579d2e3b866b245643
+      resolved-ref: 4b44dc4d44ef05a18d2da2579d2e3b866b245643
       url: "https://github.com/CrispStrobe/CrispCloud"
     source: git
     version: "0.1.0"

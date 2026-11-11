@@ -2,7 +2,7 @@
   "schema_version": 1,
   "reviewed_at": "2026-11-11",
   "root_package": "crisperplayer",
-  "root_pubspec_sha256": "6cb69e3a7f570a740a770e493bb237395f5a9215add1bb661c3cd82371c18835",
+  "root_pubspec_sha256": "361d3bb5e9c5c52a79740a2734506d31fd54e9c7436795ad5045bccdcf80d6fc",
   "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test. The exact user-owned CrisperPlayer and crisp_storage identities have an explicit external-license policy exemption; their original license files and every external dependency remain checked.",
   "sdk": {
     "flutter_version": "3.44.4",
@@ -365,7 +365,7 @@
         "type": "git",
         "url": "https://github.com/CrispStrobe/CrispCloud",
         "path": "packages/crisp_storage",
-        "resolved-ref": "ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2"
+        "resolved-ref": "4b44dc4d44ef05a18d2da2579d2e3b866b245643"
       },
       "pubspec_sha256": "f43f51e8352ec74e9ad22d085ebda8b790a9e1f45d1c88aa41fe27f4a255a04d",
       "license_expression": "AGPL-3.0-only",
@@ -389,7 +389,7 @@
       "source": {
         "type": "root"
       },
-      "pubspec_sha256": "6cb69e3a7f570a740a770e493bb237395f5a9215add1bb661c3cd82371c18835",
+      "pubspec_sha256": "361d3bb5e9c5c52a79740a2734506d31fd54e9c7436795ad5045bccdcf80d6fc",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -4750,7 +4750,7 @@
           "type": "git",
           "url": "https://github.com/CrispStrobe/CrispCloud",
           "path": "packages/crisp_storage",
-          "resolved-ref": "ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2"
+          "resolved-ref": "4b44dc4d44ef05a18d2da2579d2e3b866b245643"
         }
       }
     ]

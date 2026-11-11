@@ -1,6 +1,6 @@
 # Shared Rust SMB prototype
 
-CrisperPlayer pins CrispCloud `ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2`.
+CrisperPlayer pins CrispCloud `4b44dc4d44ef05a18d2da2579d2e3b866b245643`.
 This includes the independent Rust SMB engine and generated Dart adapter behind
 `SmbSession`. Existing calls and credentials remain compatible. libsmb2 remains
 the default; no Rust library is bundled by this change.
@@ -47,3 +47,38 @@ CI, and exact license evidence for all 143 Cargo packages resolved by the bridge
 - All 37 distribution-license checker unit tests passed.
 - Full app package resolution, Flutter tests and final native artifacts remain
   CI/device qualification gates; no release or merge is implied.
+
+## Selecting the path in the GUI and CLI
+
+New SMB connections offer **libsmb2**, **Rust**, and **Auto** in the connection
+sheet. Existing connections can be changed in **Settings → Sync / Servers**
+using their SMB transport menu. The selection is saved with that connection in
+the credential store. It takes effect when the next session starts. Pause active
+or queued downloads before changing it; switching a paused job can restart its
+incompatible checkpoint safely.
+
+The desktop CLI controls the running app and therefore uses the same saved
+profiles and service as the GUI (enable desktop CLI in the app first):
+
+```sh
+crisperplayer servers
+crisperplayer server-settings CONNECTION_ID
+crisperplayer server-settings CONNECTION_ID libsmb2
+crisperplayer server-settings CONNECTION_ID rust
+crisperplayer server-settings CONNECTION_ID auto
+```
+
+For new connections, `server-connect` JSON also accepts `"smbBackend":"rust"`.
+Use its stdin JSON form for credentials. Settings responses omit credentials.
+Invalid choices fail before saving; settings changes cannot alter an active
+transfer. A saved explicit selection overrides `CRISP_SMB_BACKEND`; old profiles
+without a selection use that build default (libsmb2 unless configured otherwise).
+There is no SMB transport on Flutter Web. Rust requires a native-enabled build;
+choosing it in an ordinary build fails explicitly. Auto only handles a missing
+Rust library, never authentication or security failures.
+
+`test/smb_settings_test.dart` exercises the real authenticated desktop control
+server and shared service for all three choices, persistence, secret redaction,
+invalid input and busy-transfer protection. `test/server_connection_ui_test.dart`
+checks the actual connection selector. Both are part of the Shared SMB contract
+workflow, alongside existing browse/download CLI and progress regression tests.

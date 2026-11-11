@@ -618,11 +618,11 @@
       "review_status": "needs_review",
       "source": {
         "repository": "https://github.com/CrispStrobe/CrispCloud",
-        "revision": "ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2"
+        "revision": "4b44dc4d44ef05a18d2da2579d2e3b866b245643"
       },
       "evidence": [
         {
-          "url": "https://github.com/CrispStrobe/CrispCloud/blob/ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2/packages/crisp_storage/licensing/rust_dependencies.json",
+          "url": "https://github.com/CrispStrobe/CrispCloud/blob/4b44dc4d44ef05a18d2da2579d2e3b866b245643/packages/crisp_storage/licensing/rust_dependencies.json",
           "note": "Exact all-target Cargo source grants and file hashes; 143 packages. This is not packaged-artifact approval."
         }
       ],

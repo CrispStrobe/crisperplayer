@@ -6,8 +6,9 @@ New binary and TestFlight builds enforce the
 [external dependency license policy](LICENSE_POLICY.md). The owner's confirmed
 distribution authority covers CrisperPlayer and `crisp_storage`; their own
 AGPL declarations are not blockers and are not being replaced. External native
-LGPL artifacts require matching-source and distribution evidence. The direct desktop audio path removes the previous mpv/FFmpeg payload, but
-Glint's AAC-table provenance and target artifact reviews remain open. Other
+LGPL artifacts require matching-source and distribution evidence. The direct
+desktop audio path removes the previous mpv/FFmpeg payload. Glint's AAC tables
+now have reproducible Apache-2.0 inputs; target artifact reviews remain open. Other
 application/system libraries retain their separate requirements.
 
 Run `flutter pub get`, then

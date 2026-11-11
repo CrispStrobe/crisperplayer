@@ -99,6 +99,72 @@ def checked_file(root: Path, relative: str, digest: str) -> Path:
     return resolved
 
 
+def verify_glint_sources(glint_root: Path, glint: dict) -> tuple[set[str], list[dict]]:
+    require(bool(re.fullmatch(r"[0-9a-f]{40}", glint["commit"])), "Glint has no immutable source pin")
+    expected_glint = set()
+    for entry in glint["selected_files"]:
+        checked_file(glint_root, entry["path"], entry["vendored_sha256"])
+        require(entry["path"] not in expected_glint, "Duplicate Glint manifest entry")
+        expected_glint.add(entry["path"])
+    checked_file(glint_root, glint["patch_file"], glint["patch_sha256"])
+    metadata = {"UPSTREAM.json", "UPSTREAM.md", glint["patch_file"]}
+    expected_provenance = set()
+    provenance = glint.get("provenance_files", [])
+    require(isinstance(provenance, list), "Invalid Glint provenance manifest")
+    for entry in provenance:
+        name = entry["path"]
+        require(name.startswith("provenance/"), f"Invalid Glint provenance location: {name}")
+        checked_file(glint_root, name, entry["sha256"])
+        require(name not in expected_provenance | expected_glint | metadata,
+                f"Duplicate Glint provenance entry: {name}")
+        kind = entry["kind"]
+        require(kind in {"source_input", "license", "notice", "documentation", "evidence"},
+                f"Unknown Glint provenance kind: {name}")
+        require(isinstance(entry.get("license"), str) and bool(entry["license"].strip()),
+                f"Missing Glint provenance license: {name}")
+        if kind in {"source_input", "license", "notice"}:
+            url = entry.get("source_url", "")
+            require(isinstance(url, str) and url.startswith("https://") and
+                    bool(re.search(r"/[0-9a-f]{40}/", url)),
+                    f"Missing immutable Glint provenance source URL: {name}")
+        expected_provenance.add(name)
+    actual_glint = {path.relative_to(glint_root).as_posix() for path in glint_root.rglob("*") if path.is_file()}
+    require(actual_glint == expected_glint | expected_provenance | metadata,
+            "Unlisted or missing Glint source files")
+    require({"LICENSE", "src/mp3_decoder.cpp", "src/aac_decoder.cpp"} <= expected_glint,
+            "Glint decoder/license closure is incomplete")
+    return expected_glint, provenance
+
+
+def verify_glint_regeneration(glint_root: Path, glint: dict) -> dict | None:
+    if not glint.get("provenance_files"):
+        require("regeneration" not in glint, "Glint regeneration has no verified provenance inputs")
+        return None
+    regeneration = glint.get("regeneration", {})
+    require(regeneration.get("output") == "src/aac_tables.hpp" and
+            regeneration.get("command") == ["python3", "tools/gen_aac_tables.py", "--check"] and
+            regeneration.get("requires_network") is False,
+            "Unsupported or incomplete Glint offline regeneration contract")
+    selected = {entry["path"] for entry in glint["selected_files"]}
+    require({"tools/gen_aac_tables.py", "src/aac_tables.hpp"} <= selected,
+            "Glint regeneration script or output is not hash-verified")
+    inputs = regeneration.get("inputs", [])
+    source_inputs = {entry["path"] for entry in glint["provenance_files"] if entry["kind"] == "source_input"}
+    require(isinstance(inputs, list) and bool(inputs) and len(inputs) == len(set(inputs)) and
+            set(inputs) == source_inputs, "Glint regeneration inputs do not match verified provenance")
+    # Only the known, hash-verified generator is executed, after every source
+    # closure has passed. It checks immutable local inputs and writes no files.
+    result = subprocess.run(
+        [sys.executable, "-B", "tools/gen_aac_tables.py", "--check"],
+        cwd=glint_root, capture_output=True, text=True, encoding="utf-8",
+        errors="replace", timeout=30,
+    )
+    require(result.returncode == 0,
+            "Glint offline table regeneration failed: " + (result.stderr or result.stdout).strip())
+    return {"passed": True, "requires_network": False,
+            "output": regeneration["output"], "command": regeneration["command"], "inputs": inputs}
+
+
 def verify_source_manifests(repo: Path = REPO) -> dict:
     native = repo / "packages/crisper_audio/native"
     vendor = native / "vendor"
@@ -112,18 +178,7 @@ def verify_source_manifests(repo: Path = REPO) -> dict:
     glint_root = vendor / "glint"
     glint_file = glint_root / "UPSTREAM.json"
     glint = json.loads(glint_file.read_text(encoding="utf-8"))
-    require(bool(re.fullmatch(r"[0-9a-f]{40}", glint["commit"])), "Glint has no immutable source pin")
-    expected_glint = set()
-    for entry in glint["selected_files"]:
-        checked_file(glint_root, entry["path"], entry["vendored_sha256"])
-        require(entry["path"] not in expected_glint, "Duplicate Glint manifest entry")
-        expected_glint.add(entry["path"])
-    checked_file(glint_root, glint["patch_file"], glint["patch_sha256"])
-    actual_glint = {path.relative_to(glint_root).as_posix() for path in glint_root.rglob("*") if path.is_file()}
-    require(actual_glint == expected_glint | {"UPSTREAM.json", "UPSTREAM.md", glint["patch_file"]},
-            "Unlisted or missing Glint source files")
-    require({"LICENSE", "src/mp3_decoder.cpp", "src/aac_decoder.cpp"} <= expected_glint,
-            "Glint decoder/license closure is incomplete")
+    expected_glint, glint_provenance = verify_glint_sources(glint_root, glint)
 
     dsp_root = repo / "packages/just_audio/native/crisper_dsp"
     dsp_vendor = dsp_root / "vendor"
@@ -148,6 +203,7 @@ def verify_source_manifests(repo: Path = REPO) -> dict:
         "glint_bridge.cpp", "glint_bridge.h")]
     owned += [dsp_root / path for path in (
         "CMakeLists.txt", "crisper_dsp.cpp", "crisper_dsp.h", "wsola/wsola.cpp", "wsola/wsola.h")]
+    glint_regeneration = verify_glint_regeneration(glint_root, glint)
     return {
         "verified": True,
         "manifests": {path.relative_to(repo).as_posix(): sha256(path)
@@ -155,7 +211,10 @@ def verify_source_manifests(repo: Path = REPO) -> dict:
         "host_and_adapter_sources": {path.relative_to(repo).as_posix(): sha256(path) for path in owned},
         "miniaudio": {"revision": miniaudio["source_commit"], "license": miniaudio["license"], "files_verified": 2},
         "glint": {"revision": glint["commit"], "declared_license": glint["declared_license"],
+                  "selected_license_expression": glint.get("selected_license_expression", glint["declared_license"]),
                   "files_verified": len(expected_glint), "provenance_caveat": glint.get("provenance_caveat"),
+                  "provenance_files_verified": len(glint_provenance),
+                  "provenance_files": glint_provenance, "regeneration": glint_regeneration,
                   "flac_required": "src/flac_decoder.cpp" in expected_glint},
         "dsp": {"files_verified": len(expected_dsp), "components": [
             {"id": item["id"], "revision": item["revision"], "license": item["license_expression"]}

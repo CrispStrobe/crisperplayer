@@ -137,9 +137,13 @@ and any local decoder patches. The shared DSP core retains its own reviewed
 vendor manifest and the original Sonic, Chromium WSOLA, Signalsmith Stretch,
 Bungee Basic and supporting-library notices.
 
-Glint's provenance record also preserves the unresolved origin/attribution of
-its AAC tables. Matching source hashes and passing playback tests do not grant
-distribution clearance; the repository's license gate reviews that separately.
+Glint declares MIT. Its AAC numerical tables are now generated offline from
+two hash-checked files at a pinned Apache-2.0 vo-aacenc revision, with the full
+license and notices retained. All 45 arrays and 3,229 values match the original
+table body; the retained patch changes attribution and the generator's inputs.
+The provenance record distinguishes this reproducible source identity from the
+unknown original generator invocation. Matching sources and functional tests
+do not replace review of the exact distributed artifacts.
 
 `scripts/audit_native_audio.py` inspects the actual desktop bundle, rejects
 bundled mpv/FFmpeg-family binaries, records the native artifact and source

@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -28,6 +29,25 @@ class NativeAudioAuditTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
         return path
+
+    def glint_manifest(self):
+        manifest = {"commit": "a" * 40, "selected_files": [],
+                    "patch_file": "UPSTREAM.patch", "provenance_files": []}
+        for name in ("LICENSE", "src/mp3_decoder.cpp", "src/aac_decoder.cpp",
+                     "src/aac_tables.hpp", "tools/gen_aac_tables.py"):
+            source = self.put(name, name.encode())
+            manifest["selected_files"].append({"path": name, "vendored_sha256": audit.sha256(source)})
+        manifest["patch_sha256"] = audit.sha256(self.put("UPSTREAM.patch"))
+        self.put("UPSTREAM.md")
+        self.put("UPSTREAM.json", json.dumps(manifest).encode())
+        return manifest
+
+    def provenance(self, name, kind="source_input"):
+        entry = {"path": name, "sha256": audit.sha256(self.put(name)),
+                 "kind": kind, "license": "Apache-2.0"}
+        if kind in ("source_input", "license", "notice"):
+            entry["source_url"] = "https://example.com/repo/" + "a" * 40 + "/" + name
+        return entry
 
     def test_linux_and_windows_exact_bundle_paths(self):
         linux = self.put("lib/libcrisper_audio.so")
@@ -113,6 +133,93 @@ class NativeAudioAuditTest(unittest.TestCase):
         for name in ("../outside", "/absolute", "nested/../file", "nested//file"):
             with self.subTest(name=name), self.assertRaises(audit.AuditError):
                 audit.checked_file(self.bundle, name, digest)
+
+    def test_provenance_sources_and_local_evidence_are_hash_verified(self):
+        manifest = self.glint_manifest()
+        manifest["provenance_files"] = [
+            self.provenance("provenance/input.c"),
+            self.provenance("provenance/COPYING", "license"),
+            self.provenance("provenance/NOTICE", "notice"),
+            self.provenance("provenance/evidence.json", "evidence"),
+            self.provenance("provenance/README.md", "documentation"),
+        ]
+        selected, provenance = audit.verify_glint_sources(self.bundle, manifest)
+        self.assertEqual(len(selected), 5)
+        self.assertEqual(len(provenance), 5)
+        for entry in manifest["provenance_files"]:
+            with self.subTest(path=entry["path"]):
+                source = self.bundle / entry["path"]
+                original = source.read_bytes()
+                source.write_bytes(b"changed provenance")
+                with self.assertRaisesRegex(audit.AuditError, "Source hash mismatch"):
+                    audit.verify_glint_sources(self.bundle, manifest)
+                source.write_bytes(original)
+
+    def test_provenance_closure_rejects_unlisted_or_duplicate_files(self):
+        manifest = self.glint_manifest()
+        entry = self.provenance("provenance/input.c")
+        with self.assertRaisesRegex(audit.AuditError, "Unlisted or missing"):
+            audit.verify_glint_sources(self.bundle, manifest)
+        manifest["provenance_files"] = [entry, entry]
+        with self.assertRaisesRegex(audit.AuditError, "Duplicate Glint provenance"):
+            audit.verify_glint_sources(self.bundle, manifest)
+        manifest["provenance_files"] = [entry]
+        manifest["selected_files"].append({"path": entry["path"], "vendored_sha256": entry["sha256"]})
+        with self.assertRaisesRegex(audit.AuditError, "Duplicate Glint provenance"):
+            audit.verify_glint_sources(self.bundle, manifest)
+
+    def test_external_provenance_requires_license_and_immutable_source(self):
+        manifest = self.glint_manifest()
+        entry = self.provenance("provenance/input.c")
+        manifest["provenance_files"] = [entry]
+        for field, value, message in (
+            ("source_url", "https://example.com/repo/main/input.c", "immutable"),
+            ("license", "", "license"),
+            ("kind", "unreviewed", "Unknown"),
+        ):
+            with self.subTest(field=field):
+                original = entry[field]
+                entry[field] = value
+                with self.assertRaisesRegex(audit.AuditError, message):
+                    audit.verify_glint_sources(self.bundle, manifest)
+                entry[field] = original
+
+    def test_offline_regeneration_failure_or_unapproved_command_cannot_pass(self):
+        manifest = self.glint_manifest()
+        manifest["provenance_files"] = [self.provenance("provenance/input.c")]
+        manifest["regeneration"] = {
+            "output": "src/aac_tables.hpp",
+            "command": ["python3", "tools/gen_aac_tables.py", "--check"],
+            "requires_network": False,
+            "inputs": ["provenance/input.c"],
+        }
+        audit.verify_glint_sources(self.bundle, manifest)
+        failed = subprocess.CompletedProcess([], 1, stdout="", stderr="generated header differs")
+        with patch.object(audit.subprocess, "run", return_value=failed) as run:
+            with self.assertRaisesRegex(audit.AuditError, "generated header differs"):
+                audit.verify_glint_regeneration(self.bundle, manifest)
+        self.assertEqual(run.call_args.kwargs["cwd"], self.bundle)
+        self.assertEqual(run.call_args.args[0],
+                         [sys.executable, "-B", "tools/gen_aac_tables.py", "--check"])
+        for field, value in (("requires_network", True), ("command", ["python3", "other.py"])):
+            original = manifest["regeneration"][field]
+            manifest["regeneration"][field] = value
+            with patch.object(audit.subprocess, "run") as run:
+                with self.assertRaisesRegex(audit.AuditError, "regeneration contract"):
+                    audit.verify_glint_regeneration(self.bundle, manifest)
+                run.assert_not_called()
+            manifest["regeneration"][field] = original
+        manifest["regeneration"]["inputs"] = ["unlisted/input.c"]
+        with patch.object(audit.subprocess, "run") as run:
+            with self.assertRaisesRegex(audit.AuditError, "inputs do not match verified"):
+                audit.verify_glint_regeneration(self.bundle, manifest)
+            run.assert_not_called()
+
+    def test_old_source_manifest_needs_no_generator_execution(self):
+        manifest = self.glint_manifest()
+        with patch.object(audit.subprocess, "run") as run:
+            self.assertIsNone(audit.verify_glint_regeneration(self.bundle, manifest))
+            run.assert_not_called()
 
     def test_native_crash_or_missing_success_cannot_pass(self):
         for result in (

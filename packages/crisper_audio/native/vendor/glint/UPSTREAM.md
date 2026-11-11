@@ -2,7 +2,9 @@
 
 Source: <https://github.com/CrispStrobe/glint>, commit
 `7b458cff0fc9c397f671c422db4770c72fc22f5c` (2026-11-02).
-The upstream project declares the MIT license retained in `LICENSE`.
+The upstream project declares the MIT license retained in `LICENSE`. The
+locally regenerated AAC table data additionally carries Apache-2.0; its exact
+source grant and notices are retained under `provenance/vo-aacenc/`.
 `UPSTREAM.json` records SHA-256 for every original and retained file; the
 reproducible local changes are in `UPSTREAM.patch`.
 
@@ -10,7 +12,8 @@ This subset compiles the MPEG-1/2/2.5 Layer III, AAC-LC and native FLAC frame
 decoders and their required tables. It contains no encoder objects, command
 line tools, WASM, FFmpeg library or resampler. The upstream FLAC whole-file
 convenience function is excluded by `CRISPER_FLAC_FRAME_ONLY`. The table
-generator is retained as provenance evidence and is never run by the build.
+generator reconstructs the retained header offline during the native-source
+audit. The application build never downloads table sources.
 The host uses the separate `../../glint_bridge.cpp` bounded-frame ABI.
 
 ## Local decoder changes
@@ -43,15 +46,22 @@ It supports native FLAC with a declared sample count, mono/stereo 4–24-bit PCM
 FLAC, 32-bit FLAC, negative LPC quantization shifts and Ogg-FLAC are not
 supported. Neither opening nor seeking requires whole-file decoding.
 
-## AAC table provenance remains unresolved
+## AAC table source and attribution
 
-The retained `src/aac_tables.hpp` and `tools/gen_aac_tables.py` describe
-normative AAC tables extracted and cross-checked from **vo-aacenc
-(Apache-2.0)** and **FFmpeg libavcodec**. The generator uses moving upstream
-branches rather than immutable extraction revisions. The Glint MIT headline
-does not, by itself, establish attribution requirements or clear derived-table
-licensing. This integration preserves that evidence and makes no claim of
-distribution approval. It introduces no linked FFmpeg or LGPL runtime.
+The current `tools/gen_aac_tables.py` reads only immutable, hash-verified
+**vo-aacenc Apache-2.0** inputs. Its `aac_rom.c` supplies codebooks and band
+tables; `tns.c` supplies identical TNS limits. All 45 numerical arrays and the
+entire C++ body after `#ifndef` remain byte-identical to Glint's original
+header. Only attribution comments change. The exact Apache license and both
+upstream notices are retained and included in the app's desktop-audio notice.
+
+[The source map and reconstruction record](provenance/AAC_TABLES.md) distinguishes
+extracted codebook data from mathematical coefficient checks. It also retains
+the separately verified pair of immutable vo-aacenc/FFmpeg revisions that
+reproduce the original Glint generator output. That historical reconstruction
+does not recover the original invocation. No FFmpeg source is retained, read
+by the current generator, or linked into this decoder. This scoped source
+record does not assert whole-product distribution approval.
 
 No Opus implementation or libopus-derived table is included in this subset.
 The pinned decoder's AAC feature coverage is AAC-LC mono/stereo with supported

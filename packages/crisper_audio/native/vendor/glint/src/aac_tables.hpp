@@ -1,10 +1,15 @@
 // glint - AAC standard tables (GENERATED FILE — do not edit)
+// SPDX-License-Identifier: MIT AND Apache-2.0
 // Regenerate with: python tools/gen_aac_tables.py
 //
-// Normative data from ISO/IEC 13818-7 / 14496-3 (scalefactor-band offsets,
-// spectral Huffman codebooks 1-11, scalefactor codebook). Values extracted
-// from two independent implementations (vo-aacenc, Apache-2.0; ffmpeg
-// libavcodec/aactab.c) and cross-checked bit-for-bit by the generator.
+// Crisper modification: all table data is extracted exclusively from
+// vo-aacenc aac_rom.c and tns.c, immutable revision:
+// f23bc0d15467012bab11deb76ad06819140d2ccf
+// Copyright 2003-2010 VisualOn, Inc. Licensed under Apache-2.0.
+// Generated C++ layout and generator: MIT, Glint contributors.
+// Exact sources, license and notices: provenance/vo-aacenc/.
+// Numerical initializers match the original Glint header exactly;
+// no FFmpeg source is read or needed by this regeneration path.
 
 #ifndef GLINT_AAC_TABLES_HPP
 #define GLINT_AAC_TABLES_HPP

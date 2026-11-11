@@ -137,6 +137,295 @@
      void dequant_band(int ch, int bk, int sf, int i0, int i1);
      void inverse_quant(int ch);
      void deinterleave_short(int ch);
+--- a/src/aac_tables.hpp
++++ b/src/aac_tables.hpp
+@@ -1,10 +1,15 @@
+ // glint - AAC standard tables (GENERATED FILE — do not edit)
++// SPDX-License-Identifier: MIT AND Apache-2.0
+ // Regenerate with: python tools/gen_aac_tables.py
+ //
+-// Normative data from ISO/IEC 13818-7 / 14496-3 (scalefactor-band offsets,
+-// spectral Huffman codebooks 1-11, scalefactor codebook). Values extracted
+-// from two independent implementations (vo-aacenc, Apache-2.0; ffmpeg
+-// libavcodec/aactab.c) and cross-checked bit-for-bit by the generator.
++// Crisper modification: all table data is extracted exclusively from
++// vo-aacenc aac_rom.c and tns.c, immutable revision:
++// f23bc0d15467012bab11deb76ad06819140d2ccf
++// Copyright 2003-2010 VisualOn, Inc. Licensed under Apache-2.0.
++// Generated C++ layout and generator: MIT, Glint contributors.
++// Exact sources, license and notices: provenance/vo-aacenc/.
++// Numerical initializers match the original Glint header exactly;
++// no FFmpeg source is read or needed by this regeneration path.
+ 
+ #ifndef GLINT_AAC_TABLES_HPP
+ #define GLINT_AAC_TABLES_HPP
+--- a/tools/gen_aac_tables.py
++++ b/tools/gen_aac_tables.py
+@@ -1,36 +1,40 @@
+ #!/usr/bin/env python3
+-"""Generate src/aac_tables.hpp — ISO/IEC 13818-7 / 14496-3 standard AAC tables.
+-
+-The scalefactor-band offsets and Huffman codebooks are normative data from the
+-ISO spec (Annex A / Table 4.5.x). To rule out transcription errors, this
+-script extracts the same tables from TWO independent implementations —
+-vo-aacenc (Apache-2.0) and ffmpeg's libavcodec/aactab.c — cross-checks them
+-bit-for-bit, verifies each codebook is prefix-free, and only then emits the
+-C++ header. Run from the repo root:
+-
+-    python tools/gen_aac_tables.py [--srcdir DIR]
+-
+-If --srcdir is not given, the two source files are downloaded into a temp dir.
++"""Rebuild AAC tables from immutable Apache-2.0 vo-aacenc sources.
++
++Crisper's local adaptation of Glint's MIT generator uses only aac_rom.c and
++its TNS-limit companion tns.c at the pinned source revision below. The exact
++source files and Apache license/notices are retained in provenance/vo-aacenc.
++It does not fetch or read FFmpeg. All numerical initializers are unchanged
++from Glint's original header; see provenance/AAC_TABLES.md for the comparison
++and the separate historical two-source reproduction evidence.
++
++Run from this vendor directory:
++    python tools/gen_aac_tables.py --check
++
++--srcdir permits an alternate directory containing byte-identical pinned
++inputs. Inputs must match the recorded SHA-256 values; no network is used.
+ """
+ 
+ import argparse
+-import os
+ import re
+-import subprocess
+-import sys
+-import tempfile
+-
+-VO_URL = "https://raw.githubusercontent.com/mstorsjo/vo-aacenc/master/aacenc/src/aac_rom.c"
+-FF_URL = "https://raw.githubusercontent.com/FFmpeg/FFmpeg/master/libavcodec/aactab.c"
+-
+-
+-def fetch(srcdir):
++import hashlib
++from pathlib import Path
++
++VO_COMMIT = "f23bc0d15467012bab11deb76ad06819140d2ccf"
++SOURCE_HASHES = {
++    "aac_rom.c": "bebae3b53f4de70055c6328a24e3fc3172f3b15d40eb9e4556d6d8c2d91cb8b6",
++    "tns.c": "473d54f31d5ac12529cf0a17caffbe5d6e53cf50849aba109ab1f9ba6d9f77fa",
++}
++
++
++def source_paths(srcdir):
+     paths = {}
+-    for name, url in (("aac_rom.c", VO_URL), ("aactab.c", FF_URL)):
+-        p = os.path.join(srcdir, name)
+-        if not os.path.exists(p):
+-            subprocess.check_call(["curl", "-sL", "-o", p, url])
+-        paths[name] = p
++    for name, expected in SOURCE_HASHES.items():
++        path = Path(srcdir) / name
++        actual = hashlib.sha256(path.read_bytes()).hexdigest()
++        if actual != expected:
++            raise ValueError(f"{name}: source SHA-256 {actual} != {expected}")
++        paths[name] = path
+     return paths
+ 
+ 
+@@ -85,12 +89,13 @@
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--srcdir", default=None)
+     ap.add_argument("--out", default="src/aac_tables.hpp")
++    ap.add_argument("--check", action="store_true", help="verify output without writing")
+     args = ap.parse_args()
+ 
+-    srcdir = args.srcdir or tempfile.mkdtemp(prefix="aac_tables_")
+-    paths = fetch(srcdir)
+-    vo = strip_comments(open(paths["aac_rom.c"]).read())
+-    ff = strip_comments(open(paths["aactab.c"]).read())
++    srcdir = args.srcdir or Path(__file__).resolve().parent.parent / "provenance/vo-aacenc"
++    paths = source_paths(srcdir)
++    vo = strip_comments(paths["aac_rom.c"].read_text())
++    tns = strip_comments(paths["tns.c"].read_text())
+ 
+     # ---- spectral codebooks -------------------------------------------------
+     sizes = [81, 81, 81, 81, 81, 81, 64, 64, 169, 169, 289]
+@@ -98,90 +103,61 @@
+     lavs = [1, 1, 2, 2, 4, 4, 7, 7, 12, 12, 16]
+     signed = [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0]
+ 
+-    ff_bits = [extract_array(ff, f"bits{k}") for k in range(1, 12)]
+-    ff_codes = [extract_array(ff, f"codes{k}") for k in range(1, 12)]
+-
+-    vo_lens = [None] * 11
++    spec_bits = [None] * 11
+     for pair, (a, b) in ((extract_array(vo, "huff_ltab1_2"), (0, 1)),
+                          (extract_array(vo, "huff_ltab3_4"), (2, 3)),
+                          (extract_array(vo, "huff_ltab5_6"), (4, 5)),
+                          (extract_array(vo, "huff_ltab7_8"), (6, 7)),
+                          (extract_array(vo, "huff_ltab9_10"), (8, 9))):
+         hi, lo = unpack_pair(pair)
+-        vo_lens[a], vo_lens[b] = hi, lo
+-    vo_lens[10] = extract_array(vo, "huff_ltab11")
+-    vo_codes = [extract_array(vo, f"huff_ctab{k}") for k in range(1, 12)]
++        spec_bits[a], spec_bits[b] = hi, lo
++    spec_bits[10] = extract_array(vo, "huff_ltab11")
++    spec_codes = [extract_array(vo, f"huff_ctab{k}") for k in range(1, 12)]
+ 
+     for k in range(11):
+-        assert len(ff_bits[k]) == sizes[k] == len(ff_codes[k]), f"book{k+1} ff size"
+-        assert len(vo_lens[k]) == sizes[k] == len(vo_codes[k]), f"book{k+1} vo size"
+-        assert ff_bits[k] == vo_lens[k], f"book{k+1}: lengths differ ff vs vo"
+-        assert ff_codes[k] == vo_codes[k], f"book{k+1}: codes differ ff vs vo"
+-        check_prefix_free(ff_codes[k], ff_bits[k], f"book{k+1}")
++        assert len(spec_bits[k]) == sizes[k] == len(spec_codes[k]), f"book{k+1} size"
++        check_prefix_free(spec_codes[k], spec_bits[k], f"book{k+1}")
+ 
+     # ---- scalefactor codebook ----------------------------------------------
+-    scf_bits = extract_array(ff, "ff_aac_scalefactor_bits")
+-    scf_codes = extract_array(ff, "ff_aac_scalefactor_code")
+-    vo_scf_lens = extract_array(vo, "huff_ltabscf")
+-    vo_scf_codes = extract_array(vo, "huff_ctabscf")
++    scf_bits = extract_array(vo, "huff_ltabscf")
++    scf_codes = extract_array(vo, "huff_ctabscf")
+     assert len(scf_bits) == len(scf_codes) == 121
+-    assert scf_bits == vo_scf_lens, "scf lengths differ"
+-    # ffmpeg left-aligns scalefactor codes to 32 bits? No — compare raw first,
+-    # else right-align both before failing.
+-    if scf_codes != vo_scf_codes:
+-        aligned = [c >> (32 - l) if c >= (1 << l) else c for c, l in zip(scf_codes, scf_bits)]
+-        assert aligned == vo_scf_codes, "scf codes differ even after alignment"
+-        scf_codes = aligned
+     check_prefix_free(scf_codes, scf_bits, "scf")
+ 
+     # ---- scalefactor band tables -------------------------------------------
+-    num_swb_long = extract_array(ff, "ff_aac_num_swb_1024")[:12]
+-    num_swb_short = extract_array(ff, "ff_aac_num_swb_128")[:12]
+-    ff_long_names = ["96", "96", "64", "48", "48", "32", "24", "24", "16", "16", "16", "8"]
+-    ff_short_names = ["96", "96", "96", "48", "48", "48", "24", "24", "16", "16", "16", "8"]
+-    long_tabs, short_tabs = [], []
+-    for i in range(12):
+-        lt = extract_array(ff, f"swb_offset_1024_{ff_long_names[i]}")
+-        st = extract_array(ff, f"swb_offset_128_{ff_short_names[i]}")
+-        # normalize: ensure terminator present
+-        if lt[-1] != 1024:
+-            lt = lt + [1024]
+-        if st[-1] != 128:
+-            st = st + [128]
+-        assert len(lt) == num_swb_long[i] + 1, f"rate{i} long: {len(lt)} vs {num_swb_long[i]}+1"
+-        assert len(st) == num_swb_short[i] + 1, f"rate{i} short: {len(st)} vs {num_swb_short[i]}+1"
+-        long_tabs.append(lt)
+-        short_tabs.append(st)
+-
+-    # cross-check against vo-aacenc band tables
+-    vo_total_long = extract_array(vo, "sfBandTotalLong")
+-    vo_total_short = extract_array(vo, "sfBandTotalShort")
++    num_swb_long = extract_array(vo, "sfBandTotalLong")
++    num_swb_short = extract_array(vo, "sfBandTotalShort")
+     vo_long_off = extract_array(vo, "sfBandTabLongOffset")
+     vo_long_tab = extract_array(vo, "sfBandTabLong")
+     vo_short_off = extract_array(vo, "sfBandTabShortOffset")
+     vo_short_tab = extract_array(vo, "sfBandTabShort")
+-    assert vo_total_long == num_swb_long, f"num_swb_long differ: {vo_total_long} vs {num_swb_long}"
+-    assert vo_total_short == num_swb_short
++    assert len(num_swb_long) == len(num_swb_short) == 12
++    long_tabs, short_tabs = [], []
+     for i in range(12):
+-        vl = vo_long_tab[vo_long_off[i] : vo_long_off[i] + num_swb_long[i] + 1]
+-        vs = vo_short_tab[vo_short_off[i] : vo_short_off[i] + num_swb_short[i] + 1]
+-        assert vl == long_tabs[i], f"rate{i}: long sfb table differs\n{vl}\n{long_tabs[i]}"
+-        assert vs == short_tabs[i], f"rate{i}: short sfb table differs"
++        lt = vo_long_tab[vo_long_off[i] : vo_long_off[i] + num_swb_long[i] + 1]
++        st = vo_short_tab[vo_short_off[i] : vo_short_off[i] + num_swb_short[i] + 1]
++        assert len(lt) == num_swb_long[i] + 1 and lt[0] == 0 and lt[-1] == 1024
++        assert len(st) == num_swb_short[i] + 1 and st[0] == 0 and st[-1] == 128
++        assert all(a < b for a, b in zip(lt, lt[1:]))
++        assert all(a < b for a, b in zip(st, st[1:]))
++        long_tabs.append(lt)
++        short_tabs.append(st)
+ 
+     sample_rates = extract_array(vo, "sampRateTab")[:12]
+     assert sample_rates == [96000, 88200, 64000, 48000, 44100, 32000,
+                             24000, 22050, 16000, 12000, 11025, 8000]
+ 
+     # ---- TNS ----------------------------------------------------------------
+-    # Max-bands limits (ffmpeg aactab.c; 13th entry is the 7350 Hz index we
+-    # don't support). Cross-check: the 4-bit TNS coefficient map must match
+-    # vo-aacenc's Q31 tnsCoeff4 table, which validates the arcsin/sine
++    # Max-band limits come from the same Apache-2.0 source revision's tns.c.
++    # Independently check that the mathematical 4-bit TNS coefficient formula
++    # matches vo-aacenc's Q31 tnsCoeff4 data, validating the arcsin/sine
+     # (de)quantization formula the encoder implements in code:
+     #   iqfac(+) = (2^(res-1) - 0.5) / (pi/2), iqfac(-) with + 0.5,
+     #   coef = sin(idx / iqfac)
+     import math
+-    tns_long = extract_array(ff, "ff_tns_max_bands_1024")[:12]
+-    tns_short = extract_array(ff, "ff_tns_max_bands_128")[:12]
++    tns_long = extract_array(tns, "tnsMaxBandsLongMainLow")
++    tns_short = extract_array(tns, "tnsMaxBandsShortMainLow")
++    assert len(tns_long) == len(tns_short) == 12
+     vo_c4 = extract_array(vo, "tnsCoeff3Borders")  # presence check only
+     vo_c4 = extract_array(vo, "tnsCoeff4")
+     iqp = (2 ** 3 - 0.5) / (math.pi / 2)
+@@ -201,7 +177,7 @@
+              for ref in (ref_signed, ref_wrapped))
+     assert ok, "TNS coef formula does not reproduce vo-aacenc tnsCoeff4"
+ 
+-    print("all cross-checks passed: 11 spectral books, scf book, 12 sfb tables, TNS coef map")
++    print("pinned-source checks passed: 11 spectral books, scf book, 12 sfb tables, TNS coef map")
+ 
+     # ---- emit ---------------------------------------------------------------
+     def fmt(vals, per_line=12, hexfmt=False):
+@@ -217,12 +193,17 @@
+ 
+     h = []
+     h.append("// glint - AAC standard tables (GENERATED FILE — do not edit)")
++    h.append("// SPDX-License-Identifier: MIT AND Apache-2.0")
+     h.append("// Regenerate with: python tools/gen_aac_tables.py")
+     h.append("//")
+-    h.append("// Normative data from ISO/IEC 13818-7 / 14496-3 (scalefactor-band offsets,")
+-    h.append("// spectral Huffman codebooks 1-11, scalefactor codebook). Values extracted")
+-    h.append("// from two independent implementations (vo-aacenc, Apache-2.0; ffmpeg")
+-    h.append("// libavcodec/aactab.c) and cross-checked bit-for-bit by the generator.")
++    h.append("// Crisper modification: all table data is extracted exclusively from")
++    h.append("// vo-aacenc aac_rom.c and tns.c, immutable revision:")
++    h.append(f"// {VO_COMMIT}")
++    h.append("// Copyright 2003-2010 VisualOn, Inc. Licensed under Apache-2.0.")
++    h.append("// Generated C++ layout and generator: MIT, Glint contributors.")
++    h.append("// Exact sources, license and notices: provenance/vo-aacenc/.")
++    h.append("// Numerical initializers match the original Glint header exactly;")
++    h.append("// no FFmpeg source is read or needed by this regeneration path.")
+     h.append("")
+     h.append("#ifndef GLINT_AAC_TABLES_HPP")
+     h.append("#define GLINT_AAC_TABLES_HPP")
+@@ -284,10 +265,10 @@
+     h.append("")
+     for k in range(11):
+         h.append(f"inline constexpr uint8_t kSpecBits{k+1}[{sizes[k]}] = {{")
+-        h.append(fmt(ff_bits[k], 16))
++        h.append(fmt(spec_bits[k], 16))
+         h.append("};")
+         h.append(f"inline constexpr uint16_t kSpecCodes{k+1}[{sizes[k]}] = {{")
+-        h.append(fmt(ff_codes[k], 8, hexfmt=True))
++        h.append(fmt(spec_codes[k], 8, hexfmt=True))
+         h.append("};")
+     h.append("")
+     h.append("inline constexpr const uint8_t* kSpecBits[11] = {")
+@@ -318,9 +299,14 @@
+     h.append("")
+     h.append("#endif // GLINT_AAC_TABLES_HPP")
+ 
+-    with open(args.out, "w") as f:
+-        f.write("\n".join(h))
+-    print(f"wrote {args.out}")
++    generated = "\n".join(h)
++    if args.check:
++        if Path(args.out).read_bytes() != generated.encode("utf-8"):
++            raise ValueError(f"generated table header differs: {args.out}")
++        print(f"verified {args.out}")
++    else:
++        Path(args.out).write_bytes(generated.encode("utf-8"))
++        print(f"wrote {args.out}")
+ 
+ 
+ if __name__ == "__main__":
 --- a/src/flac_decoder.cpp
 +++ b/src/flac_decoder.cpp
 @@ -48,7 +48,7 @@

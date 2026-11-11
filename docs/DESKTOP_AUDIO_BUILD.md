@@ -85,8 +85,10 @@ interruptions and long-book behavior on each target before release.
 ## Provenance and distribution
 
 Source and notices live beside the new package. The original portable DSP
-closure is reused without duplicating vendor files. Glint's AAC-table provenance
-question remains recorded; this implementation does not declare it resolved.
+closure is reused without duplicating vendor files. Glint's AAC tables now
+regenerate offline from pinned Apache-2.0 vo-aacenc inputs with the complete
+license/notices. The table values are unchanged and the source history is
+recorded in the Glint provenance manifest.
 The normal distribution checker still blocks unreviewed artifacts and missing
 source/notice obligations. Removing the audio mpv/FFmpeg path does not remove
 unrelated LGPL system/application dependencies.

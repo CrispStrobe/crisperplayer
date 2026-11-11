@@ -106,9 +106,12 @@ in [the shared manifest](../packages/just_audio/native/crisper_dsp/vendor/manife
 The independent host and Dart code are MIT. miniaudio's exact 0.11.25 header,
 MIT-0/public-domain notices and source hash are retained. Glint's selected source
 and local patches have original/current file hashes and a reversible patch.
-Glint declares MIT, but the AAC-table extraction provenance noted by CrispAudio
-is still unresolved; that fact remains in the source manifest and distribution
-gate. No top-level wrapper license is used to approve a native payload.
+Glint declares MIT. The AAC-table provenance gap noted by CrispAudio has a
+reproducible source correction here: the generator uses only hash-checked
+Apache-2.0 vo-aacenc inputs at an immutable revision, with original notices.
+The 45 arrays and 3,229 values are unchanged; the source record preserves the
+old header/generator identities and the local patch. It does not claim to know
+the historical generator invocation. Native artifact review remains separate.
 
 The new desktop audio dependency graph removes media_kit/libmpv and FFmpeg. This
 does not remove LGPL components from the rest of the application or the host OS.

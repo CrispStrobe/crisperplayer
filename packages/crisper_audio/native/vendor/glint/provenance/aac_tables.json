@@ -1,0 +1,334 @@
+{
+  "schema_version": 1,
+  "verified_date": "2026-11-11",
+  "scope": "Selected AAC table source provenance and exact reconstruction, not historical invocation identity or whole-product distribution approval.",
+  "upstream_glint": {
+    "commit": "7b458cff0fc9c397f671c422db4770c72fc22f5c",
+    "header_sha256": "df0118f458bb3e0e1b92ecc276b4fb75bed27dde51996a9e8b882006a6dafc51",
+    "generator_sha256": "f4d10c4cee3ff01d6e8cc92365e087e8438453511ce02c9db9b78f3a0882d75e",
+    "first_table_commit": "059d235bd32e3f6aad84bb5b836906a6bd53336d",
+    "last_table_generator_commit": "3f6208299962d87eec7a0f37683b1a6ccbc888f2"
+  },
+  "historical_reproduction": {
+    "description": "The unmodified Glint generator reproduces the original header byte-for-byte from this immutable pair. These are verified reproducing revisions; the original extraction invocation is not known.",
+    "inputs": [
+      {
+        "url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/aac_rom.c",
+        "sha256": "bebae3b53f4de70055c6328a24e3fc3172f3b15d40eb9e4556d6d8c2d91cb8b6",
+        "declared_license": "Apache-2.0"
+      },
+      {
+        "url": "https://github.com/FFmpeg/FFmpeg/blob/044bfc7785650102f1e3e27868dc40b023d90d5f/libavcodec/aactab.c",
+        "sha256": "dc26f9316026cd807617db09c72424ae2b19b07a1d9c19a45cc05ab9617a32ce",
+        "declared_license": "LGPL-2.1-or-later"
+      }
+    ],
+    "reproduced_header_sha256": "df0118f458bb3e0e1b92ecc276b4fb75bed27dde51996a9e8b882006a6dafc51",
+    "matches_original_header": true,
+    "ffmpeg_source_retained_or_used_by_current_generator": false
+  },
+  "current_reconstruction": {
+    "source_repository": "https://github.com/mstorsjo/vo-aacenc",
+    "commit": "f23bc0d15467012bab11deb76ad06819140d2ccf",
+    "input_files": [
+      {
+        "path": "provenance/vo-aacenc/aac_rom.c",
+        "sha256": "bebae3b53f4de70055c6328a24e3fc3172f3b15d40eb9e4556d6d8c2d91cb8b6",
+        "kind": "source_input",
+        "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/aac_rom.c",
+        "license": "Apache-2.0",
+        "git_blob_sha": "f08f3a97b27daaef5f709406186201625fb8e0d3",
+        "size_bytes": 129247
+      },
+      {
+        "path": "provenance/vo-aacenc/tns.c",
+        "sha256": "473d54f31d5ac12529cf0a17caffbe5d6e53cf50849aba109ab1f9ba6d9f77fa",
+        "kind": "source_input",
+        "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/tns.c",
+        "license": "Apache-2.0",
+        "git_blob_sha": "455a864cbb5ac493f75734f7ef919203728cfd62",
+        "size_bytes": 29373
+      },
+      {
+        "path": "provenance/vo-aacenc/COPYING",
+        "sha256": "8b3f1762349248d444ab9acbafe73941254e36e1064954da56bb9ddbd5873ddb",
+        "kind": "license",
+        "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/COPYING",
+        "license": "Apache-2.0",
+        "git_blob_sha": "5ec4bf01e7e7fdb46973ba93ae4992fb41352c7f",
+        "size_bytes": 10271
+      },
+      {
+        "path": "provenance/vo-aacenc/NOTICE",
+        "sha256": "e2ae60e14bece975eeab49210fcaf4ee529b77e6ca13e7d6556b6bb203897b31",
+        "kind": "notice",
+        "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/NOTICE",
+        "license": "Apache-2.0",
+        "git_blob_sha": "d4ab1ac781a9d45b59089f04b3390ebadfc89b5d",
+        "size_bytes": 13467
+      },
+      {
+        "path": "provenance/vo-aacenc/AACENC_NOTICE",
+        "sha256": "38751245389e1e23f73e6f5384b5cbe7fa972cc4410c5adc9c04b082a0b9561a",
+        "kind": "notice",
+        "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/NOTICE",
+        "license": "Apache-2.0",
+        "git_blob_sha": "c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d",
+        "size_bytes": 10695
+      }
+    ],
+    "generator_path": "tools/gen_aac_tables.py",
+    "generator_sha256": "1cc2c412b077e819077e54a4bb01c91a40e98512afa39d6d3829b1a498d21f00",
+    "output_path": "src/aac_tables.hpp",
+    "output_sha256": "340a2848baf7347c0a9c8ea8e8bd60c2f2970772689795ab86f10e080ae24285",
+    "license_expression": "MIT AND Apache-2.0",
+    "offline_command": [
+      "python3",
+      "tools/gen_aac_tables.py",
+      "--check"
+    ],
+    "runtime_algorithm_changes": false,
+    "cpp_body_after_ifndef_byte_identical": true,
+    "cpp_body_sha256": "c949a9d1dafe2f1f24a72d1b244532049d1d86fc0474ea696469c4b2759b0d01",
+    "numeric_array_count": 45,
+    "numeric_value_count": 3229,
+    "numeric_arrays": [
+      {
+        "name": "kSampleRates",
+        "values": 12,
+        "integer_values_sha256": "f0c1a5cf9d23de875dd2bcc3c05d358a7215907a4767647c91f4b0e4e40d6e17"
+      },
+      {
+        "name": "kNumSwbLong",
+        "values": 12,
+        "integer_values_sha256": "6e7945cbc0a14f9d4ca7e05bd7bc8c304b63c070a645a9ff70f2abe811ac90bb"
+      },
+      {
+        "name": "kNumSwbShort",
+        "values": 12,
+        "integer_values_sha256": "b276d1e828f4147de0651ebd33eedf828a698747c13d06b62f35369bc5cf715a"
+      },
+      {
+        "name": "kSwbLong_96000",
+        "values": 42,
+        "integer_values_sha256": "2a32277ca57745a5df41f3cbdc705c4fff00486fc6767a641b5ac92e65d7e375"
+      },
+      {
+        "name": "kSwbLong_64000",
+        "values": 48,
+        "integer_values_sha256": "9552858c909ecf5ad260a432a2f9d7eec45a39d93b53fa82820320f0480556fa"
+      },
+      {
+        "name": "kSwbLong_48000",
+        "values": 50,
+        "integer_values_sha256": "b29ea50c7c0dad557ccda084f7096b5e154372bbc71d5ce5b1a8f5179f1d9a6c"
+      },
+      {
+        "name": "kSwbLong_32000",
+        "values": 52,
+        "integer_values_sha256": "c961fa1861cd4278663c942fd7ae86586eebf090ecca5c9694d63a528b309a77"
+      },
+      {
+        "name": "kSwbLong_24000",
+        "values": 48,
+        "integer_values_sha256": "7c7a81c9ecb1907c0d5d5eef75862894d5e8d3338388a93ff25146ac27cc68c0"
+      },
+      {
+        "name": "kSwbLong_16000",
+        "values": 44,
+        "integer_values_sha256": "c8c05b9a270f7a529f6a2f0cdc3c4acfb487176a663967472b5c7e742eb7470c"
+      },
+      {
+        "name": "kSwbLong_8000",
+        "values": 41,
+        "integer_values_sha256": "3a227afb406479094c755e41aa471ec470c7f90306d60b3a63687c8638c78dc0"
+      },
+      {
+        "name": "kSwbShort_96000",
+        "values": 13,
+        "integer_values_sha256": "ee98c6b6d41c4ea6352ec3c16b4795a5c0edbb1eabe4e0b524487c7beb00113a"
+      },
+      {
+        "name": "kSwbShort_48000",
+        "values": 15,
+        "integer_values_sha256": "337472df2af6e8a402834f249ed8c67d40b6e67051782bef3eb9022dc9fa62ae"
+      },
+      {
+        "name": "kSwbShort_24000",
+        "values": 16,
+        "integer_values_sha256": "4b1c74da49ccfc0430bab0b8015eb44d9f30496d2770f1675c09081aab17dc5c"
+      },
+      {
+        "name": "kSwbShort_16000",
+        "values": 16,
+        "integer_values_sha256": "45ef4ace98db92d4e140394e2476d0d30e6f6173edbf208d900046b155e5bf75"
+      },
+      {
+        "name": "kSwbShort_8000",
+        "values": 16,
+        "integer_values_sha256": "b062d9847511b963b22dad8ddc85905724f8e4c692bc0ca415e94bcd1e8410d9"
+      },
+      {
+        "name": "kBookDim",
+        "values": 11,
+        "integer_values_sha256": "f59abba5c3a4661069a95e72ab7e70c30206844aa3e4ce31f823b345e4cf71d0"
+      },
+      {
+        "name": "kBookLav",
+        "values": 11,
+        "integer_values_sha256": "7c86cd39db8523bc19fa5f193cdeebc147fef97395fc07e51d2c5047c1b8ee75"
+      },
+      {
+        "name": "kBookSigned",
+        "values": 11,
+        "integer_values_sha256": "4bc6b5554e3e78e0acfe4395bfe68736a4c005787f236be857e216d69f5d0685"
+      },
+      {
+        "name": "kBookSize",
+        "values": 11,
+        "integer_values_sha256": "6729dac556eaac18332fa266b8c0d1d3e5f7797d2637e65e7886c4815118b1d2"
+      },
+      {
+        "name": "kSpecBits1",
+        "values": 81,
+        "integer_values_sha256": "f92411f0f4b03b66b1286b23f00bb8908b8404cd42f78c5a6dcd5607aa94bc89"
+      },
+      {
+        "name": "kSpecCodes1",
+        "values": 81,
+        "integer_values_sha256": "7bdaceef2e74743fad6a982ac7af4ed5b79d9b377661ee6563abc59c20e9b319"
+      },
+      {
+        "name": "kSpecBits2",
+        "values": 81,
+        "integer_values_sha256": "d56e18878a8fc23d2d36d0e39fb0596325e460c29fd9395ab0122fd2d0cce375"
+      },
+      {
+        "name": "kSpecCodes2",
+        "values": 81,
+        "integer_values_sha256": "79e76ca11643315f15f3d2533cfcf86e3bfa4f4628d46063faa6e770d3dbb2c1"
+      },
+      {
+        "name": "kSpecBits3",
+        "values": 81,
+        "integer_values_sha256": "05946cddfa7db491a886d4406a55f1264a41d2a9f09e8121252ab73d837f9cb3"
+      },
+      {
+        "name": "kSpecCodes3",
+        "values": 81,
+        "integer_values_sha256": "b6a08b79862aad6a60e12918ba9d719034e699edaf8f716e11ba72a8c6eafe52"
+      },
+      {
+        "name": "kSpecBits4",
+        "values": 81,
+        "integer_values_sha256": "73a5d2205a7ea224548158f9e79e799b7cf5439f959fca0d5dc9a8765773d9f9"
+      },
+      {
+        "name": "kSpecCodes4",
+        "values": 81,
+        "integer_values_sha256": "af96fa55a3defc3ca08c9cca814e09d777a176ee85399a4f8ff27f60983fac71"
+      },
+      {
+        "name": "kSpecBits5",
+        "values": 81,
+        "integer_values_sha256": "123306188d12963c3d77d11e9c50a28b1e0c54f102347c147a7f4870f669312a"
+      },
+      {
+        "name": "kSpecCodes5",
+        "values": 81,
+        "integer_values_sha256": "d458c6b9d11cfc16121601bb496fb277483fcfc31df7eb235f7d5d89baa2689f"
+      },
+      {
+        "name": "kSpecBits6",
+        "values": 81,
+        "integer_values_sha256": "55d48b999c1a05bca7433613e3ce017f970dca03ea1504089c34128b832acd7a"
+      },
+      {
+        "name": "kSpecCodes6",
+        "values": 81,
+        "integer_values_sha256": "6a7091efe1b75e4123d03eaa313f39a4f662e470d2b2bac2be21450d616b6d8f"
+      },
+      {
+        "name": "kSpecBits7",
+        "values": 64,
+        "integer_values_sha256": "d4452dcf1650a0206ba12ba985947c3579db1efc447e61de2bb561f6c75b5ca9"
+      },
+      {
+        "name": "kSpecCodes7",
+        "values": 64,
+        "integer_values_sha256": "8383ea92dad986ef49ead5fc3246aef45ebcb4b3919e26b11b2445b0ca74e50d"
+      },
+      {
+        "name": "kSpecBits8",
+        "values": 64,
+        "integer_values_sha256": "c100fc6b84b3850da9e5e1c0be523649b1993e150e458b848906fe9dbca22123"
+      },
+      {
+        "name": "kSpecCodes8",
+        "values": 64,
+        "integer_values_sha256": "dfab648bb849f31f4cda675d2a43bac82f87fcf44e3c4790fc62fc5b2de408e3"
+      },
+      {
+        "name": "kSpecBits9",
+        "values": 169,
+        "integer_values_sha256": "3f1a3efa9ce7d4a279e9dbffc707fb79ead10ca291a1269155c268d3339c3955"
+      },
+      {
+        "name": "kSpecCodes9",
+        "values": 169,
+        "integer_values_sha256": "7047408d1db5ffa2a0feeeadcef0e32d87c05c04b9d7eab575cc17faff6c5c50"
+      },
+      {
+        "name": "kSpecBits10",
+        "values": 169,
+        "integer_values_sha256": "c13f6fdd1b830509cfe68b543970071cae0f6885ef86e366f7f39c4ba6d11b9b"
+      },
+      {
+        "name": "kSpecCodes10",
+        "values": 169,
+        "integer_values_sha256": "ffd69c03e16b71f4cc8a1fac7ec0734889926508f7fc381d13bb4096d97e5d26"
+      },
+      {
+        "name": "kSpecBits11",
+        "values": 289,
+        "integer_values_sha256": "efe6e2056243289722c50fd64d7910d45950f9ff6a2fa1ad5c48a7e3deae9ef5"
+      },
+      {
+        "name": "kSpecCodes11",
+        "values": 289,
+        "integer_values_sha256": "489ccb3fac3345dbdadaf7d1620cb93a56fe88df1b7f7068457a28cbeb82f260"
+      },
+      {
+        "name": "kTnsMaxBandsLong",
+        "values": 12,
+        "integer_values_sha256": "6c6ff9b76441e236010e73948d5211b5f6e657e77bf79ac6b174ce58a7bb159b"
+      },
+      {
+        "name": "kTnsMaxBandsShort",
+        "values": 12,
+        "integer_values_sha256": "f5987a2dbb52d1a63b022cef438fa31bf88023279e9c93c256b102c4603ecc5a"
+      },
+      {
+        "name": "kScfBits",
+        "values": 121,
+        "integer_values_sha256": "e20d0c560fdbc26ec8b724203d725b11dd752231a9d93a4ed80273eade1e54f9"
+      },
+      {
+        "name": "kScfCodes",
+        "values": 121,
+        "integer_values_sha256": "0f73ba30e952717bee6c96da4f3985097421049025abcee01d6c2e6f3736fef5"
+      }
+    ],
+    "source_map": {
+      "spectral_Huffman_codewords": "aac_rom.c: huff_ctab1 through huff_ctab11",
+      "spectral_Huffman_lengths": "aac_rom.c: huff_ltab1_2 through huff_ltab9_10 (split packed bytes), huff_ltab11",
+      "scalefactor_Huffman": "aac_rom.c: huff_ltabscf and huff_ctabscf",
+      "scalefactor_band_counts_offsets": "aac_rom.c: sfBandTotalLong/Short, sfBandTabLong/ShortOffset, sfBandTabLong/Short",
+      "sample_rates": "aac_rom.c: sampRateTab (first12rates)",
+      "TNS_maximum_bands": "tns.c: tnsMaxBandsLongMainLow and tnsMaxBandsShortMainLow",
+      "TNS_quantization_formula": "sin(index / ((2^(res-1) +/-0.5)/(pi/2))); mathematical verification against aac_rom.c tnsCoeff4, not emitted as a copied coefficient table",
+      "book_dimensions_sizes_signedness": "existing Glint format descriptors; unchanged"
+    }
+  },
+  "notices": "Exact upstream COPYING, root NOTICE and aacenc/NOTICE retained. Root NOTICE includes an unrelated Unicode notice, preserved unabridged; no Unicode implementation/data selected."
+}

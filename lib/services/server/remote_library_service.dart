@@ -5,17 +5,21 @@ import 'package:crisp_storage/crisp_storage.dart'
         TransferScheduler,
         ScheduledTransfer,
         TransferCancelled;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+
 import '../library_service.dart';
 import 'credential_store.dart';
 import 'remote_client.dart';
+import 'progress_notifications.dart';
 import '../db/app_database.dart';
 
 class RemoteDownload {
@@ -75,6 +79,9 @@ class RemoteLibraryService extends ChangeNotifier {
   final List<RemoteConnection> _connections = [];
   final Map<String, RemoteDownload> _downloads = {};
   bool _loaded = false, _disposed = false, _pausing = false;
+  late final _progressNotifications = ProgressNotifications(() {
+    if (!_disposed) notifyListeners();
+  });
   late final _queue = TransferScheduler<_DownloadOperation>(
     maxConcurrent: 1,
     maxRetries: 2,
@@ -105,7 +112,7 @@ class RemoteLibraryService extends ChangeNotifier {
   List<RemoteConnection> get connections => List.unmodifiable(_connections);
   List<RemoteDownload> get downloads => List.unmodifiable(_downloads.values);
   void _changed() {
-    if (!_disposed) notifyListeners();
+    _progressNotifications.flush();
   }
 
   Future<Directory> _root() async =>
@@ -498,7 +505,7 @@ class RemoteLibraryService extends ChangeNotifier {
           onBytes: (bytes) {
             _checkPaused();
             job.bytes = completed + bytes;
-            _changed();
+            _progressNotifications.schedule();
           },
         );
         completed += await output.length();
@@ -565,6 +572,7 @@ class RemoteLibraryService extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _progressNotifications.dispose();
     _queue.dispose();
     _pausing = true;
     _activeClient?.close();

@@ -373,8 +373,9 @@ class DesktopControlService {
             final id = _string(args, 'connectionId');
             if (args.containsKey('smbBackend')) {
               final backend = parseSmbBackend(args['smbBackend']);
-              if (backend == null)
+              if (backend == null) {
                 throw const FormatException('SMB backend is required.');
+              }
               await service.setSmbBackend(id, backend);
             }
             return service.connections.firstWhere((c) => c.id == id).toJson();

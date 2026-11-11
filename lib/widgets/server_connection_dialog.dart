@@ -171,7 +171,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
               if (_kind == 'smb')
                 DropdownButtonFormField<SmbBackend>(
                   key: const Key('smb-backend'),
-                  value: _smbBackend,
+                  initialValue: _smbBackend,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'SMB transport',

@@ -231,10 +231,11 @@ class RemoteLibraryService extends ChangeNotifier {
   Future<void> setSmbBackend(String id, SmbBackend backend) async {
     await init();
     await _saveConnections((current) {
-      if (busy)
+      if (busy) {
         throw const RemoteException(
           'Pause active downloads before changing the SMB transport.',
         );
+      }
       final index = current.indexWhere((c) => c.id == id);
       if (index < 0 || current[index].kind != 'smb') {
         throw const FormatException('Choose an SMB connection.');

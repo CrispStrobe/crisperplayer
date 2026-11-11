@@ -93,10 +93,11 @@ Future<void> main(List<String> arguments) async {
     Object? result;
     switch (command) {
       case 'server-settings':
-        if (args.isEmpty || args.length > 2)
+        if (args.isEmpty || args.length > 2) {
           throw const FormatException(
             'server-settings requires ID and an optional backend',
           );
+        }
         result = await client.command('server-settings', {
           'connectionId': args.first,
           if (args.length == 2) 'smbBackend': args[1],

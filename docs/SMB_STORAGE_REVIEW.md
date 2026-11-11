@@ -1,49 +1,28 @@
 # SMB storage review — 11 November 2026
 
-## Current implementation
-CrisperPlayer pins CrispCloud's `packages/crisp_storage` at
-`ac90899f8110dcb266d122208b3b3a879a257eee`. The dependency closure includes
-`dart_smb2 0.2.1`, which wraps LGPL-2.1 libsmb2; the wrapper's BSD license
-does not replace the native license. Offline downloads use one scheduled
-transfer, bounded SMB reads, revision-validated resume and local import.
-SMB3 encryption is required by default; signing is enabled.
+CrisperPlayer pins CrispCloud's shared Dart transport at immutable commit
+`13ca681f0c706cf24e65c7906f8a98e20421c590`. Its optional Rust backend uses the same
+SMB core consumed directly by CrispSorter. There is no separate Dart SMB protocol
+implementation. See [GUI/CLI choices and build instructions](SMB_RUST_ROLLOUT.md).
 
-## Priorities
-1. Coalesce byte-progress notifications so fast transfers do not rebuild the UI
-   on every network chunk. Keep byte accounting and pause checks immediate,
-   and publish phase changes without delay.
-2. Improve shared transport disk writes in CrispCloud, then adopt a verified
-   immutable commit with regenerated dependency/license evidence.
-3. Retain one active audiobook import; increasing workers without measurement
-   would add connections and memory pressure.
+GUI settings and the authenticated desktop CLI update the same service and
+persisted per-server backend choice: `libsmb2`, `rust`, or `auto`. Active transfers
+prevent a backend change. Auto falls back only if the Rust native library cannot
+load before login; authentication and security failures do not switch engines.
 
-## Permissive replacement decision
-Do not replace the engine with smb_connect merely to change its license:
-its advertised SMB2.1 ceiling does not meet the existing SMB3 encryption
-contract. Evaluate a pure Rust or Go SMB2/3 engine behind a shared adapter only
-after signed/encrypted Windows/Samba/NAS tests, cancellation, resume validators,
-path confinement, mobile packaging and the complete dependency-license closure
-pass. SMBJ is Android-specific; the Swift SMBClient advertises SMB2.0.
+libsmb2 remains the default and fallback. The BSD dart_smb2 0.2.5+crisp.1 wrapper
+ships LGPL-2.1-or-later libsmb2 r10. Apple builds use a pinned source recipe with
+install-name padding; other platforms use verified release binaries. Package,
+source and native build-input hashes are recorded in `licensing/` and checked in CI.
+The fallback retains its native distribution obligations.
 
-This branch does not claim to remove LGPL. Existing notices and encryption
-defaults remain required. No engine migration or dependency pin change is
-implied by progress-notification optimization.
+Offline transfers retain bounded reads, revision-validated resume and one active
+audiobook import. Progress notifications coalesce into 100 ms windows while byte
+accounting, pause checks and phase changes remain immediate. Tests cover settings
+persistence, GUI controls, authenticated CLI commands, busy/invalid selection,
+progress timers and remote-library behavior. CI also checks lockfile consistency
+and the SMB source/license evidence.
 
-## Implemented and validated on this branch
-Byte-progress notifications are coalesced into 100 ms windows. Byte accounting
-and pause checks still run on every chunk, while queued/retrying/importing and
-terminal phase changes notify immediately and cancel any stale timer. Disposal
-cancels pending notifications. This applies to every offline-download transport,
-including SMB; it does not alter transfer concurrency or resume semantics.
-
-The three new timer-contract tests passed in an isolated Dart harness using
-fake_async: 1,000 chunk updates publish the latest count once, a phase change
-publishes immediately without a later duplicate, and disposal suppresses all
-pending/subsequent notifications. The same assertions are committed as Flutter
-tests in `test/progress_notifications_test.dart` for normal app CI.
-
-Full Flutter startup/testing was blocked by automatic approval review because
-the SDK startup attempted to access instance metadata. No workaround for that
-access was used; the isolated checks import only the pure-Dart progress helper.
-The full app/download integration suite and on-device performance remain
-unverified here. No throughput or battery improvement has been measured.
+Real SMB3 encryption interoperability, physical devices, signed release artifacts
+and measured throughput/battery behavior remain qualification gates. Passing the
+local SMB2 fixture does not justify changing the default engine.

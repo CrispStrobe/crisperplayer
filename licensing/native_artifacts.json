@@ -181,7 +181,7 @@
           "note": "Exact r10 manifest. Seven non-Apple binaries match the vendored hook. Apple binaries are rebuilt locally and are deliberately not identified by upstream binary hashes."
         },
         {
-          "url": "https://github.com/CrispStrobe/CrispCloud/blob/445c20bfc9d15b40ed65fde07bd0f0198963ff30/packages/dart_smb2/CRISP_PATCHES.md",
+          "url": "https://github.com/CrispStrobe/CrispCloud/blob/13ca681f0c706cf24e65c7906f8a98e20421c590/packages/dart_smb2/CRISP_PATCHES.md",
           "note": "Pinned r10 recipe plus install-name padding. No OpenSSL. Source and recipe hashes are recorded in native_build_inputs; final compiled and signed Apple artifact hashes remain required."
         }
       ],
@@ -607,11 +607,11 @@
       "review_status": "needs_review",
       "source": {
         "repository": "https://github.com/CrispStrobe/CrispCloud",
-        "revision": "445c20bfc9d15b40ed65fde07bd0f0198963ff30"
+        "revision": "13ca681f0c706cf24e65c7906f8a98e20421c590"
       },
       "evidence": [
         {
-          "url": "https://github.com/CrispStrobe/CrispCloud/blob/445c20bfc9d15b40ed65fde07bd0f0198963ff30/packages/crisp_storage/licensing/rust_dependencies.json",
+          "url": "https://github.com/CrispStrobe/CrispCloud/blob/13ca681f0c706cf24e65c7906f8a98e20421c590/packages/crisp_storage/licensing/rust_dependencies.json",
           "note": "Exact all-target Cargo source grants and file hashes; 143 packages. This is not packaged-artifact approval."
         }
       ],

@@ -229,8 +229,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/crisp_storage"
-      ref: "445c20bfc9d15b40ed65fde07bd0f0198963ff30"
-      resolved-ref: "445c20bfc9d15b40ed65fde07bd0f0198963ff30"
+      ref: "13ca681f0c706cf24e65c7906f8a98e20421c590"
+      resolved-ref: "13ca681f0c706cf24e65c7906f8a98e20421c590"
       url: "https://github.com/CrispStrobe/CrispCloud"
     source: git
     version: "0.1.0"
@@ -278,8 +278,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/dart_smb2"
-      ref: "445c20bfc9d15b40ed65fde07bd0f0198963ff30"
-      resolved-ref: "445c20bfc9d15b40ed65fde07bd0f0198963ff30"
+      ref: "13ca681f0c706cf24e65c7906f8a98e20421c590"
+      resolved-ref: "13ca681f0c706cf24e65c7906f8a98e20421c590"
       url: "https://github.com/CrispStrobe/CrispCloud"
     source: git
     version: "0.2.5+crisp.1"

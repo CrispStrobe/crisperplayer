@@ -6,7 +6,7 @@ to their connection dialogs or CLI commands.
 
 The complete cross-app contract, fallback table, licensing inventory boundaries
 and migration/test sequence are recorded in
-[CrispCloud's shared design](https://github.com/CrispStrobe/CrispCloud/blob/6c4fbabe712c99ce0cb75a9fdabefa5e11f8ac1d/docs/STORAGE_ENGINE_ARCHITECTURE.md).
+[CrispCloud's shared design](https://github.com/CrispStrobe/CrispCloud/blob/95f4574e58cd69881532603eb48689d43dfe8ead/docs/STORAGE_ENGINE_ARCHITECTURE.md).
 That link pins the design revision, independently of the runtime dependency.
 
 ## Current Dart and Rust responsibilities
@@ -73,6 +73,16 @@ accepted by today's provider settings. When implemented, both GUI and desktop
 CLI must update the same saved connection through `RemoteLibraryService`, omit
 credentials from responses and reject invalid or busy changes.
 
+Both Dart and Rust remain supported choices. Keep one default per provider and
+an optional per-account override: **App default**, **Dart**, **Rust**, or **Auto**.
+An absent override inherits the provider default, initially Dart. After platform
+qualification, changing a provider default to Auto makes Rust preferred with
+Dart fallback before authentication/work. Explicit account selections remain
+unchanged. The default switch affects future sessions/jobs, not active transfers;
+paused jobs must validate or restart incompatible checkpoints. Both GUI and CLI
+must report the configured policy and effective engine. Removing an engine would
+be a separate decision, not the assumed completion of the Rust migration.
+
 Fallback may select an engine only before work starts, when Auto explicitly
 permits the alternative and the same security/capability requirements hold.
 Wrong credentials, revoked sessions, failed token renewal, corrupt data and
@@ -136,7 +146,7 @@ license and ownership policy; third-party grants remain component-specific.
 - Test both cross-engine transfer directions, supported crypto versions, damaged
   data, changed sources, large files, bounded memory and disk/write failures.
 - Cover 2FA, renewal/revocation, account changes, legacy settings, native-library
-  absence, strict versus Auto behavior and incompatible sessions/checkpoints.
+  absence, default flips preserving explicit overrides/active jobs, strict versus Auto behavior and incompatible sessions/checkpoints.
 - Exercise GUI and the authenticated CLI against the same service, including
   persistence, secret-free output and active/queued-job setting guards.
 - Verify Linux/macOS/Windows and supported Android/iOS ABIs/devices, native

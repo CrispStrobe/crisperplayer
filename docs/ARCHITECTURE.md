@@ -2,6 +2,19 @@
 
 Flutter renders the UI; Riverpod owns service lifetimes and exposes Drift queries and observable settings. Drift is the local source of truth. Remote adapters authenticate to Plex, Filen, Internxt, Nextcloud, WebDAV, SFTP and SMB for offline imports. Optional Plex progress and encrypted folder progress use dedicated services; see [Cloud sync](CLOUD_SYNC.md).
 
+## Storage engine boundary
+
+Remote imports, credentials, queues and playback coordination remain in Dart.
+The shared SMB facade defaults to C libsmb2 through a Dart wrapper, with an
+optional Rust engine. Filen/Internxt currently use Dart clients; reusing Sorter's
+Rust provider libraries through a shared bridge is proposed work. The desktop
+CLI controls the same running service and saved connections as the GUI.
+
+[STORAGE_ENGINE_ARCHITECTURE.md](STORAGE_ENGINE_ARCHITECTURE.md) records current
+source pins, the target split, per-account fallback/resume rules, session-renewal
+compatibility, browser limits, licenses and tests required before changing
+defaults. No Filen/Internxt Rust selector is implemented by that design document.
+
 ## Playback
 
 `PlaybackService` serializes UI, lifecycle and native media commands. Its `AudioBackend` boundary has a just_audio implementation and a deterministic test implementation. A single native `AudioPlayer` is shared with `CrisperAudioHandler`, which publishes media metadata and delegates controls to the coordinator.

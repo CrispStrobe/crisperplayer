@@ -26,3 +26,8 @@ and the SMB source/license evidence.
 Real SMB3 encryption interoperability, physical devices, signed release artifacts
 and measured throughput/battery behavior remain qualification gates. Passing the
 local SMB2 fixture does not justify changing the default engine.
+
+The wider Dart/Rust responsibilities, proposed Filen/Internxt reuse, fallback
+policy, platform boundaries and license differences are documented in
+[STORAGE_ENGINE_ARCHITECTURE.md](STORAGE_ENGINE_ARCHITECTURE.md). Those provider
+adapters remain planned; the existing SMB selector is already implemented.

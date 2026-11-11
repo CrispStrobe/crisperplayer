@@ -1,9 +1,14 @@
 # Shared Rust SMB prototype
 
-CrisperPlayer pins CrispCloud `4b44dc4d44ef05a18d2da2579d2e3b866b245643`.
+CrisperPlayer pins CrispCloud `13ca681f0c706cf24e65c7906f8a98e20421c590`.
 This includes the independent Rust SMB engine and generated Dart adapter behind
 `SmbSession`. Existing calls and credentials remain compatible. libsmb2 remains
 the default; no Rust library is bundled by this change.
+
+This guide covers the implemented SMB modes. The current Dart/Rust split and
+proposed Filen/Internxt bridge, engine choices, session compatibility and
+qualification sequence are in
+[STORAGE_ENGINE_ARCHITECTURE.md](STORAGE_ENGINE_ARCHITECTURE.md).
 
 For host qualification, run `dart run crisp_storage:build_smb` after package
 resolution. It prints the local dynamic library path. Pass both
@@ -38,15 +43,18 @@ local verification here used the independent Dart package and license-gate tests
 The pinned shared source contains `docs/SMB_RUST_ROLLOUT.md`, native qualification
 CI, and exact license evidence for all 143 Cargo packages resolved by the bridge.
 
-## Validation recorded for this checkpoint
+## Validation checkpoint — 11 November 2026
 
-- Shared package: 19 Dart tests passed, including both libsmb2 and Rust loopback
-  transfers; Rust core unit tests and native bridge build passed.
-- Player's two adapter-contract assertions passed with the standalone Dart test
-  runner. This is not a full Flutter test run.
-- All 37 distribution-license checker unit tests passed.
-- Full app package resolution, Flutter tests and final native artifacts remain
-  CI/device qualification gates; no release or merge is implied.
+[The Player workflow at `fcbee1f`](https://github.com/CrispStrobe/crisperplayer/actions/runs/43013225459)
+passed the shared SMB contract, authenticated CLI/settings and GUI selector
+regressions, progress/remote-library tests, lockfile consistency, the 37
+license-checker unit tests and SMB source/native-recipe evidence checks.
+
+Shared native host/Apple and GUI/CLI validation is recorded in CrispCloud's
+rollout guide. Existing SMB tests do not qualify the proposed Filen/Internxt
+bridge. Real encrypted SMB3/NAS behavior, signed application artifacts and
+physical-device checks remain qualification gates; no merge or release is
+implied by these CI results.
 
 ## Selecting the path in the GUI and CLI
 
@@ -85,9 +93,9 @@ workflow, alongside existing browse/download CLI and progress regression tests.
 
 The settings screen labels legacy profiles as `build default`, because their
 transport can be set by `CRISP_SMB_BACKEND`. An explicit saved choice always wins.
-The shared macOS Dart test job currently exposes an upstream prebuilt libsmb2
-install-name/header-padding failure. Keep macOS native-asset packaging as a
-blocking rollout check; passing Linux fixture tests does not clear that gate.
+The earlier shared macOS install-name/header-padding failure is addressed by
+the pinned source recipe below; subsequent macOS and iOS CI checks passed.
+Final app bundling/signing and physical-device checks remain separate gates.
 
 ## Fallback packaging and verification
 

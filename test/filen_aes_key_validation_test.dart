@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:filen_client/aes_gcm_backend.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('every Filen backend rejects non-AES-256 keys', () async {

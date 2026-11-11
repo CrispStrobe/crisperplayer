@@ -46,7 +46,7 @@ jobs:
         env:
           CRISPER_SFTP_PYTHON: ${{ runner.temp }}/checks/bin/python
           CRISPER_SMB_PYTHON: ${{ runner.temp }}/checks/bin/python
-        run: flutter test --no-pub
+        run: flutter test --no-pub test packages/just_audio_media_kit/test
       - name: Browser player tests
         run: |
           npm ci

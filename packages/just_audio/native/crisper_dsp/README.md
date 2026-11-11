@@ -103,6 +103,9 @@ Its delivered/output-device position maps back to original source time.
 `CrisperDspStream` supplies the shared bridge for all four engines. CocoaPods
 compiles thin translation units that include these exact source files. SwiftPM
 uses the local [CrisperDsp package](Package.swift) with an explicit source list.
+The SwiftPM target requires Swift 6.2, available in the app's Xcode 26 toolchain.
+It retains the same optimization and signed-integer wrapping settings as the
+other build routes; Bungee's phase arithmetic relies on that wrapping behavior.
 There is no second vendored copy of the DSP closure. The ordinary AVPlayer Time
 Domain and Spectral paths remain available for the platform default and URLs
 outside the optional local-file backend's scope.

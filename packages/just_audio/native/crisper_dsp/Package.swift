@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 // SPDX-License-Identifier: MIT
 import PackageDescription
 
@@ -23,7 +23,10 @@ let package = Package(
                 "vendor/bungee/src/Window.cpp", "vendor/bungee/src/version.cpp"
             ],
             publicHeadersPath: "include",
-            cSettings: [.headerSearchPath("vendor/pffft"), .headerSearchPath("vendor/sonic")],
+            cSettings: [
+                .headerSearchPath("vendor/pffft"), .headerSearchPath("vendor/sonic"),
+                .unsafeFlags(["-O2"])
+            ],
             cxxSettings: [
                 .headerSearchPath("."), .headerSearchPath("vendor"),
                 .headerSearchPath("vendor/bungee"), .headerSearchPath("vendor/eigen"),
@@ -32,7 +35,12 @@ let package = Package(
                 .define("EIGEN_MPL2_ONLY", to: "1"), .define("EIGEN_DONT_PARALLELIZE", to: "1"),
                 .define("BUNGEE_SELF_TEST", to: "0"), .define("BUNGEE_VISIBILITY", to: ""),
                 .define("BUNGEE_VERSION", to: "\"61f52bf34be577d189d388772ddfa3696dee77d8\""),
-                .define("eigen_assert", to: "BUNGEE_ASSERT1")
+                .define("eigen_assert", to: "BUNGEE_ASSERT1"),
+                // Bungee's Phase.h requires wrapping signed arithmetic. Keep
+                // real-time DSP optimized in Debug, as in CocoaPods/CMake.
+                // SwiftPM 6.2 permits these flags in dependency products; the
+                // app already requires the corresponding Xcode 26 toolchain.
+                .unsafeFlags(["-fwrapv", "-O2"])
             ],
             linkerSettings: [.linkedLibrary("c++")]
         )

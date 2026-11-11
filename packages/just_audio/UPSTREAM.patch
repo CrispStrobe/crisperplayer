@@ -2497,8 +2497,8 @@
 +retain BSD-3-Clause instead; see wsola/LICENSE and wsola/UPSTREAM.md.
 --- /dev/null
 +++ b/native/crisper_dsp/Package.swift
-@@ -0,0 +1,41 @@
-+// swift-tools-version: 5.9
+@@ -0,0 +1,49 @@
++// swift-tools-version: 6.2
 +// SPDX-License-Identifier: MIT
 +import PackageDescription
 +
@@ -2523,7 +2523,10 @@
 +                "vendor/bungee/src/Window.cpp", "vendor/bungee/src/version.cpp"
 +            ],
 +            publicHeadersPath: "include",
-+            cSettings: [.headerSearchPath("vendor/pffft"), .headerSearchPath("vendor/sonic")],
++            cSettings: [
++                .headerSearchPath("vendor/pffft"), .headerSearchPath("vendor/sonic"),
++                .unsafeFlags(["-O2"])
++            ],
 +            cxxSettings: [
 +                .headerSearchPath("."), .headerSearchPath("vendor"),
 +                .headerSearchPath("vendor/bungee"), .headerSearchPath("vendor/eigen"),
@@ -2532,7 +2535,12 @@
 +                .define("EIGEN_MPL2_ONLY", to: "1"), .define("EIGEN_DONT_PARALLELIZE", to: "1"),
 +                .define("BUNGEE_SELF_TEST", to: "0"), .define("BUNGEE_VISIBILITY", to: ""),
 +                .define("BUNGEE_VERSION", to: "\"61f52bf34be577d189d388772ddfa3696dee77d8\""),
-+                .define("eigen_assert", to: "BUNGEE_ASSERT1")
++                .define("eigen_assert", to: "BUNGEE_ASSERT1"),
++                // Bungee's Phase.h requires wrapping signed arithmetic. Keep
++                // real-time DSP optimized in Debug, as in CocoaPods/CMake.
++                // SwiftPM 6.2 permits these flags in dependency products; the
++                // app already requires the corresponding Xcode 26 toolchain.
++                .unsafeFlags(["-fwrapv", "-O2"])
 +            ],
 +            linkerSettings: [.linkedLibrary("c++")]
 +        )
@@ -2541,7 +2549,7 @@
 +)
 --- /dev/null
 +++ b/native/crisper_dsp/README.md
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,221 @@
 +# CrisperPlayer native time-stretch adapter
 +
 +This streaming PCM core supplies optional processors for Android, Apple
@@ -2647,6 +2655,9 @@
 +`CrisperDspStream` supplies the shared bridge for all four engines. CocoaPods
 +compiles thin translation units that include these exact source files. SwiftPM
 +uses the local [CrisperDsp package](Package.swift) with an explicit source list.
++The SwiftPM target requires Swift 6.2, available in the app's Xcode 26 toolchain.
++It retains the same optimization and signed-integer wrapping settings as the
++other build routes; Bungee's phase arithmetic relies on that wrapping behavior.
 +There is no second vendored copy of the DSP closure. The ordinary AVPlayer Time
 +Domain and Spectral paths remain available for the platform default and URLs
 +outside the optional local-file backend's scope.

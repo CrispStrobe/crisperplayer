@@ -205,7 +205,10 @@ PCM output. It checks 0.5×, 1×, 1.5×, 2× and 3× for both automatic pitch
 correction and legacy scaletempo. With `--require-portable`, it also requires
 Sonic, Chromium WSOLA, Signalsmith Stretch, Bungee Basic and FFmpeg Atempo,
 for 35 native output checks. It verifies output duration and approximate
-pitch and records the native version/configuration and binary hash.
+pitch and records the native version/configuration and binary hash. Each optional
+choice must appear in the loaded filter inventory and survive configuration
+readback. Native error logs, including a failed filter being disabled, fail the
+check even if fallback processing would produce plausible output.
 The legacy path matches media_kit 1.2.6: pitch correction is off, mpv speed stays
 at the app's 1.0 pitch value, and `scaletempo:scale=<rate>` applies the tempo.
 
@@ -219,9 +222,8 @@ LD_LIBRARY_PATH=/absolute/path/audio-build/prefix/lib \
 
 Both source builders invoke this test after compiling, and the desktop audio
 workflow runs them on Linux and Windows. Check the workflow artifacts for the
-result of the actual branch being reviewed. The full native build requires its
-provisioned runner; the host workspace does not contain those development
-dependencies.
+result of the actual branch being reviewed. A full native build requires the
+development dependencies listed above.
 This test does not measure narration intelligibility, transient fidelity,
 music quality, battery use, gapless transitions or interruption behavior. Those
 need representative content and real target-device validation.

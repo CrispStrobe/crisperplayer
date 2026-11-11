@@ -1,9 +1,12 @@
+import ctypes
 import io
 from pathlib import Path
 import sys
 import tarfile
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from scripts import smoke_desktop_audio
 
@@ -73,10 +76,41 @@ class LinuxAudioCandidateTest(unittest.TestCase):
             options = smoke_desktop_audio.render_options(Path('/output/tone.wav'), 2.5, engine)
             self.assertEqual(options['speed'], '2.5')
             self.assertEqual(options['audio-pitch-correction'], 'yes')
-            self.assertEqual(options['af'], f'crisperdsp=engine={engine}')
+            self.assertEqual(options['af'], f'@crisper_speed:crisperdsp=engine={engine}')
         atempo = smoke_desktop_audio.render_options(Path('/output/tone.wav'), 1.75, 'atempo')
         self.assertEqual(atempo['speed'], '1.75')
-        self.assertEqual(atempo['af'], 'lavfi-tempo=filter=atempo')
+        self.assertEqual(atempo['af'], '@crisper_speed:lavfi-tempo=filter=atempo')
+
+    def test_smoke_rejects_filter_bypass_even_when_fallback_pcm_would_pass(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'fallback.wav'
+            smoke_desktop_audio.fixture(path)
+            # This valid unity-speed output would pass duration/pitch checks.
+            duration, pitch = smoke_desktop_audio.pcm_measurements(path)
+            self.assertEqual(duration, 6)
+            self.assertAlmostEqual(pitch, 440, delta=1)
+            log = smoke_desktop_audio.LogMessage(
+                b'af', b'error', b'Disabling filter crisper_speed because it failed.', 20)
+            event = smoke_desktop_audio.Event(
+                2, 0, 0, ctypes.cast(ctypes.pointer(log), ctypes.c_void_p))
+            closed = []
+            fake = SimpleNamespace(
+                handle=1,
+                lib=SimpleNamespace(
+                    mpv_initialize=lambda _: 0,
+                    mpv_request_log_messages=lambda *_: 0,
+                    mpv_command=lambda *_: 0,
+                    mpv_wait_event=lambda *_: ctypes.pointer(event)),
+                option=lambda *_: None,
+                property=lambda name: {
+                    'option-info/af/choices': 'lavfi-tempo,atempo',
+                    'af': '@crisper_speed:lavfi-tempo=filter=atempo',
+                }.get(name),
+                close=lambda: closed.append(True))
+            with patch.object(smoke_desktop_audio, 'NativePlayer', return_value=fake):
+                with self.assertRaisesRegex(RuntimeError, 'Disabling filter'):
+                    smoke_desktop_audio.render(Path('/unused'), path, path, 1, 'atempo')
+            self.assertEqual(closed, [True])
 
     def test_windows_recipe_builds_its_own_lgpl_ffmpeg_and_uses_wasapi(self):
         commands = build.build_commands({name: Path('/source') / name for name in ('ffmpeg', 'mpv', 'libass', 'libplacebo')}, Path('/output'), 2, 'windows')

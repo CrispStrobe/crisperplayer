@@ -100,6 +100,10 @@ upstream notices and gives the corresponding-source URL. Host signal and
 Media3/JNI results are retained in
 [native_dsp_host_2026-11-10.json](evidence/native_dsp_host_2026-11-10.json),
 which explicitly does not approve a release artifact.
+The [portable source review](evidence/portable_sources_2026-11-11.json) verifies
+the unchanged seven-component/258-file closure, notice preservation and the
+41 distribution-policy regression tests. It records source evidence only,
+without promoting Apple, Android or desktop artifacts to approved status.
 
 The pinned NDK `28.2.13676358` and its `libc++_shared.so` are a separate native
 component. The [official NDK documentation](https://developer.android.com/ndk/guides/cpp-support)

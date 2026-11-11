@@ -31,6 +31,11 @@ class EndFile(ctypes.Structure):
     _fields_ = [("reason", ctypes.c_int), ("error", ctypes.c_int)]
 
 
+class LogMessage(ctypes.Structure):
+    _fields_ = [("prefix", ctypes.c_char_p), ("level", ctypes.c_char_p),
+                ("text", ctypes.c_char_p), ("log_level", ctypes.c_int)]
+
+
 class NativePlayer:
     def __init__(self, library: Path):
         self._dll_directories = []
@@ -41,6 +46,7 @@ class NativePlayer:
         self.lib = ctypes.CDLL(str(library.resolve()))
         self.lib.mpv_create.restype = ctypes.c_void_p
         self.lib.mpv_initialize.argtypes = [ctypes.c_void_p]
+        self.lib.mpv_request_log_messages.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
         self.lib.mpv_set_option_string.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p]
         self.lib.mpv_get_property_string.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
         self.lib.mpv_get_property_string.restype = ctypes.c_void_p
@@ -142,10 +148,38 @@ def render_options(output: Path, rate: float, mode: str) -> dict[str, str]:
         # app's pitch fixed at 1.0: tempo is the filter scale; mpv speed is pitch.
         options["af"] = f"scaletempo:scale={rate:.8f}"
     elif mode in portable:
-        options['af'] = f'crisperdsp=engine={mode}'
+        options['af'] = f'@crisper_speed:crisperdsp=engine={mode}'
     elif mode == 'atempo':
-        options['af'] = 'lavfi-tempo=filter=atempo'
+        options['af'] = '@crisper_speed:lavfi-tempo=filter=atempo'
     return options
+
+
+def check_processor(player: NativePlayer, mode: str) -> str | None:
+    """Reject a missing optional engine before a fallback can pass tone checks."""
+    if mode in ('automatic', 'legacy_scaletempo'):
+        return player.property('af')
+    inventory = {name.strip() for name in (player.property('option-info/af/choices') or '').split(',')}
+    required = {'lavfi-tempo', 'atempo'} if mode == 'atempo' else {'crisperdsp'}
+    if not required.issubset(inventory):
+        raise RuntimeError(f'{mode}: the loaded libmpv lacks required filters: {sorted(required - inventory)}')
+    installed = player.property('af') or ''
+    tokens = ('crisper_speed', 'lavfi-tempo', 'filter', 'atempo') if mode == 'atempo' else ('crisper_speed', 'crisperdsp', 'engine', mode)
+    if not all(token in installed for token in tokens):
+        raise RuntimeError(f'{mode}: libmpv did not retain the selected filter: {installed!r}')
+    return installed
+
+
+def check_native_log(event: Event) -> None:
+    if event.event_id != 2:  # MPV_EVENT_LOG_MESSAGE
+        return
+    log = ctypes.cast(event.data, ctypes.POINTER(LogMessage)).contents
+    prefix = (log.prefix or b'').decode('utf-8', errors='replace')
+    level = (log.level or b'').decode('utf-8', errors='replace')
+    message = (log.text or b'').decode('utf-8', errors='replace').strip()
+    # mpv can disable a failed filter and continue with its default processor.
+    # Matching output duration/pitch alone would incorrectly certify that run.
+    if level in ('error', 'fatal') or 'disabling filter' in message.lower():
+        raise RuntimeError(f'Native playback logged {level} from {prefix}: {message}')
 
 
 def render(library: Path, source: Path, output: Path, rate: float, mode: str) -> dict:
@@ -155,8 +189,11 @@ def render(library: Path, source: Path, output: Path, rate: float, mode: str) ->
             player.option(name, value)
         if player.lib.mpv_initialize(player.handle) < 0:
             raise RuntimeError("mpv_initialize failed")
+        if player.lib.mpv_request_log_messages(player.handle, b'error') < 0:
+            raise RuntimeError('Could not observe native filter failures')
         version = player.property("mpv-version")
         configuration = player.property("mpv-configuration")
+        installed = check_processor(player, mode)
         command = (ctypes.c_char_p * 4)(b"loadfile", str(source).encode(), b"replace", None)
         result = player.lib.mpv_command(player.handle, command)
         if result < 0:
@@ -164,10 +201,18 @@ def render(library: Path, source: Path, output: Path, rate: float, mode: str) ->
         deadline = time.monotonic() + 25
         while time.monotonic() < deadline:
             event = player.lib.mpv_wait_event(player.handle, .1).contents
+            check_native_log(event)
             if event.event_id == 7:  # MPV_EVENT_END_FILE
                 end = ctypes.cast(event.data, ctypes.POINTER(EndFile)).contents
                 if end.error < 0 or end.reason != 0:
                     raise RuntimeError(f"Native EOF failed: reason={end.reason}, error={end.error}")
+                # Consume already queued logs before accepting normal EOF.
+                while True:
+                    pending = player.lib.mpv_wait_event(player.handle, 0).contents
+                    if pending.event_id == 0:
+                        break
+                    check_native_log(pending)
+                check_processor(player, mode)
                 break
         else:
             raise TimeoutError("Native PCM rendering did not reach EOF")
@@ -178,7 +223,7 @@ def render(library: Path, source: Path, output: Path, rate: float, mode: str) ->
         raise AssertionError(f"{mode} {rate}x: {duration:.3f}s output, expected {6 / rate:.3f}s")
     if abs(frequency - 440) > 12:
         raise AssertionError(f"{mode} {rate}x: pitch {frequency:.2f}Hz, expected about 440Hz")
-    return {"mode": mode, "speed": rate, "output_seconds": duration, "frequency_hz": frequency, "mpv_version": version, "mpv_configuration": configuration}
+    return {"mode": mode, "speed": rate, "output_seconds": duration, "frequency_hz": frequency, "mpv_version": version, "mpv_configuration": configuration, "installed_filter": installed, "native_error_log_check": "passed"}
 
 
 def main() -> int:

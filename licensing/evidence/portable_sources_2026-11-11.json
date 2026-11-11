@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-11-11",
+  "scope": "Source and license evidence for the shared native processor closure; no target binary or distribution approval.",
+  "release_approved": false,
+  "component": "portable-native-speed-processors",
+  "platforms": [
+    "android",
+    "ios",
+    "macos",
+    "linux",
+    "windows"
+  ],
+  "source_manifest": {
+    "path": "packages/just_audio/native/crisper_dsp/vendor/manifest.json",
+    "sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
+    "verified": true
+  },
+  "upstream_component_count": 7,
+  "upstream_original_file_count": 258,
+  "upstream_sources_modified": false,
+  "reviewed_license_references": [
+    "LicenseRef-PFFFT-FFTPACK"
+  ],
+  "checks": [
+    {
+      "check": "Exact native manifest and local license reference",
+      "method": "scripts.check_distribution_licenses.native_license_refs and audit_native_source_manifest",
+      "result": "passed",
+      "findings": []
+    },
+    {
+      "check": "Distribution policy regression suite",
+      "command": "python3 -m unittest scripts.tests.test_distribution_licenses",
+      "result": "passed",
+      "test_count": 41,
+      "coverage": "Includes exact PFFFT grant on every native platform, missing platform coverage and per-target artifact hashes for a shared vendored source manifest."
+    },
+    {
+      "check": "Bundled third-party notice preservation",
+      "result": "passed",
+      "method": "Byte comparison of the original sonic/LICENSE section through the final original notice against the baseline asset; added platform introduction and independent adapter MIT notice leave original texts unchanged.",
+      "baseline_revision": "b84254b5c996b016642ba6bbae82a4e4aaae72bc"
+    },
+    {
+      "check": "Vendored just_audio provenance",
+      "result": "passed",
+      "package": "just_audio",
+      "upstream_version": "0.10.6",
+      "local_version": "0.10.6+crisper.4",
+      "archive_sha256": "e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6",
+      "license_expression": "MIT",
+      "original_file_count": 38,
+      "patched_original_file_count": 12,
+      "local_addition_count": 69,
+      "method": "Reverse-applied the final complete UPSTREAM.patch to the current selected originals and inventoried additions, then verified every one of the 38 recorded original-file hashes. The independently checked seven-component native vendor manifest and its original grants remain separate."
+    },
+    {
+      "check": "Vendored desktop adapter provenance",
+      "result": "passed",
+      "package": "just_audio_media_kit",
+      "upstream_version": "2.1.0",
+      "local_version": "2.1.0+crisper.1",
+      "archive_url": "https://pub.dev/api/archives/just_audio_media_kit-2.1.0.tar.gz",
+      "archive_sha256": "f3cf04c3a50339709e87e90b4e841eef4364ab4be2bdbac0c54cc48679f84d23",
+      "license_expression": "Unlicense",
+      "original_file_count": 8,
+      "local_addition_count": 3,
+      "method": "Compared all retained original-file hashes against the unpacked pinned pub.dev archive, then reverse-applied the recorded patch to the current package and verified all eight original hashes. Checked exact selected closure including three additions and three provenance documents. The unchanged upstream Unlicense notice remains separate from native libmpv/FFmpeg licenses."
+    }
+  ],
+  "distribution_limits": [
+    "This is not an Android ABI/APK, Apple device/simulator application, Linux ELF or Windows DLL artifact audit.",
+    "Source review does not establish target decoder/output behavior, source-clock accuracy in a platform audio device, interruption handling, perceptual quality or CPU/battery use.",
+    "Controlled mpv/FFmpeg source recipes and runtime capability checks do not approve a system libmpv or replace the separately inventoried historical Windows DLL.",
+    "The complete resolved Dart/SDK inventory and target-specific native evidence remain subject to the existing distribution checker and release gates."
+  ]
+}

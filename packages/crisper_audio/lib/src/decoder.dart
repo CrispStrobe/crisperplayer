@@ -11,6 +11,7 @@ import 'mp4_aac.dart';
 
 part 'decoder_raw.dart';
 part 'decoder_wav.dart';
+part 'decoder_flac.dart';
 
 /// A seekable, bounded-memory decoder for local audio files.
 ///
@@ -36,6 +37,9 @@ abstract class PcmDecoder {
       final header = reader.bytes(0, 12);
       if (_matches(header, 0, 'RIFF') && _matches(header, 8, 'WAVE')) {
         return _WavDecoder.open(reader);
+      }
+      if (_matches(header, 0, 'fLaC')) {
+        return _FlacDecoder.open(reader, library);
       }
       _EncodedSource source;
       // ISO-BMFF files may begin with a small free/wide box before ftyp/moov.

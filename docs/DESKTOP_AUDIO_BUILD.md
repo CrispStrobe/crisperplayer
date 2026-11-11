@@ -44,7 +44,8 @@ cmake --build build/crisper_audio --config Release --parallel 2
 ctest --test-dir build/crisper_audio -C Release --output-on-failure
 
 # Linux. Use the corresponding .dylib or Release/crisper_audio.dll on other hosts.
-CRISPER_AUDIO_LIBRARY_PATH="$PWD/build/crisper_audio/libcrisper_audio.so" \
+CRISPER_REQUIRE_NATIVE_AUDIO=1 \
+  CRISPER_AUDIO_LIBRARY_PATH="$PWD/build/crisper_audio/libcrisper_audio.so" \
   flutter test packages/crisper_audio/test
 
 python scripts/audit_native_audio.py \
@@ -63,13 +64,13 @@ end-of-file drain, cancellation, multi-track transitions and exact source-frame
 accounting through every engine. A native null-device test also runs an actual
 callback thread. Neither substitutes for real output-device qualification.
 
-MP3/AAC regression fixtures are synthetic and have recorded generation commands
+MP3/AAC/FLAC regression fixtures are synthetic and have recorded generation commands
 and hashes. FFmpeg may be used to generate/reference test media; it is not a
 runtime dependency or shipped codec in this path.
 
 ## Playback and migration limits
 
-The initial direct decoder covers WAV, MP3, AAC-LC ADTS and AAC-LC M4A/M4B/MP4;
+The direct decoder covers WAV, MP3, AAC-LC ADTS, AAC-LC M4A/M4B/MP4 and native FLAC;
 see [portable coverage](PORTABLE_AUDIO_PROCESSORS.md) and the package README for
 updated codec scope. It does not claim arbitrary FFmpeg codec support.
 Unsupported profiles/containers produce an explicit error. Existing desktop

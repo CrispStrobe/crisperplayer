@@ -81,6 +81,79 @@ Uint8List waveBytes(
   return bytes;
 }
 
+int flacCrc(List<int> bytes, int width, int polynomial) {
+  var crc = 0;
+  final mask = (1 << width) - 1;
+  for (final byte in bytes) {
+    crc ^= byte << (width - 8);
+    for (var bit = 0; bit < 8; bit++) {
+      crc =
+          ((crc << 1) ^ ((crc & (1 << (width - 1))) != 0 ? polynomial : 0)) &
+          mask;
+    }
+  }
+  return crc;
+}
+
+List<int> flacNumber(int number) {
+  if (number < 128) return [number];
+  var extra = 1;
+  while (number >= (1 << (5 * extra + 6))) {
+    extra++;
+  }
+  return [
+    ((0xff << (7 - extra)) & 0xff) | (number >> (6 * extra)),
+    for (var i = extra - 1; i >= 0; i--) 0x80 | ((number >> (6 * i)) & 63),
+  ];
+}
+
+int flacRamp(int frame, int channel) =>
+    (frame * 13 + channel * 997) % 32768 - 16384;
+
+/// Independently constructed valid verbatim FLAC, larger than the decoder's
+/// compressed window. Variable blocking carries PCM sample numbers in headers.
+void writeLargeFlac(File file) {
+  const block = 65535;
+  const count = 9;
+  final metadata = Uint8List(42);
+  metadata.setAll(0, [102, 76, 97, 67, 0x80, 0, 0, 34]);
+  final m = ByteData.sublistView(metadata);
+  m.setUint16(8, block);
+  m.setUint16(10, block);
+  m.setUint64(18, (44100 << 44) | (1 << 41) | (15 << 36) | (block * count));
+  final out = file.openSync(mode: FileMode.write);
+  try {
+    out.writeFromSync(metadata);
+    for (var frame = 0; frame < count; frame++) {
+      final header = <int>[
+        0xff,
+        0xf9,
+        0x70,
+        0x18,
+        ...flacNumber(frame * block),
+        0xff,
+        0xfe,
+      ];
+      header.add(flacCrc(header, 8, 7));
+      final bytes = Uint8List(header.length + 2 * (1 + block * 2) + 2);
+      bytes.setAll(0, header);
+      final b = ByteData.sublistView(bytes);
+      var at = header.length;
+      for (var ch = 0; ch < 2; ch++) {
+        bytes[at++] = 2; // Verbatim, no wasted bits.
+        for (var i = 0; i < block; i++) {
+          b.setInt16(at, flacRamp(frame * block + i, ch));
+          at += 2;
+        }
+      }
+      b.setUint16(at, flacCrc(Uint8List.sublistView(bytes, 0, at), 16, 0x8005));
+      out.writeFromSync(bytes);
+    }
+  } finally {
+    out.closeSync();
+  }
+}
+
 void main() {
   final libraryPath = Platform.environment['CRISPER_AUDIO_LIBRARY_PATH'];
   if (Platform.environment['CRISPER_REQUIRE_NATIVE_AUDIO'] == '1' &&
@@ -251,6 +324,8 @@ void main() {
     ('mono_mpeg25.mp3', 'mp3', 11025, 1),
     ('stereo_lc.aac', 'aac-adts', 44100, 2),
     ('stereo_lc.m4b', 'aac-mp4', 44100, 2),
+    ('stereo_pcm16.flac', 'flac', 44100, 2),
+    ('stereo_pcm24.flac', 'flac', 44100, 2),
   ];
   for (final c in cases) {
     test(
@@ -322,6 +397,143 @@ void main() {
       skip: skipNative,
     );
   }
+
+  for (final bits in [16, 24]) {
+    test('FLAC $bits-bit PCM matches every original sample exactly', () {
+      final decoder = PcmDecoder.open(
+        fixture('stereo_pcm$bits.flac'),
+        library: DynamicLibrary.open(libraryPath!),
+      );
+      try {
+        var position = 0;
+        while (true) {
+          final n = decoder.readFrames(output, 4096);
+          if (n == 0) break;
+          final samples = output.asTypedList(n * 2);
+          for (var j = 0; j < n; j++) {
+            final i = position + j;
+            var left = (i * 17 % 20000) - 10000;
+            var right = ((i * 31 + 741) % 24000) - 12000;
+            if (bits == 24) {
+              left = left * 127 + i % 127;
+              right = right * 173 - i % 173;
+            }
+            final scale = (1 << (bits - 1)).toDouble();
+            if (samples[j * 2] != left / scale ||
+                samples[j * 2 + 1] != right / scale) {
+              fail('FLAC $bits-bit differs from source at frame $i');
+            }
+          }
+          position += n;
+        }
+        expect(position, 176400);
+      } finally {
+        decoder.dispose();
+      }
+    }, skip: skipNative);
+  }
+
+  test('FLAC CRC corruption and unknown duration fail explicitly', () {
+    final original = File(fixture('stereo_pcm16.flac')).readAsBytesSync();
+    final file = File('${tmp.path}/corrupt.flac')..writeAsBytesSync(original);
+    final changed = Uint8List.fromList(original);
+    changed[changed.length - 1] ^= 0x55;
+    file.writeAsBytesSync(changed);
+    final decoder = PcmDecoder.open(
+      file.path,
+      library: DynamicLibrary.open(libraryPath!),
+    );
+    try {
+      expect(
+        () => decoder.seek(decoder.totalFrames - 1),
+        throwsFormatException,
+      );
+      expect(() => decoder.readFrames(output, 1), throwsStateError);
+    } finally {
+      decoder.dispose();
+    }
+    changed.setAll(0, original);
+    changed[8 + 13] &= 0xf0;
+    changed.fillRange(8 + 14, 8 + 18, 0);
+    file.writeAsBytesSync(changed);
+    expect(
+      () => PcmDecoder.open(
+        file.path,
+        library: DynamicLibrary.open(libraryPath),
+      ),
+      throwsFormatException,
+    );
+  }, skip: skipNative);
+
+  test(
+    'FLAC seek cooperatively cancels between bounded scan blocks',
+    () {
+      var calls = 0;
+      var cancel = false;
+      final cancelled = StateError('cancel FLAC seek');
+      final decoder = PcmDecoder.open(
+        fixture('stereo_pcm16.flac'),
+        library: DynamicLibrary.open(libraryPath!),
+        checkCancelled: () {
+          if (cancel && ++calls >= 5) throw cancelled;
+        },
+      );
+      try {
+        cancel = true;
+        expect(() => decoder.seek(140000), throwsA(same(cancelled)));
+      } finally {
+        decoder.dispose();
+      }
+    },
+    skip: skipNative,
+  );
+
+  test(
+    'Variable-block FLAC crosses the 2 MiB window and seeks without PCM indexing',
+    () {
+      final file = File('${tmp.path}/large.flac');
+      writeLargeFlac(file);
+      expect(file.lengthSync(), greaterThan(2 * 1024 * 1024));
+      final decoder = PcmDecoder.open(
+        file.path,
+        library: DynamicLibrary.open(libraryPath!),
+      );
+      try {
+        var position = 0;
+        while (true) {
+          final n = decoder.readFrames(output, 4096);
+          if (n == 0) break;
+          final samples = output.asTypedList(n * 2);
+          for (var i = 0; i < n; i++) {
+            if (samples[i * 2] != flacRamp(position + i, 0) / 32768 ||
+                samples[i * 2 + 1] != flacRamp(position + i, 1) / 32768) {
+              fail('FLAC window-boundary decode differs at ${position + i}');
+            }
+          }
+          position += n;
+        }
+        expect(position, 65535 * 9);
+        for (final at in [
+          0,
+          1,
+          65534,
+          65535,
+          456789,
+          decoder.totalFrames - 5,
+        ]) {
+          decoder.seek(at);
+          final n = decoder.readFrames(output, 37);
+          for (var i = 0; i < n; i++) {
+            expect(output[i * 2], flacRamp(at + i, 0) / 32768);
+            expect(output[i * 2 + 1], flacRamp(at + i, 1) / 32768);
+          }
+        }
+      } finally {
+        decoder.dispose();
+      }
+    },
+    skip: skipNative,
+  );
 
   test(
     'AAC-LC M4B preserves source timing, tone pitch and reference signal quality',

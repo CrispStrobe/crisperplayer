@@ -6,9 +6,10 @@ The upstream project declares the MIT license retained in `LICENSE`.
 `UPSTREAM.json` records SHA-256 for every original and retained file; the
 reproducible local changes are in `UPSTREAM.patch`.
 
-This subset compiles the MPEG-1/2/2.5 Layer III and AAC-LC decoder classes and
-their required tables. It contains no encoder objects, command line tools,
-WASM, FFmpeg library, resampler, or whole-file decoding helpers. The table
+This subset compiles the MPEG-1/2/2.5 Layer III, AAC-LC and native FLAC frame
+decoders and their required tables. It contains no encoder objects, command
+line tools, WASM, FFmpeg library or resampler. The upstream FLAC whole-file
+convenience function is excluded by `CRISPER_FLAC_FRAME_ONLY`. The table
 generator is retained as provenance evidence and is never run by the build.
 The host uses the separate `../../glint_bridge.cpp` bounded-frame ABI.
 
@@ -25,6 +26,22 @@ this does not claim bit-identical output to another decoder.
 The bridge initializes upstream static Huffman/window tables once before
 concurrent decoder creation, checks frame sizes and finite output, and keeps
 C++ exceptions inside the C ABI. Dart reads one compressed frame at a time.
+
+The FLAC patch exposes its existing independent frame parser and decoder,
+including consumed bytes and absolute sample numbers. It preserves header
+CRC8 and complete-frame CRC16 verification, supports FLAC's 36-bit sample
+number encoding, bounds predictor output and short-frame warmup, and removes
+an upstream 31-bit unary-code restriction that rejected valid Rice residuals.
+Signed wasted-bit restoration uses multiplication rather than shifting negative
+integers. Only the bounded frame functions are built for this application.
+
+The Dart FLAC path reads STREAMINFO, skips pictures/comments without copying,
+and seeks by bounded header search plus CRC-validated frame numbers. It keeps
+at most 2 MiB of compressed read-ahead and one PCM block (at most 65,535 frames).
+It supports native FLAC with a declared sample count, mono/stereo 4–24-bit PCM,
+8–384 kHz and the pinned decoder's supported prediction tools. Unknown-length
+FLAC, 32-bit FLAC, negative LPC quantization shifts and Ogg-FLAC are not
+supported. Neither opening nor seeking requires whole-file decoding.
 
 ## AAC table provenance remains unresolved
 

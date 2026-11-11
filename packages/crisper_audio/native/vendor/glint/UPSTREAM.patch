@@ -137,3 +137,156 @@
      void dequant_band(int ch, int bk, int sf, int i0, int i1);
      void inverse_quant(int ch);
      void deinterleave_short(int ch);
+--- a/src/flac_decoder.cpp
++++ b/src/flac_decoder.cpp
+@@ -48,7 +48,7 @@
+         while (ok_ && bit_ < len_ * 8) {
+             if (read(1)) return z;
+             z++;
+-            if (z > 31) {
++            if (z > (1 << 24)) {
+                 ok_ = false;
+                 return -1;
+             }
+@@ -96,6 +96,8 @@
+         extra = 4; v = b0 & 0x03;
+     } else if ((b0 & 0xFE) == 0xFC) {
+         extra = 5; v = b0 & 0x01;
++    } else if (b0 == 0xFE) {
++        extra = 6; v = 0;  // FLAC permits a 36-bit sample number.
+     } else {
+         return false;
+     }
+@@ -105,6 +107,9 @@
+         if ((b & 0xC0) != 0x80) return false;
+         v = (v << 6) | (b & 0x3F);
+     }
++    const uint64_t minimum[] = {0, 1ULL << 7, 1ULL << 11,
++        1ULL << 16, 1ULL << 21, 1ULL << 26, 1ULL << 31};
++    if (v < minimum[extra] || v >= (1ULL << 36)) return false;
+     out = v;
+     return true;
+ }
+@@ -230,10 +235,14 @@
+         for (int i = 0; i < block_size; i++) out[i] = br.read_signed(bps);
+     } else if (type >= 8 && type <= 12) {
+         int order = type - 8;
++        if (order > block_size) return false;
+         for (int i = 0; i < order; i++) out[i] = br.read_signed(bps);
+         if (!decode_residual(br, order, block_size, out)) return false;
+-        for (int i = order; i < block_size; i++)
++        for (int i = order; i < block_size; i++) {
+             out[i] += fixed_predict(out, i, order);
++            const int64_t limit = int64_t{1} << (bps - 1);
++            if (out[i] < -limit || out[i] >= limit) return false;
++        }
+     } else if (type >= 32 && type <= 63) {
+         int order = type - 31;
+         if (order > block_size) return false;
+@@ -249,13 +258,15 @@
+             int64_t sum = 0;
+             for (int j = 0; j < order; j++) sum += coeff[j] * out[i - j - 1];
+             out[i] += sum >> shift;
++            const int64_t limit = int64_t{1} << (bps - 1);
++            if (out[i] < -limit || out[i] >= limit) return false;
+         }
+     } else {
+         return false;
+     }
+     if (!br.ok()) return false;
+     if (wasted) {
+-        for (auto& v : out) v <<= wasted;
++        for (auto& v : out) v *= int64_t{1} << wasted;
+     }
+     return true;
+ }
+@@ -267,6 +278,7 @@
+     int chan_assign = 0;
+     int bits_per_sample = 0;
+     size_t data_offset = 0;
++    uint64_t first_sample = 0;
+ };
+ 
+ static bool parse_frame_header(const uint8_t* d, size_t n, const StreamInfo& si,
+@@ -288,6 +300,7 @@
+     if (pos >= n) return false;
+     if (crc8(d, pos) != d[pos]) return false;
+     pos++;
++    h.first_sample = (d[1] & 1) ? num : num * (uint64_t)si.max_block_size;
+     h.block_size = block;
+     h.sample_rate = rate;
+     h.chan_assign = ca;
+@@ -397,6 +410,45 @@
+     return si.valid ? 0 : -1;
+ }
+ 
++// Crisper streaming entry points. Frame-local scratch is bounded by the
++// validated STREAMINFO maximum; neither function retains compressed input.
++int frame_info(const uint8_t* data, size_t len, const StreamInfo& si,
++               DecodedFrameInfo& info) {
++    info = {};
++    FrameHeader h;
++    if (!si.valid || si.channels < 1 || si.channels > 2 ||
++        si.bits_per_sample < 4 || si.bits_per_sample > 24 ||
++        si.max_block_size < 16 || si.max_block_size > 65535 ||
++        !parse_frame_header(data, len, si, h) ||
++        h.sample_rate != si.sample_rate || h.channels != si.channels ||
++        h.bits_per_sample != si.bits_per_sample ||
++        h.block_size > si.max_block_size ||
++        h.first_sample >= si.total_samples ||
++        h.first_sample + (uint64_t)h.block_size > si.total_samples)
++        return -1;
++    info.first_sample = h.first_sample;
++    info.samples = h.block_size;
++    return 0;
++}
++
++int decode_one_frame(const uint8_t* data, size_t len, const StreamInfo& si,
++                     float* pcm, size_t pcm_samples, DecodedFrameInfo& info) {
++    if (!pcm || len > 2 * 1024 * 1024 || frame_info(data, len, si, info) < 0 ||
++        pcm_samples < (size_t)info.samples * si.channels) return -1;
++    std::vector<int64_t> frame;
++    FrameHeader h;
++    size_t consumed = 0;
++    if (decode_frame(data, len, si, frame, h, consumed) < 0) return -1;
++    const int64_t limit = int64_t{1} << (si.bits_per_sample - 1);
++    for (size_t i = 0; i < frame.size(); ++i) {
++        if (frame[i] < -limit || frame[i] >= limit) return -1;
++        pcm[i] = static_cast<float>(frame[i] / static_cast<double>(limit));
++    }
++    info.encoded_bytes = consumed;
++    return info.samples;
++}
++
++#ifndef CRISPER_FLAC_FRAME_ONLY
+ int decode(const uint8_t* data, size_t len, std::vector<float>& pcm,
+            int& sample_rate, int& channels) {
+     pcm.clear();
+@@ -448,5 +500,7 @@
+     return pcm.empty() ? -1 : 0;
+ }
+ 
++#endif  // CRISPER_FLAC_FRAME_ONLY
++
+ }  // namespace flac
+ }  // namespace glint
+--- a/src/flac_decoder.hpp
++++ b/src/flac_decoder.hpp
+@@ -29,6 +29,17 @@
+ int decode(const uint8_t* data, size_t len, std::vector<float>& pcm,
+            int& sample_rate, int& channels);
+ 
++// Crisper: independent, bounded frame access for streaming playback.
++struct DecodedFrameInfo {
++    uint64_t first_sample = 0;
++    int samples = 0;
++    size_t encoded_bytes = 0;
++};
++int frame_info(const uint8_t* data, size_t len, const StreamInfo& si,
++               DecodedFrameInfo& info);
++int decode_one_frame(const uint8_t* data, size_t len, const StreamInfo& si,
++                     float* pcm, size_t pcm_samples, DecodedFrameInfo& info);
++
+ // Internals exposed for focused tests.
+ int parse_streaminfo(const uint8_t* data, size_t len, StreamInfo& si);
+ uint8_t crc8(const uint8_t* data, size_t len);

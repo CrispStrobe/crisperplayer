@@ -147,7 +147,7 @@ final class _RawFrameSource implements _EncodedSource {
     if (first == null) {
       throw const FormatException(
         'Direct decoder supports PCM WAV, MP3, '
-        'AAC-LC ADTS, and AAC-LC MP4/M4A/M4B',
+        'AAC-LC ADTS, AAC-LC MP4/M4A/M4B, and native FLAC',
       );
     }
     var trimStart = 0;

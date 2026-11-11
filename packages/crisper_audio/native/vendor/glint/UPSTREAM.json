@@ -44,10 +44,20 @@
       "path": "tools/gen_aac_tables.py",
       "upstream_sha256": "f4d10c4cee3ff01d6e8cc92365e087e8438453511ce02c9db9b78f3a0882d75e",
       "vendored_sha256": "f4d10c4cee3ff01d6e8cc92365e087e8438453511ce02c9db9b78f3a0882d75e"
+    },
+    {
+      "path": "src/flac_decoder.cpp",
+      "upstream_sha256": "f576984802266db7c69de1f92f66c9e35334154d9676f81c4b488d8cdc28d978",
+      "vendored_sha256": "d8bb32ba4c53a6abd1f740ea4fb2bd13ccd4112a99d4899ef1453711cf3d245c"
+    },
+    {
+      "path": "src/flac_decoder.hpp",
+      "upstream_sha256": "a2b94ad4b72d700613ceee2cd559fd7c024be04812bfd7368e48adfbbc270601",
+      "vendored_sha256": "af6ec1da869114aca156539c7792f2de5ca63bcd296314dadf55fdda24ebe359"
     }
   ],
   "patch_file": "UPSTREAM.patch",
-  "patch_sha256": "e58b921025737b8f2d9a120ab465aaf9cc38a5c9ab8420d538fc642cc56efdd7",
-  "source_scope": "MPEG-1/2/2.5 Layer III and AAC-LC decoder implementations and required tables only; no encoders, CLI, WASM, whole-file helpers, resampler, Opus, Vorbis or FLAC.",
+  "patch_sha256": "2c0c902988edb813c51c2fbcd0499be25cb402f4ae89a6c82b2ff14a559ec3ac",
+  "source_scope": "MPEG-1/2/2.5 Layer III, AAC-LC, and bounded native FLAC frame decoders plus required tables; no encoders, CLI, WASM, resampler, Opus, or Vorbis. The upstream FLAC whole-file helper is excluded with CRISPER_FLAC_FRAME_ONLY.",
   "provenance_caveat": "aac_tables.hpp describes values extracted and cross-checked from vo-aacenc (Apache-2.0) and FFmpeg libavcodec. The retained generator does not record immutable extraction commits. The Glint MIT declaration alone does not resolve attribution or derived-table licensing; no distribution clearance is asserted."
 }

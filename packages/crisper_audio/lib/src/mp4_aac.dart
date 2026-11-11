@@ -88,7 +88,8 @@ final class Mp4AacTrack {
     final movieScale = r.timeHeader(movieHeader).scale;
     final mdia = r.requiredChild(selected, 'mdia');
     final timing = r.timeHeader(r.requiredChild(mdia, 'mdhd'));
-    final table = r.requiredChild(r.requiredChild(mdia, 'minf'), 'stbl');
+    final mediaInfo = r.requiredChild(mdia, 'minf');
+    final table = r.requiredChild(mediaInfo, 'stbl');
     final children = <String, _Box>{};
     for (final box in r.children(table)) {
       if (children.containsKey(box.type)) _invalid('duplicate ${box.type}');
@@ -114,6 +115,26 @@ final class Mp4AacTrack {
     if (r.u16(entry.data + 6, entry.end) != 1) {
       _unsupported('external media reference');
     }
+    // Index1 is only an index into dref, not a self-contained flag. When a
+    // data-reference table is present, resolve the selected entry before using
+    // local mdat offsets; otherwise an external URL could be decoded as bytes
+    // from this file. Legacy files without dinf remain bounded by mdat checks.
+    final dataInfo = r.child(mediaInfo, 'dinf');
+    if (dataInfo != null) {
+      final references = r.requiredChild(dataInfo, 'dref');
+      r.fullBoxZero(references);
+      final count = r.u32(references.data + 4, references.end);
+      var seen = 0;
+      _Box? first;
+      for (final reference in r.boxes(references.data + 8, references.end)) {
+        first ??= reference;
+        seen++;
+      }
+      if (seen != count || first == null) _invalid('data-reference count');
+      if (first.type != 'url ' || r.u32(first.data, first.end) != 1) {
+        _unsupported('external media reference');
+      }
+    }
     final version = r.u16(entry.data + 8, entry.end);
     if (version != 0 && version != 1) {
       _unsupported('QuickTime audio version $version');
@@ -126,8 +147,19 @@ final class Mp4AacTrack {
       entry.end,
     )) {
       if (box.type == 'sinf') _unsupported('encrypted audio');
-      if (box.type == 'esds') esds = box;
-      if (box.type == 'wave') esds ??= r.child(box, 'esds');
+      if (box.type == 'esds') {
+        if (esds != null) _invalid('multiple AAC configurations');
+        esds = box;
+      }
+      if (box.type == 'wave') {
+        for (final child in r.children(box)) {
+          if (child.type == 'sinf') _unsupported('encrypted audio');
+          if (child.type == 'esds') {
+            if (esds != null) _invalid('multiple AAC configurations');
+            esds = child;
+          }
+        }
+      }
     }
     if (esds == null) _invalid('missing AAC configuration');
     r.fullBoxZero(esds);
@@ -189,17 +221,28 @@ final class Mp4AacTrack {
       if (r.u32(rateAt, list.end) != 0x00010000) {
         _unsupported('timeline rate edits');
       }
-      if (mediaTime * config.rate % timing.scale != 0) {
+      // Version-1 timestamps are signed/unsigned 64-bit values. Dart native
+      // int multiplication wraps, even when the scaled quotient would fit.
+      // Keep these rare metadata calculations wide until the source bound has
+      // been applied; never let an invalid distant edit wrap into valid PCM.
+      final mediaNumerator = BigInt.from(mediaTime) * BigInt.from(config.rate);
+      final mediaScale = BigInt.from(timing.scale);
+      if (mediaNumerator % mediaScale != BigInt.zero) {
         _unsupported('fractional AAC trim');
       }
-      trimStart = mediaTime * config.rate ~/ timing.scale;
-      if (trimStart >= timedFrames || segment == 0) {
+      final trim = mediaNumerator ~/ mediaScale;
+      if (trim >= BigInt.from(timedFrames) || segment == 0) {
         _invalid('edit outside audio timeline');
       }
-      totalFrames = math.min(
-        timedFrames - trimStart,
-        segment * config.rate ~/ movieScale,
-      );
+      trimStart = trim.toInt();
+      final presentation =
+          BigInt.from(segment) *
+          BigInt.from(config.rate) ~/
+          BigInt.from(movieScale);
+      final available = timedFrames - trimStart;
+      totalFrames = presentation > BigInt.from(available)
+          ? available
+          : presentation.toInt();
     }
     if (totalFrames <= 0) _invalid('empty audio presentation');
     final stco = children['stco'];

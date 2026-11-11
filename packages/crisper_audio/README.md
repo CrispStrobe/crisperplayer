@@ -13,6 +13,35 @@ FFmpeg, or SoLoud. Apple and Android keep their existing playback adapters;
 this plugin is not registered on those platforms. The native CMake project
 can also build on macOS for host tests.
 
+## Player and decoder support
+
+`NativeAudioPlayer` supports load, play/pause, stop, source-time seek, volume,
+and pitch-preserving speed changes from 0.50× to 3.00×. Choose Sonic, Chromium
+WSOLA, Signalsmith Stretch or Bungee Basic when constructing the player. The
+worker owns decoder, DSP and output handles, checks cancellation during long
+scans, and closes its resources before disposal completes. Metadata and
+waveform probes use the same bounded decoder.
+
+| Input | Current supported scope |
+| --- | --- |
+| WAV | Mono/stereo integer PCM 8/16/24/32-bit and float 32/64-bit, including compatible extensible WAV |
+| MP3 | MPEG-1/2/2.5 Layer III; Xing/LAME delay and padding; reservoir and synthesis preroll for seeks |
+| ADTS AAC | Mono/stereo AAC-LC with supported coding tools; packet-frame duration and seek preroll |
+| M4A/M4B/MP4 | Local, unencrypted, non-fragmented AAC-LC; paged sample tables, 64-bit chunk offsets and supported `elst`/`stts` presentation trims |
+| Native FLAC | Mono/stereo, 4–24-bit PCM, known STREAMINFO length; bounded frame decoding and CRC-validated frame seeking |
+
+Playback is limited by the shared DSP's 8–192 kHz sample-rate range. The
+decoder never holds a whole book's compressed data or PCM. MP3/ADTS indexes
+retain at most 16,384 checkpoints. FLAC retains a 2 MiB compressed window and
+one block of at most 65,535 frames; larger compressed frames fail explicitly.
+
+HE-AAC/SBR/PS, ALAC, encrypted/fragmented MP4, multichannel audio, complex edit
+lists, Ogg Vorbis/Opus/Ogg-FLAC, unknown-length or 32-bit FLAC, and negative
+FLAC LPC shifts are outside this decoder's current scope. MP4 gapless trimming
+uses edit/sample timing; metadata present only in `iTunSMPB` is not applied.
+Unsupported streams report an error. Apple/Android codec support is unchanged
+because those platforms use their own playback adapters.
+
 ## Native output contract
 
 `native/crisper_output.h` defines ABI version 1. All counts are frames, with
@@ -107,3 +136,16 @@ the full MIT-0/public-domain grants. Glint's manifest records its source pin
 and any local decoder patches. The shared DSP core retains its own reviewed
 vendor manifest and the original Sonic, Chromium WSOLA, Signalsmith Stretch,
 Bungee Basic and supporting-library notices.
+
+Glint's provenance record also preserves the unresolved origin/attribution of
+its AAC tables. Matching source hashes and passing playback tests do not grant
+distribution clearance; the repository's license gate reviews that separately.
+
+`scripts/audit_native_audio.py` inspects the actual desktop bundle, rejects
+bundled mpv/FFmpeg-family binaries, records the native artifact and source
+hashes, and executes the real processor/decoder/output ABI in a child process.
+The direct-native CI workflow builds on Linux, Windows and macOS, then runs
+the Dart decoder/player/app-adapter tests with a required native library. It
+also builds real Linux/Windows Flutter bundles and reruns those tests against
+the library inside the bundle. These checks exercise a manual/null output
+device; they do not establish physical audio-device latency.

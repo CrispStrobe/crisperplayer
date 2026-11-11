@@ -41,6 +41,9 @@ _Fixture _fixture(
   int? presentationFrames,
   int? finalFrames,
   int editCount = 1,
+  bool wideEdit = false,
+  bool? selfContainedReference,
+  bool duplicateConfig = false,
   List<int> asc = const [0x12, 0x10],
   List<int>? forcedOffsets,
 }) {
@@ -67,6 +70,7 @@ _Fixture _fixture(
     final sampleEntry = _box(encrypted ? 'enca' : 'mp4a', [
       ...entry.buffer.asUint8List(),
       ..._full('esds', config),
+      if (duplicateConfig) ..._full('esds', config),
     ]);
     final sizeTable = compact
         ? _full('stz2', [
@@ -109,17 +113,37 @@ _Fixture _fixture(
       ..._box('trak', [
         if (trim != null)
           ..._box('edts', [
-            ..._full('elst', [
+            ..._box('elst', [
+              wideEdit ? 1 : 0,
+              0,
+              0,
+              0,
               ..._u32(editCount),
-              ..._u32(presentationFrames ?? (count * 1024 - trim)),
-              ..._u32(trim),
+              ...(wideEdit ? _u64 : _u32)(
+                presentationFrames ?? (count * 1024 - trim),
+              ),
+              ...(wideEdit ? _u64 : _u32)(trim),
               ..._u32(0x10000),
             ]),
           ]),
         ..._box('mdia', [
           ..._full('mdhd', timing),
           ..._full('hdlr', [..._u32(0), ...'soun'.codeUnits]),
-          ..._box('minf', stbl),
+          ..._box('minf', [
+            if (selfContainedReference != null)
+              ..._box(
+                'dinf',
+                _full('dref', [
+                  ..._u32(1),
+                  ..._box('url ', [
+                    ..._u32(selfContainedReference ? 1 : 0),
+                    if (!selfContainedReference)
+                      ...'external-audio.aac\x00'.codeUnits,
+                  ]),
+                ]),
+              ),
+            ...stbl,
+          ]),
         ]),
       ]),
     ]);
@@ -205,6 +229,53 @@ void main() {
     }
   });
 
+  test('version1 edits retain their 64-bit source/presentation timing', () {
+    final fixture = _fixture(
+      directory,
+      trim: 1024,
+      presentationFrames: 2880,
+      wideEdit: true,
+    );
+    try {
+      final track = Mp4AacTrack.open(fixture.reader);
+      expect(track.trimStartFrames, 1024);
+      expect(track.totalFrames, 2880);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  test(
+    'version1 edit multiplication cannot wrap an out-of-range trim to zero',
+    () {
+      final fixture = _fixture(
+        directory,
+        trim: 1 << 62,
+        presentationFrames: 1024,
+        wideEdit: true,
+      );
+      try {
+        expect(() => Mp4AacTrack.open(fixture.reader), throwsFormatException);
+      } finally {
+        fixture.close();
+      }
+    },
+  );
+
+  test('version1 presentation duration cannot wrap into a shorter track', () {
+    final fixture = _fixture(
+      directory,
+      trim: 0,
+      presentationFrames: (1 << 62) + 100,
+      wideEdit: true,
+    );
+    try {
+      expect(Mp4AacTrack.open(fixture.reader).totalFrames, 4096);
+    } finally {
+      fixture.close();
+    }
+  });
+
   test('compact sample-size tables preserve variable packet lengths', () {
     final fixture = _fixture(directory, compact: true);
     try {
@@ -244,6 +315,33 @@ void main() {
     final fixture = _fixture(directory, asc: [0x12, 0x10, 0x56, 0xe5, 0]);
     try {
       expect(Mp4AacTrack.open(fixture.reader).sampleRate, 44100);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  test('data-reference1 must actually point to self-contained media', () {
+    final fixture = _fixture(directory, selfContainedReference: false);
+    try {
+      expect(() => Mp4AacTrack.open(fixture.reader), throwsUnsupportedError);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  test('explicit self-contained URL data reference is accepted', () {
+    final fixture = _fixture(directory, selfContainedReference: true);
+    try {
+      expect(Mp4AacTrack.open(fixture.reader).totalFrames, 4096);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  test('duplicate AAC configuration is rejected as ambiguous metadata', () {
+    final fixture = _fixture(directory, duplicateConfig: true);
+    try {
+      expect(() => Mp4AacTrack.open(fixture.reader), throwsFormatException);
     } finally {
       fixture.close();
     }

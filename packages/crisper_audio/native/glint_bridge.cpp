@@ -2,6 +2,7 @@
 #include "glint_bridge.h"
 #include "vendor/glint/src/aac_decoder.hpp"
 #include "vendor/glint/src/mp3_decoder.hpp"
+#include "vendor/glint/src/flac_decoder.hpp"
 #include <cmath>
 #include <memory>
 #include <mutex>
@@ -83,5 +84,45 @@ extern "C" int32_t ca_glint_decode(void* context, const uint8_t* data,
         return frames;
     } catch (...) {
         return -6;
+    }
+}
+
+extern "C" int32_t ca_glint_flac_frame_info(const uint8_t* streaminfo,
+    const uint8_t* data, int32_t length, ca_glint_flac_info* info) {
+    if (info) *info = {};
+    if (!streaminfo || !data || !info || length < 6 || length > 2 * 1024 * 1024)
+        return -1;
+    try {
+        glint::flac::StreamInfo si;
+        glint::flac::DecodedFrameInfo fi;
+        if (glint::flac::parse_streaminfo(streaminfo, 34, si) < 0 ||
+            glint::flac::frame_info(data, static_cast<size_t>(length), si, fi) < 0)
+            return -1;
+        *info = {static_cast<int64_t>(fi.first_sample), fi.samples, 0};
+        return 0;
+    } catch (...) {
+        return -1;
+    }
+}
+
+extern "C" int32_t ca_glint_flac_decode(const uint8_t* streaminfo,
+    const uint8_t* data, int32_t length, float* pcm, int32_t pcm_samples,
+    ca_glint_flac_info* info) {
+    if (info) *info = {};
+    if (!streaminfo || !data || !pcm || !info || length < 6 ||
+        length > 2 * 1024 * 1024 || pcm_samples <= 0 || pcm_samples > 65535 * 2)
+        return -1;
+    try {
+        glint::flac::StreamInfo si;
+        glint::flac::DecodedFrameInfo fi;
+        if (glint::flac::parse_streaminfo(streaminfo, 34, si) < 0) return -1;
+        const int frames = glint::flac::decode_one_frame(data,
+            static_cast<size_t>(length), si, pcm, static_cast<size_t>(pcm_samples), fi);
+        if (frames < 0) return frames;
+        *info = {static_cast<int64_t>(fi.first_sample), fi.samples,
+                 static_cast<int32_t>(fi.encoded_bytes)};
+        return frames;
+    } catch (...) {
+        return -1;
     }
 }

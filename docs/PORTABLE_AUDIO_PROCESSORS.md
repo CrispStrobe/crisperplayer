@@ -55,16 +55,20 @@ stale queues rather than mixing speed mappings.
 
 ### Decoder scope
 
-The initial streaming codec path supports PCM/float WAV, MPEG-1/2/2.5 Layer III
-MP3, AAC-LC ADTS and unencrypted AAC-LC in M4A/M4B/MP4. MP3 seeks restore the
+The streaming codec path supports PCM/float WAV, MPEG-1/2/2.5 Layer III
+MP3, AAC-LC ADTS, unencrypted AAC-LC in M4A/M4B/MP4, and native FLAC. MP3 seeks restore the
 reservoir/synthesis state with preroll; MP4 uses on-disk paged sample tables,
 64-bit chunk offsets, and supported priming/presentation trims. AAC seek noise
-state is per decoder and tied to the absolute packet ordinal.
+state is per decoder and tied to the absolute packet ordinal. FLAC supports
+known-length mono/stereo 4–24-bit streams, a bounded compressed window and
+CRC-validated frame seeking.
 
 This is not general MP4 or all-profile AAC support. HE-AAC/SBR/PS, ALAC,
 encryption, fragmented MP4, multichannel audio and complex edit lists are
-rejected explicitly. Unsupported formats are not passed to an invisible mpv
-fallback. Consult the package README for the current additional codec scope.
+rejected explicitly. MP4 `iTunSMPB`-only gapless metadata is not applied.
+Ogg Vorbis/Opus/Ogg-FLAC, unknown-length or 32-bit FLAC and negative FLAC LPC
+shifts remain unsupported. Consult the package README for the complete scope
+and resource limits. Unsupported formats report an error.
 Apple/Android format support remains governed by their own decoders.
 
 ## Reuse of the other CrispStrobe projects

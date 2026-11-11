@@ -26,6 +26,19 @@ CA_GLINT_EXPORT void ca_glint_destroy(void* context);
 // packet_index is the absolute stream packet ordinal, including on seek.
 CA_GLINT_EXPORT int32_t ca_glint_decode(void* context, const uint8_t* data,
     int32_t length, float* pcm, ca_glint_frame_info* info, int64_t packet_index);
+
+typedef struct ca_glint_flac_info {
+    int64_t first_frame;
+    int32_t frames;
+    int32_t encoded_bytes;
+} ca_glint_flac_info;
+// STREAMINFO is exactly 34 bytes. Input contains at most one bounded window;
+// decode returns the consumed byte count for the first CRC-validated frame.
+CA_GLINT_EXPORT int32_t ca_glint_flac_frame_info(const uint8_t* streaminfo,
+    const uint8_t* data, int32_t length, ca_glint_flac_info* info);
+CA_GLINT_EXPORT int32_t ca_glint_flac_decode(const uint8_t* streaminfo,
+    const uint8_t* data, int32_t length, float* pcm, int32_t pcm_samples,
+    ca_glint_flac_info* info);
 #ifdef __cplusplus
 }
 #endif

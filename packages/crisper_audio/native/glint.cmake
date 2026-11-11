@@ -5,6 +5,7 @@ add_library(crisper_glint OBJECT
   "${CMAKE_CURRENT_LIST_DIR}/glint_bridge.cpp"
   "${CRISPER_GLINT_ROOT}/src/mp3_decoder.cpp"
   "${CRISPER_GLINT_ROOT}/src/aac_decoder.cpp"
+  "${CRISPER_GLINT_ROOT}/src/flac_decoder.cpp"
 )
 set_target_properties(crisper_glint PROPERTIES
   POSITION_INDEPENDENT_CODE ON
@@ -12,6 +13,7 @@ set_target_properties(crisper_glint PROPERTIES
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF
 )
+target_compile_definitions(crisper_glint PRIVATE CRISPER_FLAC_FRAME_ONLY)
 target_include_directories(crisper_glint PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
 if(MSVC)
   target_compile_definitions(crisper_glint PRIVATE _USE_MATH_DEFINES)

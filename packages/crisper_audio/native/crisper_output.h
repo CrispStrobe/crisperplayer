@@ -28,7 +28,9 @@ CA_EXPORT void ca_cancel_set(CaCancellation* token, uint64_t generation);
 CA_EXPORT uint64_t ca_cancel_get(const CaCancellation* token);
 CA_EXPORT void ca_cancel_destroy(CaCancellation* token);
 enum ca_output_backend {
+    // Requires a usable native output; never silently falls back to null.
     CA_OUTPUT_DEVICE = 0,
+    // Explicit offline-test modes; neither produces audible output.
     CA_OUTPUT_NULL = 1,
     CA_OUTPUT_MANUAL = 2,
 };

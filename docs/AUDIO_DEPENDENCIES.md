@@ -128,7 +128,7 @@ Keep immutable source hashes and complete original notices.
 
 GPL, LGPL and MPL are not eligible for **new decoder additions** under this
 rule. A custom codec license is not automatically accepted as similar. The
-existing approved MPL DSP choices and platform system libraries keep their
+previously selected MPL DSP choices and platform system libraries keep their
 separate policy scope.
 
 ## Prioritized alternatives and additions

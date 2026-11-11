@@ -362,7 +362,7 @@
         "MIT applies to the independent Dart/native host. Glint decoder originals and patches retain MIT; AAC table data is reproducibly regenerated from pinned Apache-2.0 vo-aacenc inputs with complete notices. Miniaudio and the four-engine DSP closure retain their separate native identities and notices. Target artifact reviews remain unresolved; the package-level grant does not approve them.",
         "Windows/Linux replace the media_kit/libmpv runtime with a bounded Dart worker, Glint frame decoding and native PCM output. Apple/Android continue using existing platform adapters."
       ],
-      "source_tree_sha256": "c7a6c8eb9ed699e34f9dbd7a29bad75170ce07a5a88e21b1ecc8bf5fcec5ad03"
+      "source_tree_sha256": "0b42f127ee4dbefdd18fab1e31f336826d368a443a7194b485ee746ed647f6ff"
     },
     {
       "name": "crisperplayer",
@@ -3561,7 +3561,7 @@
     {
       "package": "crisper_audio",
       "path": "native/CMakeLists.txt",
-      "sha256": "150415e116159bc0f4e764a7113c7a935d837d24167b51d6e09ad7a664d5fccd",
+      "sha256": "99efe1460f1cce3423a45073eee24f8879efad659df9df0e054ac88caef857eb",
       "platforms": [
         "linux",
         "windows"
@@ -3570,7 +3570,7 @@
     {
       "package": "crisper_audio",
       "path": "native/crisper_output.cpp",
-      "sha256": "f2d90355b342f9524482ea360bc17349d3b0c709d46506754ac9d84c16feea8d",
+      "sha256": "139a0c289de23bc78778b7939f32c1674a083585e9ea38b791d5ccc917d63417",
       "platforms": [
         "linux",
         "windows"
@@ -3579,7 +3579,7 @@
     {
       "package": "crisper_audio",
       "path": "native/crisper_output.h",
-      "sha256": "59ece8cc9fc8fa554ca0690c648f2025904f06836e010423e46c645b5a5211da",
+      "sha256": "0884bd1e3423ee403629fc434d37ec7625b0f34df43a779b2a9c3a8ea6d07553",
       "platforms": [
         "linux",
         "windows"
@@ -3634,6 +3634,15 @@
       "package": "crisper_audio",
       "path": "native/miniaudio_impl.c",
       "sha256": "d9755a99e5cd7d4e0c874d07c91016d056cf401d34134ef5c815425c855f921f",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/tests/no_device_test.cpp",
+      "sha256": "73648f0d14e459fbc3b51ed18ae8414691c9f702ca83b5691fdc2ea60956ad5b",
       "platforms": [
         "linux",
         "windows"

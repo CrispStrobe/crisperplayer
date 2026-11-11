@@ -474,7 +474,7 @@
         },
         {
           "path": "docs/AUDIO_PATENTS.md",
-          "sha256": "a511c57d28b4552e480f52a04455655e349b1cf3e6d63757774a74fb2cf09a38",
+          "sha256": "cc16053a6d2424b2ea56f4ffafa6034f25f5b0ae7702ab411523f4c54070a269",
           "note": "Dated primary-source patent findings and OS-first AAC direction. Source-license identification is separate from patent coverage; no patent clearance is asserted."
         }
       ],
@@ -628,7 +628,7 @@
         },
         {
           "path": "docs/AUDIO_PATENTS.md",
-          "sha256": "a511c57d28b4552e480f52a04455655e349b1cf3e6d63757774a74fb2cf09a38",
+          "sha256": "cc16053a6d2424b2ea56f4ffafa6034f25f5b0ae7702ab411523f4c54070a269",
           "note": "Dated primary-source patent findings and OS-first AAC direction. Source-license identification is separate from patent coverage; no patent clearance is asserted."
         }
       ],
@@ -669,7 +669,7 @@
         },
         {
           "path": "packages/crisper_audio/native/crisper_output.h",
-          "sha256": "59ece8cc9fc8fa554ca0690c648f2025904f06836e010423e46c645b5a5211da",
+          "sha256": "0884bd1e3423ee403629fc434d37ec7625b0f34df43a779b2a9c3a8ea6d07553",
           "note": "Bounded queue ABI, failure contract, callback-based presentation estimate and stated timing limits."
         },
         {
@@ -686,6 +686,11 @@
           "path": "licensing/evidence/native_audio_ci_2026-11-11.json",
           "sha256": "498555e636612b575f8912349c2e907c2a7295baf39f758ed249af81bbad866b",
           "note": "Observed Linux release-bundle audit and exact packaged native tests, macOS host results, Windows fix and local JACK-removal checks. Confirms bundled SMB presence, not full SMB payload/license clearance."
+        },
+        {
+          "path": "licensing/evidence/native_output_device_failure_2026-11-11.json",
+          "sha256": "cc43d07534aa3edc524b15815ab54883279a183f6a840f029b9c97d2f919f963",
+          "note": "Actual Linux null-backend fallback regression, production error handling, existing native output suite, native ABI/source audit and 18 Dart player/adapter checks against the rebuilt binary. Not physical-output or distribution approval."
         }
       ],
       "blockers": [

@@ -22,6 +22,7 @@ enum Error : int32_t {
     kRoute = -5,
     kManualOnly = -6,
     kAtomic = -7,
+    kNoDevice = -8,
 };
 thread_local int32_t create_error = kOk;
 
@@ -35,6 +36,7 @@ const char* error_text(int32_t error) {
     case kRoute: return "Native audio route changed or was interrupted; reopen output";
     case kManualOnly: return "Manual output pump called for a real device";
     case kAtomic: return "Platform lacks lock-free audio counter atomics";
+    case kNoDevice: return "No usable native audio output device is available";
     default: return "Native output failed";
     }
 }
@@ -205,6 +207,15 @@ int32_t open_device(CaOutput* output) {
     }
     if (result != MA_SUCCESS) return fail(output, kDevice);
     output->device_ready = true;
+    // miniaudio's default selection ends with a successful null backend when
+    // every physical backend fails. Accepting it for normal playback would
+    // discard PCM while advancing the source/listening clock. Only explicit
+    // offline-test requests may use that sink. Mark initialized first so the
+    // normal failure cleanup also releases the null device and its context.
+    if (output->backend == CA_OUTPUT_DEVICE &&
+        output->device.pContext->backend == ma_backend_null) {
+        return fail(output, kNoDevice);
+    }
     output->latency = estimate_latency(output, output->period);
     // Bound allocations and fail visibly for an unusably large device queue;
     // never pretend a smaller delay represents it.

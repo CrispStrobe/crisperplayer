@@ -12,14 +12,14 @@ codec limits are described in [portable processing](PORTABLE_AUDIO_PROCESSORS.md
 | --- | --- |
 | Full root `flutter analyze --no-pub` after decoder/parser integration | No issues found |
 | Required-library Dart decoder/parser/player/clock/app-adapter suite | 64 passed, no skips; uses the compiled native library |
-| Native output checks | 13,455 passed, including bounded queues, manual output and a real null-device callback thread |
+| Native output checks | 13,455 passed, including bounded queues, manual output and a real null-device callback thread; 37 additional checks reproduce and prevent production fallback to the silent null backend |
 | Native sanitizers | AddressSanitizer and UndefinedBehaviorSanitizer passed; LeakSanitizer could not run under this environment's ptrace setup |
 | Python evidence/release/audit regressions | 110 passed |
 | Flutter web build | Passed; this target remains the native-app availability notice |
 | Broader root Flutter suite | 383 passed, five skipped, 11 failed in browser-upload setup because this environment could not enumerate network interfaces (`Bad value for ai_flags`); this is not recorded as a full-suite pass |
 | Source and runtime inventory | 159 production packages, ten active native components; retired desktop mpv/FFmpeg identities remain historical evidence |
 | AAC table provenance | Offline regeneration from immutable Apache-2.0 vo-aacenc inputs; all 45 arrays and 3,229 numerical values unchanged, full notices retained |
-| Distribution report | 226 recorded native build/evidence inputs; no source/version/hash drift or forbidden-declared-grant finding; 31 package/runtime artifact and distribution review findings remain explicit |
+| Distribution report | 227 recorded native build/evidence inputs; no source/version/hash drift or forbidden-declared-grant finding; 32 package/runtime artifact and distribution review findings remain explicit, including unresolved bundled AAC patent coverage |
 
 The 64 native Dart checks include 24 decoder tests, 19 MP4 parser tests,
 15 player/probe tests, three source-clock tests and three actual app-adapter
@@ -53,6 +53,16 @@ and the follow-up binary/source identities are retained in
 [native CI evidence](../licensing/evidence/native_audio_ci_2026-11-11.json).
 Passing these builds does not establish physical-device output, interruption
 handling or hardware latency.
+
+The later [no-device regression evidence](../licensing/evidence/native_output_device_failure_2026-11-11.json)
+records an actual miniaudio build with only the null backend enabled. Before
+the fix, normal device mode accepted that silent sink; after the fix it reports
+an output-device error, while explicit test/null playback still works. Both
+native CTest targets and the complete native source/ABI audit pass. The 18
+Dart player/probe/app-adapter checks also pass against this rebuilt library;
+they overlap the earlier 64 checks. The new test is included in host CI, with
+Windows/macOS results still requiring the corresponding target run.
+
 Artifact and distribution review remains separate from these functional tests.
 The [direct native host evidence](../licensing/evidence/direct_native_audio_2026-11-11.json)
 records the exact library/source hashes, audit output and test scopes. Counts

@@ -56,4 +56,22 @@ if(CRISPER_AUDIO_TESTS)
   target_link_libraries(crisper_output_test PRIVATE crisper_audio)
   add_test(NAME crisper_output COMMAND crisper_output_test)
   set_tests_properties(crisper_output PROPERTIES TIMEOUT 20)
+
+  # Exercise miniaudio's real fallback path with every physical backend
+  # disabled. This must fail in production mode even though the explicit
+  # null device remains available for offline tests.
+  add_executable(crisper_output_no_device_test
+    tests/no_device_test.cpp crisper_output.cpp miniaudio_impl.c)
+  target_compile_features(crisper_output_no_device_test PRIVATE c_std_11 cxx_std_20)
+  target_include_directories(crisper_output_no_device_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_compile_definitions(crisper_output_no_device_test PRIVATE
+    MA_ENABLE_ONLY_SPECIFIC_BACKENDS MA_ENABLE_NULL)
+  if(UNIX)
+    find_package(Threads REQUIRED)
+    target_link_libraries(crisper_output_no_device_test PRIVATE
+      Threads::Threads ${CMAKE_DL_LIBS} m)
+  endif()
+  add_test(NAME crisper_output_no_device COMMAND crisper_output_no_device_test)
+  set_tests_properties(crisper_output_no_device PROPERTIES TIMEOUT 20)
 endif()

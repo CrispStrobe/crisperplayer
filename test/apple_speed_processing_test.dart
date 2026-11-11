@@ -66,6 +66,26 @@ class _NativeTransport {
     messenger.setMockMethodCallHandler(channel, handler);
   }
 
+  Future<void> publishClock({
+    required ProcessingState state,
+    required Duration position,
+    Duration age = Duration.zero,
+  }) async {
+    final id = requests.last['id']! as String;
+    await messenger.handlePlatformMessage(
+      'com.ryanheise.just_audio.events.$id',
+      codec.encodeSuccessEnvelope({
+        'processingState': state.index,
+        'updateTime': DateTime.now().subtract(age).millisecondsSinceEpoch,
+        'updatePosition': position.inMicroseconds,
+        'bufferedPosition': 120000000,
+        'duration': 120000000,
+        'currentIndex': 0,
+      }),
+      null,
+    );
+  }
+
   void close() {
     for (final channel in channels) {
       messenger.setMockMethodCallHandler(channel, null);
@@ -161,6 +181,86 @@ void main() {
       }
     });
   }
+
+  test(
+    'portable Apple clock never extrapolates a stale ready event across a gap',
+    () async {
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final transport = _NativeTransport()..install();
+      final player = AudioPlayer(
+        handleInterruptions: false,
+        androidApplyAudioAttributes: false,
+        handleAudioSessionActivation: false,
+        audioLoadConfiguration: const AudioLoadConfiguration(
+          darwinLoadControl: DarwinLoadControl(
+            speedProcessor: DarwinSpeedProcessor.wsola,
+          ),
+        ),
+      );
+      try {
+        await player.setAudioSources([AudioSource.uri(Uri.file('/clock.wav'))]);
+        await player.setSpeed(2);
+        await player.play();
+        await transport.publishClock(
+          state: ProcessingState.ready,
+          position: const Duration(seconds: 5),
+          age: const Duration(seconds: 2),
+        );
+        expect(player.position, const Duration(seconds: 5));
+        await transport.publishClock(
+          state: ProcessingState.buffering,
+          position: const Duration(seconds: 5),
+          age: const Duration(seconds: 2),
+        );
+        expect(player.playing, isTrue);
+        expect(player.processingState, ProcessingState.buffering);
+        expect(player.position, const Duration(seconds: 5));
+        await transport.publishClock(
+          state: ProcessingState.ready,
+          position: const Duration(seconds: 9),
+        );
+        expect(player.processingState, ProcessingState.ready);
+        expect(player.position, const Duration(seconds: 9));
+      } finally {
+        await player.dispose();
+        transport.close();
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
+
+  test('Apple platform default retains its smooth position clock', () async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    final transport = _NativeTransport()..install();
+    final player = AudioPlayer(
+      handleInterruptions: false,
+      androidApplyAudioAttributes: false,
+      handleAudioSessionActivation: false,
+      audioLoadConfiguration: const AudioLoadConfiguration(
+        darwinLoadControl: DarwinLoadControl(),
+      ),
+    );
+    try {
+      await player.setAudioSources([
+        AudioSource.uri(Uri.file('/default-clock.wav')),
+      ]);
+      await player.setSpeed(2);
+      await player.play();
+      await transport.publishClock(
+        state: ProcessingState.ready,
+        position: const Duration(seconds: 5),
+        age: const Duration(seconds: 2),
+      );
+      expect(player.position, greaterThanOrEqualTo(const Duration(seconds: 9)));
+      expect(player.position, lessThan(const Duration(seconds: 12)));
+    } finally {
+      await player.dispose();
+      transport.close();
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
 
   test(
     'upstream default remains Time Domain and non-Apple startup stays unchanged',

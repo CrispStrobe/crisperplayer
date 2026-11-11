@@ -1,6 +1,6 @@
 # Desktop audio: artifact evidence and controlled build candidate
 
-Reviewed 10 November 2026. This records what has been inspected and what remains
+Updated 11 November 2026. This records what has been inspected and what remains
 unverified. The distribution policy is in [LICENSE_POLICY.md](LICENSE_POLICY.md).
 The release gate reads [native_artifacts.json](../licensing/native_artifacts.json).
 
@@ -77,6 +77,12 @@ The build plan:
   current mpv even for this audio-focused build.
 - Uses Meson `--wrap-mode=nofallback`; it does not silently download missing
   dependencies. No package-manager installation is performed by the script.
+- Adds the optional `crisperdsp` filter using the existing pinned Sonic,
+  Chromium WSOLA, Signalsmith Stretch and Bungee Basic source closure. The
+  adapter participates in mpv's speed-command and source-timestamp protocol;
+  it does not use a fixed-buffer effect or replace the default processor.
+  `prepare_portable_mpv.py` verifies the exact upstream files before applying
+  the integration, and preserves the patch and corresponding native sources.
 - Records commands, logs, source archives, upstream notices, toolchain versions,
   host package inventory where available, native library hashes, ELF dynamic
   sections and post-build license-marker observations.
@@ -126,12 +132,79 @@ replacement, required notices and matching source/relink materials. Keep the
 manifest in `needs_review` until this evidence and the actual packaging have
 been reviewed.
 
+## Windows portable source build
+
+The same source pins are supported by
+[build_windows_audio.py](../scripts/build_windows_audio.py) under a native
+**MSYS2 UCRT64** shell. This builds a private FFmpeg with the same non-GPL
+configuration, builds the patched mpv with WASAPI output, and installs to an
+isolated prefix. It does not use an MSYS2 prebuilt FFmpeg or replace the
+existing `2023-09-24` Windows binary automatically.
+
+The Windows runner needs `base-devel`, `make`, and these UCRT64 packages (each
+with the `mingw-w64-ucrt-x86_64-` prefix): `toolchain`, `python`, `meson`,
+`ninja`, `pkgconf`, `nasm`, `python-jinja`, `freetype`, `fribidi`, `harfbuzz`,
+and `xxhash`. The exact installation and both platform builds are recorded in
+[desktop-portable-audio.yml](../.github/workflows/desktop-portable-audio.yml).
+Use the UCRT64 Python, compiler and pkg-config consistently, and a workspace
+path without spaces because upstream native build tools may reject them.
+
+```sh
+python scripts/build_windows_audio.py \
+  --workspace /c/crisper-build/portable-windows \
+  --source-cache /c/crisper-build/audio-archives \
+  --jobs 2 --build
+```
+
+Its `prefix/bin/` contains the resulting media DLLs. Review and supply their
+complete runtime dependency closure, including the applicable UCRT64 runtime,
+font and text libraries, before distributing a bundle. The build evidence and
+source patch are in `compliance/`; the recipe retains `release_approved: false`.
+
+## Run the app with a controlled candidate
+
+Use [run_portable_desktop.py](../scripts/run_portable_desktop.py) to launch the
+app with the completed prefix. The helper selects `LIBMPV_LIBRARY_PATH` and
+sets the dependent-library search path for that child process, so libmpv loads
+its own FFmpeg and other libraries without replacing a system installation:
+
+```sh
+python3 scripts/run_portable_desktop.py \
+  --prefix /absolute/path/audio-build/prefix -- flutter run -d linux
+```
+
+On Windows, provide the UCRT64 runtime directory when it is not already on
+`PATH`. The helper prepends the candidate's `bin/` and the specified runtime
+directory only for the child process:
+
+```sh
+python scripts/run_portable_desktop.py \
+  --prefix C:/crisper-build/portable-windows/prefix \
+  --runtime-bin C:/msys64/ucrt64/bin -- flutter run -d windows
+```
+
+At startup the local `just_audio_media_kit` adapter asks the **loaded** libmpv
+for `option-info/af/choices`. The four portable choices appear only when
+`crisperdsp` is present. FFmpeg Atempo appears only when both `lavfi-tempo`
+and `atempo` are present. Older stock mpv builds retain Automatic and Legacy
+scaletempo. A saved optional mode unavailable in a later installation falls
+back to Automatic with an explanation; its saved preference remains intact.
+The native player independently checks an explicit selection before loading
+audio and verifies that mpv installed the requested filter.
+
+The command after `--` can also be a built application executable. Separate
+app-bundling work must preserve this dependency closure and loader selection.
+A successful source build alone does not certify
+an arbitrary copied DLL/`.so`, a stock package download, or a release bundle.
+
 ## Native timing and pitch smoke test
 
 [smoke_desktop_audio.py](../scripts/smoke_desktop_audio.py) loads a supplied native
 libmpv and renders a generated six-second, 440 Hz PCM tone through mpv's actual
 PCM output. It checks 0.5×, 1×, 1.5×, 2× and 3× for both automatic pitch
-correction and legacy scaletempo. It verifies output duration and approximate
+correction and legacy scaletempo. With `--require-portable`, it also requires
+Sonic, Chromium WSOLA, Signalsmith Stretch, Bungee Basic and FFmpeg Atempo,
+for 35 native output checks. It verifies output duration and approximate
 pitch and records the native version/configuration and binary hash.
 The legacy path matches media_kit 1.2.6: pitch correction is off, mpv speed stays
 at the app's 1.0 pitch value, and `scaletempo:scale=<rate>` applies the tempo.
@@ -140,14 +213,40 @@ at the app's 1.0 pitch value, and `scaletempo:scale=<rate>` applies the tempo.
 LD_LIBRARY_PATH=/absolute/path/audio-build/prefix/lib \
   python3 scripts/smoke_desktop_audio.py \
   --library /absolute/path/audio-build/prefix/lib/libmpv.so \
+  --require-portable \
   --output /absolute/path/audio-build/compliance/playback-smoke.json
 ```
 
-The Linux builder invokes this test after compiling. The native test has not
-been run in this workspace because no controlled native build is available.
+Both source builders invoke this test after compiling, and the desktop audio
+workflow runs them on Linux and Windows. Check the workflow artifacts for the
+result of the actual branch being reviewed. The full native build requires its
+provisioned runner; the host workspace does not contain those development
+dependencies.
 This test does not measure narration intelligibility, transient fidelity,
 music quality, battery use, gapless transitions or interruption behavior. Those
 need representative content and real target-device validation.
+
+There is also an isolated host test of the **actual** `af_crisper.c` callbacks
+against the compiled shared DSP core. It models only mpv's frame/pin contract:
+24 stream cases cover all engines and six speeds; 12 further cases cover
+draining a speed change, discarding old audio on seek, and changing sample rate
+and channel count. Another 16 cases cover unsupported channel counts, invalid
+PCM, invalid speed and failures from the internal converter. All 52 cases check
+that failures end the stream without mpv bypassing the selected processor. The
+stream tests check frame totals, finite PCM, source PTS, unity passthrough,
+partial input larger than the core ring, and finite EOF. This harness is
+separate from the full mpv build and does not claim device playback validation.
+
+The desktop adapter also tests native error-event ordering. A fatal error from
+the selected optional processor or mpv disabling the labeled filter stops the
+player, fails any pending load and retains the error through subsequent buffering
+and completion events. Choosing another processor and restarting creates a new
+player. Existing default processors keep their existing error behavior.
+
+```sh
+python3 packages/just_audio/native/mpv/tests/run_contract.py \
+  --library build/native-dsp/libcrisper_dsp.so --build-dir build/mpv-contract
+```
 
 ## Other desktop migration paths
 

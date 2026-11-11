@@ -550,6 +550,106 @@ void main() {
     },
   );
 
+  testWidgets(
+    'unavailable saved desktop engine keeps a truthful active label',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      final previous = SpeedProcessing.activeDesktopMode;
+      final h = PlaybackHarness();
+      await tester.runAsync(h.init);
+      SpeedProcessing.configureForStartup('automatic');
+      h.settings.desktopSpeedProcessing = 'sonic';
+      try {
+        await _show(tester, h.playback);
+        final panel = find.byKey(const ValueKey('speed-processing-panel'));
+        await tester.ensureVisible(panel);
+        await tester.tap(panel);
+        await tester.pumpAndSettle();
+        expect(find.text('Desktop · Automatic'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('speed-processing-sonic')),
+          findsNothing,
+        );
+        expect(
+          find.textContaining(
+            'Sonic is not available in this installed audio engine',
+          ),
+          findsOneWidget,
+        );
+        expect(h.settings.desktopSpeedProcessing, 'sonic');
+        expect(
+          SpeedProcessing.activeDesktopMode,
+          DesktopSpeedProcessing.automatic,
+        );
+      } finally {
+        try {
+          await _close(tester, h.dispose);
+        } finally {
+          SpeedProcessing.configureForStartup(previous.id);
+          debugDefaultTargetPlatformOverride = null;
+        }
+      }
+    },
+  );
+
+  testWidgets(
+    'portable Apple choice waits for restart and keeps Apple default',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final previous = SpeedProcessing.activeAppleMode;
+      final h = PlaybackHarness();
+      await tester.runAsync(h.init);
+      SpeedProcessing.configureAppleForStartup('timeDomain');
+      try {
+        await _show(tester, h.playback);
+        final panel = find.byKey(const ValueKey('speed-processing-panel'));
+        await tester.ensureVisible(panel);
+        await tester.tap(panel);
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(RadioListTile<AppleSpeedProcessing>),
+          findsNWidgets(6),
+        );
+        final choice = find.byKey(
+          const ValueKey('speed-processing-apple-signalsmith'),
+        );
+        await tester.ensureVisible(choice);
+        await tester.tap(choice);
+        await tester.pumpAndSettle();
+        expect(h.settings.appleSpeedProcessing, 'signalsmith');
+        expect(
+          SpeedProcessing.activeAppleMode,
+          AppleSpeedProcessing.timeDomain,
+        );
+        expect(
+          SpeedProcessing
+              .appleLoadConfiguration!
+              .darwinLoadControl!
+              .speedProcessor,
+          isNull,
+        );
+        expect(find.text('Apple · Time Domain'), findsOneWidget);
+        SpeedProcessing.configureAppleForStartup(
+          h.settings.appleSpeedProcessing,
+        );
+        expect(
+          SpeedProcessing
+              .appleLoadConfiguration!
+              .darwinLoadControl!
+              .speedProcessor,
+          DarwinSpeedProcessor.signalsmith,
+        );
+      } finally {
+        try {
+          await _close(tester, h.dispose);
+        } finally {
+          SpeedProcessing.configureAppleForStartup(previous.id);
+          debugDefaultTargetPlatformOverride = null;
+        }
+      }
+    },
+  );
+
   for (final platform in [TargetPlatform.iOS, TargetPlatform.macOS]) {
     testWidgets('Apple selection is restart-only on $platform', (tester) async {
       debugDefaultTargetPlatformOverride = platform;

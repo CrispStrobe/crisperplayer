@@ -282,7 +282,25 @@
  end
 --- a/lib/just_audio.dart
 +++ b/lib/just_audio.dart
-@@ -2228,7 +2228,28 @@
+@@ -671,6 +671,17 @@
+   Duration get position => _getPositionFor(playbackEvent);
+ 
+   Duration _getPositionFor(PlaybackEvent playbackEvent) {
++    if (!kIsWeb &&
++        (defaultTargetPlatform == TargetPlatform.iOS ||
++            defaultTargetPlatform == TargetPlatform.macOS) &&
++        _audioLoadConfiguration?.darwinLoadControl?.speedProcessor != null) {
++      // The optional PCM player's source clock excludes output-starvation gaps.
++      // A worker can detect those gaps only after a queued buffer has played.
++      // Extrapolating even its last ready event would count unheard source time
++      // before the next buffering event. Use the native 200 ms snapshots for
++      // this backend; AVPlayer and every other platform keep their usual clock.
++      return playbackEvent.updatePosition;
++    }
+     if (playing && processingState == ProcessingState.ready) {
+       final result = playbackEvent.updatePosition +
+           (DateTime.now().difference(playbackEvent.updateTime)) * speed;
+@@ -2228,7 +2239,28 @@
        );
  }
  
@@ -312,7 +330,7 @@
  class DarwinLoadControl {
    /// (iOS/macOS) Whether the player will wait for sufficient data to be
    /// buffered before starting playback to avoid the likelihood of stalling.
-@@ -2246,25 +2267,72 @@
+@@ -2246,25 +2278,72 @@
    /// (iOS/macOS) If specified, limits the download bandwidth in bits per
    /// second.
    final double? preferredPeakBitRate;
@@ -387,7 +405,7 @@
  class AndroidLoadControl {
    /// (Android) The minimum duration of audio that should be buffered ahead of
    /// the current position.
-@@ -2291,6 +2359,10 @@
+@@ -2291,6 +2370,10 @@
  
    /// (Android) The back buffer duration.
    final Duration backBufferDuration;
@@ -398,7 +416,7 @@
  
    const AndroidLoadControl({
      this.minBufferDuration = const Duration(seconds: 50),
-@@ -2300,9 +2372,10 @@
+@@ -2300,9 +2383,10 @@
      this.targetBufferBytes,
      this.prioritizeTimeOverSizeThresholds = false,
      this.backBufferDuration = Duration.zero,
@@ -410,7 +428,7 @@
          minBufferDuration: minBufferDuration,
          maxBufferDuration: maxBufferDuration,
          bufferForPlaybackDuration: bufferForPlaybackDuration,
-@@ -2311,7 +2384,29 @@
+@@ -2311,7 +2395,29 @@
          targetBufferBytes: targetBufferBytes,
          prioritizeTimeOverSizeThresholds: prioritizeTimeOverSizeThresholds,
          backBufferDuration: backBufferDuration,
@@ -1599,13 +1617,14 @@
 +@end
 --- /dev/null
 +++ b/darwin/just_audio/Sources/just_audio/CrisperPortableAudioPlayer.m
-@@ -0,0 +1,550 @@
+@@ -0,0 +1,607 @@
 +// SPDX-License-Identifier: MIT
 +// Copyright (c) 2026 CrisperPlayer contributors
 +#import "./include/just_audio/CrisperPortableAudioPlayer.h"
 +#import "./include/just_audio/CrisperDspStream.h"
 +#import "./include/just_audio/BetterEventChannel.h"
 +#import <math.h>
++#include <string.h>
 +
 +static NSError *portableError(NSString *message) {
 +    return [NSError errorWithDomain:@"CrisperPortableAudio" code:1
@@ -1653,6 +1672,7 @@
 +    BOOL _shuffle;
 +    BOOL _playing;
 +    BOOL _disposed;
++    BOOL _manualRendering;
 +    FlutterResult _playResult;
 +    void (^_eventHandler)(NSDictionary *);
 +    id _configurationObserver;
@@ -1670,7 +1690,7 @@
 +
 +- (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar
 +                        playerId:(NSString *)playerId engine:(NSInteger)engine {
-+    self = [self initWithEngine:engine eventHandler:nil];
++    self = [self initWithEngine:engine manualRendering:NO eventHandler:nil];
 +    if (!self) return nil;
 +    _methodChannel = [FlutterMethodChannel methodChannelWithName:[@"com.ryanheise.just_audio.methods." stringByAppendingString:playerId]
 +                                               binaryMessenger:registrar.messenger];
@@ -1687,10 +1707,11 @@
 +    return self;
 +}
 +
-+- (instancetype)initWithEngine:(NSInteger)engine eventHandler:(void (^)(NSDictionary *))eventHandler {
++- (instancetype)initWithEngine:(NSInteger)engine manualRendering:(BOOL)manualRendering eventHandler:(void (^)(NSDictionary *))eventHandler {
 +    self = [super init];
 +    if (!self) return nil;
 +    _engine = engine;
++    _manualRendering = manualRendering;
 +    _rate = 1;
 +    _volume = 1;
 +    _state = psIdle;
@@ -1741,6 +1762,31 @@
 +    dispatch_async(_queue, ^{ [self handleCall:call result:result]; });
 +}
 +
++- (void)renderOfflineFrames:(AVAudioFrameCount)frames completion:(void (^)(AVAudioPCMBuffer *, NSError *))completion {
++    dispatch_async(_queue, ^{
++        NSError *error = nil;
++        AVAudioPCMBuffer *buffer = nil;
++        if (self->_disposed || !self->_manualRendering || !self->_playing || !self->_stream || frames == 0 || frames > 65536) {
++            error = portableError(@"Offline rendering requires an active offline integration player and 1–65536 frames.");
++        } else {
++            buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:self->_stream.format frameCapacity:frames];
++            AVAudioPCMBuffer *block = [[AVAudioPCMBuffer alloc] initWithPCMFormat:self->_stream.format frameCapacity:MIN(frames, 4096)];
++            for (AVAudioFrameCount offset = 0; offset < frames; offset += 4096) {
++                block.frameLength = 0;
++                AVAudioEngineManualRenderingStatus status = [self->_audioEngine renderOffline:MIN(frames - offset, 4096) toBuffer:block error:&error];
++                if (status == AVAudioEngineManualRenderingStatusError && !error) error = portableError(@"Offline audio rendering failed.");
++                if (error || block.frameLength == 0) break;
++                for (AVAudioChannelCount channel = 0; channel < buffer.format.channelCount; ++channel) {
++                    memcpy(buffer.floatChannelData[channel] + buffer.frameLength, block.floatChannelData[channel], block.frameLength * sizeof(float));
++                }
++                buffer.frameLength += block.frameLength;
++            }
++            [self broadcast:nil];
++        }
++        dispatch_async(dispatch_get_main_queue(), ^{ completion(buffer, error); });
++    });
++}
++
 +- (void)reply:(FlutterResult)result value:(id)value {
 +    if (result) dispatch_async(dispatch_get_main_queue(), ^{ result(value); });
 +}
@@ -1754,13 +1800,16 @@
 +- (int64_t)currentPosition {
 +    if (!_stream || !_node || !_playing) return _lastPosition;
 +    int64_t frames = _completedFrames;
++    BOOL audiblePCM = NO;
 +    AVAudioTime *renderTime = _node.lastRenderTime;
 +    AVAudioTime *playerTime = renderTime ? [_node playerTimeForNodeTime:renderTime] : nil;
-+    if (playerTime.isSampleTimeValid) {
++    BOOL validClock = _manualRendering ? _audioEngine.manualRenderingSampleTime > 0 : playerTime.isSampleTimeValid;
++    if (validClock && _audioEngine.isRunning && _node.isPlaying) {
 +        // Rendering can run ahead of the device. Never count queued PCM as
 +        // heard media, and never move behind a dataPlayedBack boundary.
-+        int64_t latency = (int64_t)llround(_node.outputPresentationLatency * _stream.format.sampleRate);
-+        int64_t heardTime = MAX(0, playerTime.sampleTime - latency);
++        int64_t latency = _manualRendering ? 0 : (int64_t)llround(_node.outputPresentationLatency * _stream.format.sampleRate);
++        int64_t timelineTime = _manualRendering ? _audioEngine.manualRenderingSampleTime : playerTime.sampleTime;
++        int64_t heardTime = timelineTime - latency;
 +        // A slow decode may leave a silent gap on the node's timeline. Count
 +        // only intervals containing scheduled PCM, never that silence.
 +        for (NSDictionary *segment in _scheduledSegments) {
@@ -1769,18 +1818,29 @@
 +            if (heardTime < start) break;
 +            int64_t output = [segment[@"outputStart"] longLongValue] + MIN(heardTime, end) - start;
 +            frames = MAX(frames, output);
-+            if (heardTime < end) break;
++            if (heardTime < end) { audiblePCM = YES; break; }
 +        }
 +    }
-+    _lastPosition = MAX(_lastPosition, [_stream mediaPositionForOutputFrames:frames]);
++    int64_t position = MAX(_lastPosition, [_stream mediaPositionForOutputFrames:frames]);
++    if (_state == psReady || _state == psBuffering) {
++        // Merely queuing PCM after starvation does not mean the listener has
++        // heard it. Stay buffering until the source clock actually advances
++        // into a scheduled interval, including through device startup latency.
++        BOOL resumed = _state != psBuffering || position > _lastPosition;
++        _state = audiblePCM && resumed ? psReady : psBuffering;
++    }
++    _lastPosition = position;
 +    return _lastPosition;
 +}
 +
 +- (void)broadcast:(NSError *)error {
 +    if (_disposed) return;
++    // Evaluate position first: the same render-clock snapshot also determines
++    // ready/buffering. Dictionary expression ordering must not send stale ready.
++    int64_t position = [self currentPosition];
 +    NSDictionary *event = @{
 +        @"processingState": @(_state),
-+        @"updatePosition": @([self currentPosition]),
++        @"updatePosition": @(position),
 +        @"updateTime": @((int64_t)llround(NSDate.date.timeIntervalSince1970 * 1000)),
 +        @"bufferedPosition": @(_stream ? _stream.decodedPositionMicroseconds : _lastPosition),
 +        @"icyMetadata": @{},
@@ -1795,6 +1855,12 @@
 +            if (self->_eventHandler) self->_eventHandler(event);
 +        }
 +    });
++}
++
++- (void)broadcastClockTransition {
++    enum ProcessingState previous = _state;
++    [self currentPosition];
++    if (_state != previous) [self broadcast:nil];
 +}
 +
 +- (void)resetOutput {
@@ -1912,6 +1978,8 @@
 +    [_audioEngine attachNode:_node];
 +    [_audioEngine connect:_node to:_audioEngine.mainMixerNode format:_stream.format];
 +    _node.volume = _volume;
++    if (_manualRendering && ![_audioEngine enableManualRenderingMode:AVAudioEngineManualRenderingModeOffline
++                                                             format:_stream.format maximumFrameCount:4096 error:error]) return NO;
 +    [_audioEngine prepare];
 +    _state = psReady;
 +    if (![self fillBuffers:error]) return NO;
@@ -1924,6 +1992,9 @@
 +}
 +
 +- (BOOL)fillBuffers:(NSError **)error {
++    // Report a depleted audible queue before doing decoder/DSP work. Queuing
++    // future buffers below must not prematurely report recovery from that gap.
++    [self broadcastClockTransition];
 +    // Four buffers bound queued output to 16,384 frames. All decoding/DSP runs
 +    // on this worker queue, never on the real-time render callback.
 +    while (_queuedBuffers < 4 && !_stream.isEnded) {
@@ -1934,10 +2005,12 @@
 +        int64_t timelineStart = _timelineScheduledEnd;
 +        AVAudioTime *renderTime = _node.lastRenderTime;
 +        AVAudioTime *playerTime = renderTime ? [_node playerTimeForNodeTime:renderTime] : nil;
-+        if (playerTime.isSampleTimeValid && playerTime.sampleTime > timelineStart) {
++        int64_t now = _manualRendering ? _audioEngine.manualRenderingSampleTime :
++            (playerTime.isSampleTimeValid ? playerTime.sampleTime : -1);
++        if (now > timelineStart) {
 +            // Recovery after starvation: explicitly schedule in the future and
 +            // retain the gap in the clock map instead of skipping source time.
-+            timelineStart = playerTime.sampleTime + 512;
++            timelineStart = now + (_manualRendering ? 0 : (int64_t)ceil(_stream.format.sampleRate * .05));
 +        }
 +        int64_t completed = _scheduledFrames + buffer.frameLength;
 +        _timelineScheduledEnd = timelineStart + buffer.frameLength;
@@ -1948,7 +2021,7 @@
 +        __weak CrisperPortableAudioPlayer *weakSelf = self;
 +        AVAudioTime *time = [AVAudioTime timeWithSampleTime:timelineStart atRate:_stream.format.sampleRate];
 +        [_node scheduleBuffer:buffer atTime:time options:0
-+          completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack
++          completionCallbackType:_manualRendering ? AVAudioPlayerNodeCompletionDataRendered : AVAudioPlayerNodeCompletionDataPlayedBack
 +          completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
 +            CrisperPortableAudioPlayer *strongSelf = weakSelf;
 +            if (!strongSelf) return;
@@ -1966,6 +2039,7 @@
 +            });
 +        }];
 +    }
++    [self broadcastClockTransition];
 +    return YES;
 +}
 +
@@ -2108,6 +2182,7 @@
 +                        BOOL found = NO;
 +                        for (NSInteger i = 0; i < (NSInteger)_sources.count; ++i) if ([_sources[i][@"id"] isEqual:currentId]) { next = i; found = YES; break; }
 +                        [self openIndex:next position:found ? position : 0 error:&error];
++                        if (!error && _playing && _state == psCompleted) [self advance];
 +                        [self broadcast:nil];
 +                    }
 +                }
@@ -2185,11 +2260,12 @@
 +NS_ASSUME_NONNULL_END
 --- /dev/null
 +++ b/darwin/just_audio/Sources/just_audio/include/just_audio/CrisperPortableAudioPlayer.h
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,26 @@
 +// SPDX-License-Identifier: MIT
 +// Copyright (c) 2026 CrisperPlayer contributors
 +#import "AudioPlayer.h"
 +
++NS_ASSUME_NONNULL_BEGIN
 +/// Optional local-file playback path. The normal AVQueuePlayer stays unchanged.
 +@interface CrisperPortableAudioPlayer : NSObject
 ++ (NSInteger)engineIdentifierForName:(NSString *)name NS_SWIFT_NAME(engineIdentifier(for:));
@@ -2199,11 +2275,18 @@
 +/// Native entry point used by the integration harness without a FlutterEngine.
 +/// Commands and event callbacks retain the same channel message contract.
 +- (instancetype)initWithEngine:(NSInteger)engine
-+                  eventHandler:(void (^)(NSDictionary *event))eventHandler
-+    NS_SWIFT_NAME(init(engine:eventHandler:));
++               manualRendering:(BOOL)manualRendering
++                  eventHandler:(void (^ _Nullable)(NSDictionary *event))eventHandler
++    NS_SWIFT_NAME(init(engine:manualRendering:eventHandler:));
 +- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result;
++/// Offline integration rendering uses the same scheduler, transport and DSP;
++/// installed players always render to the device and reject this operation.
++- (void)renderOfflineFrames:(AVAudioFrameCount)frames
++                completion:(void (^)(AVAudioPCMBuffer * _Nullable, NSError * _Nullable))completion
++    NS_SWIFT_NAME(renderOffline(frames:completion:));
 +- (void)dispose:(BOOL)calledFromDealloc;
 +@end
++NS_ASSUME_NONNULL_END
 --- /dev/null
 +++ b/darwin/just_audio/Sources/just_audio/portable_dsp/crisper_dsp.cpp
 @@ -0,0 +1,3 @@
@@ -2320,7 +2403,7 @@
 +#include "../../../../../native/crisper_dsp/wsola/wsola.cpp"
 --- /dev/null
 +++ b/native/crisper_dsp/CMakeLists.txt
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,62 @@
 +# SPDX-License-Identifier: MIT
 +cmake_minimum_required(VERSION 3.22)
 +project(crisper_dsp LANGUAGES C CXX)
@@ -2367,7 +2450,9 @@
 +target_compile_options(crisper_dsp PRIVATE
 +  $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-O2>
 +  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fwrapv>
-+  $<$<C_COMPILER_ID:MSVC>:/O2>)
++  # CMake's MSVC Debug flags include /RTC1, which conflicts with /O2. Keep that
++  # debugger configuration buildable; device performance checks use Release.
++  $<$<AND:$<C_COMPILER_ID:MSVC>,$<NOT:$<CONFIG:Debug>>>:/O2>)
 +if(ANDROID)
 +  target_link_libraries(crisper_dsp PRIVATE log)
 +elseif(UNIX)
@@ -2456,21 +2541,23 @@
 +)
 --- /dev/null
 +++ b/native/crisper_dsp/README.md
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,218 @@
 +# CrisperPlayer native time-stretch adapter
 +
-+This is a real streaming PCM processor used by the optional Android quality
-+modes. It compiles Bungee Basic and Signalsmith Stretch from pinned, unmodified
-+sources, plus a maintained portable **Chromium WSOLA** fork. The same core can
-+be built on Linux for deterministic tests and WAV comparisons. The streaming
-+adapter is MIT licensed; the Chromium-derived port is BSD-3-Clause. Each upstream
-+implementation keeps its license, recorded in
++This streaming PCM core supplies optional processors for Android, Apple
++local-file playback and controlled desktop libmpv builds. It compiles Sonic C,
++Bungee Basic and Signalsmith Stretch from pinned, unmodified sources, plus a
++maintained portable **Chromium WSOLA** fork. The same code also runs in host
++tests and WAV comparisons. The streaming adapter is MIT licensed; the
++Chromium-derived port is BSD-3-Clause. Each upstream implementation keeps its
++license, recorded in
 +[vendor/manifest.json](vendor/manifest.json).
 +
 +Android's default remains Media3's Sonic processor. The native Sonic C processor
-+is included for the host comparison harness; that comparison is **not** a
-+bit-exact replica of Media3 Sonic. Bungee, Signalsmith and WSOLA are optional
-+listening choices, not a claim that one wins for every voice or speed. Signalsmith's
++serves the optional Apple/desktop paths and the host comparison harness; it is
++**not** a bit-exact replica of Media3 Sonic. Apple Time Domain and desktop mpv
++Automatic remain their platform defaults. Bungee, Signalsmith and WSOLA are
++optional listening choices, not a claim that one wins for every voice or speed. Signalsmith's
 +upstream guidance concentrates on moderate time stretch, roughly 0.75–1.5×.
 +The adapter's tested functional range is 0.5–3×.
 +
@@ -2497,6 +2584,11 @@
 +all-negative correlations, signed/excluded endpoints, silence, anti-phase stereo
 +and a silent first channel. Git-file snapshots verify both SHA-256 and the exact
 +upstream Git blob ID; existing archive source pins remain unchanged.
++
++The CMake target also supports `CRISPER_DSP_SHARED=ON` and
++`CRISPER_DSP_TESTS=ON` for the Linux, macOS and Windows native CI matrix. The
++shared library is a testable processing core; loading it alone does not connect
++an application's decoder or audio output.
 +
 +The host tests exercise the actual compiled library, including:
 +
@@ -2541,6 +2633,37 @@
 +Listen at equal perceived loudness. Compare consonants, breath sounds, first and
 +last words, pauses, background music and stereo image at the speeds you use.
 +Host timing includes Python I/O and is not an Android CPU or battery result.
++
++## Native playback integrations
++
++Android's Media3/JNI adapter retains its existing PCM sink and processing-chain
++integration. It replaces the default speed stage for the selected alternatives;
++it does not run a second stretcher after Sonic. Android's default Sonic path
++continues to use Media3 without loading the optional JNI processor.
++
++The Apple adapter decodes supported local files with `AVAudioFile`, streams PCM
++through this core and schedules the processed buffers through `AVAudioEngine`.
++Its delivered/output-device position maps back to original source time.
++`CrisperDspStream` supplies the shared bridge for all four engines. CocoaPods
++compiles thin translation units that include these exact source files. SwiftPM
++uses the local [CrisperDsp package](Package.swift) with an explicit source list.
++There is no second vendored copy of the DSP closure. The ordinary AVPlayer Time
++Domain and Spectral paths remain available for the platform default and URLs
++outside the optional local-file backend's scope.
++
++The [mpv integration](../mpv/) registers a `crisperdsp` filter in a controlled,
++source-built libmpv. It accepts mpv's speed commands, drains each old-rate segment
++before changing rate, and emits source-timestamped PCM. Decoder, output device
++and native player events remain with mpv. The desktop adapter detects the
++filter in the library actually loaded; a stock system libmpv or historical
++Windows DLL does not gain custom engines from the Dart wrapper alone. The
++controlled Linux and Windows recipes include the source preparation and keep
++the matching source/patch evidence. FFmpeg atempo is a separate optional
++desktop route when that loaded mpv exposes it.
++
++See [portable platform coverage](../../../../docs/PORTABLE_AUDIO_PROCESSORS.md)
++for build recipes, limits and validation boundaries. The separate browser
++player has no new integration of this core.
 +
 +## Streaming contract
 +
@@ -2629,11 +2752,14 @@
 +PFFFT's exact notice is retained under a local `LicenseRef-PFFFT-FFTPACK` instead
 +of substituting an inaccurately named standard license.
 +
-+The app's Android DSP notice includes these license texts and the corresponding
-+source location. Distribution must preserve notices and make the MPL-covered
-+source and modifications available under MPL-2.0. Neither passing these signal
-+tests nor finding a permissive wrapper license certifies the entire APK's native
-+and Maven dependency closure; those remain separate release checks.
++The app's shared DSP notice includes these license texts and the corresponding
++source location on all native platforms; its historical `ANDROID-DSP.txt`
++filename is retained. Distribution must preserve notices and make the
++MPL-covered source and modifications available under MPL-2.0. The inventory
++requires source-manifest review for Android, iOS, macOS, Linux and Windows,
++while keeping their individual artifact validation pending. Host signal tests
++do not verify an APK's NDK/Maven closure, an Apple application bundle or a
++desktop libmpv/FFmpeg package; those remain separate release checks.
 --- /dev/null
 +++ b/native/crisper_dsp/crisper_dsp.cpp
 @@ -0,0 +1,491 @@
@@ -4931,7 +5057,7 @@
 +#endif
 --- /dev/null
 +++ b/native/mpv/af_crisper.c
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,280 @@
 +// SPDX-License-Identifier: MIT
 +// Copyright (c) 2026 CrisperPlayer contributors
 +// Optional source-built libmpv filter; uses mpv's LGPL internal filter API.
@@ -4952,6 +5078,7 @@
 +
 +struct crisper_priv {
 +    struct crisper_options *options;
++    struct mp_filter *converter;
 +    struct mp_pin *input;
 +    struct mp_aframe *pending;
 +    struct mp_aframe *format;
@@ -4959,7 +5086,7 @@
 +    cp_dsp *dsp;
 +    double requested_speed, running_speed;
 +    double origin_pts, input_speed;
-+    bool finishing, eof;
++    bool finishing, eof, invalid_speed, failed;
 +};
 +
 +static void clear_segment(struct crisper_priv *p)
@@ -5008,6 +5135,15 @@
 +{
 +    struct crisper_priv *p = f->priv;
 +    if (!mp_pin_in_needs_data(f->ppins[1])) return;
++    if (p->failed) {
++        mp_pin_in_write(f->ppins[1], MP_EOF_FRAME);
++        return;
++    }
++    if (mp_filter_has_failed(p->converter)) {
++        MP_ERR(f, "crisperdsp input conversion failed\n");
++        goto error;
++    }
++    if (p->invalid_speed) goto error;
 +
 +    // Work and storage are bounded. Output is pulled before accepting more
 +    // input; no native frame is released until every input sample is consumed.
@@ -5111,7 +5247,13 @@
 +
 +error:
 +    MP_ERR(f, "crisperdsp processing failed: %s\n", cp_dsp_last_error());
-+    mp_filter_internal_mark_failed(f);
++    // mpv bypasses user filters marked failed and forwards untreated PCM.
++    // End this stream instead; the Dart adapter latches the error log and
++    // stops the player. No raw audio can escape while that event is delivered.
++    p->failed = true;
++    clear_segment(p);
++    TA_FREEP(&p->pending);
++    mp_pin_in_write(f->ppins[1], MP_EOF_FRAME);
 +}
 +
 +static bool crisper_command(struct mp_filter *f, struct mp_filter_command *cmd)
@@ -5120,12 +5262,13 @@
 +    if (cmd->type != MP_FILTER_COMMAND_SET_SPEED) return false;
 +    if (!isfinite(cmd->speed) || cmd->speed < .5 || cmd->speed > 3) {
 +        MP_ERR(f, "crisperdsp supports speeds from 0.5 to 3.0\n");
-+        mp_filter_internal_mark_failed(f);
++        p->invalid_speed = true;
 +        return true;
 +    }
 +    // Drain old-rate PCM before adopting the new rate, preserving all accepted
 +    // source frames. A seek reset deliberately discards old audio instead.
 +    p->requested_speed = cmd->speed;
++    p->invalid_speed = false;
 +    return true;
 +}
 +
@@ -5135,6 +5278,7 @@
 +    clear_segment(p);
 +    TA_FREEP(&p->pending);
 +    p->eof = false;
++    p->failed = false;
 +}
 +
 +static void crisper_destroy(struct mp_filter *f) { crisper_reset(f); }
@@ -5168,6 +5312,10 @@
 +        talloc_free(f);
 +        return NULL;
 +    }
++    p->converter = convert->f;
++    // Converter and resampler failures must end this stream too. Otherwise
++    // child failures propagate to this user filter and mpv bypasses it.
++    mp_filter_set_error_handler(p->converter, f);
 +    mp_autoconvert_add_afmt(convert, AF_FORMAT_FLOAT);
 +    mp_pin_connect(convert->f->pins[0], f->ppins[0]);
 +    p->input = convert->f->pins[1];
@@ -5233,6 +5381,386 @@
 +dependencies += declare_dependency(
 +  link_with: crisper_library,
 +  include_directories: include_directories('core'))
+--- /dev/null
++++ b/native/mpv/tests/filter_contract.c
+@@ -0,0 +1,195 @@
++// SPDX-License-Identifier: MIT
++#include "test_api.h"
++#include "../af_crisper.c"
++
++struct fixture {
++    struct mp_filter filter, converter;
++    struct crisper_priv state;
++    struct crisper_options options;
++    struct mp_pin input, output;
++};
++
++static struct mp_aframe *source(int rate, int channels, int count, double pts, bool silent) {
++    struct mp_aframe *f = mp_aframe_create();
++    f->rate = rate; f->channels = channels; f->format = AF_FORMAT_FLOAT; f->pts = pts;
++    assert(!mp_aframe_pool_allocate(NULL, f, count));
++    for (int i = 0; i < count; ++i)
++        for (int c = 0; c < channels; ++c)
++            f->data[i * channels + c] = silent ? 0 : .3 * sin(i * 2 * 3.141592653589793 * 440 / rate);
++    return f;
++}
++
++static void init(struct fixture *t, int engine, double rate,
++                 struct mp_aframe **frames, int count) {
++    memset(t, 0, sizeof(*t));
++    t->options.engine = engine;
++    t->input.input = frames; t->input.count = count;
++    t->filter.priv = &t->state; t->filter.ppins[1] = &t->output;
++    t->state.converter = &t->converter;
++    t->state.input = &t->input; t->state.options = &t->options;
++    t->state.format = mp_aframe_create(); t->state.requested_speed = rate;
++    t->state.origin_pts = MP_NOPTS_VALUE;
++}
++
++static struct mp_aframe *pull(struct fixture *t, bool *eof) {
++    for (int attempts = 0; attempts < 10000; ++attempts) {
++        crisper_process(&t->filter);
++        assert(!t->filter.failed);
++        struct mp_frame output = t->output.output;
++        t->output.output = (struct mp_frame){0};
++        if (output.type == MP_FRAME_EOF) { *eof = true; return NULL; }
++        if (output.type == MP_FRAME_AUDIO) return output.data;
++    }
++    assert(!"mpv filter stalled");
++    return NULL;
++}
++
++static void destroy(struct fixture *t) {
++    crisper_destroy(&t->filter);
++    test_free(t->state.format);
++    for (int i = t->input.index; i < t->input.count; ++i) test_free(t->input.input[i]);
++}
++
++static void check_stream(int engine, double speed) {
++    const int count = 192001; // More than the core's input capacity: partial write.
++    struct mp_aframe *frames[] = {source(48000, 2, count, 5, false)};
++    struct fixture t; init(&t, engine, speed, frames, 1);
++    int64_t delivered = 0;
++    bool eof = false;
++    double peak = 0;
++    while (!eof) {
++        struct mp_aframe *out = pull(&t, &eof);
++        if (!out) break;
++        assert(out->speed == speed);
++        const double expected = 5 + floor(delivered * speed) / 48000;
++        assert(fabs(out->pts - expected) < 1e-9);
++        for (int i = 0; i < out->size * 2; ++i) {
++            assert(isfinite(out->data[i]));
++            peak = fmax(peak, fabs(out->data[i]));
++            if (speed == 1) {
++                const double wanted = .3 * sin((delivered + i / 2) * 2 * 3.141592653589793 * 440 / 48000);
++                assert(fabs(out->data[i] - wanted) < 1e-7);
++            }
++        }
++        delivered += out->size;
++        test_free(out);
++    }
++    assert(delivered == llround(count / speed));
++    assert(peak > .1);
++    destroy(&t);
++}
++
++static void check_rate_change(int engine) {
++    const int count = 300001;
++    struct mp_aframe *frames[] = {source(48000, 1, count, 5, false)};
++    struct fixture t; init(&t, engine, 1.5, frames, 1);
++    bool eof = false;
++    struct mp_aframe *out = pull(&t, &eof);
++    assert(out && !eof);
++    int64_t old_count = out->size, new_count = 0;
++    const int64_t accepted = cp_dsp_input_frames(t.state.dsp);
++    test_free(out);
++    struct mp_filter_command command = {MP_FILTER_COMMAND_SET_SPEED, .75};
++    assert(crisper_command(&t.filter, &command));
++    bool entered_new_segment = false;
++    while (!eof) {
++        out = pull(&t, &eof);
++        if (!out) break;
++        if (out->speed == 1.5) {
++            assert(!entered_new_segment);
++            assert(fabs(out->pts - (5 + floor(old_count * 1.5) / 48000)) < 1e-9);
++            old_count += out->size;
++        } else {
++            assert(out->speed == .75);
++            entered_new_segment = true;
++            assert(fabs(out->pts - (5 + (accepted + floor(new_count * .75)) / 48000)) < 1e-9);
++            new_count += out->size;
++        }
++        test_free(out);
++    }
++    assert(entered_new_segment);
++    assert(old_count == llround(accepted / 1.5));
++    assert(new_count == llround((count - accepted) / .75));
++    destroy(&t);
++}
++
++static void check_seek(int engine) {
++    struct mp_aframe *frames[] = {source(48000, 1, 240000, 5, false)};
++    struct fixture t; init(&t, engine, 1.5, frames, 1);
++    bool eof = false;
++    test_free(pull(&t, &eof));
++    crisper_reset(&t.filter);
++    frames[0] = source(48000, 1, 24001, 100, true);
++    t.input.index = 0; t.input.sent_eof = false;
++    int64_t delivered = 0;
++    while (!eof) {
++        struct mp_aframe *out = pull(&t, &eof);
++        if (!out) break;
++        assert(fabs(out->pts - (100 + floor(delivered * 1.5) / 48000)) < 1e-9);
++        for (int i = 0; i < out->size; ++i) assert(fabs(out->data[i]) < 1e-7);
++        delivered += out->size;
++        test_free(out);
++    }
++    assert(delivered == llround(24001 / 1.5));
++    destroy(&t);
++}
++
++static void check_format_change(int engine) {
++    struct mp_aframe *frames[] = {
++        source(48000, 1, 48001, 10, false),
++        source(44100, 2, 44101, 20, false),
++    };
++    struct fixture t; init(&t, engine, 2, frames, 2);
++    bool eof = false, second = false;
++    int64_t delivered[2] = {0, 0};
++    while (!eof) {
++        struct mp_aframe *out = pull(&t, &eof);
++        if (!out) break;
++        int stream = out->rate == 48000 ? 0 : 1;
++        if (stream) second = true;
++        else assert(!second);
++        assert(out->channels == stream + 1);
++        assert(fabs(out->pts - ((stream ? 20 : 10) +
++                   (double)delivered[stream] * 2 / out->rate)) < 1e-9);
++        delivered[stream] += out->size;
++        test_free(out);
++    }
++    assert(delivered[0] == llround(48001 / 2.0));
++    assert(delivered[1] == llround(44101 / 2.0));
++    destroy(&t);
++}
++
++static void check_failure_closed(int engine, int kind) {
++    struct mp_aframe *frames[] = {source(48000, kind == 0 ? 3 : 1, 4096, 5, false)};
++    struct fixture t; init(&t, engine, 1.5, frames, 1);
++    if (kind == 1) frames[0]->data[0] = NAN;
++    if (kind == 2) {
++        struct mp_filter_command command = {MP_FILTER_COMMAND_SET_SPEED, 4};
++        assert(crisper_command(&t.filter, &command));
++    }
++    if (kind == 3) mp_filter_internal_mark_failed(&t.converter);
++    bool eof = false;
++    assert(!pull(&t, &eof));
++    assert(eof && t.state.failed);
++    // Marking an mpv user filter failed would make mpv bypass it. We must send
++    // EOF without that flag, and never return raw PCM on subsequent requests.
++    assert(!t.filter.failed);
++    eof = false;
++    assert(!pull(&t, &eof));
++    assert(eof);
++    destroy(&t);
++}
++
++int main(void) {
++    const double rates[] = {.5, 1, 1.25, 1.5, 2, 3};
++    for (int engine = 0; engine < 4; ++engine) {
++        for (int rate = 0; rate < 6; ++rate) check_stream(engine, rates[rate]);
++        check_rate_change(engine);
++        check_seek(engine);
++        check_format_change(engine);
++        for (int failure = 0; failure < 4; ++failure)
++            check_failure_closed(engine, failure);
++    }
++    puts("52 mpv callback contracts passed: PCM, source clocks, lifecycle, and no untreated audio after processor failure");
++    return 0;
++}
+--- /dev/null
++++ b/native/mpv/tests/run_contract.py
+@@ -0,0 +1,34 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: MIT
++"""Exercise actual af_crisper callbacks against the compiled native core.
++
++The host pin/frame model isolates duration, PTS and lifecycle behavior. It does
++not replace the full source-built libmpv PCM integration tests in CI.
++"""
++import argparse
++from pathlib import Path
++import subprocess
++
++HERE = Path(__file__).resolve().parent
++
++if __name__ == '__main__':
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--library', type=Path, required=True)
++    parser.add_argument('--build-dir', type=Path, required=True)
++    parser.add_argument('--cc', default='cc')
++    args = parser.parse_args()
++    output = args.build_dir.resolve()
++    output.mkdir(parents=True, exist_ok=True)
++    for name in ('audio/aframe.h', 'audio/format.h', 'common/common.h',
++                 'filters/f_autoconvert.h', 'filters/filter_internal.h',
++                 'filters/user_filters.h', 'options/m_option.h'):
++        header = output / 'include' / name
++        header.parent.mkdir(parents=True, exist_ok=True)
++        header.write_text('#include "test_api.h"\n')
++    exe = output / 'test-mpv-filter'
++    subprocess.run([args.cc, '-std=c11', '-O2', '-I' + str(output / 'include'),
++                    '-I' + str(HERE), '-I' + str(HERE.parents[1] / 'crisper_dsp'),
++                    str(HERE / 'filter_contract.c'), str(args.library.resolve()),
++                    '-Wl,-rpath,' + str(args.library.resolve().parent), '-lm',
++                    '-o', str(exe)], check=True)
++    subprocess.run([str(exe)], check=True)
+--- /dev/null
++++ b/native/mpv/tests/test_api.h
+@@ -0,0 +1,142 @@
++// SPDX-License-Identifier: MIT
++// Minimal host-side model of mpv's frame/pin contract. This is test scaffolding,
++// not a replacement native player or copied mpv implementation.
++#pragma once
++#include <assert.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#define MP_NOPTS_VALUE (-1e20)
++#define MPMIN(a, b) ((a) < (b) ? (a) : (b))
++#define mp_assert assert
++#define MP_ERR(f, ...) fprintf(stderr, __VA_ARGS__)
++#define talloc_steal(parent, pointer) (pointer)
++#define TA_FREEP(pointer) do { test_free(*(pointer)); *(pointer) = NULL; } while (0)
++#define talloc_free test_free
++#define AF_FORMAT_FLOAT 1
++#define OPT_CHOICE(...) 0
++
++enum { MP_FRAME_NONE, MP_FRAME_AUDIO, MP_FRAME_EOF };
++enum { MP_PIN_IN, MP_PIN_OUT, MP_FILTER_COMMAND_SET_SPEED };
++struct mp_frame { int type; void *data; };
++#define MAKE_FRAME(type, data) ((struct mp_frame){(type), (data)})
++#define MP_EOF_FRAME MAKE_FRAME(MP_FRAME_EOF, NULL)
++
++struct mp_aframe {
++    int tag, rate, channels, format, size, offset;
++    double pts, speed;
++    float *data;
++    uint8_t *planes[1];
++};
++struct mp_aframe_pool { int unused; };
++struct mp_pin {
++    struct mp_aframe **input;
++    int count, index;
++    bool sent_eof;
++    struct mp_frame output;
++};
++struct mp_filter {
++    void *priv;
++    struct mp_filter *error_handler;
++    struct mp_pin *ppins[2], *pins[2];
++    bool failed;
++    int progress;
++};
++struct mp_autoconvert { struct mp_filter *f; };
++struct mp_filter_command { int type; double speed; };
++struct mp_filter_info {
++    const char *name;
++    size_t priv_size;
++    void (*process)(struct mp_filter *);
++    bool (*command)(struct mp_filter *, struct mp_filter_command *);
++    void (*reset)(struct mp_filter *), (*destroy)(struct mp_filter *);
++};
++struct m_option { const char *name; int unused; };
++struct mp_user_filter_entry {
++    struct {
++        const char *description, *name;
++        size_t priv_size;
++        const void *priv_defaults;
++        const struct m_option *options;
++    } desc;
++    struct mp_filter *(*create)(struct mp_filter *, void *);
++};
++
++static void test_free(void *pointer) {
++    if (!pointer) return;
++    struct mp_aframe *frame = pointer;
++    assert(frame->tag == 42);
++    free(frame->data);
++    free(frame);
++}
++static struct mp_aframe *mp_aframe_create(void) {
++    struct mp_aframe *f = calloc(1, sizeof(*f));
++    f->tag = 42; f->speed = 1; f->pts = MP_NOPTS_VALUE;
++    return f;
++}
++static void mp_aframe_reset(struct mp_aframe *f) {
++    free(f->data); memset(f, 0, sizeof(*f));
++    f->tag = 42; f->speed = 1; f->pts = MP_NOPTS_VALUE;
++}
++static void mp_aframe_config_copy(struct mp_aframe *a, struct mp_aframe *b) {
++    a->rate = b->rate; a->channels = b->channels; a->format = b->format;
++}
++static bool mp_aframe_config_equals(struct mp_aframe *a, struct mp_aframe *b) {
++    return a->rate == b->rate && a->channels == b->channels && a->format == b->format;
++}
++static void mp_aframe_copy_attributes(struct mp_aframe *a, struct mp_aframe *b) {
++    a->pts = b->pts; a->speed = b->speed;
++}
++static struct mp_aframe *mp_aframe_new_ref(struct mp_aframe *format) {
++    assert(!format->data);
++    struct mp_aframe *f = mp_aframe_create();
++    mp_aframe_config_copy(f, format); mp_aframe_copy_attributes(f, format);
++    return f;
++}
++static int mp_aframe_pool_allocate(struct mp_aframe_pool *p, struct mp_aframe *f, int n) {
++    (void)p; f->data = calloc((size_t)n * f->channels, sizeof(float));
++    f->size = n; f->offset = 0; return f->data ? 0 : -1;
++}
++static int mp_aframe_get_rate(struct mp_aframe *f) { return f->rate; }
++static int mp_aframe_get_channels(struct mp_aframe *f) { return f->channels; }
++static int mp_aframe_get_format(struct mp_aframe *f) { return f->format; }
++static int mp_aframe_get_size(struct mp_aframe *f) { return f->size; }
++static double mp_aframe_get_pts(struct mp_aframe *f) { return f->pts; }
++static double mp_aframe_get_speed(struct mp_aframe *f) { return f->speed; }
++static void mp_aframe_set_size(struct mp_aframe *f, int n) { f->size = n; }
++static void mp_aframe_set_pts(struct mp_aframe *f, double pts) { f->pts = pts; }
++static void mp_aframe_set_speed(struct mp_aframe *f, double speed) { f->speed = speed; }
++static uint8_t **mp_aframe_get_data_ro(struct mp_aframe *f) {
++    f->planes[0] = (uint8_t *)(f->data + f->offset * f->channels); return f->planes;
++}
++static uint8_t **mp_aframe_get_data_rw(struct mp_aframe *f) { return mp_aframe_get_data_ro(f); }
++static void mp_aframe_skip_samples(struct mp_aframe *f, int n) {
++    assert(n >= 0 && n <= f->size); f->size -= n; f->offset += n;
++    if (f->pts != MP_NOPTS_VALUE) f->pts += (double)n * f->speed / f->rate;
++}
++static bool mp_pin_in_needs_data(struct mp_pin *p) { return !p->output.type; }
++static struct mp_frame mp_pin_out_read(struct mp_pin *p) {
++    if (p->index < p->count) return MAKE_FRAME(MP_FRAME_AUDIO, p->input[p->index++]);
++    if (!p->sent_eof) { p->sent_eof = true; return MP_EOF_FRAME; }
++    return MAKE_FRAME(MP_FRAME_NONE, NULL);
++}
++static bool mp_pin_in_write(struct mp_pin *p, struct mp_frame f) {
++    assert(!p->output.type); p->output = f; return true;
++}
++static void mp_frame_unref(struct mp_frame *f) { test_free(f->data); *f = (struct mp_frame){0}; }
++static void mp_filter_internal_mark_failed(struct mp_filter *f) { f->failed = true; }
++static void mp_filter_set_error_handler(struct mp_filter *f, struct mp_filter *handler) { f->error_handler = handler; }
++static bool mp_filter_has_failed(struct mp_filter *f) { bool failed = f->failed; f->failed = false; return failed; }
++static void mp_filter_internal_mark_progress(struct mp_filter *f) { ++f->progress; }
++
++// Creation uses real mpv during native integration CI; the host harness below
++// supplies its input/output pins directly and exercises the actual callbacks.
++static struct mp_filter *mp_filter_create(struct mp_filter *p, const struct mp_filter_info *i) { (void)p; (void)i; return NULL; }
++static struct mp_pin *mp_filter_add_pin(struct mp_filter *f, int d, const char *n) { (void)f; (void)d; (void)n; return NULL; }
++static struct mp_aframe_pool *mp_aframe_pool_create(void *p) { (void)p; return NULL; }
++static struct mp_autoconvert *mp_autoconvert_create(struct mp_filter *p) { (void)p; return NULL; }
++static void mp_autoconvert_add_afmt(struct mp_autoconvert *p, int f) { (void)p; (void)f; }
++static void mp_pin_connect(struct mp_pin *a, struct mp_pin *b) { (void)a; (void)b; }
 --- /dev/null
 +++ b/native/mpv/upstream.json
 @@ -0,0 +1,12 @@

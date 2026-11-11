@@ -1,6 +1,5 @@
-library just_audio_media_kit;
-
 import 'dart:async';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
@@ -28,6 +27,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
   Future<void> _configureProcessor() async {
     await _readyCompleter.future;
+    _throwIfProcessorFailed();
     final filter = _speedProcessor.audioFilter;
     if (filter == null) return;
     final supported = MediaKitSpeedProcessor.supportedBy(
@@ -40,6 +40,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
       );
     }
     await setAudioFilterChecked(_player, filter);
+    _throwIfProcessorFailed();
   }
 
   static final _logger = Logger('MediaKitPlayer');
@@ -56,6 +57,10 @@ class MediaKitPlayer extends AudioPlayerPlatform {
   int? _errorCode;
   String? _errorMessage;
   Completer<Duration?>? _loadCompleter;
+  PlatformException? _processorFailure;
+  Future<void>? _processorStop;
+  bool _released = false;
+  bool _nativeDisposed = false;
 
   /// The index that's currently playing
   int _currentIndex = 0;
@@ -70,11 +75,10 @@ class MediaKitPlayer extends AudioPlayerPlatform {
   }
 
   MediaKitPlayer(super.id)
-    : _speedProcessor =
-          JustAudioMediaKit.speedProcessor ??
-          (JustAudioMediaKit.pitch
-              ? MediaKitSpeedProcessor.legacyScaletempo
-              : MediaKitSpeedProcessor.automatic) {
+      : _speedProcessor = JustAudioMediaKit.speedProcessor ??
+            (JustAudioMediaKit.pitch
+                ? MediaKitSpeedProcessor.legacyScaletempo
+                : MediaKitSpeedProcessor.automatic) {
     _player = Player(
       configuration: PlayerConfiguration(
         pitch: _speedProcessor == MediaKitSpeedProcessor.legacyScaletempo,
@@ -86,12 +90,29 @@ class MediaKitPlayer extends AudioPlayerPlatform {
       ),
     );
 
+    _listenToPlayer();
+  }
+
+  /// Exercise native event ordering without needing a device or native binary.
+  @visibleForTesting
+  MediaKitPlayer.withPlayer(
+    super.id,
+    Player player,
+    MediaKitSpeedProcessor processor,
+  ) : _speedProcessor = processor {
+    _player = player;
+    _readyCompleter.complete();
+    _listenToPlayer();
+  }
+
+  void _listenToPlayer() {
     if (JustAudioMediaKit.prefetchPlaylist) {
       setProperty(_player, 'prefetch-playlist', 'yes');
     }
 
     _streamSubscriptions = [
       _player.stream.duration.listen((duration) {
+        if (_processorFailure != null) return;
         if (_currentMedia?.extras?['overrideDuration'] != null) return;
 
         if (_setPosition != null && duration.inSeconds > 0) {
@@ -102,6 +123,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _updatePlaybackEvent();
       }),
       _player.stream.position.listen((position) {
+        if (_processorFailure != null) return;
         _position = position;
         final start = _currentMedia?.start;
         if (start != null) _position -= start;
@@ -109,6 +131,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _updatePlaybackEvent();
       }),
       _player.stream.buffering.listen((isBuffering) {
+        if (_processorFailure != null) return;
         final start = _currentMedia?.start;
         if (!isBuffering && start != null && _bufferedPosition <= start) {
           // Not ready yet, will be triggered by _player.stream.buffer
@@ -135,6 +158,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _updatePlaybackEvent();
       }),
       _player.stream.buffer.listen((buffer) {
+        if (_processorFailure != null) return;
         _bufferedPosition = buffer;
         // Detect ready for clipping audio source
         final start = _currentMedia?.start;
@@ -153,6 +177,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _dataController.add(PlayerDataMessage(volume: volume / 100.0));
       }),
       _player.stream.completed.listen((completed) {
+        if (_processorFailure != null) return;
         _bufferedPosition = _position = Duration.zero;
         if (completed &&
             // is at the end of the [Playlist]
@@ -167,6 +192,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _updatePlaybackEvent();
       }),
       _player.stream.error.listen((error) {
+        if (_processorFailure != null) return;
         final errorUri = RegExp(r'Failed to open (.*)\.').firstMatch(error)?[1];
         if (errorUri == null || errorUri == _currentMedia?.uri) {
           _processingState = ProcessingStateMessage.idle;
@@ -182,6 +208,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _logger.severe('ERROR OCCURRED: $error');
       }),
       _player.stream.playlist.listen((playlist) {
+        if (_processorFailure != null) return;
         if (_currentIndex != playlist.index) {
           _bufferedPosition = _position = Duration.zero;
           _currentIndex = playlist.index;
@@ -201,10 +228,67 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _dataController.add(PlayerDataMessage(speed: rate));
       }),
       _player.stream.log.listen((event) {
+        if (_speedProcessor.isFatalFilterLog(
+          prefix: event.prefix,
+          level: event.level,
+          text: event.text,
+        )) {
+          _failProcessor(event.text);
+        }
         // ignore: avoid_print
         print("MPV: [${event.level}] ${event.prefix}: ${event.text}");
       }),
     ];
+  }
+
+  void _throwIfProcessorFailed() {
+    final failure = _processorFailure;
+    if (failure != null) throw failure;
+  }
+
+  void _failProcessor(String nativeMessage) {
+    if (_processorFailure != null || _released) return;
+    final failure = PlatformException(
+      code: '$kErrorCode',
+      message: 'The ${_speedProcessor.name} speed processor failed. Playback '
+          'has stopped. Choose another processor and restart CrisperPlayer. '
+          '${nativeMessage.trim()}',
+    );
+    _processorFailure = failure;
+    _errorCode = kErrorCode;
+    _errorMessage = failure.message;
+    _playing = false;
+    _mediaOpened = false;
+    _setPosition = null;
+    _processingState = ProcessingStateMessage.idle;
+    _dataController.add(PlayerDataMessage(playing: false));
+    _updatePlaybackEvent();
+    if (_loadCompleter != null && !_loadCompleter!.isCompleted) {
+      _loadCompleter!.completeError(failure);
+    }
+    _processorStop = _stopFailedProcessor();
+    unawaited(_processorStop);
+  }
+
+  Future<void> _stopFailedProcessor() async {
+    try {
+      await _player.pause();
+    } catch (error) {
+      _logger.warning('Pausing a failed audio processor failed: $error');
+    }
+    try {
+      await _player.stop();
+    } catch (error) {
+      _logger.warning('Stopping a failed audio processor failed: $error');
+      // If native stop itself fails, releasing the player is the final way to
+      // prevent its disabled-filter fallback from continuing audio playback.
+      try {
+        await _player.dispose();
+        _nativeDisposed = true;
+      } catch (error) {
+        _logger.severe('Releasing a failed audio processor failed: $error');
+      }
+    }
   }
 
   void _updateDuration(Duration duration) {
@@ -241,6 +325,12 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
   /// Updates the playback event
   void _updatePlaybackEvent() {
+    if (_released) return;
+    if (_processorFailure != null) {
+      _processingState = ProcessingStateMessage.idle;
+      _errorCode = kErrorCode;
+      _errorMessage = _processorFailure!.message;
+    }
     _eventController.add(
       PlaybackEventMessage(
         processingState: _processingState,
@@ -259,9 +349,14 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
   @override
   Future<LoadResponse> load(LoadRequest request) async {
+    _throwIfProcessorFailed();
     _logger.finest('load(${request.toMap()})');
     _mediaOpened = false;
     _loadCompleter = Completer();
+    final loadResult = _loadCompleter!.future;
+    // Native logs can report failure while open() is still pending. Attach an
+    // error handler immediately; awaiting this same future below still throws.
+    loadResult.ignore();
     _currentIndex = request.initialIndex ?? 0;
     _bufferedPosition = Duration.zero;
     _position = Duration.zero;
@@ -271,6 +366,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
     _errorMessage = null;
     _updatePlaybackEvent();
 
+    final Future<void> opened;
     if (request.audioSourceMessage is ConcatenatingAudioSourceMessage) {
       final audioSource =
           request.audioSourceMessage as ConcatenatingAudioSourceMessage;
@@ -279,14 +375,22 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         index: _currentIndex,
       );
 
-      await _player.open(playable, play: _playing);
+      opened = _player.open(playable, play: _playing);
     } else {
       final playable = _convertAudioSourceIntoMediaKit(
         request.audioSourceMessage,
       );
       _logger.finest('playable is ${playable.toString()}');
-      await _player.open(playable, play: _playing);
+      opened = _player.open(playable, play: _playing);
     }
+    // A native processor error must reject load even if open() is still
+    // waiting for a decoder or output device. The stop operation runs
+    // independently; Future.any also observes a later open() failure.
+    await Future.any<void>([
+      opened,
+      loadResult.then<void>((_) {}),
+    ]);
+    _throwIfProcessorFailed();
     _mediaOpened = true;
 
     if (request.initialPosition != null) {
@@ -294,15 +398,18 @@ class MediaKitPlayer extends AudioPlayerPlatform {
     }
 
     _updatePlaybackEvent();
-    final duration = await _loadCompleter?.future;
+    final duration = await loadResult;
+    _throwIfProcessorFailed();
     return LoadResponse(duration: duration);
   }
 
   @override
   Future<PlayResponse> play(PlayRequest request) async {
+    _throwIfProcessorFailed();
     _playing = true;
     if (_mediaOpened) {
       await _player.play();
+      _throwIfProcessorFailed();
     }
     return PlayResponse();
   }
@@ -325,6 +432,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
   @override
   Future<SetSpeedResponse> setSpeed(SetSpeedRequest request) {
+    _throwIfProcessorFailed();
     return _player.setRate(request.speed).then((_) => SetSpeedResponse());
   }
 
@@ -347,9 +455,8 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
     _dataController.add(
       PlayerDataMessage(
-        shuffleMode: shuffling
-            ? ShuffleModeMessage.all
-            : ShuffleModeMessage.none,
+        shuffleMode:
+            shuffling ? ShuffleModeMessage.all : ShuffleModeMessage.none,
       ),
     );
     return SetShuffleModeResponse();
@@ -357,6 +464,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
   @override
   Future<SeekResponse> seek(SeekRequest request) async {
+    _throwIfProcessorFailed();
     _logger.finest('seek(${request.toMap()})');
     if (request.index != null) {
       await _player.jump(request.index!);
@@ -433,14 +541,19 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
   /// Release the resources used by this player.
   Future<void> release() async {
+    if (_released) return;
+    _released = true;
     _logger.info('releasing player resources');
     _mediaOpened = false;
-    await _player.dispose();
     // cancel all stream subscriptions
     for (final StreamSubscription subscription in _streamSubscriptions) {
-      unawaited(subscription.cancel());
+      await subscription.cancel();
     }
     _streamSubscriptions.clear();
+    await _processorStop;
+    if (!_nativeDisposed) await _player.dispose();
+    await _eventController.close();
+    await _dataController.close();
   }
 
   /// Converts an [AudioSourceMessage] into a [Media] for playback

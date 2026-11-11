@@ -63,15 +63,23 @@ resume positions. Explicit metadata backups include the journal. See
 
 Choose exact playback rates from **0.50× to 3.00×**, adjust in **0.05×** steps,
 and see the remaining listening time. Rates are remembered per book. On
-Windows/Linux, **Speed → Speed processing** offers Automatic (the engine's
-default pitch-preserving route) and Legacy scaletempo, applied after restart.
-On iOS/macOS the same panel offers Time Domain (the voice default) and
-Spectral (an alternative for music and mixed audio), also applied after restart.
-Android keeps Sonic as the default and offers experimental Bungee Basic and
-Signalsmith Stretch alternatives after restart. The native alternatives retain
-original source timing for resume/history; skip silence remains available with
-Sonic. Their pinned MPL/permissive source and notices are included. See
-[algorithms, platform differences and validation limits](docs/SPEED_PROCESSING.md).
+Windows/Linux, **Speed → Speed processing** keeps Automatic (the engine's
+default pitch-preserving route) and Legacy scaletempo. Controlled libmpv builds
+also offer Sonic, Chromium WSOLA, Signalsmith Stretch and Bungee Basic; FFmpeg
+Atempo appears when the loaded library supports its tempo integration. Only
+processors available in that library are offered.
+
+On iOS/macOS the same panel keeps Time Domain (the voice default) and Spectral,
+and adds the four portable processors for supported local/downloaded files.
+Android keeps Media3 Sonic as the default alongside Chromium WSOLA, Signalsmith
+Stretch and Bungee Basic. Processor choices apply after restart. The native
+alternatives retain original source timing for resume/history; Android's skip
+silence remains available with Sonic. These choices preserve pitch while
+changing speed; they do not add an independent pitch-shift control.
+
+Pinned source and original notices are included. See
+[algorithms and platform differences](docs/SPEED_PROCESSING.md) and
+[portable builds, coverage and validation limits](docs/PORTABLE_AUDIO_PROCESSORS.md).
 
 ## Import from Android Downloads
 

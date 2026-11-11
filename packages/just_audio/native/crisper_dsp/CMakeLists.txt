@@ -44,7 +44,9 @@ target_compile_definitions(crisper_dsp PRIVATE
 target_compile_options(crisper_dsp PRIVATE
   $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-O2>
   $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fwrapv>
-  $<$<C_COMPILER_ID:MSVC>:/O2>)
+  # CMake's MSVC Debug flags include /RTC1, which conflicts with /O2. Keep that
+  # debugger configuration buildable; device performance checks use Release.
+  $<$<AND:$<C_COMPILER_ID:MSVC>,$<NOT:$<CONFIG:Debug>>>:/O2>)
 if(ANDROID)
   target_link_libraries(crisper_dsp PRIVATE log)
 elseif(UNIX)

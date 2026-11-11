@@ -671,6 +671,17 @@ class AudioPlayer {
   Duration get position => _getPositionFor(playbackEvent);
 
   Duration _getPositionFor(PlaybackEvent playbackEvent) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS) &&
+        _audioLoadConfiguration?.darwinLoadControl?.speedProcessor != null) {
+      // The optional PCM player's source clock excludes output-starvation gaps.
+      // A worker can detect those gaps only after a queued buffer has played.
+      // Extrapolating even its last ready event would count unheard source time
+      // before the next buffering event. Use the native 200 ms snapshots for
+      // this backend; AVPlayer and every other platform keep their usual clock.
+      return playbackEvent.updatePosition;
+    }
     if (playing && processingState == ProcessingState.ready) {
       final result = playbackEvent.updatePosition +
           (DateTime.now().difference(playbackEvent.updateTime)) * speed;

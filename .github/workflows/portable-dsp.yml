@@ -4,11 +4,16 @@ on:
   pull_request:
     paths:
       - 'packages/just_audio/native/crisper_dsp/**'
+      - 'packages/just_audio/native/mpv/**'
       - '.github/workflows/portable-dsp.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: portable-dsp-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   streaming:
@@ -44,6 +49,12 @@ jobs:
           python packages/just_audio/native/crisper_dsp/tools/test_streaming.py
           --library ${{ matrix.library }}
           --report build/portable-dsp/streaming-report.json
+      - name: Exercise mpv frame and speed callbacks with the real DSP
+        if: runner.os == 'Linux'
+        run: >-
+          python packages/just_audio/native/mpv/tests/run_contract.py
+          --library build/portable-dsp/libcrisper_dsp.so
+          --build-dir build/mpv-contract
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -58,8 +58,11 @@ selection. `CrisperDspStream` decodes local files with `AVAudioFile`, streams
 bounded mono/stereo float PCM through the existing four-engine C ABI, and drains
 the exact finite output. `AVAudioPlayerNode` schedules a bounded output queue;
 the clock maps played frames to original source time and excludes queued audio,
-processor lookahead, hardware latency and output-starvation gaps. Seeking and
-speed changes replace buffered audio at the current source position. File queues,
+processor lookahead, hardware latency and output-starvation gaps.
+The Dart position getter uses these native snapshots for portable Apple players,
+so it cannot extrapolate a stale ready event across an undetected output gap.
+AVPlayer and other platforms retain their existing interpolated position clock.
+Seeking and speed changes replace buffered audio at the current source position. File queues,
 clipping, loop/shuffle order and local playlist operations retain the native
 method-channel contract. Network/unsupported inputs report an explicit error.
 

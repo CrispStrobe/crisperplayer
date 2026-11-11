@@ -4,6 +4,7 @@
 #import "./include/just_audio/CrisperDspStream.h"
 #import "./include/just_audio/BetterEventChannel.h"
 #import <math.h>
+#include <string.h>
 
 static NSError *portableError(NSString *message) {
     return [NSError errorWithDomain:@"CrisperPortableAudio" code:1
@@ -51,6 +52,7 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
     BOOL _shuffle;
     BOOL _playing;
     BOOL _disposed;
+    BOOL _manualRendering;
     FlutterResult _playResult;
     void (^_eventHandler)(NSDictionary *);
     id _configurationObserver;
@@ -68,7 +70,7 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
 
 - (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar
                         playerId:(NSString *)playerId engine:(NSInteger)engine {
-    self = [self initWithEngine:engine eventHandler:nil];
+    self = [self initWithEngine:engine manualRendering:NO eventHandler:nil];
     if (!self) return nil;
     _methodChannel = [FlutterMethodChannel methodChannelWithName:[@"com.ryanheise.just_audio.methods." stringByAppendingString:playerId]
                                                binaryMessenger:registrar.messenger];
@@ -85,10 +87,11 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
     return self;
 }
 
-- (instancetype)initWithEngine:(NSInteger)engine eventHandler:(void (^)(NSDictionary *))eventHandler {
+- (instancetype)initWithEngine:(NSInteger)engine manualRendering:(BOOL)manualRendering eventHandler:(void (^)(NSDictionary *))eventHandler {
     self = [super init];
     if (!self) return nil;
     _engine = engine;
+    _manualRendering = manualRendering;
     _rate = 1;
     _volume = 1;
     _state = psIdle;
@@ -139,6 +142,31 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
     dispatch_async(_queue, ^{ [self handleCall:call result:result]; });
 }
 
+- (void)renderOfflineFrames:(AVAudioFrameCount)frames completion:(void (^)(AVAudioPCMBuffer *, NSError *))completion {
+    dispatch_async(_queue, ^{
+        NSError *error = nil;
+        AVAudioPCMBuffer *buffer = nil;
+        if (self->_disposed || !self->_manualRendering || !self->_playing || !self->_stream || frames == 0 || frames > 65536) {
+            error = portableError(@"Offline rendering requires an active offline integration player and 1–65536 frames.");
+        } else {
+            buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:self->_stream.format frameCapacity:frames];
+            AVAudioPCMBuffer *block = [[AVAudioPCMBuffer alloc] initWithPCMFormat:self->_stream.format frameCapacity:MIN(frames, 4096)];
+            for (AVAudioFrameCount offset = 0; offset < frames; offset += 4096) {
+                block.frameLength = 0;
+                AVAudioEngineManualRenderingStatus status = [self->_audioEngine renderOffline:MIN(frames - offset, 4096) toBuffer:block error:&error];
+                if (status == AVAudioEngineManualRenderingStatusError && !error) error = portableError(@"Offline audio rendering failed.");
+                if (error || block.frameLength == 0) break;
+                for (AVAudioChannelCount channel = 0; channel < buffer.format.channelCount; ++channel) {
+                    memcpy(buffer.floatChannelData[channel] + buffer.frameLength, block.floatChannelData[channel], block.frameLength * sizeof(float));
+                }
+                buffer.frameLength += block.frameLength;
+            }
+            [self broadcast:nil];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{ completion(buffer, error); });
+    });
+}
+
 - (void)reply:(FlutterResult)result value:(id)value {
     if (result) dispatch_async(dispatch_get_main_queue(), ^{ result(value); });
 }
@@ -152,13 +180,16 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
 - (int64_t)currentPosition {
     if (!_stream || !_node || !_playing) return _lastPosition;
     int64_t frames = _completedFrames;
+    BOOL audiblePCM = NO;
     AVAudioTime *renderTime = _node.lastRenderTime;
     AVAudioTime *playerTime = renderTime ? [_node playerTimeForNodeTime:renderTime] : nil;
-    if (playerTime.isSampleTimeValid) {
+    BOOL validClock = _manualRendering ? _audioEngine.manualRenderingSampleTime > 0 : playerTime.isSampleTimeValid;
+    if (validClock && _audioEngine.isRunning && _node.isPlaying) {
         // Rendering can run ahead of the device. Never count queued PCM as
         // heard media, and never move behind a dataPlayedBack boundary.
-        int64_t latency = (int64_t)llround(_node.outputPresentationLatency * _stream.format.sampleRate);
-        int64_t heardTime = MAX(0, playerTime.sampleTime - latency);
+        int64_t latency = _manualRendering ? 0 : (int64_t)llround(_node.outputPresentationLatency * _stream.format.sampleRate);
+        int64_t timelineTime = _manualRendering ? _audioEngine.manualRenderingSampleTime : playerTime.sampleTime;
+        int64_t heardTime = timelineTime - latency;
         // A slow decode may leave a silent gap on the node's timeline. Count
         // only intervals containing scheduled PCM, never that silence.
         for (NSDictionary *segment in _scheduledSegments) {
@@ -167,18 +198,29 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
             if (heardTime < start) break;
             int64_t output = [segment[@"outputStart"] longLongValue] + MIN(heardTime, end) - start;
             frames = MAX(frames, output);
-            if (heardTime < end) break;
+            if (heardTime < end) { audiblePCM = YES; break; }
         }
     }
-    _lastPosition = MAX(_lastPosition, [_stream mediaPositionForOutputFrames:frames]);
+    int64_t position = MAX(_lastPosition, [_stream mediaPositionForOutputFrames:frames]);
+    if (_state == psReady || _state == psBuffering) {
+        // Merely queuing PCM after starvation does not mean the listener has
+        // heard it. Stay buffering until the source clock actually advances
+        // into a scheduled interval, including through device startup latency.
+        BOOL resumed = _state != psBuffering || position > _lastPosition;
+        _state = audiblePCM && resumed ? psReady : psBuffering;
+    }
+    _lastPosition = position;
     return _lastPosition;
 }
 
 - (void)broadcast:(NSError *)error {
     if (_disposed) return;
+    // Evaluate position first: the same render-clock snapshot also determines
+    // ready/buffering. Dictionary expression ordering must not send stale ready.
+    int64_t position = [self currentPosition];
     NSDictionary *event = @{
         @"processingState": @(_state),
-        @"updatePosition": @([self currentPosition]),
+        @"updatePosition": @(position),
         @"updateTime": @((int64_t)llround(NSDate.date.timeIntervalSince1970 * 1000)),
         @"bufferedPosition": @(_stream ? _stream.decodedPositionMicroseconds : _lastPosition),
         @"icyMetadata": @{},
@@ -193,6 +235,12 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
             if (self->_eventHandler) self->_eventHandler(event);
         }
     });
+}
+
+- (void)broadcastClockTransition {
+    enum ProcessingState previous = _state;
+    [self currentPosition];
+    if (_state != previous) [self broadcast:nil];
 }
 
 - (void)resetOutput {
@@ -310,6 +358,8 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
     [_audioEngine attachNode:_node];
     [_audioEngine connect:_node to:_audioEngine.mainMixerNode format:_stream.format];
     _node.volume = _volume;
+    if (_manualRendering && ![_audioEngine enableManualRenderingMode:AVAudioEngineManualRenderingModeOffline
+                                                             format:_stream.format maximumFrameCount:4096 error:error]) return NO;
     [_audioEngine prepare];
     _state = psReady;
     if (![self fillBuffers:error]) return NO;
@@ -322,6 +372,9 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
 }
 
 - (BOOL)fillBuffers:(NSError **)error {
+    // Report a depleted audible queue before doing decoder/DSP work. Queuing
+    // future buffers below must not prematurely report recovery from that gap.
+    [self broadcastClockTransition];
     // Four buffers bound queued output to 16,384 frames. All decoding/DSP runs
     // on this worker queue, never on the real-time render callback.
     while (_queuedBuffers < 4 && !_stream.isEnded) {
@@ -332,10 +385,12 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
         int64_t timelineStart = _timelineScheduledEnd;
         AVAudioTime *renderTime = _node.lastRenderTime;
         AVAudioTime *playerTime = renderTime ? [_node playerTimeForNodeTime:renderTime] : nil;
-        if (playerTime.isSampleTimeValid && playerTime.sampleTime > timelineStart) {
+        int64_t now = _manualRendering ? _audioEngine.manualRenderingSampleTime :
+            (playerTime.isSampleTimeValid ? playerTime.sampleTime : -1);
+        if (now > timelineStart) {
             // Recovery after starvation: explicitly schedule in the future and
             // retain the gap in the clock map instead of skipping source time.
-            timelineStart = playerTime.sampleTime + 512;
+            timelineStart = now + (_manualRendering ? 0 : (int64_t)ceil(_stream.format.sampleRate * .05));
         }
         int64_t completed = _scheduledFrames + buffer.frameLength;
         _timelineScheduledEnd = timelineStart + buffer.frameLength;
@@ -346,7 +401,7 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
         __weak CrisperPortableAudioPlayer *weakSelf = self;
         AVAudioTime *time = [AVAudioTime timeWithSampleTime:timelineStart atRate:_stream.format.sampleRate];
         [_node scheduleBuffer:buffer atTime:time options:0
-          completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack
+          completionCallbackType:_manualRendering ? AVAudioPlayerNodeCompletionDataRendered : AVAudioPlayerNodeCompletionDataPlayedBack
           completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
             CrisperPortableAudioPlayer *strongSelf = weakSelf;
             if (!strongSelf) return;
@@ -364,6 +419,7 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
             });
         }];
     }
+    [self broadcastClockTransition];
     return YES;
 }
 
@@ -506,6 +562,7 @@ static NSMutableDictionary *mutableTree(NSDictionary *source) {
                         BOOL found = NO;
                         for (NSInteger i = 0; i < (NSInteger)_sources.count; ++i) if ([_sources[i][@"id"] isEqual:currentId]) { next = i; found = YES; break; }
                         [self openIndex:next position:found ? position : 0 error:&error];
+                        if (!error && _playing && _state == psCompleted) [self advance];
                         [self broadcast:nil];
                     }
                 }

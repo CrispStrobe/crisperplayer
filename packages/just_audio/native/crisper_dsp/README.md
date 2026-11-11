@@ -1,17 +1,19 @@
 # CrisperPlayer native time-stretch adapter
 
-This is a real streaming PCM processor used by the optional Android quality
-modes. It compiles Bungee Basic and Signalsmith Stretch from pinned, unmodified
-sources, plus a maintained portable **Chromium WSOLA** fork. The same core can
-be built on Linux for deterministic tests and WAV comparisons. The streaming
-adapter is MIT licensed; the Chromium-derived port is BSD-3-Clause. Each upstream
-implementation keeps its license, recorded in
+This streaming PCM core supplies optional processors for Android, Apple
+local-file playback and controlled desktop libmpv builds. It compiles Sonic C,
+Bungee Basic and Signalsmith Stretch from pinned, unmodified sources, plus a
+maintained portable **Chromium WSOLA** fork. The same code also runs in host
+tests and WAV comparisons. The streaming adapter is MIT licensed; the
+Chromium-derived port is BSD-3-Clause. Each upstream implementation keeps its
+license, recorded in
 [vendor/manifest.json](vendor/manifest.json).
 
 Android's default remains Media3's Sonic processor. The native Sonic C processor
-is included for the host comparison harness; that comparison is **not** a
-bit-exact replica of Media3 Sonic. Bungee, Signalsmith and WSOLA are optional
-listening choices, not a claim that one wins for every voice or speed. Signalsmith's
+serves the optional Apple/desktop paths and the host comparison harness; it is
+**not** a bit-exact replica of Media3 Sonic. Apple Time Domain and desktop mpv
+Automatic remain their platform defaults. Bungee, Signalsmith and WSOLA are
+optional listening choices, not a claim that one wins for every voice or speed. Signalsmith's
 upstream guidance concentrates on moderate time stretch, roughly 0.75–1.5×.
 The adapter's tested functional range is 0.5–3×.
 
@@ -38,6 +40,11 @@ The build also compiles/runs eight WSOLA search regression fixtures, including
 all-negative correlations, signed/excluded endpoints, silence, anti-phase stereo
 and a silent first channel. Git-file snapshots verify both SHA-256 and the exact
 upstream Git blob ID; existing archive source pins remain unchanged.
+
+The CMake target also supports `CRISPER_DSP_SHARED=ON` and
+`CRISPER_DSP_TESTS=ON` for the Linux, macOS and Windows native CI matrix. The
+shared library is a testable processing core; loading it alone does not connect
+an application's decoder or audio output.
 
 The host tests exercise the actual compiled library, including:
 
@@ -82,6 +89,37 @@ sounds as speech or a perceptual benchmark.
 Listen at equal perceived loudness. Compare consonants, breath sounds, first and
 last words, pauses, background music and stereo image at the speeds you use.
 Host timing includes Python I/O and is not an Android CPU or battery result.
+
+## Native playback integrations
+
+Android's Media3/JNI adapter retains its existing PCM sink and processing-chain
+integration. It replaces the default speed stage for the selected alternatives;
+it does not run a second stretcher after Sonic. Android's default Sonic path
+continues to use Media3 without loading the optional JNI processor.
+
+The Apple adapter decodes supported local files with `AVAudioFile`, streams PCM
+through this core and schedules the processed buffers through `AVAudioEngine`.
+Its delivered/output-device position maps back to original source time.
+`CrisperDspStream` supplies the shared bridge for all four engines. CocoaPods
+compiles thin translation units that include these exact source files. SwiftPM
+uses the local [CrisperDsp package](Package.swift) with an explicit source list.
+There is no second vendored copy of the DSP closure. The ordinary AVPlayer Time
+Domain and Spectral paths remain available for the platform default and URLs
+outside the optional local-file backend's scope.
+
+The [mpv integration](../mpv/) registers a `crisperdsp` filter in a controlled,
+source-built libmpv. It accepts mpv's speed commands, drains each old-rate segment
+before changing rate, and emits source-timestamped PCM. Decoder, output device
+and native player events remain with mpv. The desktop adapter detects the
+filter in the library actually loaded; a stock system libmpv or historical
+Windows DLL does not gain custom engines from the Dart wrapper alone. The
+controlled Linux and Windows recipes include the source preparation and keep
+the matching source/patch evidence. FFmpeg atempo is a separate optional
+desktop route when that loaded mpv exposes it.
+
+See [portable platform coverage](../../../../docs/PORTABLE_AUDIO_PROCESSORS.md)
+for build recipes, limits and validation boundaries. The separate browser
+player has no new integration of this core.
 
 ## Streaming contract
 
@@ -170,8 +208,11 @@ are unchanged, and every selected file has a SHA-256 entry in the manifest.
 PFFFT's exact notice is retained under a local `LicenseRef-PFFFT-FFTPACK` instead
 of substituting an inaccurately named standard license.
 
-The app's Android DSP notice includes these license texts and the corresponding
-source location. Distribution must preserve notices and make the MPL-covered
-source and modifications available under MPL-2.0. Neither passing these signal
-tests nor finding a permissive wrapper license certifies the entire APK's native
-and Maven dependency closure; those remain separate release checks.
+The app's shared DSP notice includes these license texts and the corresponding
+source location on all native platforms; its historical `ANDROID-DSP.txt`
+filename is retained. Distribution must preserve notices and make the
+MPL-covered source and modifications available under MPL-2.0. The inventory
+requires source-manifest review for Android, iOS, macOS, Linux and Windows,
+while keeping their individual artifact validation pending. Host signal tests
+do not verify an APK's NDK/Maven closure, an Apple application bundle or a
+desktop libmpv/FFmpeg package; those remain separate release checks.

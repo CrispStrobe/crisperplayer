@@ -9,9 +9,9 @@ failed changes, and stops controlling a book when another one becomes active.
 ## What the installed app uses
 
 This assessment is based on the dependency versions in `pubspec.lock`:
-`just_audio 0.10.6+crisper.3` (a maintained MIT-licensed adapter to 0.10.6,
+`just_audio 0.10.6+crisper.4` (a maintained MIT-licensed adapter to 0.10.6,
 with separately licensed native processors),
-`just_audio_media_kit 2.1.0`, and `media_kit 1.2.6`.
+`just_audio_media_kit 2.1.0+crisper.1`, and `media_kit 1.2.6`.
 
 | Platform | Current speed processing | Choice available in this app |
 | --- | --- | --- |
@@ -21,8 +21,11 @@ with separately licensed native processors),
 | Android, WSOLA | A maintained portable fork of Chromium's waveform-similarity overlap-and-add processing, under BSD-3-Clause. | Experimental opt-in; compare speech at moderate rates. |
 | iOS and macOS, Time Domain | AVFoundation `AVAudioTimePitchAlgorithmTimeDomain`, the upstream voice-oriented default. | Default; selectable. |
 | iOS and macOS, Spectral | AVFoundation `AVAudioTimePitchAlgorithmSpectral`, Apple's music-oriented alternative with higher computational cost. | Optional; selectable. |
+| iOS and macOS, portable engines | Sonic C, Chromium WSOLA, Signalsmith Stretch and Bungee Basic through the shared native core. | Experimental local/downloaded mono/stereo file playback using AVAudioFile and AVAudioEngine. |
 | Windows and Linux, Automatic | mpv's default pitch-preserving speed path, through media_kit. Current mpv documentation specifies `scaletempo2`; the exact implementation depends on the bundled or installed mpv version. | Default for new launches; selectable. |
 | Windows and Linux, Legacy scaletempo | media_kit's independent pitch-control path, with pitch left at 1.0. It installs `scaletempo:scale=...` and turns off mpv's separate automatic pitch-correction filter. | Compatibility alternative; selectable. |
+| Windows and Linux, portable engines | The shared four-engine core via the `crisperdsp` mpv audio filter. | Selectable when using the controlled source build; unavailable in stock libmpv binaries. |
+| Windows and Linux, FFmpeg atempo | mpv's tempo-aware `lavfi-tempo` wrapper around the linked FFmpeg atempo filter. | Selectable only when both filters are detected. |
 
 The separate Pages browser player uses browser media playback; this document
 describes the native Flutter app.
@@ -64,11 +67,17 @@ measurements. See [Android validation](ANDROID_AUDIO_PROCESSORS.md).
 
 ## Desktop choice
 
-Open **Speed → Speed processing**. Choose **Automatic** or **Legacy scaletempo**.
+Open **Speed → Speed processing**. **Automatic** and **Legacy scaletempo**
+remain available. The application probes the actual loaded libmpv before creating
+its player, exposing **Sonic**, **WSOLA**, **Signalsmith Stretch**, **Bungee Basic**
+and **FFmpeg atempo** when their native filters are present.
 The preference applies to all books **after restarting CrisperPlayer**. The
 sheet identifies the mode used by the current process and a pending selection
 separately. It never claims to switch the running decoder when only a preference
-has changed.
+has changed. If a saved optional processor is missing after changing the installed
+libmpv, startup uses Automatic, retains the saved preference and explains the
+unavailability in the sheet. Direct adapter requests for unavailable processors
+fail explicitly.
 
 Automatic is configured before player creation using the public
 `JustAudioMediaKit.pitch = false` option. Despite that option's name, it disables
@@ -82,10 +91,25 @@ legacy route on Windows and Linux. The app now makes this behavior explicit and
 offers the normal engine-default path, while retaining the previous path for
 recordings where the listener prefers it.
 
+The portable `crisperdsp` filter participates in mpv's speed-command protocol,
+handles variable PCM duration and carries original-source timestamps. Speed
+transitions drain the old segment; seeking discards old buffered audio. The
+atempo option requires `lavfi-tempo`, because adding a plain fixed lavfi atempo
+filter does not by itself satisfy mpv's speed and source-clock contract. The
+controlled v0.42.0 build includes the required wrapper; older Windows libraries
+are capability checked rather than assumed equivalent.
+
+Build and run instructions, source pins and the separate release-evidence limits
+are in [PORTABLE_AUDIO_PROCESSORS.md](PORTABLE_AUDIO_PROCESSORS.md) and
+[DESKTOP_AUDIO_BUILD.md](DESKTOP_AUDIO_BUILD.md). Ordinary Windows builds retain
+the existing bundled library; Linux may load a system library. The custom
+source build is needed to enable all four portable desktop choices.
+
 ## Apple choice
 
 On iOS and macOS, open **Speed → Speed processing** and choose **Time Domain**
-or **Spectral**. Time Domain remains the default. Apple documents it as suitable
+or **Spectral**, or opt into **Sonic**, **WSOLA**, **Signalsmith Stretch** or
+**Bungee Basic** for local/downloaded books. Time Domain remains the default. Apple documents it as suitable
 for voice and less computationally intensive than Spectral. Spectral is intended
 for music and is useful to compare on music-backed or mixed recordings; no
 CrisperPlayer listening benchmark establishes that it is better for every voice.
@@ -98,6 +122,24 @@ for the shared player. The patched native source sets the public
 swap the active audio processor during playback. The choice is also transported
 again if just_audio recreates its native player.
 
+The four portable choices select a separate local PCM path using AVAudioFile
+for decoding and AVAudioPlayerNode for output. Audio is streamed through bounded
+buffers; a whole audiobook is never decoded into memory. The player maps actual
+played frames to source time, holds the clock through output gaps and pauses,
+reopens at source position on seeks/rate changes, and drains before completing
+or advancing a file. It supports file queues, clipping, loops and shuffle order.
+Portable Apple positions use native snapshots at roughly 200 ms intervals, so
+an undetected output gap cannot be counted by wall-clock interpolation. The
+existing Apple and other platform players retain their usual smooth clocks.
+The Apple network/AVPlayer path remains available by choosing Time Domain or
+Spectral. Unsupported URLs, channel layouts or sample rates fail with an
+explanation instead of silently changing the selected engine.
+
+CocoaPods and SwiftPM compile the same pinned native source closure used on
+Android. The functional range remains 0.50×–3.00×, 8–192 kHz mono/stereo; Apple
+format support is limited to the formats AVAudioFile can decode. Portable
+choices are experimental pending target-device listening and performance checks.
+
 The complete upstream diff, original source hashes, licenses and
 update procedure are documented in
 [the vendored package provenance](../packages/just_audio/UPSTREAM.md).
@@ -108,8 +150,9 @@ The broader app/distribution license review is tracked separately in
 ## Other algorithms and tradeoffs
 
 - **Sonic** remains the Android default. The native C implementation is also
-  included as the host comparison baseline; the default app path continues
-  to use Media3's implementation rather than replacing it with the C copy.
+  included as an optional Apple/desktop engine and the host comparison baseline;
+  Android's default continues to use Media3's implementation. The C core is not
+  claimed to be bit-identical to Media3.
 - **WSOLA** now has its own portable C++ implementation maintained in this
   repository, derived from Chromium's BSD-3-Clause matching, windowing and
   overlap-add code. It uses shared stereo alignment, bounded streaming buffers,
@@ -124,7 +167,7 @@ The broader app/distribution license review is tracked separately in
   scaletempo and Rubber Band's R2 engine; this is an upstream characterization,
   not a CrisperPlayer listening benchmark.
 - **Signalsmith Stretch** and its current **Signalsmith Linear** dependency use
-  MIT licenses. The Android alternative now has a real native PCM integration.
+  MIT licenses. The shared native implementation has Android, Apple-local and controlled-mpv PCM integrations.
   The author says time stretching sounds best for modest changes around
   0.75×–1.5×, so it should not be assumed to improve 2×–3× audiobook speech.
   Its adapter handles input/output latency, seek priming and flush behavior to
@@ -145,11 +188,13 @@ The broader app/distribution license review is tracked separately in
   license. Its normal open-source license fails this project's no-GPL/AGPL
   dependency policy, so it is excluded from the open-source processor options.
 
-The Bungee, Signalsmith and WSOLA native integrations are currently Android-only.
-iOS/macOS retain the public AVFoundation choices; Windows/Linux retain the
-documented mpv choices. SoundTouch remains an unintegrated candidate. Sharing
-the native core across platforms does not itself connect it to another
-platform's decoder or audio output.
+The four shared engines now have platform adapters for Android, Apple local
+files and controlled Linux/Windows libmpv builds. The existing Apple and mpv
+processors remain defaults. FFmpeg atempo adds a desktop alternative without a
+new source dependency when the native tempo-aware wrapper is present. SoundTouch
+remains an unintegrated candidate; it adds a separate LGPL source/relinking burden
+without improving platform reach over the four existing cores. Browser playback
+is unchanged, and this work adds no independent pitch slider.
 
 No algorithm is claimed to sound best for every narrator, recording, speed,
 device or listener. A processor listening comparison should use the same

@@ -15,6 +15,32 @@ enum MediaKitSpeedProcessor {
 
   const MediaKitSpeedProcessor(this.audioFilter);
 
+  /// mpv normally bypasses failed user filters. The optional processor must
+  /// instead stop playback, including when an internal converter fails and mpv
+  /// reports only the filter's application label from its `af` chain.
+  bool isFatalFilterLog({
+    required String prefix,
+    required String level,
+    required String text,
+  }) {
+    if (audioFilter == null || (level != 'error' && level != 'fatal')) {
+      return false;
+    }
+    final message = text.toLowerCase();
+    if (RegExp(r'\bdisabling filter @?crisper_speed\b').hasMatch(message)) {
+      return true;
+    }
+    final parts = prefix.toLowerCase().split('/');
+    if (this != atempo) return parts.contains('crisperdsp');
+    return parts.any((part) => const {
+              'lavfi_tempo',
+              'lavfi-tempo',
+              'lavfi',
+              'atempo',
+            }.contains(part)) ||
+        (parts.contains('ffmpeg') && message.contains('atempo'));
+  }
+
   /// Uses mpv's actual filter inventory, including its linked libavfilter.
   static Set<MediaKitSpeedProcessor> supportedBy(Iterable<String> filters) {
     final available = filters.toSet();

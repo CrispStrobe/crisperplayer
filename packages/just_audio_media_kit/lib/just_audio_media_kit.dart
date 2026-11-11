@@ -1,5 +1,5 @@
 /// `package:media_kit` bindings for `just_audio` to support Linux and Windows.
-library just_audio_media_kit;
+library;
 
 import 'dart:collection';
 

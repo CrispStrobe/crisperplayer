@@ -18,6 +18,7 @@ struct crisper_options {
 
 struct crisper_priv {
     struct crisper_options *options;
+    struct mp_filter *converter;
     struct mp_pin *input;
     struct mp_aframe *pending;
     struct mp_aframe *format;
@@ -25,7 +26,7 @@ struct crisper_priv {
     cp_dsp *dsp;
     double requested_speed, running_speed;
     double origin_pts, input_speed;
-    bool finishing, eof;
+    bool finishing, eof, invalid_speed, failed;
 };
 
 static void clear_segment(struct crisper_priv *p)
@@ -74,6 +75,15 @@ static void crisper_process(struct mp_filter *f)
 {
     struct crisper_priv *p = f->priv;
     if (!mp_pin_in_needs_data(f->ppins[1])) return;
+    if (p->failed) {
+        mp_pin_in_write(f->ppins[1], MP_EOF_FRAME);
+        return;
+    }
+    if (mp_filter_has_failed(p->converter)) {
+        MP_ERR(f, "crisperdsp input conversion failed\n");
+        goto error;
+    }
+    if (p->invalid_speed) goto error;
 
     // Work and storage are bounded. Output is pulled before accepting more
     // input; no native frame is released until every input sample is consumed.
@@ -177,7 +187,13 @@ static void crisper_process(struct mp_filter *f)
 
 error:
     MP_ERR(f, "crisperdsp processing failed: %s\n", cp_dsp_last_error());
-    mp_filter_internal_mark_failed(f);
+    // mpv bypasses user filters marked failed and forwards untreated PCM.
+    // End this stream instead; the Dart adapter latches the error log and
+    // stops the player. No raw audio can escape while that event is delivered.
+    p->failed = true;
+    clear_segment(p);
+    TA_FREEP(&p->pending);
+    mp_pin_in_write(f->ppins[1], MP_EOF_FRAME);
 }
 
 static bool crisper_command(struct mp_filter *f, struct mp_filter_command *cmd)
@@ -186,12 +202,13 @@ static bool crisper_command(struct mp_filter *f, struct mp_filter_command *cmd)
     if (cmd->type != MP_FILTER_COMMAND_SET_SPEED) return false;
     if (!isfinite(cmd->speed) || cmd->speed < .5 || cmd->speed > 3) {
         MP_ERR(f, "crisperdsp supports speeds from 0.5 to 3.0\n");
-        mp_filter_internal_mark_failed(f);
+        p->invalid_speed = true;
         return true;
     }
     // Drain old-rate PCM before adopting the new rate, preserving all accepted
     // source frames. A seek reset deliberately discards old audio instead.
     p->requested_speed = cmd->speed;
+    p->invalid_speed = false;
     return true;
 }
 
@@ -201,6 +218,7 @@ static void crisper_reset(struct mp_filter *f)
     clear_segment(p);
     TA_FREEP(&p->pending);
     p->eof = false;
+    p->failed = false;
 }
 
 static void crisper_destroy(struct mp_filter *f) { crisper_reset(f); }
@@ -234,6 +252,10 @@ static struct mp_filter *crisper_create(struct mp_filter *parent, void *options)
         talloc_free(f);
         return NULL;
     }
+    p->converter = convert->f;
+    // Converter and resampler failures must end this stream too. Otherwise
+    // child failures propagate to this user filter and mpv bypasses it.
+    mp_filter_set_error_handler(p->converter, f);
     mp_autoconvert_add_afmt(convert, AF_FORMAT_FLOAT);
     mp_pin_connect(convert->f->pins[0], f->ppins[0]);
     p->input = convert->f->pins[1];

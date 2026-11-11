@@ -1,0 +1,358 @@
+{
+  "schema_version": 1,
+  "binary_sha256": "99bed290e3bd4eadf1e3d4a9a8cd072715d8dab56d3495da855170dd21bd349b",
+  "checks": [
+    {
+      "mode": "automatic",
+      "speed": 0.5,
+      "output_seconds": 11.976,
+      "frequency_hz": 439.9631008819746,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "automatic",
+      "speed": 1,
+      "output_seconds": 6.0,
+      "frequency_hz": 440.0016081930124,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "automatic",
+      "speed": 1.5,
+      "output_seconds": 4.0,
+      "frequency_hz": 440.0024774914273,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "automatic",
+      "speed": 2,
+      "output_seconds": 2.999979166666667,
+      "frequency_hz": 439.63641414219353,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "automatic",
+      "speed": 3,
+      "output_seconds": 2.0,
+      "frequency_hz": 440.00539222294395,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "legacy_scaletempo",
+      "speed": 0.5,
+      "output_seconds": 11.94,
+      "frequency_hz": 440.03515183840176,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "scaletempo=scale=%10%0.50000000",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "legacy_scaletempo",
+      "speed": 1,
+      "output_seconds": 6.0,
+      "frequency_hz": 440.0016081930124,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "scaletempo=scale=%10%1.00000000",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "legacy_scaletempo",
+      "speed": 1.5,
+      "output_seconds": 4.02,
+      "frequency_hz": 440.0562279134628,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "scaletempo=scale=%10%1.50000000",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "legacy_scaletempo",
+      "speed": 2,
+      "output_seconds": 3.0,
+      "frequency_hz": 440.00339508792507,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "scaletempo=scale=%10%2.00000000",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "legacy_scaletempo",
+      "speed": 3,
+      "output_seconds": 2.04,
+      "frequency_hz": 440.23515607227097,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "scaletempo=scale=%10%3.00000000",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "sonic",
+      "speed": 0.5,
+      "output_seconds": 12.0,
+      "frequency_hz": 440.1717239524999,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "sonic",
+      "speed": 1,
+      "output_seconds": 6.0,
+      "frequency_hz": 440.0016081930124,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "sonic",
+      "speed": 1.5,
+      "output_seconds": 4.0,
+      "frequency_hz": 440.0024774914273,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "sonic",
+      "speed": 2,
+      "output_seconds": 3.0,
+      "frequency_hz": 439.6330218597366,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "sonic",
+      "speed": 3,
+      "output_seconds": 2.0,
+      "frequency_hz": 439.4171497199721,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "wsola",
+      "speed": 0.5,
+      "output_seconds": 12.0,
+      "frequency_hz": 440.0007834771785,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "wsola",
+      "speed": 1,
+      "output_seconds": 6.0,
+      "frequency_hz": 440.0016081930124,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "wsola",
+      "speed": 1.5,
+      "output_seconds": 4.0,
+      "frequency_hz": 440.0024774914273,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "wsola",
+      "speed": 2,
+      "output_seconds": 3.0,
+      "frequency_hz": 440.00339508792507,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "wsola",
+      "speed": 3,
+      "output_seconds": 2.0,
+      "frequency_hz": 440.00539222294395,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "signalsmith",
+      "speed": 0.5,
+      "output_seconds": 12.0,
+      "frequency_hz": 440.0007834771785,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "signalsmith",
+      "speed": 1,
+      "output_seconds": 6.0,
+      "frequency_hz": 440.0016081930124,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "signalsmith",
+      "speed": 1.5,
+      "output_seconds": 4.0,
+      "frequency_hz": 440.0024774914273,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "signalsmith",
+      "speed": 2,
+      "output_seconds": 3.0,
+      "frequency_hz": 440.00339508792507,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "signalsmith",
+      "speed": 3,
+      "output_seconds": 2.0,
+      "frequency_hz": 440.00539222294395,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "bungee",
+      "speed": 0.5,
+      "output_seconds": 12.0,
+      "frequency_hz": 440.0007834771785,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "bungee",
+      "speed": 1,
+      "output_seconds": 6.0,
+      "frequency_hz": 440.0016081930124,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "bungee",
+      "speed": 1.5,
+      "output_seconds": 4.0,
+      "frequency_hz": 440.0024774914273,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "bungee",
+      "speed": 2,
+      "output_seconds": 3.0,
+      "frequency_hz": 440.00339508792507,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "bungee",
+      "speed": 3,
+      "output_seconds": 2.0,
+      "frequency_hz": 440.00539222294395,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "atempo",
+      "speed": 0.5,
+      "output_seconds": 11.919979166666666,
+      "frequency_hz": 439.9327306824824,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "atempo",
+      "speed": 1,
+      "output_seconds": 6.0,
+      "frequency_hz": 440.0016081930124,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "atempo",
+      "speed": 1.5,
+      "output_seconds": 4.025854166666667,
+      "frequency_hz": 439.63319167971366,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "atempo",
+      "speed": 2,
+      "output_seconds": 3.0336875,
+      "frequency_hz": 440.0682843555664,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+      "native_error_log_check": "passed"
+    },
+    {
+      "mode": "atempo",
+      "speed": 3,
+      "output_seconds": 2.037166666666667,
+      "frequency_hz": 439.8018780806639,
+      "mpv_version": "mpv v0.42.0",
+      "mpv_configuration": "-Dbuildtype=release -Dprefix=/workspace/scratch/30ec26ee1dd9/crisperplayer/build/portable-linux-validation/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+      "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+      "native_error_log_check": "passed"
+    }
+  ],
+  "claim": "Generated-tone duration and pitch smoke test only; speech quality and licensing are separate reviews.",
+  "release_approved": false
+}

@@ -1,0 +1,1241 @@
+{
+  "schema_version": 1,
+  "status": "controlled_linux_host_candidate_validated",
+  "recorded_date": "2026-11-11",
+  "release_approved": false,
+  "scope": "Actual Linux x86_64 source compile/link and libmpv PCM output. This is not a packaged application or release approval.",
+  "source": {
+    "git_checkpoint": "4189a6a",
+    "note": "The Meson target-order fix in prepare_portable_mpv.py was applied after this checkpoint; exact inputs and prepared patch are recorded below.",
+    "input_sha256": {
+      "licensing/linux_audio_sources.json": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
+      "scripts/build_linux_audio.py": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08",
+      "scripts/build_windows_audio.py": "d8d664c4226977f4506440f3507a942bae5a47e26ff2d591d8b97cb3c43a6e7f",
+      "scripts/prepare_portable_mpv.py": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
+      "scripts/smoke_desktop_audio.py": "6b7fc530e409267d947e9812acab9f3e06fdc36fb1b277b315f70d0d85840ff4",
+      "packages/just_audio/native/mpv/af_crisper.c": "609b73a92ee638ae636d3bdeb50f1cc380ff287472fcee5f070377fd73d3be23",
+      "packages/just_audio/native/mpv/meson.build": "c4f4ad3387836f72c1b73a1d6f97e5401fa7bfef8547f7c422ca2b86c34ed4a4",
+      "packages/just_audio/native/mpv/upstream.json": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419",
+      "packages/just_audio/native/crisper_dsp/vendor/manifest.json": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b"
+    },
+    "archives": [
+      {
+        "id": "ffmpeg",
+        "version": "9.0.2",
+        "url": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz",
+        "sha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e",
+        "archive": "ffmpeg-9.0.2.tar.xz",
+        "repository": "https://git.ffmpeg.org/ffmpeg.git",
+        "revision": "n9.0.2",
+        "license_expression": "LGPL-2.1-or-later",
+        "size_bytes": 12040788
+      },
+      {
+        "id": "mpv",
+        "version": "0.42.0",
+        "url": "https://api.github.com/repos/mpv-player/mpv/tarball/v0.42.0",
+        "sha256": "8e5f930836acbc702c0057cbe0674d821ad0bc9bedb31b05eb034c4e4af13cdc",
+        "archive": "mpv-0.42.0.tar.gz",
+        "repository": "https://github.com/mpv-player/mpv",
+        "revision": "v0.42.0",
+        "license_expression": "LGPL-2.1-or-later",
+        "size_bytes": 7515781
+      },
+      {
+        "id": "libplacebo",
+        "version": "7.387.0",
+        "url": "https://api.github.com/repos/haasn/libplacebo/tarball/v7.387.0",
+        "sha256": "ac20b4897e231358da9a19d7136eb9f375cda820b29ee4a58875e1f6abe79ef4",
+        "archive": "libplacebo-7.387.0.tar.gz",
+        "repository": "https://github.com/haasn/libplacebo",
+        "revision": "v7.387.0",
+        "license_expression": "LGPL-2.1-or-later",
+        "size_bytes": 972939
+      },
+      {
+        "id": "libass",
+        "version": "0.17.5",
+        "url": "https://api.github.com/repos/libass/libass/tarball/0.17.5",
+        "sha256": "960ce5c828c202b406ed06fcef6130e3a5f4c3a12639cdac5f34507ed526a89a",
+        "archive": "libass-0.17.5.tar.gz",
+        "repository": "https://github.com/libass/libass",
+        "revision": "0.17.5",
+        "license_expression": "ISC",
+        "size_bytes": 351566
+      }
+    ],
+    "prepared_source_report_sha256": "cd4ad4dd840a2bac2f54b5f3963134de5b7dd9b94dc3a028787d1d094f87fc0d",
+    "core_manifest_sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
+    "integration_sources": {
+      "af_crisper.c": "609b73a92ee638ae636d3bdeb50f1cc380ff287472fcee5f070377fd73d3be23",
+      "meson.build": "c4f4ad3387836f72c1b73a1d6f97e5401fa7bfef8547f7c422ca2b86c34ed4a4",
+      "upstream.json": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419"
+    },
+    "patched_files": {
+      "meson.build": "6956980669f736a8a22a5821016b637318661823c7a300d5cd218b6979816c2c",
+      "filters/user_filters.c": "9d1c16c460228ffc96bac9f53812f93d0ab0fad8c1ed4958f949a29050838952",
+      "filters/user_filters.h": "d665a378b8c33a1eed9712cffa42cb21d8326f3e452f3079f1d1b6b08c27565e"
+    },
+    "patch": "--- a/meson.build\n+++ b/meson.build\n@@ -63,6 +63,7 @@\n     'audio/decode/ad_dsd.c',\n     'audio/decode/ad_lavc.c',\n     'audio/decode/ad_spdif.c',\n+    'audio/filter/af_crisper.c',\n     'audio/filter/af_drop.c',\n     'audio/filter/af_format.c',\n     'audio/filter/af_lavcac3enc.c',\n@@ -1814,6 +1815,8 @@\n features += {'libmpv-' + get_option('default_library'): get_option('libmpv')}\n \n \n+subdir('crisper-dsp')\n+\n # build targets\n if win32\n     windows = import('windows')\n--- a/filters/user_filters.c\n+++ b/filters/user_filters.c\n@@ -35,6 +35,7 @@\n     &af_lavfi_bridge,\n     &af_scaletempo,\n     &af_scaletempo2,\n+    &af_crisper,\n     &af_lavfi_tempo,\n     &af_format,\n #if HAVE_RUBBERBAND\n--- a/filters/user_filters.h\n+++ b/filters/user_filters.h\n@@ -22,6 +22,7 @@\n extern const struct mp_user_filter_entry af_lavfi_bridge;\n extern const struct mp_user_filter_entry af_scaletempo;\n extern const struct mp_user_filter_entry af_scaletempo2;\n+extern const struct mp_user_filter_entry af_crisper;\n extern const struct mp_user_filter_entry af_lavfi_tempo;\n extern const struct mp_user_filter_entry af_format;\n extern const struct mp_user_filter_entry af_rubberband;\n",
+    "prepared_files_verified": 288
+  },
+  "build": {
+    "commands": [
+      {
+        "cwd": "${WORKSPACE}/build/ffmpeg",
+        "argv": [
+          "${WORKSPACE}/source/ffmpeg/ffmpeg-9.0.2/configure",
+          "--prefix=${WORKSPACE}/prefix",
+          "--disable-gpl",
+          "--disable-nonfree",
+          "--disable-version3",
+          "--disable-autodetect",
+          "--disable-everything",
+          "--disable-network",
+          "--disable-static",
+          "--enable-shared",
+          "--enable-pic",
+          "--disable-doc",
+          "--disable-debug",
+          "--disable-ffplay",
+          "--disable-ffprobe",
+          "--disable-avdevice",
+          "--enable-ffmpeg",
+          "--enable-avcodec",
+          "--enable-avformat",
+          "--enable-avfilter",
+          "--enable-avutil",
+          "--enable-swresample",
+          "--enable-swscale",
+          "--enable-protocol=file,pipe",
+          "--enable-demuxer=aac,ac3,aiff,asf,au,flac,matroska,mov,mp3,ogg,wav,wv",
+          "--enable-parser=aac,aac_latm,ac3,flac,mpegaudio,opus,vorbis",
+          "--enable-decoder=aac,aac_fixed,aac_latm,ac3,alac,flac,mp1,mp1float,mp2,mp2float,mp3,mp3float,opus,vorbis,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*",
+          "--enable-encoder=pcm_s16le",
+          "--enable-muxer=pcm_s16le,wav",
+          "--enable-filter=abuffer,abuffersink,aformat,anull,aresample,asetpts,atempo"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}/build/ffmpeg",
+        "argv": [
+          "make",
+          "-j4"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}/build/ffmpeg",
+        "argv": [
+          "make",
+          "install"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "setup",
+          "${WORKSPACE}/build/libass",
+          "${WORKSPACE}/source/libass/libass-libass-64ebcac",
+          "--prefix=${WORKSPACE}/prefix",
+          "--wrap-mode=nofallback",
+          "--buildtype=release",
+          "--libdir=lib",
+          "-Ddefault_library=shared",
+          "-Dauto_features=disabled",
+          "-Drequire-system-font-provider=false",
+          "-Dasm=disabled"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "compile",
+          "-C",
+          "${WORKSPACE}/build/libass",
+          "-j",
+          "4"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "install",
+          "-C",
+          "${WORKSPACE}/build/libass"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "setup",
+          "${WORKSPACE}/build/libplacebo",
+          "${WORKSPACE}/source/libplacebo/haasn-libplacebo-451d8ea",
+          "--prefix=${WORKSPACE}/prefix",
+          "--wrap-mode=nofallback",
+          "--buildtype=release",
+          "--libdir=lib",
+          "-Ddefault_library=shared",
+          "-Dauto_features=disabled",
+          "-Ddemos=false",
+          "-Dtests=false",
+          "-Dbench=false",
+          "-Dfuzz=false"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "compile",
+          "-C",
+          "${WORKSPACE}/build/libplacebo",
+          "-j",
+          "4"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "install",
+          "-C",
+          "${WORKSPACE}/build/libplacebo"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "setup",
+          "${WORKSPACE}/build/mpv",
+          "${WORKSPACE}/source/mpv/mpv-player-mpv-b985c36",
+          "--prefix=${WORKSPACE}/prefix",
+          "--wrap-mode=nofallback",
+          "--buildtype=release",
+          "--libdir=lib",
+          "-Ddefault_library=shared",
+          "-Dauto_features=disabled",
+          "-Dgpl=false",
+          "-Dlibmpv=true",
+          "-Dcplayer=false",
+          "-Dbuild-date=false",
+          "-Dtests=false",
+          "-Dfuzzers=false",
+          "-Dgl=disabled",
+          "-Dlua=disabled",
+          "-Dcplugins=disabled",
+          "-Djavascript=disabled",
+          "-Drubberband=disabled",
+          "-Dlibarchive=disabled",
+          "-Dlibcurl=disabled",
+          "-Dalsa=enabled",
+          "-Dpulse=enabled"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "compile",
+          "-C",
+          "${WORKSPACE}/build/mpv",
+          "-j",
+          "4"
+        ]
+      },
+      {
+        "cwd": "${WORKSPACE}",
+        "argv": [
+          "meson",
+          "install",
+          "-C",
+          "${WORKSPACE}/build/mpv"
+        ]
+      }
+    ],
+    "command_notes": [
+      "FFmpeg compiled and installed using the recorded recipe.",
+      "Remaining recorded Meson commands were resumed after workspace-only dependency metadata and include-path relocation fixes.",
+      "mpv was re-extracted from its hash-verified archive, prepared again with the corrected target insertion point, then configured, compiled and installed.",
+      "libplacebo requires Vulkan headers even for disabled-Vulkan stubs; Linux and Windows CI prerequisites now include them. Vulkan rendering remains disabled."
+    ],
+    "toolchain": {
+      "tools": {
+        "cc": "cc (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "make": "GNU Make 4.4.1\nBuilt for x86_64-pc-linux-gnu\nCopyright (C) 1988-2023 Free Software Foundation, Inc.\nLicense GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.",
+        "meson": "1.12.1",
+        "ninja": "1.13.2.git.kitware.jobserver-pipe-1",
+        "pkg-config": "1.8.1",
+        "nasm": "NASM version 2.16.03"
+      },
+      "system_packages": {
+        "freetype2": {
+          "version": "26.2.20",
+          "link_flags": "-lfreetype"
+        },
+        "fribidi": {
+          "version": "1.0.16",
+          "link_flags": "-L${HOST_DEPENDENCIES}/usr/lib/x86_64-linux-gnu -lfribidi"
+        },
+        "harfbuzz": {
+          "version": "10.2.0",
+          "link_flags": "-L${HOST_DEPENDENCIES}/usr/lib/x86_64-linux-gnu -lharfbuzz"
+        },
+        "alsa": {
+          "version": "1.2.14",
+          "link_flags": "-L${HOST_DEPENDENCIES}/usr/lib/x86_64-linux-gnu -lasound"
+        },
+        "libpulse": {
+          "version": "17.0",
+          "link_flags": "-lpulse -pthread"
+        }
+      },
+      "status": "candidate_not_release_approved",
+      "source_date_epoch": "1793836800",
+      "dpkg_packages": ""
+    },
+    "host": {
+      "os": "Debian GNU/Linux 13 (trixie), x86_64",
+      "dependency_method": "Hash-verified Debian packages were extracted into a workspace-only prefix without installation scripts or host system changes. Pkg-config paths were relocated for local builds.",
+      "debian_packages": {
+        "source": "https://deb.debian.org/debian/dists/trixie/main/binary-amd64/Packages.xz",
+        "index_sha256": "7778d3e3f303b7ddb8ce0fe7c8d57473a076c6bf2e8f241f75421d2396352498",
+        "packages": [
+          {
+            "Package": "nasm",
+            "Version": "2.16.03-1",
+            "Filename": "pool/main/n/nasm/nasm_2.16.03-1_amd64.deb",
+            "SHA256": "e5096e91356d643f54d46f3ede1d8d44e45c81a3995fb057c28ec51e3791818f"
+          },
+          {
+            "Package": "libfreetype-dev",
+            "Version": "2.13.3+dfsg-1+deb13u1",
+            "Filename": "pool/main/f/freetype/libfreetype-dev_2.13.3+dfsg-1+deb13u1_amd64.deb",
+            "SHA256": "f58107859d9fa44206e64cf35bdbd4febdec66a33e456ce2e5e3712f01b6c895"
+          },
+          {
+            "Package": "libfreetype6",
+            "Version": "2.13.3+dfsg-1+deb13u1",
+            "Filename": "pool/main/f/freetype/libfreetype6_2.13.3+dfsg-1+deb13u1_amd64.deb",
+            "SHA256": "e4947f3291528f03d574f2b01d5c5fc45c58c47480f32888a5cdf0f231ab584e"
+          },
+          {
+            "Package": "libfribidi-dev",
+            "Version": "1.0.16-1",
+            "Filename": "pool/main/f/fribidi/libfribidi-dev_1.0.16-1_amd64.deb",
+            "SHA256": "a5056c7e5e88afbd63b5350990fb450086df0f3af9c2616c52d8b6bf4cf234a7"
+          },
+          {
+            "Package": "libfribidi0",
+            "Version": "1.0.16-1",
+            "Filename": "pool/main/f/fribidi/libfribidi0_1.0.16-1_amd64.deb",
+            "SHA256": "f8c35ec8606d0843bd3cf020c6cfa39ddfe717ec58ed826b5855ba9927eb0d55"
+          },
+          {
+            "Package": "libharfbuzz-dev",
+            "Version": "10.2.0-1+deb13u1",
+            "Filename": "pool/main/h/harfbuzz/libharfbuzz-dev_10.2.0-1+deb13u1_amd64.deb",
+            "SHA256": "2588a9535b4b08193418d076605ca0878545e5b06a1a86a1f952f88f33ce79f9"
+          },
+          {
+            "Package": "libharfbuzz0b",
+            "Version": "10.2.0-1+deb13u1",
+            "Filename": "pool/main/h/harfbuzz/libharfbuzz0b_10.2.0-1+deb13u1_amd64.deb",
+            "SHA256": "932165b933e5eb633293afe984a983ebe89cb27c923ce7208626f1da6c0c7941"
+          },
+          {
+            "Package": "libasound2-dev",
+            "Version": "1.2.14-1+deb13u1",
+            "Filename": "pool/main/a/alsa-lib/libasound2-dev_1.2.14-1+deb13u1_amd64.deb",
+            "SHA256": "dfa8e8a133ef8704093d03464d86a3e86d26232baf1e3827aa030cb68c437e1c"
+          },
+          {
+            "Package": "libasound2t64",
+            "Version": "1.2.14-1+deb13u1",
+            "Filename": "pool/main/a/alsa-lib/libasound2t64_1.2.14-1+deb13u1_amd64.deb",
+            "SHA256": "5495496142d57e5ad6d581ac5456ec3c87f872c109a2bfb815d154b673eebc67"
+          },
+          {
+            "Package": "libpulse-dev",
+            "Version": "17.0+dfsg1-2+b1",
+            "Filename": "pool/main/p/pulseaudio/libpulse-dev_17.0+dfsg1-2+b1_amd64.deb",
+            "SHA256": "bcbd91aae55d1794f8fe8b1e766ec810173a6415b2165642bf756858e20ab7c4"
+          },
+          {
+            "Package": "libpulse0",
+            "Version": "17.0+dfsg1-2+b1",
+            "Filename": "pool/main/p/pulseaudio/libpulse0_17.0+dfsg1-2+b1_amd64.deb",
+            "SHA256": "786aca79119cb249562708fd24dcdf817604cfe75bbfcb8cda3464042e17f40e"
+          },
+          {
+            "Package": "libxxhash-dev",
+            "Version": "0.8.3-2",
+            "Filename": "pool/main/x/xxhash/libxxhash-dev_0.8.3-2_amd64.deb",
+            "SHA256": "c67517ebeb2f66cc4262dc476b4c7decc2b738a6d031e4869ca6bb726a75f645"
+          },
+          {
+            "Package": "libxxhash0",
+            "Version": "0.8.3-2",
+            "Filename": "pool/main/x/xxhash/libxxhash0_0.8.3-2_amd64.deb",
+            "SHA256": "81da7064d56fc044f5db4bb3c1e80ff50a4986dcbbf80d958eeca565b44c157f"
+          },
+          {
+            "Package": "libpng-dev",
+            "Version": "1.6.48-1+deb13u5",
+            "Filename": "pool/main/libp/libpng1.6/libpng-dev_1.6.48-1+deb13u5_amd64.deb",
+            "SHA256": "9027d5ace59ce266124c87054302805f49f9cb1ec4a6c8264a64596c7916fbff"
+          },
+          {
+            "Package": "libpng16-16t64",
+            "Version": "1.6.48-1+deb13u5",
+            "Filename": "pool/main/libp/libpng1.6/libpng16-16t64_1.6.48-1+deb13u5_amd64.deb",
+            "SHA256": "2465b4e9fa85cff54dc10a6da3e64074d8d9292c86e4a8f989b809d6b158e97e"
+          },
+          {
+            "Package": "libgraphite2-dev",
+            "Version": "1.3.14-2+deb13u1",
+            "Filename": "pool/main/g/graphite2/libgraphite2-dev_1.3.14-2+deb13u1_amd64.deb",
+            "SHA256": "95285830ac3b4d672cdf05651de1c47884ca135a7601a365b9e5060ed18dee26"
+          },
+          {
+            "Package": "libgraphite2-3",
+            "Version": "1.3.14-2+deb13u1",
+            "Filename": "pool/main/g/graphite2/libgraphite2-3_1.3.14-2+deb13u1_amd64.deb",
+            "SHA256": "1769ba3ed3c1fc75b7fbe02678e32aa24391205813eceef4e1e3500015d12ee3"
+          },
+          {
+            "Package": "libglib2.0-dev",
+            "Version": "2.84.4-3~deb13u5",
+            "Filename": "pool/main/g/glib2.0/libglib2.0-dev_2.84.4-3~deb13u5_amd64.deb",
+            "SHA256": "ad98b1a769da55a8007ea9953306b0deb6092205d4fac8d915e2bd83d4ecc8a5"
+          },
+          {
+            "Package": "libglib2.0-0t64",
+            "Version": "2.84.4-3~deb13u5",
+            "Filename": "pool/main/g/glib2.0/libglib2.0-0t64_2.84.4-3~deb13u5_amd64.deb",
+            "SHA256": "e2baf92c57d1db1753e5781a61450d9a01e7833c7bd2dfe87776a6811c11ecc2"
+          },
+          {
+            "Package": "libglib2.0-dev-bin",
+            "Version": "2.84.4-3~deb13u5",
+            "Filename": "pool/main/g/glib2.0/libglib2.0-dev-bin_2.84.4-3~deb13u5_amd64.deb",
+            "SHA256": "d35ef75a4b04ea10081d484e025b0a4fecd0232ffc0e76403bcd249b3b47e643"
+          },
+          {
+            "Package": "libgio-2.0-dev",
+            "Version": "2.84.4-3~deb13u5",
+            "Filename": "pool/main/g/glib2.0/libgio-2.0-dev_2.84.4-3~deb13u5_amd64.deb",
+            "SHA256": "a9bbd748ddd40a08b336e8d6b1755e698957ac640d081ddc4c330b716c6b89c3"
+          },
+          {
+            "Package": "libbz2-dev",
+            "Version": "1.0.8-6",
+            "Filename": "pool/main/b/bzip2/libbz2-dev_1.0.8-6_amd64.deb",
+            "SHA256": "b395471bf69087a18a6baa04d68a9d50497b20f8a2602d9729c7069f820bbe6b"
+          },
+          {
+            "Package": "libbz2-1.0",
+            "Version": "1.0.8-6",
+            "Filename": "pool/main/b/bzip2/libbz2-1.0_1.0.8-6_amd64.deb",
+            "SHA256": "cba4cda04244b5e481bb15524bc3c983a7d1b6f330013b9b381706a2fcb65310"
+          },
+          {
+            "Package": "libsysprof-capture-4-dev",
+            "Version": "48.0-2",
+            "Filename": "pool/main/s/sysprof/libsysprof-capture-4-dev_48.0-2_amd64.deb",
+            "SHA256": "3cb76e124187700f5977a0acb914b3f82b2bd28105fce6f1cf2a34497b234af2"
+          },
+          {
+            "Package": "libvulkan-dev",
+            "Version": "1.4.309.0-1",
+            "Filename": "pool/main/v/vulkan-loader/libvulkan-dev_1.4.309.0-1_amd64.deb",
+            "SHA256": "8d329d465e16168afff58b1bd0dd6db46aac2cc3f56054a481b25a04e90b345a"
+          },
+          {
+            "Package": "libvulkan1",
+            "Version": "1.4.309.0-1",
+            "Filename": "pool/main/v/vulkan-loader/libvulkan1_1.4.309.0-1_amd64.deb",
+            "SHA256": "f47da79cd140264fe21cceb08bc87a71bc7fec05819e4a421f3f518d21101a37"
+          }
+        ],
+        "note": "Workspace-only extraction for local validation. Pkg-config prefixes relocated; no package scripts executed or host installation changed."
+      },
+      "python_build_tools": {
+        "meson": "1.12.1",
+        "Jinja2": "3.1.6",
+        "MarkupSafe": "3.0.4"
+      },
+      "environment": {
+        "TMPDIR": "${HOST_WORKSPACE}/tmp",
+        "PKG_CONFIG_PATH": [
+          "${WORKSPACE}/prefix/lib/pkgconfig",
+          "${HOST_DEPENDENCIES}/usr/lib/x86_64-linux-gnu/pkgconfig",
+          "${HOST_DEPENDENCIES}/usr/share/pkgconfig"
+        ],
+        "LD_LIBRARY_PATH": "${WORKSPACE}/prefix/lib",
+        "SOURCE_DATE_EPOCH": "1793836800"
+      }
+    }
+  },
+  "binaries": [
+    {
+      "file": "prefix/lib/libass.so.9.4.2",
+      "sha256": "88ddc5db52dff16f446431a02cce24bccfc4dcf832707b60e6f727e24f7066fa",
+      "size_bytes": 319544,
+      "needed": [
+        "libm.so.6",
+        "libfreetype.so.6",
+        "libfribidi.so.0",
+        "libharfbuzz.so.0",
+        "libc.so.6"
+      ],
+      "runpath": ""
+    },
+    {
+      "file": "prefix/lib/libavcodec.so.63.1.102",
+      "sha256": "0c48f7c423ab18d0ed8cf1bf11a2eed8739ca7a19105e9d08ecd4d2f0f68af03",
+      "size_bytes": 1646240,
+      "needed": [
+        "libswresample.so.7",
+        "libavutil.so.61",
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "runpath": "",
+      "marker_inspection": {
+        "role": "ffmpeg",
+        "marker_verdict": "compatible_markers",
+        "mpv_versions": [],
+        "ffmpeg_license_markers": {
+          "libavcodec": [
+            "LGPL version 2.1 or later"
+          ]
+        },
+        "findings": [],
+        "release_approved": false,
+        "mpv_configurations": [],
+        "ffmpeg_configurations": [
+          "--prefix=${WORKSPACE}/prefix --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-everything --disable-network --disable-static --enable-shared --enable-pic --disable-doc --disable-debug --disable-ffplay --disable-ffprobe --disable-avdevice --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avfilter --enable-avutil --enable-swresample --enable-swscale --enable-protocol='file,pipe' --enable-demuxer='aac,ac3,aiff,asf,au,flac,matroska,mov,mp3,ogg,wav,wv' --enable-parser='aac,aac_latm,ac3,flac,mpegaudio,opus,vorbis' --enable-decoder='aac,aac_fixed,aac_latm,ac3,alac,flac,mp1,mp1float,mp2,mp2float,mp3,mp3float,opus,vorbis,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*' --enable-encoder=pcm_s16le --enable-muxer='pcm_s16le,wav' --enable-filter='abuffer,abuffersink,aformat,anull,aresample,asetpts,atempo'"
+        ]
+      }
+    },
+    {
+      "file": "prefix/lib/libavfilter.so.12.1.102",
+      "sha256": "88224f29c9bcd92de1a8c1ea3cbb8a497c04c5fa4c7db3233b1f8388cf57d8e0",
+      "size_bytes": 220360,
+      "needed": [
+        "libswresample.so.7",
+        "libavutil.so.61",
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "runpath": "",
+      "marker_inspection": {
+        "role": "ffmpeg",
+        "marker_verdict": "compatible_markers",
+        "mpv_versions": [],
+        "ffmpeg_license_markers": {
+          "libavfilter": [
+            "LGPL version 2.1 or later"
+          ]
+        },
+        "findings": [],
+        "release_approved": false,
+        "mpv_configurations": [],
+        "ffmpeg_configurations": [
+          "--prefix=${WORKSPACE}/prefix --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-everything --disable-network --disable-static --enable-shared --enable-pic --disable-doc --disable-debug --disable-ffplay --disable-ffprobe --disable-avdevice --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avfilter --enable-avutil --enable-swresample --enable-swscale --enable-protocol='file,pipe' --enable-demuxer='aac,ac3,aiff,asf,au,flac,matroska,mov,mp3,ogg,wav,wv' --enable-parser='aac,aac_latm,ac3,flac,mpegaudio,opus,vorbis' --enable-decoder='aac,aac_fixed,aac_latm,ac3,alac,flac,mp1,mp1float,mp2,mp2float,mp3,mp3float,opus,vorbis,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*' --enable-encoder=pcm_s16le --enable-muxer='pcm_s16le,wav' --enable-filter='abuffer,abuffersink,aformat,anull,aresample,asetpts,atempo'"
+        ]
+      }
+    },
+    {
+      "file": "prefix/lib/libavformat.so.63.1.102",
+      "sha256": "e4d4b18a42c3ad58d9cd84caabf7f674cccd5c73f17fe5a96b34656776be2258",
+      "size_bytes": 667960,
+      "needed": [
+        "libavcodec.so.63",
+        "libavutil.so.61",
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "runpath": "",
+      "marker_inspection": {
+        "role": "ffmpeg",
+        "marker_verdict": "compatible_markers",
+        "mpv_versions": [],
+        "ffmpeg_license_markers": {
+          "libavformat": [
+            "LGPL version 2.1 or later"
+          ]
+        },
+        "findings": [],
+        "release_approved": false,
+        "mpv_configurations": [],
+        "ffmpeg_configurations": [
+          "--prefix=${WORKSPACE}/prefix --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-everything --disable-network --disable-static --enable-shared --enable-pic --disable-doc --disable-debug --disable-ffplay --disable-ffprobe --disable-avdevice --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avfilter --enable-avutil --enable-swresample --enable-swscale --enable-protocol='file,pipe' --enable-demuxer='aac,ac3,aiff,asf,au,flac,matroska,mov,mp3,ogg,wav,wv' --enable-parser='aac,aac_latm,ac3,flac,mpegaudio,opus,vorbis' --enable-decoder='aac,aac_fixed,aac_latm,ac3,alac,flac,mp1,mp1float,mp2,mp2float,mp3,mp3float,opus,vorbis,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*' --enable-encoder=pcm_s16le --enable-muxer='pcm_s16le,wav' --enable-filter='abuffer,abuffersink,aformat,anull,aresample,asetpts,atempo'"
+        ]
+      }
+    },
+    {
+      "file": "prefix/lib/libavutil.so.61.1.102",
+      "sha256": "4e83433273041fb2f304d30200d2a4aed74a67771e35592f4d9bfde711b4331b",
+      "size_bytes": 1018544,
+      "needed": [
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "runpath": "",
+      "marker_inspection": {
+        "role": "ffmpeg",
+        "marker_verdict": "compatible_markers",
+        "mpv_versions": [],
+        "ffmpeg_license_markers": {
+          "libavutil": [
+            "LGPL version 2.1 or later"
+          ]
+        },
+        "findings": [],
+        "release_approved": false,
+        "mpv_configurations": [],
+        "ffmpeg_configurations": [
+          "--prefix=${WORKSPACE}/prefix --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-everything --disable-network --disable-static --enable-shared --enable-pic --disable-doc --disable-debug --disable-ffplay --disable-ffprobe --disable-avdevice --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avfilter --enable-avutil --enable-swresample --enable-swscale --enable-protocol='file,pipe' --enable-demuxer='aac,ac3,aiff,asf,au,flac,matroska,mov,mp3,ogg,wav,wv' --enable-parser='aac,aac_latm,ac3,flac,mpegaudio,opus,vorbis' --enable-decoder='aac,aac_fixed,aac_latm,ac3,alac,flac,mp1,mp1float,mp2,mp2float,mp3,mp3float,opus,vorbis,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*' --enable-encoder=pcm_s16le --enable-muxer='pcm_s16le,wav' --enable-filter='abuffer,abuffersink,aformat,anull,aresample,asetpts,atempo'"
+        ]
+      }
+    },
+    {
+      "file": "prefix/lib/libmpv.so.2.6.0",
+      "sha256": "99bed290e3bd4eadf1e3d4a9a8cd072715d8dab56d3495da855170dd21bd349b",
+      "size_bytes": 2833032,
+      "needed": [
+        "libass.so.9",
+        "libavcodec.so.63",
+        "libavfilter.so.12",
+        "libavformat.so.63",
+        "libavutil.so.61",
+        "libplacebo.so.387",
+        "libswresample.so.7",
+        "libswscale.so.10",
+        "libasound.so.2",
+        "libpulse.so.0",
+        "libstdc++.so.6",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "runpath": "",
+      "marker_inspection": {
+        "role": "mpv",
+        "marker_verdict": "compatible_markers",
+        "mpv_versions": [
+          "mpv v0.42.0"
+        ],
+        "ffmpeg_license_markers": {},
+        "findings": [],
+        "release_approved": false,
+        "mpv_configurations": [
+          "-Dbuildtype=release -Dprefix=${WORKSPACE}/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled"
+        ],
+        "ffmpeg_configurations": []
+      }
+    },
+    {
+      "file": "prefix/lib/libplacebo.so.387",
+      "sha256": "16e264eb6a379cf0cb1cc5f7aab02dbd45414df12c396f4e262c0dad0567c0c9",
+      "size_bytes": 978288,
+      "needed": [
+        "libstdc++.so.6",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6"
+      ],
+      "runpath": ""
+    },
+    {
+      "file": "prefix/lib/libswresample.so.7.1.102",
+      "sha256": "3e6d35595d00565c10d9f37e8cb6b2fec80fd92230e481860d19079a7bf47f37",
+      "size_bytes": 141648,
+      "needed": [
+        "libavutil.so.61",
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "runpath": "",
+      "marker_inspection": {
+        "role": "ffmpeg",
+        "marker_verdict": "compatible_markers",
+        "mpv_versions": [],
+        "ffmpeg_license_markers": {
+          "libswresample": [
+            "LGPL version 2.1 or later"
+          ]
+        },
+        "findings": [],
+        "release_approved": false,
+        "mpv_configurations": [],
+        "ffmpeg_configurations": [
+          "--prefix=${WORKSPACE}/prefix --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-everything --disable-network --disable-static --enable-shared --enable-pic --disable-doc --disable-debug --disable-ffplay --disable-ffprobe --disable-avdevice --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avfilter --enable-avutil --enable-swresample --enable-swscale --enable-protocol='file,pipe' --enable-demuxer='aac,ac3,aiff,asf,au,flac,matroska,mov,mp3,ogg,wav,wv' --enable-parser='aac,aac_latm,ac3,flac,mpegaudio,opus,vorbis' --enable-decoder='aac,aac_fixed,aac_latm,ac3,alac,flac,mp1,mp1float,mp2,mp2float,mp3,mp3float,opus,vorbis,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*' --enable-encoder=pcm_s16le --enable-muxer='pcm_s16le,wav' --enable-filter='abuffer,abuffersink,aformat,anull,aresample,asetpts,atempo'"
+        ]
+      }
+    },
+    {
+      "file": "prefix/lib/libswscale.so.10.1.102",
+      "sha256": "14b69b049957ee25011dc0dc5868c5ff65f7f36bf6b509285573db3785ae4944",
+      "size_bytes": 2145088,
+      "needed": [
+        "libavutil.so.61",
+        "libm.so.6",
+        "libc.so.6"
+      ],
+      "runpath": "",
+      "marker_inspection": {
+        "role": "ffmpeg",
+        "marker_verdict": "compatible_markers",
+        "mpv_versions": [],
+        "ffmpeg_license_markers": {
+          "libswscale": [
+            "LGPL version 2.1 or later"
+          ]
+        },
+        "findings": [],
+        "release_approved": false,
+        "mpv_configurations": [],
+        "ffmpeg_configurations": [
+          "--prefix=${WORKSPACE}/prefix --disable-gpl --disable-nonfree --disable-version3 --disable-autodetect --disable-everything --disable-network --disable-static --enable-shared --enable-pic --disable-doc --disable-debug --disable-ffplay --disable-ffprobe --disable-avdevice --enable-ffmpeg --enable-avcodec --enable-avformat --enable-avfilter --enable-avutil --enable-swresample --enable-swscale --enable-protocol='file,pipe' --enable-demuxer='aac,ac3,aiff,asf,au,flac,matroska,mov,mp3,ogg,wav,wv' --enable-parser='aac,aac_latm,ac3,flac,mpegaudio,opus,vorbis' --enable-decoder='aac,aac_fixed,aac_latm,ac3,alac,flac,mp1,mp1float,mp2,mp2float,mp3,mp3float,opus,vorbis,wavpack,wmav1,wmav2,wmapro,wmalossless,wmavoice,pcm*' --enable-encoder=pcm_s16le --enable-muxer='pcm_s16le,wav' --enable-filter='abuffer,abuffersink,aformat,anull,aresample,asetpts,atempo'"
+        ]
+      }
+    }
+  ],
+  "observed_runtime_resolution": [
+    {
+      "soname": "libass.so.9",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libass.so.9.4.2",
+      "sha256": "88ddc5db52dff16f446431a02cce24bccfc4dcf832707b60e6f727e24f7066fa"
+    },
+    {
+      "soname": "libavcodec.so.63",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libavcodec.so.63.1.102",
+      "sha256": "0c48f7c423ab18d0ed8cf1bf11a2eed8739ca7a19105e9d08ecd4d2f0f68af03"
+    },
+    {
+      "soname": "libavfilter.so.12",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libavfilter.so.12.1.102",
+      "sha256": "88224f29c9bcd92de1a8c1ea3cbb8a497c04c5fa4c7db3233b1f8388cf57d8e0"
+    },
+    {
+      "soname": "libavformat.so.63",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libavformat.so.63.1.102",
+      "sha256": "e4d4b18a42c3ad58d9cd84caabf7f674cccd5c73f17fe5a96b34656776be2258"
+    },
+    {
+      "soname": "libavutil.so.61",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libavutil.so.61.1.102",
+      "sha256": "4e83433273041fb2f304d30200d2a4aed74a67771e35592f4d9bfde711b4331b"
+    },
+    {
+      "soname": "libplacebo.so.387",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libplacebo.so.387",
+      "sha256": "16e264eb6a379cf0cb1cc5f7aab02dbd45414df12c396f4e262c0dad0567c0c9"
+    },
+    {
+      "soname": "libswresample.so.7",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libswresample.so.7.1.102",
+      "sha256": "3e6d35595d00565c10d9f37e8cb6b2fec80fd92230e481860d19079a7bf47f37"
+    },
+    {
+      "soname": "libswscale.so.10",
+      "resolved_file": "${WORKSPACE}/prefix/lib/libswscale.so.10.1.102",
+      "sha256": "14b69b049957ee25011dc0dc5868c5ff65f7f36bf6b509285573db3785ae4944"
+    },
+    {
+      "soname": "libasound.so.2",
+      "resolved_file": "/lib/x86_64-linux-gnu/libasound.so.2.0.0",
+      "sha256": "0faa79c7a37189b9efcd9bff5874cd1af1c05b0cc66831733087d84cbe87e811"
+    },
+    {
+      "soname": "libpulse.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libpulse.so.0.24.3",
+      "sha256": "2bce57f25d08141a071c348021f5f3c94bc0fdcf644b3dd22a592d6f303ce8fa"
+    },
+    {
+      "soname": "libstdc++.so.6",
+      "resolved_file": "/lib/x86_64-linux-gnu/libstdc++.so.6.0.33",
+      "sha256": "972bb2a18b71140dab0240f8a1f68ab3fb1d56bcd4c4f824a91b70888faf5a00"
+    },
+    {
+      "soname": "libm.so.6",
+      "resolved_file": "/lib/x86_64-linux-gnu/libm.so.6",
+      "sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3"
+    },
+    {
+      "soname": "libgcc_s.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libgcc_s.so.1",
+      "sha256": "30c61ab012a4241bed033725a09b61f5fdd3bb7df95ee852d0b096520524c7af"
+    },
+    {
+      "soname": "libc.so.6",
+      "resolved_file": "/lib/x86_64-linux-gnu/libc.so.6",
+      "sha256": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92"
+    },
+    {
+      "soname": "libfreetype.so.6",
+      "resolved_file": "/lib/x86_64-linux-gnu/libfreetype.so.6.20.2",
+      "sha256": "9e376992a91e92d86809893a3b9eea22a4e27849db1686f6ca58032f79cdafb5"
+    },
+    {
+      "soname": "libfribidi.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libfribidi.so.0.4.0",
+      "sha256": "bbd962bd1c3ac1c25dc983d2951962caf55acb46a80e33ef93e31392edd5a222"
+    },
+    {
+      "soname": "libharfbuzz.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libharfbuzz.so.0.61020.0",
+      "sha256": "c0cc41333a8fc0c24428a61ba0af6380aabb1f0d91ac48c13ed743b06c8ccc87"
+    },
+    {
+      "soname": "libpulsecommon-17.0.so",
+      "resolved_file": "/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-17.0.so",
+      "sha256": "916b99b9bf3d354bdffa0aedc26480655d1ecf697e0d481ef02dc7ba5039024f"
+    },
+    {
+      "soname": "libdbus-1.so.3",
+      "resolved_file": "/lib/x86_64-linux-gnu/libdbus-1.so.3.38.3",
+      "sha256": "f8c5475204730fa615547b10b642d7e27e5954ed1c12c47507743f2b486ba5a0"
+    },
+    {
+      "soname": "libz.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libz.so.1.3.1",
+      "sha256": "85590dd58edf5445e18bc7193e5ebc01ac5841f1ae187e97705a662e90c6421e"
+    },
+    {
+      "soname": "libbz2.so.1.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libbz2.so.1.0.4",
+      "sha256": "c630f057efedc12f848710d71f40283895591e5b4608539f387895c64e0553da"
+    },
+    {
+      "soname": "libpng16.so.16",
+      "resolved_file": "/lib/x86_64-linux-gnu/libpng16.so.16.48.0",
+      "sha256": "7dd8e62ca2f3b2b3bb642e485b1324b01950aad82eb63bad2c783ac94d80c001"
+    },
+    {
+      "soname": "libbrotlidec.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libbrotlidec.so.1.1.0",
+      "sha256": "ff4baf3141862726c25ab08cdd94bced37dcae0c6827943d3e40fc1079969814"
+    },
+    {
+      "soname": "libglib-2.0.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libglib-2.0.so.0.8400.4",
+      "sha256": "980ab64e995225de1543779e3bafafac9d705904d42ca3b5eb76e7a336cc5e1d"
+    },
+    {
+      "soname": "libgraphite2.so.3",
+      "resolved_file": "/lib/x86_64-linux-gnu/libgraphite2.so.3.2.1",
+      "sha256": "5c4b17bdbd121d3c65f28c22d9c2a0504ca493d9e8fa7d7d31383c72237416b4"
+    },
+    {
+      "soname": "libsndfile.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libsndfile.so.1.0.37",
+      "sha256": "643e4862f5847d6e5ecb442222d93735a6d4190283df26d4b63d104141a9a056"
+    },
+    {
+      "soname": "libX11-xcb.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libX11-xcb.so.1.0.0",
+      "sha256": "c73c2e98ad556a412dd6eef44b857dbd3cc02f191db8af30968084565f60f311"
+    },
+    {
+      "soname": "libX11.so.6",
+      "resolved_file": "/lib/x86_64-linux-gnu/libX11.so.6.4.0",
+      "sha256": "b03e563b316b8b53c7988f0ee91d6656cc425538e00947a8b14482d179e80099"
+    },
+    {
+      "soname": "libxcb.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libxcb.so.1.1.0",
+      "sha256": "a1cde2cec9b7b8b38e4cca450c55c63651efb80a2458d76964b56b763043f533"
+    },
+    {
+      "soname": "libsystemd.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libsystemd.so.0.40.0",
+      "sha256": "c59f9015342de9c2dcb2decccb3d83218849fe3e4388c723a6528254fd7606f0"
+    },
+    {
+      "soname": "libasyncns.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libasyncns.so.0.3.1",
+      "sha256": "03429d16fdb490790adb62a0140573111ff8ce2f2e17937a25b93096e8570051"
+    },
+    {
+      "soname": "libbrotlicommon.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libbrotlicommon.so.1.1.0",
+      "sha256": "0697dd09666e2a080974470950075ee959f2391ecb173ceee50423f969032d79"
+    },
+    {
+      "soname": "libatomic.so.1",
+      "resolved_file": "/lib/x86_64-linux-gnu/libatomic.so.1.2.0",
+      "sha256": "9558489f171274c220104894258f483055853ed8a23d4ff754c850ce55765aa2"
+    },
+    {
+      "soname": "libpcre2-8.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libpcre2-8.so.0.14.0",
+      "sha256": "92e9b4167f9bbc237ca8f5526d82ee99ec9f8dbd0270ef1dd0ab24e2217f48e3"
+    },
+    {
+      "soname": "libFLAC.so.14",
+      "resolved_file": "/lib/x86_64-linux-gnu/libFLAC.so.14.0.0",
+      "sha256": "b39619be623caffbf2b04e7a2c9cc51b4ef20af8ae0434fb2693b50ebff9090f"
+    },
+    {
+      "soname": "libvorbis.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libvorbis.so.0.4.9",
+      "sha256": "0685850ab1d1e71e4c162c18b26bfa41a9dd97ff22682a773df4ba6df3bc961a"
+    },
+    {
+      "soname": "libvorbisenc.so.2",
+      "resolved_file": "/lib/x86_64-linux-gnu/libvorbisenc.so.2.0.12",
+      "sha256": "db5b676baf57298eedf65528ec31837f8c6fd9b7c8f03b162fc1666ce127c347"
+    },
+    {
+      "soname": "libopus.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libopus.so.0.10.1",
+      "sha256": "621e97f23655dbf2727873b7717e3b65ae8c734f84a0848f88c21edb95202357"
+    },
+    {
+      "soname": "libogg.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libogg.so.0.8.5",
+      "sha256": "642a3280273c5ecd8e1ff6c58c9fac3bffc1da41b878c9362473f59174937f77"
+    },
+    {
+      "soname": "libmpg123.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libmpg123.so.0.48.3",
+      "sha256": "b5963c5d72f19d4c86010150277a9630a13ce784b4f8af27659b66b69b25b3b8"
+    },
+    {
+      "soname": "libmp3lame.so.0",
+      "resolved_file": "/lib/x86_64-linux-gnu/libmp3lame.so.0.0.0",
+      "sha256": "98d0d7579c760053242a1deac2ebe335b8f8636f44235580f05b732f5fa207bb"
+    },
+    {
+      "soname": "libXau.so.6",
+      "resolved_file": "/lib/x86_64-linux-gnu/libXau.so.6.0.0",
+      "sha256": "4275ec5b14bec21770c44447b3a52977e211c7ba08745008f3a1783878e091bb"
+    },
+    {
+      "soname": "libXdmcp.so.6",
+      "resolved_file": "/lib/x86_64-linux-gnu/libXdmcp.so.6.0.0",
+      "sha256": "761409b24c818719f8c8a2a64a61c8ac6a3067f3d8882485dca64a98d7500040"
+    },
+    {
+      "soname": "libcap.so.2",
+      "resolved_file": "/lib/x86_64-linux-gnu/libcap.so.2.75",
+      "sha256": "41217b0af128444f66dee8adda52b2ceaf19da00e5b0b155e2b87b857671286b"
+    }
+  ],
+  "smoke": {
+    "script": "scripts/smoke_desktop_audio.py",
+    "report_sha256": "ee3531c142b2e5c5d413649f73c27b0c585f07525b34f1083ff0b57467dca8ba",
+    "libmpv_binary_sha256": "99bed290e3bd4eadf1e3d4a9a8cd072715d8dab56d3495da855170dd21bd349b",
+    "mpv_version": "mpv v0.42.0",
+    "mpv_configuration": "-Dbuildtype=release -Dprefix=${WORKSPACE}/prefix -Dwrap_mode=nofallback -Dlibdir=lib -Ddefault_library=shared -Dauto_features=disabled -Dgpl=false -Dlibmpv=true -Dcplayer=false -Dbuild-date=false -Dtests=false -Dfuzzers=false -Dgl=disabled -Dlua=disabled -Dcplugins=disabled -Djavascript=disabled -Drubberband=disabled -Dlibarchive=disabled -Dlibcurl=disabled -Dalsa=enabled -Dpulse=enabled",
+    "checks_passed": 35,
+    "checks": [
+      {
+        "mode": "automatic",
+        "speed": 0.5,
+        "output_seconds": 11.976,
+        "frequency_hz": 439.9631008819746,
+        "installed_filter": "",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "automatic",
+        "speed": 1,
+        "output_seconds": 6.0,
+        "frequency_hz": 440.0016081930124,
+        "installed_filter": "",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "automatic",
+        "speed": 1.5,
+        "output_seconds": 4.0,
+        "frequency_hz": 440.0024774914273,
+        "installed_filter": "",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "automatic",
+        "speed": 2,
+        "output_seconds": 2.999979166666667,
+        "frequency_hz": 439.63641414219353,
+        "installed_filter": "",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "automatic",
+        "speed": 3,
+        "output_seconds": 2.0,
+        "frequency_hz": 440.00539222294395,
+        "installed_filter": "",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "legacy_scaletempo",
+        "speed": 0.5,
+        "output_seconds": 11.94,
+        "frequency_hz": 440.03515183840176,
+        "installed_filter": "scaletempo=scale=%10%0.50000000",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "legacy_scaletempo",
+        "speed": 1,
+        "output_seconds": 6.0,
+        "frequency_hz": 440.0016081930124,
+        "installed_filter": "scaletempo=scale=%10%1.00000000",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "legacy_scaletempo",
+        "speed": 1.5,
+        "output_seconds": 4.02,
+        "frequency_hz": 440.0562279134628,
+        "installed_filter": "scaletempo=scale=%10%1.50000000",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "legacy_scaletempo",
+        "speed": 2,
+        "output_seconds": 3.0,
+        "frequency_hz": 440.00339508792507,
+        "installed_filter": "scaletempo=scale=%10%2.00000000",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "legacy_scaletempo",
+        "speed": 3,
+        "output_seconds": 2.04,
+        "frequency_hz": 440.23515607227097,
+        "installed_filter": "scaletempo=scale=%10%3.00000000",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "sonic",
+        "speed": 0.5,
+        "output_seconds": 12.0,
+        "frequency_hz": 440.1717239524999,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "sonic",
+        "speed": 1,
+        "output_seconds": 6.0,
+        "frequency_hz": 440.0016081930124,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "sonic",
+        "speed": 1.5,
+        "output_seconds": 4.0,
+        "frequency_hz": 440.0024774914273,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "sonic",
+        "speed": 2,
+        "output_seconds": 3.0,
+        "frequency_hz": 439.6330218597366,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "sonic",
+        "speed": 3,
+        "output_seconds": 2.0,
+        "frequency_hz": 439.4171497199721,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=sonic",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "wsola",
+        "speed": 0.5,
+        "output_seconds": 12.0,
+        "frequency_hz": 440.0007834771785,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "wsola",
+        "speed": 1,
+        "output_seconds": 6.0,
+        "frequency_hz": 440.0016081930124,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "wsola",
+        "speed": 1.5,
+        "output_seconds": 4.0,
+        "frequency_hz": 440.0024774914273,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "wsola",
+        "speed": 2,
+        "output_seconds": 3.0,
+        "frequency_hz": 440.00339508792507,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "wsola",
+        "speed": 3,
+        "output_seconds": 2.0,
+        "frequency_hz": 440.00539222294395,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=wsola",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "signalsmith",
+        "speed": 0.5,
+        "output_seconds": 12.0,
+        "frequency_hz": 440.0007834771785,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "signalsmith",
+        "speed": 1,
+        "output_seconds": 6.0,
+        "frequency_hz": 440.0016081930124,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "signalsmith",
+        "speed": 1.5,
+        "output_seconds": 4.0,
+        "frequency_hz": 440.0024774914273,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "signalsmith",
+        "speed": 2,
+        "output_seconds": 3.0,
+        "frequency_hz": 440.00339508792507,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "signalsmith",
+        "speed": 3,
+        "output_seconds": 2.0,
+        "frequency_hz": 440.00539222294395,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=signalsmith",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "bungee",
+        "speed": 0.5,
+        "output_seconds": 12.0,
+        "frequency_hz": 440.0007834771785,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "bungee",
+        "speed": 1,
+        "output_seconds": 6.0,
+        "frequency_hz": 440.0016081930124,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "bungee",
+        "speed": 1.5,
+        "output_seconds": 4.0,
+        "frequency_hz": 440.0024774914273,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "bungee",
+        "speed": 2,
+        "output_seconds": 3.0,
+        "frequency_hz": 440.00339508792507,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "bungee",
+        "speed": 3,
+        "output_seconds": 2.0,
+        "frequency_hz": 440.00539222294395,
+        "installed_filter": "@crisper_speed:crisperdsp=engine=bungee",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "atempo",
+        "speed": 0.5,
+        "output_seconds": 11.919979166666666,
+        "frequency_hz": 439.9327306824824,
+        "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "atempo",
+        "speed": 1,
+        "output_seconds": 6.0,
+        "frequency_hz": 440.0016081930124,
+        "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "atempo",
+        "speed": 1.5,
+        "output_seconds": 4.025854166666667,
+        "frequency_hz": 439.63319167971366,
+        "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "atempo",
+        "speed": 2,
+        "output_seconds": 3.0336875,
+        "frequency_hz": 440.0682843555664,
+        "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+        "native_error_log_check": "passed"
+      },
+      {
+        "mode": "atempo",
+        "speed": 3,
+        "output_seconds": 2.037166666666667,
+        "frequency_hz": 439.8018780806639,
+        "installed_filter": "@crisper_speed:lavfi-tempo=filter=atempo",
+        "native_error_log_check": "passed"
+      }
+    ],
+    "checks_include": [
+      "actual native filter inventory",
+      "selected labeled filter readback before and after playback",
+      "fatal/error/disabled-filter log rejection",
+      "finite native EOF",
+      "generated-tone output duration",
+      "approximate preservation of 440 Hz pitch"
+    ],
+    "command": "TMPDIR=${HOST_WORKSPACE}/tmp LD_LIBRARY_PATH=${WORKSPACE}/prefix/lib python3 scripts/smoke_desktop_audio.py --library ${WORKSPACE}/prefix/lib/libmpv.so --require-portable --output ${WORKSPACE}/compliance/playback-smoke.json",
+    "report": "licensing/evidence/portable_linux_playback_2026-11-11.json"
+  },
+  "remaining_limits": [
+    "Only the Linux x86_64 host was executed. Windows source-build/PCM CI remains a separate validation requirement.",
+    "No packaged Flutter application, target-device audio output, lifecycle/interruption, long-book, subjective audio-quality or battery test is represented by these PCM checks.",
+    "The host uses extracted and system dependency libraries. Installed RUNPATHs and all runtime-resolution entries are observations, not an approved redistributable dependency closure.",
+    "Matching target-package source, notices, library replacement/relink materials and all packaging/distribution requirements remain subject to the existing license release gate.",
+    "No native binary is committed, bundled into the application, or marked release-approved by this evidence."
+  ]
+}

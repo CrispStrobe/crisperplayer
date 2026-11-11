@@ -30,7 +30,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y
           build-essential meson ninja-build pkg-config nasm python3-jinja2
           libfreetype-dev libfribidi-dev libharfbuzz-dev libasound2-dev
-          libpulse-dev libxxhash-dev
+          libpulse-dev libxxhash-dev libvulkan-dev
       - name: Build the pinned LGPL libmpv with all four portable engines
         run: python3 scripts/build_linux_audio.py --workspace build/portable-linux --jobs 2 --build
       - name: Preserve build and real PCM integration evidence
@@ -69,6 +69,7 @@ jobs:
             mingw-w64-ucrt-x86_64-fribidi
             mingw-w64-ucrt-x86_64-harfbuzz
             mingw-w64-ucrt-x86_64-xxhash
+            mingw-w64-ucrt-x86_64-vulkan-headers
       - name: Build private LGPL FFmpeg and portable libmpv for WASAPI
         run: python scripts/build_windows_audio.py --workspace build/portable-windows --jobs 2 --build
       - name: Preserve build and real PCM integration evidence

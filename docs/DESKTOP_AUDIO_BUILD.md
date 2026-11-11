@@ -57,12 +57,14 @@ a promise that the application uses no GPL components.
 
 [linux_audio_sources.json](../licensing/linux_audio_sources.json) pins archive
 hashes for mpv 0.42.0, FFmpeg 9.0.2, libass 0.17.5 and libplacebo 7.387.0. The
-archives were downloaded and hash-verified during this review. The preparation
-path of [build_linux_audio.py](../scripts/build_linux_audio.py) was exercised.
-**The native build has not been executed here**: this workspace lacks the
-required native toolchain/development libraries. The script is an explicit
-candidate for a separately provisioned build runner and does not change the
-application's default loader or approve a Linux release.
+archives were downloaded and hash-verified during this review. A controlled
+Linux x86_64 build compiled and linked all four libraries and the portable DSP
+filter on 2026-11-11. The resulting libmpv passed all 35 native PCM checks,
+including filter inventory/readback and error-log checks. Exact source inputs,
+commands, binary hashes, host dependency observations and measurements are in
+[the Linux host evidence](../licensing/evidence/portable_linux_host_2026-11-11.json).
+This validates a source-built candidate on one host. It does not change the
+application's default loader or approve a packaged Linux release.
 
 The build plan:
 
@@ -104,8 +106,10 @@ python3 scripts/build_linux_audio.py \
 
 For the build, use a **new workspace** on a controlled Linux runner with Python
 3.12+, a C/C++ compiler, make, Meson, Ninja, NASM, pkg-config and readelf. Provide
-development files for FreeType, FriBidi, HarfBuzz, ALSA and PulseAudio, plus the
-Python modules required by the pinned upstream projects (including Jinja2).
+development files for FreeType, FriBidi, HarfBuzz, ALSA and PulseAudio, Vulkan
+headers (`libvulkan-dev` on Debian/Ubuntu), plus the Python modules required by
+the pinned upstream projects (including Jinja2). libplacebo's disabled-Vulkan
+stubs still include these headers; Vulkan rendering remains disabled.
 Record and review the exact runner image, package versions, dependency licenses
 and sources. The source archive hashes alone do not pin these host dependencies
 or establish a byte-for-byte reproducible build.
@@ -144,7 +148,8 @@ existing `2023-09-24` Windows binary automatically.
 The Windows runner needs `base-devel`, `make`, and these UCRT64 packages (each
 with the `mingw-w64-ucrt-x86_64-` prefix): `toolchain`, `python`, `meson`,
 `ninja`, `pkgconf`, `nasm`, `python-jinja`, `freetype`, `fribidi`, `harfbuzz`,
-and `xxhash`. The exact installation and both platform builds are recorded in
+`xxhash`, and `vulkan-headers`. The exact installation and both platform builds
+are recorded in
 [desktop-portable-audio.yml](../.github/workflows/desktop-portable-audio.yml).
 Use the UCRT64 Python, compiler and pkg-config consistently, and a workspace
 path without spaces because upstream native build tools may reject them.
@@ -222,8 +227,10 @@ LD_LIBRARY_PATH=/absolute/path/audio-build/prefix/lib \
 
 Both source builders invoke this test after compiling, and the desktop audio
 workflow runs them on Linux and Windows. Check the workflow artifacts for the
-result of the actual branch being reviewed. A full native build requires the
-development dependencies listed above.
+result of the actual branch being reviewed. The recorded Linux host validation
+used workspace-only extracted development packages and local build tools; its
+dependency and packaging limits are explicit in the evidence above. A Windows
+native build and target-device playback remain separate checks.
 This test does not measure narration intelligibility, transient fidelity,
 music quality, battery use, gapless transitions or interruption behavior. Those
 need representative content and real target-device validation.
@@ -233,8 +240,8 @@ against the compiled shared DSP core. It models only mpv's frame/pin contract:
 24 stream cases cover all engines and six speeds; 12 further cases cover
 draining a speed change, discarding old audio on seek, and changing sample rate
 and channel count. Another 16 cases cover unsupported channel counts, invalid
-PCM, invalid speed and failures from the internal converter. All 52 cases check
-that failures end the stream without mpv bypassing the selected processor. The
+PCM, invalid speed and failures from the internal converter. These failure
+cases ensure the stream ends without mpv bypassing the selected processor. The
 stream tests check frame totals, finite PCM, source PTS, unity passthrough,
 partial input larger than the core ring, and finite EOF. This harness is
 separate from the full mpv build and does not claim device playback validation.

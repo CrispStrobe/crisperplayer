@@ -115,6 +115,15 @@ python3 packages/just_audio/native/crisper_dsp/tools/test_streaming.py \
 python3 -m unittest scripts.tests.test_distribution_licenses
 ```
 
+A controlled Linux x86-64 libmpv build has also passed 35 actual native PCM
+checks: Automatic, Legacy scaletempo, Sonic, WSOLA, Signalsmith, Bungee and
+atempo at 0.5×, 1×, 1.5×, 2× and 3×. The smoke test checks the installed
+optional filter and rejects native error messages, so a correctly timed
+fallback cannot silently satisfy it. Exact candidate and report hashes are
+recorded in [the host evidence](../licensing/evidence/portable_linux_host_2026-11-11.json).
+This is synthetic file-output evidence; Flutter app packaging, audio-device
+playback and the other native targets retain their separate validation needs.
+
 After resolving the real Flutter dependency graph, the existing distribution
 report checks the complete production dependency inventory and native evidence:
 

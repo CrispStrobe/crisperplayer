@@ -5242,7 +5242,7 @@
     {
       "package": "crisperplayer",
       "path": "scripts/prepare_portable_mpv.py",
-      "sha256": "eae49dd8954f5f1a719e5903daef564fe38c3e13addf4c17bed70f9575c08408",
+      "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
       "platforms": [
         "linux",
         "windows"
@@ -5307,6 +5307,15 @@
       "package": "just_audio_media_kit",
       "path": "test/processor_failure_test.dart",
       "sha256": "30209bc356713fe3df5edb7ec1020553d695d24c0ca43dead507f5b7ed81f5e3",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/desktop-portable-audio.yml",
+      "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
       "platforms": [
         "linux",
         "windows"

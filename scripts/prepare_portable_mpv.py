@@ -59,7 +59,10 @@ def prepare(source: Path, evidence: Path) -> dict:
             raise ValueError(f'Ambiguous mpv patch location: {name}')
         text = originals[name].replace(before, after)
         if name == 'meson.build':
-            marker = '# Keeps track of all enabled/disabled features'
+            # A static library is a build target. Meson requires all upstream
+            # add_project_arguments/add_project_link_arguments calls to run
+            # before it, while libmpv still needs our dependency at creation.
+            marker = '# build targets'
             if text.count(marker) != 1:
                 raise ValueError('Ambiguous mpv dependency insertion')
             text = text.replace(marker, "subdir('crisper-dsp')\n\n" + marker)

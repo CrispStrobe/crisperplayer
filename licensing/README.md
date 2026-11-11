@@ -105,6 +105,14 @@ the unchanged seven-component/258-file closure, notice preservation and the
 41 distribution-policy regression tests. It records source evidence only,
 without promoting Apple, Android or desktop artifacts to approved status.
 
+The [controlled Linux host candidate](evidence/portable_linux_host_2026-11-11.json)
+records an actual x86-64 libmpv build and 35 native PCM checks: all four portable
+engines, FFmpeg atempo, and the two existing mpv modes at five playback rates.
+The checks verify optional-filter installation and reject native error logs.
+Its binary and report hashes identify this tested candidate; release approval
+remains false while shipped packaging, dependency closure, corresponding-source
+delivery and device/output validation remain pending.
+
 The pinned NDK `28.2.13676358` and its `libc++_shared.so` are a separate native
 component. The [official NDK documentation](https://developer.android.com/ndk/guides/cpp-support)
 identifies the upstream LLVM grant and explains that this shared runtime must

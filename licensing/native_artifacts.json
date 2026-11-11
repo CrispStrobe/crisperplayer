@@ -51,7 +51,7 @@
         },
         {
           "path": "scripts/prepare_portable_mpv.py",
-          "sha256": "eae49dd8954f5f1a719e5903daef564fe38c3e13addf4c17bed70f9575c08408",
+          "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
           "note": "Exact pinned-source validation and source/patch retention for the controlled mpv filter."
         },
         {
@@ -63,6 +63,11 @@
           "path": "assets/licenses/DESKTOP-AUDIO.txt",
           "sha256": "11b3ca220217f9d4a09acca95a54635cf5a6e1e28f8e41fc50f23e403dd0eb95",
           "note": "Historical Windows binary identity and unresolved LGPL obligations remain explicit alongside the source-built alternative."
+        },
+        {
+          "path": ".github/workflows/desktop-portable-audio.yml",
+          "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
+          "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
         }
       ],
       "blockers": [
@@ -106,7 +111,7 @@
         },
         {
           "path": "scripts/prepare_portable_mpv.py",
-          "sha256": "eae49dd8954f5f1a719e5903daef564fe38c3e13addf4c17bed70f9575c08408",
+          "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
           "note": "Validates exact original mpv files and shared DSP closure, applies the independent local filter, and retains corresponding-source patch evidence."
         },
         {
@@ -133,13 +138,44 @@
           "path": "assets/licenses/DESKTOP-AUDIO.txt",
           "sha256": "11b3ca220217f9d4a09acca95a54635cf5a6e1e28f8e41fc50f23e403dd0eb95",
           "note": "Retains historical binary evidence and LGPL obligations while explaining the controlled build and capability-gated processors."
+        },
+        {
+          "path": ".github/workflows/desktop-portable-audio.yml",
+          "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
+          "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
+        },
+        {
+          "path": "licensing/evidence/portable_linux_host_2026-11-11.json",
+          "sha256": "7d19ed57f47ba452db7f8d19facf398511b5f04d504ce1032b0396527c3f2c99",
+          "note": "Actual Linux x86-64 controlled source build: nine native binary hashes/marker inspections, observed runtime resolution, exact source/preparation inputs and 35 passing native PCM checks. Explicit release_approved: false; no target-package approval or evidence for another platform."
+        },
+        {
+          "path": "licensing/evidence/portable_linux_playback_2026-11-11.json",
+          "sha256": "ee3531c142b2e5c5d413649f73c27b0c585f07525b34f1083ff0b57467dca8ba",
+          "note": "Exact retained successful native playback report for seven modes at five rates; optional filter inventory/readback and native-error rejection prevent a timed fallback from passing. Report and tested libmpv binary have separate recorded hashes."
         }
       ],
       "blockers": [
-        "No controlled Linux candidate has been compiled and validated in this workspace. Source preparation and script tests do not prove native build success.",
         "Review and pin the complete toolchain/system dependency closure, inspect the final ELF runtime resolution, provide source/notices, and demonstrate replaceable shared-library packaging before approving a release.",
         "System libmpv discovered by name may be a GPL build; its presence cannot satisfy this component."
-      ]
+      ],
+      "artifact_review_status": "pending_release_packaging_validation",
+      "candidate_validation": {
+        "platform": "linux",
+        "architecture": "x86_64",
+        "build_status": "compiled_and_linked",
+        "native_pcm_checks_passed": 35,
+        "processor_modes": 7,
+        "release_approved": false,
+        "binary": {
+          "filename": "libmpv.so.2.6.0",
+          "sha256": "99bed290e3bd4eadf1e3d4a9a8cd072715d8dab56d3495da855170dd21bd349b",
+          "size_bytes": 2833032
+        },
+        "evidence": "licensing/evidence/portable_linux_host_2026-11-11.json",
+        "playback_report": "licensing/evidence/portable_linux_playback_2026-11-11.json",
+        "scope": "Observed host candidate only. The packaged Flutter application, target audio-device behavior, redistributable dependency closure, source/notices and replacement/relink materials remain pending."
+      }
     },
     {
       "id": "desktop-ffmpeg-external",
@@ -517,7 +553,7 @@
         "android_ndk": "28.2.13676358",
         "cmake": "3.22.1",
         "stl": "c++_shared; separately inventoried NDK runtime must ship with the app",
-        "target_artifact_validation": "Pending Android ABI/APK audits, Apple device/simulator/universal-library and app-bundle checks, and controlled Linux/Windows libmpv hashes, linked-dependency inspection and source/build correspondence. A host DSP build does not approve another platform artifact.",
+        "target_artifact_validation": "A Linux x86-64 host candidate has compiled, linked and passed native PCM checks; its exact hashes and observed dependencies are recorded separately. Shipped Android ABI/APK, Apple device/simulator/universal app-bundle, Linux package and Windows DLL validation remains pending. A host candidate does not approve final packaging or another platform artifact.",
         "device_validation": "Pending target listening, interruptions, output routing and CPU/battery measurements. Host tests and source configuration are not device acceptance."
       },
       "evidence": [
@@ -683,7 +719,7 @@
         },
         {
           "path": "scripts/prepare_portable_mpv.py",
-          "sha256": "eae49dd8954f5f1a719e5903daef564fe38c3e13addf4c17bed70f9575c08408",
+          "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
           "note": "Validates pristine mpv integration files and the shared vendor manifest before copying the core, generating the local patch and retaining provenance evidence."
         },
         {
@@ -710,6 +746,21 @@
           "path": ".github/workflows/portable-dsp.yml",
           "sha256": "b629d1298848916ee88129f9244f3cd8d05a5a91b5fb9f5857cfbf9a7ba83b39",
           "note": "Cross-platform shared-core build/test workflow and adapter validation; only completed retained target output can establish actual CI results."
+        },
+        {
+          "path": ".github/workflows/desktop-portable-audio.yml",
+          "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
+          "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
+        },
+        {
+          "path": "licensing/evidence/portable_linux_host_2026-11-11.json",
+          "sha256": "7d19ed57f47ba452db7f8d19facf398511b5f04d504ce1032b0396527c3f2c99",
+          "note": "Actual Linux x86-64 controlled source build: nine native binary hashes/marker inspections, observed runtime resolution, exact source/preparation inputs and 35 passing native PCM checks. Explicit release_approved: false; no target-package approval or evidence for another platform."
+        },
+        {
+          "path": "licensing/evidence/portable_linux_playback_2026-11-11.json",
+          "sha256": "ee3531c142b2e5c5d413649f73c27b0c585f07525b34f1083ff0b57467dca8ba",
+          "note": "Exact retained successful native playback report for seven modes at five rates; optional filter inventory/readback and native-error rejection prevent a timed fallback from passing. Report and tested libmpv binary have separate recorded hashes."
         }
       ],
       "blockers": [

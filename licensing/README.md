@@ -74,16 +74,16 @@ macOS, Linux and Windows. It separates three review states:
 | Evidence | Current scope |
 | --- | --- |
 | Source review | Reviewed: seven exact upstream revisions, six archive hashes and the Chromium Git snapshot, with 258 original source and notice files verified against the vendored manifest. |
-| License review | Reviewed: independent MIT core/Apple adapters; Sonic Apache-2.0; Signalsmith Stretch/Linear MIT; Chromium WSOLA BSD-3-Clause; Bungee Basic MPL-2.0; selected Eigen Core MPL-2.0 with retained BSD/Apache notices; exact permissive PFFFT/FFTPACK notice. Desktop wrappers and linked mpv/FFmpeg retain their separate grants. |
-| Target artifact review | Pending: Android ABI/APK checks, Apple library/application builds and controlled desktop libmpv builds each need packaged native hashes, dependency inspection, source/build correspondence, notices and playback validation. |
+| License review | Reviewed: independent MIT core/Apple adapters; Sonic Apache-2.0; Signalsmith Stretch/Linear MIT; Chromium WSOLA BSD-3-Clause; Bungee Basic MPL-2.0; selected Eigen Core MPL-2.0 with retained BSD/Apache notices; exact permissive PFFFT/FFTPACK notice. The direct desktop Glint/miniaudio host has separate native evidence. |
+| Target artifact review | Pending: Android ABI/APK checks, Apple library/application builds and direct native desktop bundles each need packaged native hashes, dependency inspection, source/build correspondence, notices and playback validation. |
 
 The checker reads the pinned native source manifest as well as the bundle's
 top-level license declaration. A new or changed file, stale manifest, missing
 source pin, or forbidden transitive declaration is a blocker. The app package
 also pins the complete vendor tree, reviewed upstream patch, local additions,
 Gradle/CMake/CocoaPods/SwiftPM recipes, JNI/Java/Apple adapters and source-test
-files. The vendored desktop adapter has its own original hashes and source-tree
-pin. Shared DSP notices and license registration are separately hashed as
+files. The direct desktop package has separate Glint/miniaudio manifests and a
+source-tree pin. Shared DSP notices and license registration are separately hashed as
 evidence. The asset keeps its historical `ANDROID-DSP.txt` filename while
 identifying all platforms that use the shared core.
 
@@ -105,13 +105,47 @@ the unchanged seven-component/258-file closure, notice preservation and the
 41 distribution-policy regression tests. It records source evidence only,
 without promoting Apple, Android or desktop artifacts to approved status.
 
-The [controlled Linux host candidate](evidence/portable_linux_host_2026-11-11.json)
-records an actual x86-64 libmpv build and 35 native PCM checks: all four portable
-engines, FFmpeg atempo, and the two existing mpv modes at five playback rates.
-The checks verify optional-filter installation and reject native error logs.
-Its binary and report hashes identify this tested candidate; release approval
-remains false while shipped packaging, dependency closure, corresponding-source
-delivery and device/output validation remain pending.
+## Direct native desktop evidence
+
+The production Dart graph now has 159 packages. It removes the media_kit/libmpv
+packages and adds the independently MIT-licensed `crisper_audio` host. Windows
+and Linux compile the shared DSP core, selected Glint frame decoders and the
+pinned miniaudio output implementation into one native library. The active
+inventory has ten native components; retired mpv/FFmpeg identities remain in
+`native_artifacts.json.retired_desktop_audio` as historical evidence.
+
+The new host's source license is separate from its native payloads. Glint has
+original/current hashes and a reversible local patch. Its AAC table generator
+uses only pinned Apache-2.0 vo-aacenc inputs; all 45 numerical arrays and 3,229
+values are unchanged. Complete upstream license/notice files and reproducible
+source evidence are retained. The original generator invocation is not known;
+the record identifies a reproducing source revision and the current inputs.
+The full miniaudio
+MIT-0/Unlicense alternatives are retained; this inventory explicitly selects
+Unlicense. Miniaudio's decoding, encoding, resource manager and high-level
+engine are disabled. System audio libraries remain separate runtime identities.
+
+`scripts/audit_native_audio.py` verifies the pinned files and loads the actual
+native library to exercise all four processors, decoders, output queues and
+clock behavior. Its bundle mode rejects bundled mpv/FFmpeg-family payloads.
+The direct native workflow builds Linux/Windows bundles, audits the exact
+packaged library and reruns required-library Dart tests against it. Host or
+bundle tests do not establish physical-device latency or complete a
+distribution review. The source clock's backend delay is an estimate.
+
+The [direct native host record](evidence/direct_native_audio_2026-11-11.json)
+retains the actual Linux library hash, complete source/runtime audit, offline
+table-regeneration result and functional-test counts. The audited source pins
+match commit `9ad02e406a4543c535ccb7117e8e2ef4f599f69d`. The record explicitly
+leaves release approval false and final target/device checks pending.
+
+The older [controlled Linux host candidate](evidence/portable_linux_host_2026-11-11.json)
+records an actual x86-64 libmpv prototype and 35 PCM checks at commit
+`30718ac0da888ccb77966d1500a22b49f716fce4`. Its adapters/build recipes were removed
+by the direct native migration. It does not describe a currently shipped
+payload or approve a release artifact.
+
+## Platform runtime evidence
 
 The pinned NDK `28.2.13676358` and its `libc++_shared.so` are a separate native
 component. The [official NDK documentation](https://developer.android.com/ndk/guides/cpp-support)

@@ -1,8 +1,58 @@
 # License audit and native processing validation
 
+## Direct Dart/native desktop checkpoint — 11 November 2026
+
+Work on `feature/portable-speed-engines` replaces the Windows/Linux mpv path
+with Dart transport, bounded Glint decoding, the shared four-engine DSP core
+and native output. Android and Apple retain their existing platform adapters.
+No release or store upload was performed. The current implementation and its
+codec limits are described in [portable processing](PORTABLE_AUDIO_PROCESSORS.md).
+
+| Current check | Observed result |
+| --- | --- |
+| Full root `flutter analyze --no-pub` after decoder/parser integration | No issues found |
+| Required-library Dart decoder/parser/player/clock/app-adapter suite | 64 passed, no skips; uses the compiled native library |
+| Native output checks | 13,455 passed, including bounded queues, manual output and a real null-device callback thread |
+| Native sanitizers | AddressSanitizer and UndefinedBehaviorSanitizer passed; LeakSanitizer could not run under this environment's ptrace setup |
+| Python evidence/release/audit regressions | 110 passed |
+| Flutter web build | Passed; this target remains the native-app availability notice |
+| Broader root Flutter suite | 383 passed, five skipped, 11 failed in browser-upload setup because this environment could not enumerate network interfaces (`Bad value for ai_flags`); this is not recorded as a full-suite pass |
+| Source and runtime inventory | 159 production packages, ten active native components; retired desktop mpv/FFmpeg identities remain historical evidence |
+| AAC table provenance | Offline regeneration from immutable Apache-2.0 vo-aacenc inputs; all 45 arrays and 3,229 numerical values unchanged, full notices retained |
+| Distribution report | 226 recorded native build/evidence inputs; no source/version/hash drift or forbidden-declared-grant finding; 31 package/runtime artifact and distribution review findings remain explicit |
+
+The 64 native Dart checks include 24 decoder tests, 19 MP4 parser tests,
+15 player/probe tests, three source-clock tests and three actual app-adapter
+tests. They cover exact FLAC PCM at 16/24 bits, compressed-window refills,
+MP3/AAC/M4B seeking, MP4 offsets beyond 4 GiB, bounded tables with millions of
+packets, 64-bit edit arithmetic, local media references, cancellation, queue
+reset, finite tails and source time through all four engines. The synthetic
+M4B fixture decodes 176,400 frames and retains its expected tones; this is a
+functional regression, not a listening-quality ranking.
+
+The native artifact audit verifies the retained DSP, Glint and miniaudio
+source hashes, loads the actual ABI and exercises the four processors plus
+decoder/output contracts. Bundle checks additionally reject misplaced,
+duplicate or legacy mpv/FFmpeg-family payloads. The native clock accounts for
+estimated backend buffering; it does not measure hardware/DAC presentation.
+
+Current target results belong to the exact commit's
+[PR checks](https://github.com/CrispStrobe/crisperplayer/pull/2). Earlier runs
+compiled the macOS application and shared SwiftPM processor target, and the
+Linux workflow compiled the real Flutter bundle. Superseded Apple/Android
+jobs were cancelled before all target tests completed. Passing a host build
+does not establish physical-device output, interruption handling or latency.
+Artifact and distribution review remains separate from these functional tests.
+The [direct native host evidence](../licensing/evidence/direct_native_audio_2026-11-11.json)
+records the exact library/source hashes, audit output and test scopes. Counts
+from overlapping runs must not be added together.
+
+## Historical listening-memory and native processor checkpoint
+
 Verified on 10 November 2026 with Flutter 3.44.4 and Dart 3.12.2 on the
 `feature/return-trail` branch. No release, store upload or source relicensing
-was performed.
+was performed. The following results and desktop mpv observations describe
+that earlier checkpoint; the current desktop path is documented above.
 
 | Check | Observed result |
 | --- | --- |

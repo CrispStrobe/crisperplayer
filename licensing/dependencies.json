@@ -2,7 +2,7 @@
   "schema_version": 1,
   "reviewed_at": "2026-11-11",
   "root_package": "crisperplayer",
-  "root_pubspec_sha256": "af0b180260f4646cb4086421b0b916dce0c4c9749cdb3452130d0ba110f7f2ef",
+  "root_pubspec_sha256": "1f7696784af2ba3f476e8c6f2eb9dfeb5d04b10d35ceab664561cfebd8b1b4f3",
   "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test. The exact user-owned CrisperPlayer and crisp_storage identities have an explicit external-license policy exemption; their original license files and every external dependency remain checked.",
   "sdk": {
     "flutter_version": "3.44.4",
@@ -29,26 +29,6 @@
           "package": "android_file_picker",
           "path": "LICENSE",
           "sha256": "12f7222de745bab3710ba88b59f33484ca423aa5e1deac9e56ed946706d5abab"
-        }
-      ]
-    },
-    {
-      "name": "archive",
-      "version": "4.5.2",
-      "source": {
-        "type": "hosted",
-        "name": "archive",
-        "url": "https://pub.dev",
-        "sha256": "0d58d1fa1fddf6588251ccf2819f3fb3b6d0452c1b2813ac7413a05592bfbefe"
-      },
-      "pubspec_sha256": "41d3e0ab3b8e8e07d913a2e3a179348e44f149bd46a84f44194e4ff164a75980",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "archive",
-          "path": "LICENSE",
-          "sha256": "32f97d332eae7453ec4079858e6f1d74be85beeb6d3881068b47d02a379cccea"
         }
       ]
     },
@@ -361,12 +341,36 @@
       "ownership_authorization": "user-owned-crisperplayer-crisp-storage-2026-11-10"
     },
     {
+      "name": "crisper_audio",
+      "version": "0.1.0",
+      "source": {
+        "type": "path",
+        "path": "packages/crisper_audio",
+        "relative": true
+      },
+      "pubspec_sha256": "e470e83e0b68d999feb2980f88b9ffe44a20c24a8e2906495ab30a16c20f3724",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "crisper_audio",
+          "path": "LICENSE",
+          "sha256": "17cc1de049e11c70ddd41659913ce2af2c46f24935d948ae3d1d68fcde037256"
+        }
+      ],
+      "notes": [
+        "MIT applies to the independent Dart/native host. Glint decoder originals and patches retain MIT; AAC table data is reproducibly regenerated from pinned Apache-2.0 vo-aacenc inputs with complete notices. Miniaudio and the four-engine DSP closure retain their separate native identities and notices. Target artifact reviews remain unresolved; the package-level grant does not approve them.",
+        "Windows/Linux replace the media_kit/libmpv runtime with a bounded Dart worker, Glint frame decoding and native PCM output. Apple/Android continue using existing platform adapters."
+      ],
+      "source_tree_sha256": "b7a0f5db219b1afd6e46cdb71a74b817eb8697a9041e0ded89c4e7d00081d904"
+    },
+    {
       "name": "crisperplayer",
       "version": "0.1.0+20",
       "source": {
         "type": "root"
       },
-      "pubspec_sha256": "af0b180260f4646cb4086421b0b916dce0c4c9749cdb3452130d0ba110f7f2ef",
+      "pubspec_sha256": "1f7696784af2ba3f476e8c6f2eb9dfeb5d04b10d35ceab664561cfebd8b1b4f3",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -1237,26 +1241,6 @@
       ]
     },
     {
-      "name": "image",
-      "version": "4.12.0",
-      "source": {
-        "type": "hosted",
-        "name": "image",
-        "url": "https://pub.dev",
-        "sha256": "89ed75b2f8231fe676808c5564f9590d728024ded7ac782a7ed8474f1c95b72a"
-      },
-      "pubspec_sha256": "412a2497b09fe9f41a50953fa7c63ffba30d6f093986a5c10facbe94769c7753",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "image",
-          "path": "LICENSE",
-          "sha256": "f3c17da84e0780e1c334325c73098257c32221d62498ed55ef3c1361904925aa"
-        }
-      ]
-    },
-    {
       "name": "internxt_client",
       "version": "0.2.3",
       "source": {
@@ -1398,35 +1382,11 @@
           "sha256": "63ce4443e916b27424700d7fe970003add9f54944daf732f2dbcc1d8caf1bbad"
         }
       ],
-      "source_tree_sha256": "d487b378bde7d4d36cca8bd56304adfebb756e2f59e9f7f2c2ae191412ce7c2e",
+      "source_tree_sha256": "559092593d5ac15ad8760b264e5b42b8952836f60f55085bfc22c49058d60b84",
       "notes": [
         "Local MIT just_audio adapter with platform defaults retained and separately licensed optional shared native speed processing. Original 0.10.6 archive SHA-256 e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6; original-file hashes, complete upstream patch and local additions are retained in UPSTREAM_SHA256.json, UPSTREAM.patch and LOCAL_ADDITIONS.json.",
-        "The MIT package declaration covers the just_audio wrapper and independent adapters. It does not relabel the seven native source components or the derived WSOLA implementation/fixtures: their MIT/Apache/BSD/MPL/custom permissive grants, exact 258-file original closure and pending per-platform artifact review are recorded in portable-native-speed-processors. NDK libc++, Gradle runtime and controlled desktop libmpv/FFmpeg remain separate native components."
+        "The MIT package declaration covers the just_audio wrapper and independent adapters. It does not relabel the seven native source components or the derived WSOLA implementation/fixtures: their MIT/Apache/BSD/MPL/custom permissive grants, exact 258-file original closure and pending per-platform artifact review are recorded in portable-native-speed-processors. NDK libc++, Gradle runtime and the direct desktop Glint/miniaudio host remain separate native components."
       ]
-    },
-    {
-      "name": "just_audio_media_kit",
-      "version": "2.1.0+crisper.1",
-      "source": {
-        "type": "path",
-        "path": "packages/just_audio_media_kit",
-        "relative": true
-      },
-      "pubspec_sha256": "afee7ba5c1904ba838deeb9f46c985c7d79b69e62e9025b554bb38ae339211ae",
-      "license_expression": "Unlicense",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "just_audio_media_kit",
-          "path": "LICENSE",
-          "sha256": "6b0382b16279f26ff69014300541967a356a666eb0b91b422f6862f6b7dad17e"
-        }
-      ],
-      "notes": [
-        "Selected source closure of upstream just_audio_media_kit 2.1.0, retained under its original Unlicense grant. Exact archive SHA-256 f3cf04c3a50339709e87e90b4e841eef4364ab4be2bdbac0c54cc48679f84d23, eight upstream original-file hashes, complete reversible patch, and three local Dart/test additions are documented in UPSTREAM.json, UPSTREAM.patch and UPSTREAM.md.",
-        "The local adapter selects immutable native processors, probes the loaded libmpv filter inventory and requires explicit filter installation. Its source grant does not cover or relabel native libmpv/FFmpeg payloads; the controlled native build and portable source closure remain separately inventoried with pending target-artifact validation."
-      ],
-      "source_tree_sha256": "366bcd8e716c782fc96ee08352cff0237fc59cc61b6c19f991513e663ca69fab"
     },
     {
       "name": "just_audio_platform_interface",
@@ -1646,75 +1606,6 @@
           "path": "LICENSE",
           "sha256": "d103f246ef4c18dab8af0c1dcf6a8af884e5cff554da7261a48ac43c17d98f2e"
         }
-      ]
-    },
-    {
-      "name": "media_kit",
-      "version": "1.2.6",
-      "source": {
-        "type": "hosted",
-        "name": "media_kit",
-        "url": "https://pub.dev",
-        "sha256": "ae9e79597500c7ad6083a3c7b7b7544ddabfceacce7ae5c9709b0ec16a5d6643"
-      },
-      "pubspec_sha256": "baede349813578fd5c7f63b9883d520c09d66572ec93aaadafeb05f00ef0fbe3",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "media_kit",
-          "path": "LICENSE",
-          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331"
-        }
-      ],
-      "notes": [
-        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
-      ]
-    },
-    {
-      "name": "media_kit_libs_linux",
-      "version": "1.2.1",
-      "source": {
-        "type": "hosted",
-        "name": "media_kit_libs_linux",
-        "url": "https://pub.dev",
-        "sha256": "2b473399a49ec94452c4d4ae51cfc0f6585074398d74216092bf3d54aac37ecf"
-      },
-      "pubspec_sha256": "ae38a9d08616b149a45153edf47ed7fb829d6123bb1c907e6d21a05f4024b0e9",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "media_kit_libs_linux",
-          "path": "LICENSE",
-          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331"
-        }
-      ],
-      "notes": [
-        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
-      ]
-    },
-    {
-      "name": "media_kit_libs_windows_audio",
-      "version": "1.0.9",
-      "source": {
-        "type": "hosted",
-        "name": "media_kit_libs_windows_audio",
-        "url": "https://pub.dev",
-        "sha256": "c2fd558cc87b9d89a801141fcdffe02e338a3b21a41a18fbd63d5b221a1b8e53"
-      },
-      "pubspec_sha256": "c08aa6211e404eea12a727d6eaef9fe2c607ffa09b77251a0525cd85c41712dc",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "media_kit_libs_windows_audio",
-          "path": "LICENSE",
-          "sha256": "a78baa721ad6f5c0b2d8fb0c6cfff835ad8ed90393cac0087a90e8813490f2bd"
-        }
-      ],
-      "notes": [
-        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
       ]
     },
     {
@@ -2218,26 +2109,6 @@
       ]
     },
     {
-      "name": "posix",
-      "version": "6.5.2",
-      "source": {
-        "type": "hosted",
-        "name": "posix",
-        "url": "https://pub.dev",
-        "sha256": "bc1bad54ad2b735816e31f8d4600cfde6c7839975085ddfbca48b6c9f7c4044e"
-      },
-      "pubspec_sha256": "19e8d01661b6247af96b194674fb6202258389be7cce9886cdbd50612d99fd0e",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "posix",
-          "path": "LICENSE",
-          "sha256": "aaf6271abd048deb3125828613f1797b7556472de6c7acd7103bd43e9cb6a84b"
-        }
-      ]
-    },
-    {
       "name": "pub_semver",
       "version": "2.2.1",
       "source": {
@@ -2374,26 +2245,6 @@
           "package": "rxdart",
           "path": "LICENSE",
           "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
-        }
-      ]
-    },
-    {
-      "name": "safe_local_storage",
-      "version": "2.0.6",
-      "source": {
-        "type": "hosted",
-        "name": "safe_local_storage",
-        "url": "https://pub.dev",
-        "sha256": "494b982d5edb71030650ea463d939670e91b232b588323dc75229d2c5f23e7b7"
-      },
-      "pubspec_sha256": "9c830238e345c674e9f3bea56386b9bc8a7a86cdc94f19cab2af2ca181ed6409",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "safe_local_storage",
-          "path": "LICENSE",
-          "sha256": "d4cfdb498601b2872c7a09d06c62f92f5c751261bdb6fc4ce436940c7ccac78a"
         }
       ]
     },
@@ -3022,46 +2873,6 @@
       ]
     },
     {
-      "name": "universal_platform",
-      "version": "1.1.0",
-      "source": {
-        "type": "hosted",
-        "name": "universal_platform",
-        "url": "https://pub.dev",
-        "sha256": "64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec"
-      },
-      "pubspec_sha256": "40e2f1fc8b1440c683caebfd220721f569f698420ecd012fb6ba5fcfb1759c87",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "universal_platform",
-          "path": "LICENSE",
-          "sha256": "8a135e09d6288f03171b04f07f00eb5ee04e54f2f5e9c9b952f6adbd1de48c3f"
-        }
-      ]
-    },
-    {
-      "name": "uri_parser",
-      "version": "3.0.2",
-      "source": {
-        "type": "hosted",
-        "name": "uri_parser",
-        "url": "https://pub.dev",
-        "sha256": "051c62e5f693de98ca9f130ee707f8916e2266945565926be3ff20659f7853ce"
-      },
-      "pubspec_sha256": "cb2d81f30821bbb9c6fc396584c6d79897c807bf8b23ee2a3a7990c84df3536d",
-      "license_expression": "MIT",
-      "review_status": "reviewed",
-      "license_files": [
-        {
-          "package": "uri_parser",
-          "path": "LICENSE",
-          "sha256": "2e3000f38718f050869d57540c288c661a446f64df1ba4ea4764df552b04a331"
-        }
-      ]
-    },
-    {
       "name": "url_launcher",
       "version": "6.3.3",
       "source": {
@@ -3424,31 +3235,6 @@
   ],
   "required_native_components": [
     {
-      "id": "windows-libmpv-audio-2023-09-24",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "id": "linux-libmpv-controlled",
-      "platforms": [
-        "linux"
-      ]
-    },
-    {
-      "id": "desktop-ffmpeg-external",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "id": "linux-mimalloc-2.1.2",
-      "platforms": [
-        "linux"
-      ]
-    },
-    {
       "id": "libsmb2-r9",
       "platforms": [
         "android",
@@ -3512,6 +3298,20 @@
       "platforms": [
         "android"
       ]
+    },
+    {
+      "id": "desktop-glint-decoders",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "id": "desktop-native-output",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
     }
   ],
   "native_build_inputs": [
@@ -3541,8 +3341,8 @@
     },
     {
       "package": "audio_service",
-      "path": "darwin/audio_service/Package.swift",
-      "sha256": "f36dafde68f04eb041a9e99dbc97280df5692d6d39cf4b6bc3882626809b105f",
+      "path": "darwin/audio_service.podspec",
+      "sha256": "73824ae92f5ad2d005964b1396b082dbb9d682a13a347711f2eab3194fcb9cea",
       "platforms": [
         "ios",
         "macos"
@@ -3550,8 +3350,8 @@
     },
     {
       "package": "audio_service",
-      "path": "darwin/audio_service.podspec",
-      "sha256": "73824ae92f5ad2d005964b1396b082dbb9d682a13a347711f2eab3194fcb9cea",
+      "path": "darwin/audio_service/Package.swift",
+      "sha256": "f36dafde68f04eb041a9e99dbc97280df5692d6d39cf4b6bc3882626809b105f",
       "platforms": [
         "ios",
         "macos"
@@ -3575,6 +3375,14 @@
     },
     {
       "package": "audio_session",
+      "path": "ios/audio_session.podspec",
+      "sha256": "a03e7d8bac7c7286e49bd4bc6f1137365e9ab6d793fab4113ecb5307701954a4",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "audio_session",
       "path": "ios/audio_session/Package.swift",
       "sha256": "5cf5ad32e0e56e9e7f46c1a31686f5f187041d3c0954fb1c4629fa9d9eab9679",
       "platforms": [
@@ -3583,10 +3391,10 @@
     },
     {
       "package": "audio_session",
-      "path": "ios/audio_session.podspec",
-      "sha256": "a03e7d8bac7c7286e49bd4bc6f1137365e9ab6d793fab4113ecb5307701954a4",
+      "path": "macos/audio_session.podspec",
+      "sha256": "dcb532cdf8afac042e3f712db64bbaba1568027b76539c8eb45031d98fc41737",
       "platforms": [
-        "ios"
+        "macos"
       ]
     },
     {
@@ -3598,11 +3406,637 @@
       ]
     },
     {
-      "package": "audio_session",
-      "path": "macos/audio_session.podspec",
-      "sha256": "dcb532cdf8afac042e3f712db64bbaba1568027b76539c8eb45031d98fc41737",
+      "package": "crisper_audio",
+      "path": "lib/crisper_audio.dart",
+      "sha256": "28ebb2cdf8aca9aa621e3385ea695adaec0a3d95a16f4372883977b34c25bbdd",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/cancellation.dart",
+      "sha256": "ff06eb7946c256421b8f987a693dc525b36e2faa66b9610cb22335d27d51b809",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/decoder.dart",
+      "sha256": "bb4fbd3ca06a121d93a7592844cdf2bc2a230be0a717caca6e30401c87e3b887",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/decoder_flac.dart",
+      "sha256": "94d36055ac9218028b919be9ebc99ada9a401ca3a436c8acd867dfc495799e92",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/decoder_raw.dart",
+      "sha256": "757a25602e0cb287199284fafd374f8ff0e1cb5bbf39ebcf65ee4dcaa2d06913",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/decoder_wav.dart",
+      "sha256": "bb1e0676032ddce61b8c2b2bb8854c4b3cebbab527a4aa7a9f418b137f473fa7",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/dsp.dart",
+      "sha256": "c0b5457e0a3304b108a71610d2b3c40d3fe86fe57d60dcaa8e743185172aa004",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/library.dart",
+      "sha256": "ab00aa348c4eca0613e9565039e64f1b83392a222731f630b921d083d2ce3718",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/mp4_aac.dart",
+      "sha256": "18ee8eb2cceb265d0d190d3692b11a88cc698bc0d9a09308b3ac6568eb99a6c0",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/output.dart",
+      "sha256": "ebc8b5b5860b95e7acb9ea0b4d243b1873fec839baf0c5e080bf82cca7ebe224",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/player.dart",
+      "sha256": "42af04d8dab2ce3158c5a84fb8d317369256afcca08b9d5314ef70ceb09f8aa1",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/player_stub.dart",
+      "sha256": "e8a90cb446b081074537b125d5a21e720233288e8680e10c2a101a060da93e19",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/probe.dart",
+      "sha256": "dbdefcba9958baaad4bb27cb0cb82d9962ac1651006c17f538909289fab92f85",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/probe_stub.dart",
+      "sha256": "ddda151f76fb288be996e393320959788e552dd16338baf07dc20b1103a2f9af",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/source_clock.dart",
+      "sha256": "fb38539a600ba21adc35815c81d91a358b5f97fb203d713fb661beab3c5071c8",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "lib/src/types.dart",
+      "sha256": "507fac77bfdc204345f921e02e4f87a1136e2c4fa280dfb45215fd4c7706b48e",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "650bead7ee1bff37fe75e8812fd732294538378c975db19f15710c1632f5f7a7",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/CMakeLists.txt",
+      "sha256": "150415e116159bc0f4e764a7113c7a935d837d24167b51d6e09ad7a664d5fccd",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/crisper_output.cpp",
+      "sha256": "f2d90355b342f9524482ea360bc17349d3b0c709d46506754ac9d84c16feea8d",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/crisper_output.h",
+      "sha256": "59ece8cc9fc8fa554ca0690c648f2025904f06836e010423e46c645b5a5211da",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/dsp_link.cpp",
+      "sha256": "7a33b1627b1c398f2697493c8426ef5ddee2a1b2b6966037591c02f69ea47859",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/glint.cmake",
+      "sha256": "53f66e71139f052d2985605dbdc776b001d5c62c48147eb88421c3e9e6032b2a",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/glint_bridge.cpp",
+      "sha256": "1566870c51eb21a9a7c8dd0fe95e1ef33acd2feac028bd3305a065ece5f5a558",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/glint_bridge.h",
+      "sha256": "17492a91b6726063edce90b67fee534a28c335bb990f33025fd49a906e19f0d1",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/miniaudio_config.h",
+      "sha256": "ef4f97135cc611f785f280aef3bc8c728f9d70382dd8ea3288cd6cd231d08d5c",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/miniaudio_impl.c",
+      "sha256": "d9755a99e5cd7d4e0c874d07c91016d056cf401d34134ef5c815425c855f921f",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/tests/output_test.cpp",
+      "sha256": "d2bdc2efd0c7dd78810456a066c60dce119c1215758625c16f35b050429aaaba",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/LICENSE",
+      "sha256": "ab08fb7ec4a030bd27a9a0d1fb60a39b832f7779fb11d0f2753e85593f6f944e",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/UPSTREAM.json",
+      "sha256": "f9360f99d78ca807531cb26ff53ee15a1a2ad1277e752d5a4d0ba2ed77ea8e51",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/UPSTREAM.md",
+      "sha256": "9167a28c44a2e5d6e2396861138a5caf39fd7d744110b39b4c72b8d5a7f6755c",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/UPSTREAM.patch",
+      "sha256": "3e1ae8402e9a4657f03df6b6b5c9e5a64ba74c2c52096006c0b29df96b16bb91",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/provenance/AAC_TABLES.md",
+      "sha256": "775cc98f4e789baad8260feba1951715fd05bc7e40aae6753f73cdf3616ceb61",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/provenance/aac_tables.json",
+      "sha256": "1f32f516f4ff1b096e35b6210f5c42b34d0f0914a78cd035a38b1144bc648a4e",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/provenance/vo-aacenc/AACENC_NOTICE",
+      "sha256": "38751245389e1e23f73e6f5384b5cbe7fa972cc4410c5adc9c04b082a0b9561a",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/provenance/vo-aacenc/COPYING",
+      "sha256": "8b3f1762349248d444ab9acbafe73941254e36e1064954da56bb9ddbd5873ddb",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/provenance/vo-aacenc/NOTICE",
+      "sha256": "e2ae60e14bece975eeab49210fcaf4ee529b77e6ca13e7d6556b6bb203897b31",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/provenance/vo-aacenc/aac_rom.c",
+      "sha256": "bebae3b53f4de70055c6328a24e3fc3172f3b15d40eb9e4556d6d8c2d91cb8b6",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/provenance/vo-aacenc/tns.c",
+      "sha256": "473d54f31d5ac12529cf0a17caffbe5d6e53cf50849aba109ab1f9ba6d9f77fa",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/aac_decoder.cpp",
+      "sha256": "40529083556a2370834108b623c4665f91d37acccc2720fda7962b42e5019ddc",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/aac_decoder.hpp",
+      "sha256": "34b218fd358923d3d2eba47120247c8b457a4f0d585b7a6231dca0926ee74df6",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/aac_tables.hpp",
+      "sha256": "340a2848baf7347c0a9c8ea8e8bd60c2f2970772689795ab86f10e080ae24285",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/flac_decoder.cpp",
+      "sha256": "d8bb32ba4c53a6abd1f740ea4fb2bd13ccd4112a99d4899ef1453711cf3d245c",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/flac_decoder.hpp",
+      "sha256": "af6ec1da869114aca156539c7792f2de5ca63bcd296314dadf55fdda24ebe359",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/mp3_decoder.cpp",
+      "sha256": "316a1691e984160480017a7dc71a5ddd8366df93abd907f9daefacec6835ecf8",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/mp3_decoder.hpp",
+      "sha256": "51d7847793ff847d5b87db36ddf74e717fe695df82a12478b8f6938eb933c0a3",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/src/tables.hpp",
+      "sha256": "a4012945bf1559895389f9f63d424c7e5de5eac230377bf6dc84bc35347e8cb9",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/glint/tools/gen_aac_tables.py",
+      "sha256": "1cc2c412b077e819077e54a4bb01c91a40e98512afa39d6d3829b1a498d21f00",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/miniaudio.LICENSE",
+      "sha256": "bde09ed161fef45da2194cba70601aab33ca6fdfe6eed2e3d95efd15b48561f9",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/miniaudio.h",
+      "sha256": "ac7af4de748b7e26b777f37e01cee313a308a7296a3eb080e2906b320cc55c89",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "native/vendor/miniaudio.manifest.json",
+      "sha256": "1bea7b659fb4997ea27ed370a3cb8dfbc7020fee67dd3def415464dd2046c4d5",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisper_audio",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "650bead7ee1bff37fe75e8812fd732294538378c975db19f15710c1632f5f7a7",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/android-audio.yml",
+      "sha256": "9ccae70a990fbaef26591ce8feea3598f3718554103b55a50a3fee9ffa0aeacc",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/ci.yml",
+      "sha256": "bbe5659bfa57e4fc88b52cb59a2c07d8f0a8d65cea46e03f7cf822ccbfc26d8d",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/native-audio.yml",
+      "sha256": "ef86759c6cf4832526ff04f7daf391dc0dd74b14434fa0dc3454fc8f16e9370a",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/portable-dsp.yml",
+      "sha256": "abc37a7e4d5ffe14dcaaad910950c01e948ade3298fd22ad60bf86e66814211a",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": ".github/workflows/release.yml",
+      "sha256": "e47434292760d8973dc4fe9ede315e84ae8c1a9bf8f6e784b5b4155e41272897",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "android/app/build.gradle.kts",
+      "sha256": "ff44dfabbfa3e68a7ae10e02eb88ad78751856877ebc8cd4c90332efbcdb2f1c",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "android/build.gradle.kts",
+      "sha256": "15beb7003613848ca3fcc6237db17cb91806296c516739abcc1e7aaf46dfb38b",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "android/settings.gradle.kts",
+      "sha256": "b76d554153a63772dddbe2ee91abdf582f5f871af40698b80a2ef7b70903d96f",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "assets/licenses/ANDROID-DSP.txt",
+      "sha256": "539e3d5ab51528341dc07f076d3fea79684b8a9d3929d2da93a2057766fa423e",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "assets/licenses/ANDROID-NDK.txt",
+      "sha256": "9f27804f31b74a9dde3322849b35f150c4507b60045d7abe26a5f6eb4101f362",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "assets/licenses/DESKTOP-AUDIO.txt",
+      "sha256": "1a3511643dd344507dfd9bcf63ec66cf5d7a6821209739a2fc2338f9250adf15",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "ios/Podfile.lock",
+      "sha256": "20a46db4da8c44f8bee71415f2159447efc12b2a652a197cfc9bc5457efc9650",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "ios/RunnerTests/RunnerTests.swift",
+      "sha256": "acc017cacec30a96f8d243817f0930733ab1516f895906f3977050cd5a520aab",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "lib/services/native_licenses.dart",
+      "sha256": "7ecfb24ed59414c56f9fab42c1290e3577747ceac754e988d2da64b9b67b626d",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "ab8b50512f320ac2d4a3457cf97eca146b4d894d0f8ead3bfea41b0ffdd4773c",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "macos/Podfile.lock",
+      "sha256": "e068781fcb05cb58433d78f0891b2f4c4e03949a879739554784cac44249bec3",
       "platforms": [
         "macos"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "macos/RunnerTests/RunnerTests.swift",
+      "sha256": "ae04a5615312e8fbc8d990b1865a8757684a3557756d178e3f468f5653e50721",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "scripts/audit_android_audio.py",
+      "sha256": "5b3a6f05b998d44d75cfeb330ac9e21a7c9f810581bc7ce5da7df958c77e06f9",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "scripts/audit_native_audio.py",
+      "sha256": "7fc982899e791ce713ca8cdacc1066c1f07582601301f3ae180baaa8ca26953e",
+      "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "crisperplayer",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "6cfdedb22c73d6999474c05dd3201a71b6d94a79d4bbff20d557f7fe55e907f0",
+      "platforms": [
+        "windows"
       ]
     },
     {
@@ -3635,14 +4069,6 @@
     },
     {
       "package": "device_info_plus",
-      "path": "ios/device_info_plus/Package.swift",
-      "sha256": "510e6b8bc445a1152da72bdca2fac36477d43fbffa0662ee68033267bea16920",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "device_info_plus",
       "path": "ios/device_info_plus.podspec",
       "sha256": "6d2ea5f7f1558a876c183e3ac5bb65fc70922f61ea61c8abfe5b6fd28d7f4be6",
       "platforms": [
@@ -3651,10 +4077,10 @@
     },
     {
       "package": "device_info_plus",
-      "path": "macos/device_info_plus/Package.swift",
-      "sha256": "9f27c53dd6c005265abfaa354bc5c9d2d6363b01f9ff851697d4cc1d5d5fefb3",
+      "path": "ios/device_info_plus/Package.swift",
+      "sha256": "510e6b8bc445a1152da72bdca2fac36477d43fbffa0662ee68033267bea16920",
       "platforms": [
-        "macos"
+        "ios"
       ]
     },
     {
@@ -3666,11 +4092,10 @@
       ]
     },
     {
-      "package": "file_picker_darwin",
-      "path": "darwin/file_picker_darwin/Package.swift",
-      "sha256": "2dc0e7f8934ef0fef77f8efa9a9086b49e433a342dc071c9ccd3260ee896b2a2",
+      "package": "device_info_plus",
+      "path": "macos/device_info_plus/Package.swift",
+      "sha256": "9f27c53dd6c005265abfaa354bc5c9d2d6363b01f9ff851697d4cc1d5d5fefb3",
       "platforms": [
-        "ios",
         "macos"
       ]
     },
@@ -3678,6 +4103,15 @@
       "package": "file_picker_darwin",
       "path": "darwin/file_picker_darwin.podspec",
       "sha256": "ba2d6927d890743a3580156f87ec2efbe1eab77af1b82c67525f8a72957e29d7",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "file_picker_darwin",
+      "path": "darwin/file_picker_darwin/Package.swift",
+      "sha256": "2dc0e7f8934ef0fef77f8efa9a9086b49e433a342dc071c9ccd3260ee896b2a2",
       "platforms": [
         "ios",
         "macos"
@@ -3701,8 +4135,8 @@
     },
     {
       "package": "flutter_secure_storage_darwin",
-      "path": "darwin/flutter_secure_storage_darwin/Package.swift",
-      "sha256": "9611d5065efffaf2336a48a284412736ee814b71782cf898d9a812aeea11d443",
+      "path": "darwin/flutter_secure_storage_darwin.podspec",
+      "sha256": "61285edb1b63e7c32da558d9923b60ce227bd73013c800dbaae5f009793bfeb2",
       "platforms": [
         "ios",
         "macos"
@@ -3710,8 +4144,8 @@
     },
     {
       "package": "flutter_secure_storage_darwin",
-      "path": "darwin/flutter_secure_storage_darwin.podspec",
-      "sha256": "61285edb1b63e7c32da558d9923b60ce227bd73013c800dbaae5f009793bfeb2",
+      "path": "darwin/flutter_secure_storage_darwin/Package.swift",
+      "sha256": "9611d5065efffaf2336a48a284412736ee814b71782cf898d9a812aeea11d443",
       "platforms": [
         "ios",
         "macos"
@@ -3783,518 +4217,8 @@
     },
     {
       "package": "just_audio",
-      "path": "android/build.gradle.kts",
-      "sha256": "b68360fbfdfbc1a2ee3f8caf2a8a573d39c951cb46c8c2cb664eeda61de52950",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "android/settings.gradle.kts",
-      "sha256": "eeff410ca24e1d9ad3c8191bf54771e3669eac0405c15fdd6fe2c60b89ab5d1d",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "darwin/just_audio/Package.swift",
-      "sha256": "142100114ff8a59c1e5d95a5bd56a88891655851f2bb90234aa6cbf9f8c89824",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "darwin/just_audio.podspec",
-      "sha256": "62b5c0b2a8f3c15bb66ca652bb9ff920d056bafcc49e4e42f12c5c7298d26a22",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "just_audio_web",
-      "path": "ios/just_audio_web.podspec",
-      "sha256": "d538e0be1e8cd3707e6ad8ad435deeff192f40ee7ca9b3fdd67240f6f307eaf7",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "just_waveform",
-      "path": "android/build.gradle",
-      "sha256": "375eacd8ce29020bcdaa75bc3689f4906836eb954c2981f186a5e9cccea9d1ec",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "just_waveform",
-      "path": "android/settings.gradle",
-      "sha256": "2e54204f68bce890afbaae8a4e61b153881063de1e27fc9d48da71e56782050a",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "just_waveform",
-      "path": "darwin/just_waveform/Package.swift",
-      "sha256": "7a7185f40f6c0e86b72d747ee12e70eddf3266fbe29254cddad6acf48231c126",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "just_waveform",
-      "path": "darwin/just_waveform.podspec",
-      "sha256": "b75c2f9c228c2620ee329820db7905b943c666496ddeff5d283dd750e60dbd0f",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "media_kit_libs_linux",
-      "path": "linux/CMakeLists.txt",
-      "sha256": "8e9bbe1f5e9429f5c3b1965dba663bc07d4cc40ddf7c6e065c1d2a897d4e33d6",
-      "platforms": [
-        "linux"
-      ]
-    },
-    {
-      "package": "media_kit_libs_windows_audio",
-      "path": "windows/CMakeLists.txt",
-      "sha256": "4e2174c6800b2757e3636a919ccda20f0275835c9db2a8abda456176167690f6",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "package": "objective_c",
-      "path": "hook/build.dart",
-      "sha256": "4673d675678e842c83880ef88ef14dc17b3aa89a7df615fbd0a4e5bed4846525",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "package_info_plus",
-      "path": "android/build.gradle.kts",
-      "sha256": "1fbc4122b6e622b2a8196e00eb7a5777c2e46f0a8f32b6176d5e2164416bb8dd",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "package_info_plus",
-      "path": "android/settings.gradle.kts",
-      "sha256": "721c8ab2cad39457f3a232a00cea451ecfc7eaca80ab72e70a5b3d4c3481edf5",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "package_info_plus",
-      "path": "ios/package_info_plus/Package.swift",
-      "sha256": "c86dfeeb8b2fdf724c52f352d9a1fd149f77684d811b841ce26c4b434f08b3ea",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "package_info_plus",
-      "path": "ios/package_info_plus.podspec",
-      "sha256": "20f18a30bd015d3c8787cae62c09105a79b1c0a8374711e78b41ad4a7a00948c",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "package_info_plus",
-      "path": "macos/package_info_plus/Package.swift",
-      "sha256": "edb65c18cf2a4e113a05d9a5b606a257a2c4aa29a268302db7ad42a7f17de333",
-      "platforms": [
-        "macos"
-      ]
-    },
-    {
-      "package": "package_info_plus",
-      "path": "macos/package_info_plus.podspec",
-      "sha256": "c6bc6d69711a4c21951eae34ef01d85fb2fb3688666869ced2be5c939743af05",
-      "platforms": [
-        "macos"
-      ]
-    },
-    {
-      "package": "permission_handler_android",
-      "path": "android/build.gradle",
-      "sha256": "93f521ab2c959c757090512d226fff6f66fdd9a1f31b40b3c0ad6935d07afc2f",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "permission_handler_android",
-      "path": "android/settings.gradle",
-      "sha256": "498e62f65c668b5686d078f4be72cf9f1ee833dc20554cb40f25c7724ac581a9",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "permission_handler_apple",
-      "path": "ios/permission_handler_apple/Package.swift",
-      "sha256": "f9292eca738b4ec57af61664f4f82961edd7221f769a3051f57d3459621e667a",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "permission_handler_apple",
-      "path": "ios/permission_handler_apple.podspec",
-      "sha256": "79a59da810810053610dd7d9b361ed9b58f839a0825461e6fc3a4291c833b218",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "permission_handler_windows",
-      "path": "windows/CMakeLists.txt",
-      "sha256": "f877fb5c08c3ca9779cff242dcde18028097ac537c9a75a0111d011592ffe859",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "package": "receive_sharing_intent",
-      "path": "android/build.gradle",
-      "sha256": "32f814c1bffe2ff5cafb8849832ddb33bb5b050ec5ae8afc95abb58a335e5458",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "receive_sharing_intent",
-      "path": "android/settings.gradle",
-      "sha256": "9779277eca196f39023c56ca651e61892f89b58166f5d5006f36c2d54074dadd",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "receive_sharing_intent",
-      "path": "ios/receive_sharing_intent.podspec",
-      "sha256": "a173716549546c9319324de600c783a8d18aee3be136b4f2b5fd415d1a268a70",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "share_plus",
-      "path": "android/build.gradle.kts",
-      "sha256": "0fa45ec1e7442ecdcaebd763c7edfb17f3d4904655bc55423e0d728d4be84145",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "share_plus",
-      "path": "android/settings.gradle.kts",
-      "sha256": "75a81c7820b4682ecf270b8a3419741fba483fc2ce116a0057a8597d2f9a8df5",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "share_plus",
-      "path": "ios/share_plus/Package.swift",
-      "sha256": "29b0ec39e3557602fa2c1a831b2f7b5f09a8335bf5b531255fda801f6330e5a2",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "share_plus",
-      "path": "ios/share_plus.podspec",
-      "sha256": "3f5582089b3329f8f63865cc082500640b6255211ba971b29787606ab612ab46",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "share_plus",
-      "path": "macos/share_plus/Package.swift",
-      "sha256": "dad5e932d5251bcc3445b64e4690779bfa9aa0212d74299f9dde65cbf6cf3eb6",
-      "platforms": [
-        "macos"
-      ]
-    },
-    {
-      "package": "share_plus",
-      "path": "macos/share_plus.podspec",
-      "sha256": "685b10419abf09233bfd240a6d5fef92597460862802a6b44be68eb9a5ad640d",
-      "platforms": [
-        "macos"
-      ]
-    },
-    {
-      "package": "share_plus",
-      "path": "windows/CMakeLists.txt",
-      "sha256": "65b58d65ab272b2873ffacde510ae7e58113cae64dc4308c8ec21fc6c149ecf2",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "package": "shared_preferences_android",
-      "path": "android/build.gradle.kts",
-      "sha256": "577face480aa551a419d6c3310d5720f34cda0c2df0b20901090174aa607621d",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "shared_preferences_android",
-      "path": "android/settings.gradle.kts",
-      "sha256": "e32bb28ef85cb9620d9397d0e152ae062fdc9f9149b2e06396525996e919339d",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "shared_preferences_foundation",
-      "path": "darwin/shared_preferences_foundation/Package.swift",
-      "sha256": "e0aae125c494d061044a058c54e0e52e3f1cfcb63fa7c430eaa65792b9413269",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "shared_preferences_foundation",
-      "path": "darwin/shared_preferences_foundation.podspec",
-      "sha256": "277fa1f0a165e6c955b056299105946fe152b736c5dca5f9bd9e1d639e95d04d",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "sqflite_android",
-      "path": "android/build.gradle",
-      "sha256": "52fdf4b28897b9c7bd4d3edb68da47b367a12d292acdb2300bd1b5711336dc70",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "sqflite_android",
-      "path": "android/settings.gradle",
-      "sha256": "659b3bdf550c06b3b68e8f11a1481aca0ffea66ff59eee25c463c4d97c1285c2",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "sqflite_darwin",
-      "path": "darwin/sqflite_darwin/Package.swift",
-      "sha256": "4fb85181c3b455145523c5edd8470090615ee1ec29c434cc9552a2d39578e5df",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "sqflite_darwin",
-      "path": "darwin/sqflite_darwin.podspec",
-      "sha256": "129d0f63c692cef848a74563b2bc8a8fdc676a65ba93802c7130462e33092605",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "sqlite3_flutter_libs",
-      "path": "android/build.gradle",
-      "sha256": "0576670c6ea5a5d0e77bbed6c2de16abe8000bd708aa763605eec0da566f841b",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "sqlite3_flutter_libs",
-      "path": "android/settings.gradle",
-      "sha256": "7997571de74728a057bf3bb3d7547cde91158f0d9de29b6677bcf546becbc104",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "sqlite3_flutter_libs",
-      "path": "darwin/sqlite3_flutter_libs/Package.swift",
-      "sha256": "608af01d57910c3f00a9595c5eab22d9183dcc353536e42b998bfdc680c3d1f1",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "sqlite3_flutter_libs",
-      "path": "darwin/sqlite3_flutter_libs.podspec",
-      "sha256": "d6df712afd1250d5cc92210fdc7e59a828e6ccfaaf76294df7d2f347193ac3cb",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "sqlite3_flutter_libs",
-      "path": "linux/CMakeLists.txt",
-      "sha256": "8c5f19d962af838048ddfac800b52b249eb49d796eabaff572e63900c434869d",
-      "platforms": [
-        "linux"
-      ]
-    },
-    {
-      "package": "sqlite3_flutter_libs",
-      "path": "windows/CMakeLists.txt",
-      "sha256": "2d363aed62bbbb04b4e1bfea21b98de04343de5b61607042f870c3239a40edb0",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "package": "url_launcher_android",
-      "path": "android/build.gradle.kts",
-      "sha256": "b7c15441541ac8a7d80d63780fb9128a518ac3067f70816e853a2c88ea8e8e45",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "url_launcher_android",
-      "path": "android/settings.gradle.kts",
-      "sha256": "48899388be4a4df328b6cfc308b756829bb09f9d286bbb5ec3957b8f85654a32",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "url_launcher_ios",
-      "path": "ios/url_launcher_ios/Package.swift",
-      "sha256": "a084c5f43a622fa55111da7a765002d43c312f601fcd232a0b03a673927f4660",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "url_launcher_ios",
-      "path": "ios/url_launcher_ios.podspec",
-      "sha256": "0307afd17d3408d04e375872d6563bb76457ffb1f38027aa3271647332329e93",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "url_launcher_linux",
-      "path": "linux/CMakeLists.txt",
-      "sha256": "e629a47e833c505b7e8884d8d5f008d8b463a50ce3c675c7ebd22957cbe570b3",
-      "platforms": [
-        "linux"
-      ]
-    },
-    {
-      "package": "url_launcher_macos",
-      "path": "macos/url_launcher_macos/Package.swift",
-      "sha256": "2094ecd1aa9ee88e3169b5f8f8f92769f8f5d81b8282c4bdb5bc120a9fcd56e8",
-      "platforms": [
-        "macos"
-      ]
-    },
-    {
-      "package": "url_launcher_macos",
-      "path": "macos/url_launcher_macos.podspec",
-      "sha256": "4515bb8d31c88d546797e23d2c6a08392000a617da09dc9745dbd1aa7b08b454",
-      "platforms": [
-        "macos"
-      ]
-    },
-    {
-      "package": "url_launcher_windows",
-      "path": "windows/CMakeLists.txt",
-      "sha256": "fd3030d7565f31ab7a0d3a8d7ae2a7da660a2a17d29298b2798ca2e694ae5a9c",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "ios/Podfile.lock",
-      "sha256": "20a46db4da8c44f8bee71415f2159447efc12b2a652a197cfc9bc5457efc9650",
-      "platforms": [
-        "ios"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "macos/Podfile.lock",
-      "sha256": "e068781fcb05cb58433d78f0891b2f4c4e03949a879739554784cac44249bec3",
-      "platforms": [
-        "macos"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "android/app/build.gradle.kts",
-      "sha256": "ff44dfabbfa3e68a7ae10e02eb88ad78751856877ebc8cd4c90332efbcdb2f1c",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "android/build.gradle.kts",
-      "sha256": "15beb7003613848ca3fcc6237db17cb91806296c516739abcc1e7aaf46dfb38b",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "android/settings.gradle.kts",
-      "sha256": "b76d554153a63772dddbe2ee91abdf582f5f871af40698b80a2ef7b70903d96f",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "linux/CMakeLists.txt",
-      "sha256": "ab8b50512f320ac2d4a3457cf97eca146b4d894d0f8ead3bfea41b0ffdd4773c",
-      "platforms": [
-        "linux"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "windows/CMakeLists.txt",
-      "sha256": "6cfdedb22c73d6999474c05dd3201a71b6d94a79d4bbff20d557f7fe55e907f0",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
       "path": "LOCAL_ADDITIONS.json",
-      "sha256": "0df28fd67180a6373c4f5339ec2296c95201f41db951304d004886d396c4e686",
+      "sha256": "e0d856072b940f3b676ea269774a05f6af87cf6327debfa6ca39577dad503a41",
       "platforms": [
         "android",
         "ios",
@@ -4306,7 +4230,7 @@
     {
       "package": "just_audio",
       "path": "UPSTREAM.patch",
-      "sha256": "7e9729bfbf80e10efbe8ef105e2a329ba5957101656c52dbbffa74ce13d6e31b",
+      "sha256": "45ac26a7e1d21a89d26d21354145102f5782c7444ea46e260cef56730aa3356f",
       "platforms": [
         "android",
         "ios",
@@ -4329,8 +4253,24 @@
     },
     {
       "package": "just_audio",
+      "path": "android/build.gradle.kts",
+      "sha256": "b68360fbfdfbc1a2ee3f8caf2a8a573d39c951cb46c8c2cb664eeda61de52950",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
       "path": "android/consumer-rules.pro",
       "sha256": "0ba9db374606b979ab2541d30fe2006bbcb3cf3b79819d733d43b74a7d39f51f",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "android/settings.gradle.kts",
+      "sha256": "eeff410ca24e1d9ad3c8191bf54771e3669eac0405c15fdd6fe2c60b89ab5d1d",
       "platforms": [
         "android"
       ]
@@ -4425,402 +4365,20 @@
     },
     {
       "package": "just_audio",
-      "path": "lib/just_audio.dart",
-      "sha256": "47c4d73a665c158d83facad1b135c944828af115d2c48a6677a31199f415b878",
+      "path": "darwin/just_audio.podspec",
+      "sha256": "62b5c0b2a8f3c15bb66ca652bb9ff920d056bafcc49e4e42f12c5c7298d26a22",
       "platforms": [
-        "android",
         "ios",
-        "macos",
-        "linux",
-        "windows"
+        "macos"
       ]
     },
     {
       "package": "just_audio",
-      "path": "native/crisper_dsp/CMakeLists.txt",
-      "sha256": "07db341936326f6eec8940043cef3a8486b254396a9f84561494d25020d6247e",
+      "path": "darwin/just_audio/Package.swift",
+      "sha256": "142100114ff8a59c1e5d95a5bd56a88891655851f2bb90234aa6cbf9f8c89824",
       "platforms": [
-        "android",
         "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/LICENSE",
-      "sha256": "2749c73f9c1cb9bf22449b00f983a5413c69403d8bd864978fec744237b12194",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/README.md",
-      "sha256": "3fd9c95d5c74ed1660d1754842357d9131f80e0f9919e2d8b25a963b170fc9f9",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/crisper_dsp.cpp",
-      "sha256": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/crisper_dsp.h",
-      "sha256": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/build_host.py",
-      "sha256": "8915b4dea66cb2d90642adf4e6543e26cf6a6de3475801c9d1b6662629c9877b",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/dsp.py",
-      "sha256": "9db29e6015d1de54490352d82d9cf07c3bb0caf55d4897913c0e093ab0cf9b7e",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/render_ab.py",
-      "sha256": "f92048708e68c953ed9146d9cb2e3ac985cb08f448652bf1fbf907b5f0866242",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/test_streaming.py",
-      "sha256": "66f57485f860c219b6d465967f179a97cc56f952816520a04efdfac8a497c4c2",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/vendor/manifest.json",
-      "sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "scripts/audit_android_audio.py",
-      "sha256": "5b3a6f05b998d44d75cfeb330ac9e21a7c9f810581bc7ce5da7df958c77e06f9",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "assets/licenses/ANDROID-NDK.txt",
-      "sha256": "9f27804f31b74a9dde3322849b35f150c4507b60045d7abe26a5f6eb4101f362",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "lib/services/native_licenses.dart",
-      "sha256": "6d160ebd606ed5fcca5b8c3e6c1547809c3a9ac45fe746a7fb687307fd2e71e3",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": ".github/workflows/android-audio.yml",
-      "sha256": "931813ab5cd3d612ff8d1615667e78f0b3ebfb8cacf4ce543b966541c56741f2",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": ".github/workflows/ci.yml",
-      "sha256": "fd2a6765e7925af69378dc41c3bab6ebb2655b2dd8488db8dbe74e25d9238c2a",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": ".github/workflows/release.yml",
-      "sha256": "2b0047bf8d72e50d3b3049d18cf3d7991273c7e7b93c14e40eb3078c9fb5f96b",
-      "platforms": [
-        "android"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/test_wsola_reference.py",
-      "sha256": "892b25bb8cc3ed80198c2a4f83d4bcd4b5dca2d246e4345d4bbe64871d2d5dfb",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/test_wsola_search.cpp",
-      "sha256": "5138392b116b147bd4090fa6c0d3d2a594c477e34099e3548a39e19d703fa8d5",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/README.md",
-      "sha256": "948901db5a3b4b7fb02791fafbd8f126a72c1446d7cb7a28a60cf1599370dd8c",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/portable_bridge.cpp",
-      "sha256": "f8f021ffd4f216b2b3f2ae6aae3785ca5638034fa59cb7a6864b365f8c0a1426",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/reference_bridge.cpp",
-      "sha256": "f76e9cb51a1a50be5860e304ee761809f815627b49295aeeb161ddab14185aeb",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/check_op.h",
-      "sha256": "37b948ad88443b52f82da822cd34a3ea3215b5a3d14d7de704d0ba99726f0cd3",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/containers/auto_spanification_helper.h",
-      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/containers/span.h",
-      "sha256": "0f53675384683915aaceef94a933e931c506f9d6f50b4349245ae09de4fa2f1b",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/cpu.h",
-      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/numerics/checked_math.h",
-      "sha256": "c5f790a8da7a7ea47c387b0e38acbca880219e9baf3a19350d2efc8868e09c79",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/numerics/safe_conversions.h",
-      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/build/build_config.h",
-      "sha256": "8440e1adccc60f50a7d7cb4d28b4e3d97438bce37920980f710e53d9e1dc114e",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/media/base/audio_bus.h",
-      "sha256": "089b0ee55f3f446b95c09d6696a70f18e73635994e391f8e5de951c1de1c6782",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/tools/wsola_reference/shims/media/base/media_export.h",
-      "sha256": "f4056b1b8ab3e3d5080fa0214baf31e7f2cf6527d4113aaf766f3392b1d48095",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/wsola/LICENSE",
-      "sha256": "368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/wsola/UPSTREAM.md",
-      "sha256": "a16f652301399e40cf4024733d967cc5da0f7fdbc0e1aa1917d4a0b253e6fc95",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/wsola/wsola.cpp",
-      "sha256": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/crisper_dsp/wsola/wsola.h",
-      "sha256": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
+        "macos"
       ]
     },
     {
@@ -4836,6 +4394,15 @@
       "package": "just_audio",
       "path": "darwin/just_audio/Sources/just_audio/CrisperPortableAudioPlayer.m",
       "sha256": "2acbb33718a94ddf02bff4a128581a166e424c140193dc62066c05d43222082c",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "darwin/just_audio/Sources/just_audio/JustAudioPlugin.m",
+      "sha256": "76e0f9fccdcfa050aace0d74c6255765bacf360fcb1dfe51d54727d209020924",
       "platforms": [
         "ios",
         "macos"
@@ -5032,11 +4599,83 @@
     },
     {
       "package": "just_audio",
+      "path": "lib/just_audio.dart",
+      "sha256": "47c4d73a665c158d83facad1b135c944828af115d2c48a6677a31199f415b878",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/CMakeLists.txt",
+      "sha256": "07db341936326f6eec8940043cef3a8486b254396a9f84561494d25020d6247e",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/LICENSE",
+      "sha256": "2749c73f9c1cb9bf22449b00f983a5413c69403d8bd864978fec744237b12194",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
       "path": "native/crisper_dsp/Package.swift",
       "sha256": "1ab775e686db5b7a73cb31214b3c6597c8167fb4f56ad426ba53f8974a250cc6",
       "platforms": [
         "ios",
         "macos"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/README.md",
+      "sha256": "3c0e2167878e1da7750b7e68114cf47a8221691bfafab37288a79a5981c9dde0",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/crisper_dsp.cpp",
+      "sha256": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/crisper_dsp.h",
+      "sha256": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
       ]
     },
     {
@@ -5050,161 +4689,8 @@
     },
     {
       "package": "just_audio",
-      "path": "native/mpv/af_crisper.c",
-      "sha256": "609b73a92ee638ae636d3bdeb50f1cc380ff287472fcee5f070377fd73d3be23",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/mpv/meson.build",
-      "sha256": "c4f4ad3387836f72c1b73a1d6f97e5401fa7bfef8547f7c422ca2b86c34ed4a4",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/mpv/upstream.json",
-      "sha256": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/mpv/tests/test_api.h",
-      "sha256": "a730bdeac7159d4dc79e0216a4256c50bc688d6c7a8511ac5f861dd20d15c742",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/mpv/tests/run_contract.py",
-      "sha256": "4a2f45d485c62b7461b5f2fd8ec05bd9c386a0a29f5455301a28e56395e681fa",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "native/mpv/tests/filter_contract.c",
-      "sha256": "ae7f3041d5a795662a7ab9a78edde5385c2b6f23d22ea7506868815d4e0093d7",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio",
-      "path": "darwin/just_audio/Sources/just_audio/JustAudioPlugin.m",
-      "sha256": "76e0f9fccdcfa050aace0d74c6255765bacf360fcb1dfe51d54727d209020924",
-      "platforms": [
-        "ios",
-        "macos"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "UPSTREAM.json",
-      "sha256": "9a25d7f02d2782db91fa6d5c26143ffcdadeeafd26ff0344674ef91cfad8a754",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "UPSTREAM.md",
-      "sha256": "6c93d866ea20ffead97d65662aee0fd2ba06a6361e6399a39d176a634fc3ad75",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "UPSTREAM.patch",
-      "sha256": "aa9077378c6c73c8d7de6c459871fe0081d6cd16eeadb41720b2483e2de49674",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "lib/just_audio_media_kit.dart",
-      "sha256": "ba6fccb7735d075b271c5f049b756cf76d012b2cc40cb4f728d0ff1b60143002",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "lib/mediakit_player.dart",
-      "sha256": "e7c69af23c21fbc3f64ec167dd671fde026b86cca1cd823b705b12a0427c8fa6",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "lib/src/set_property.dart",
-      "sha256": "c212239efeec58d74eba18d374ec3ad195503c6d9c92b7431c846984b9b58344",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "lib/src/set_property_io.dart",
-      "sha256": "3d495e488913a311d247830b0110b29a15eb23deccca271f4f8d1b44b9912ace",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "lib/src/set_property_noop.dart",
-      "sha256": "aa0c6ae6e840c866dec75d0195f9e0adb45b7c76e040207fa23e7e2aef7ddccc",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "lib/src/speed_processor.dart",
-      "sha256": "5a173e3eb94d6644ba727bbdc09d1c86e19de4482f3435669ac2a8e9c0d7ae3e",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "just_audio_media_kit",
-      "path": "test/speed_processor_test.dart",
-      "sha256": "300bf1ff579da18b4732db88831f33995a7665af21d4717969a5ea6fac5e579f",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "assets/licenses/ANDROID-DSP.txt",
-      "sha256": "539e3d5ab51528341dc07f076d3fea79684b8a9d3929d2da93a2057766fa423e",
+      "path": "native/crisper_dsp/tools/build_host.py",
+      "sha256": "1585ba45ec392ccd9300717aa7ab1674f3a85e877cbcc60882cf088aea8f653e",
       "platforms": [
         "android",
         "ios",
@@ -5214,71 +4700,9 @@
       ]
     },
     {
-      "package": "crisperplayer",
-      "path": "assets/licenses/DESKTOP-AUDIO.txt",
-      "sha256": "11b3ca220217f9d4a09acca95a54635cf5a6e1e28f8e41fc50f23e403dd0eb95",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "scripts/build_linux_audio.py",
-      "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "scripts/build_windows_audio.py",
-      "sha256": "d8d664c4226977f4506440f3507a942bae5a47e26ff2d591d8b97cb3c43a6e7f",
-      "platforms": [
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "scripts/prepare_portable_mpv.py",
-      "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "scripts/smoke_desktop_audio.py",
-      "sha256": "6b7fc530e409267d947e9812acab9f3e06fdc36fb1b277b315f70d0d85840ff4",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "scripts/run_portable_desktop.py",
-      "sha256": "f1cc88ae68904474bcfaf265f968e02d7b1df220b301697d9ee0565e51a31472",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": "licensing/linux_audio_sources.json",
-      "sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
-      "platforms": [
-        "linux",
-        "windows"
-      ]
-    },
-    {
-      "package": "crisperplayer",
-      "path": ".github/workflows/portable-dsp.yml",
-      "sha256": "b629d1298848916ee88129f9244f3cd8d05a5a91b5fb9f5857cfbf9a7ba83b39",
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/dsp.py",
+      "sha256": "9db29e6015d1de54490352d82d9cf07c3bb0caf55d4897913c0e093ab0cf9b7e",
       "platforms": [
         "android",
         "ios",
@@ -5288,36 +4712,658 @@
       ]
     },
     {
-      "package": "crisperplayer",
-      "path": "ios/RunnerTests/RunnerTests.swift",
-      "sha256": "eb456b700038037ab8b5463485ed6a315f74fd103cb35a704a66a9aaf03944e9",
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/render_ab.py",
+      "sha256": "f92048708e68c953ed9146d9cb2e3ac985cb08f448652bf1fbf907b5f0866242",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/test_streaming.py",
+      "sha256": "66f57485f860c219b6d465967f179a97cc56f952816520a04efdfac8a497c4c2",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/test_wsola_reference.py",
+      "sha256": "892b25bb8cc3ed80198c2a4f83d4bcd4b5dca2d246e4345d4bbe64871d2d5dfb",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/test_wsola_search.cpp",
+      "sha256": "5138392b116b147bd4090fa6c0d3d2a594c477e34099e3548a39e19d703fa8d5",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/README.md",
+      "sha256": "948901db5a3b4b7fb02791fafbd8f126a72c1446d7cb7a28a60cf1599370dd8c",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/portable_bridge.cpp",
+      "sha256": "f8f021ffd4f216b2b3f2ae6aae3785ca5638034fa59cb7a6864b365f8c0a1426",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/reference_bridge.cpp",
+      "sha256": "f76e9cb51a1a50be5860e304ee761809f815627b49295aeeb161ddab14185aeb",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/check_op.h",
+      "sha256": "37b948ad88443b52f82da822cd34a3ea3215b5a3d14d7de704d0ba99726f0cd3",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/containers/auto_spanification_helper.h",
+      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/containers/span.h",
+      "sha256": "0f53675384683915aaceef94a933e931c506f9d6f50b4349245ae09de4fa2f1b",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/cpu.h",
+      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/numerics/checked_math.h",
+      "sha256": "c5f790a8da7a7ea47c387b0e38acbca880219e9baf3a19350d2efc8868e09c79",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/base/numerics/safe_conversions.h",
+      "sha256": "8f9564e72803ac9bbf9e1e62dbf691bf85ff2dc83629ed99f2aa00b5d715e70c",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/build/build_config.h",
+      "sha256": "8440e1adccc60f50a7d7cb4d28b4e3d97438bce37920980f710e53d9e1dc114e",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/media/base/audio_bus.h",
+      "sha256": "089b0ee55f3f446b95c09d6696a70f18e73635994e391f8e5de951c1de1c6782",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/tools/wsola_reference/shims/media/base/media_export.h",
+      "sha256": "f4056b1b8ab3e3d5080fa0214baf31e7f2cf6527d4113aaf766f3392b1d48095",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/vendor/manifest.json",
+      "sha256": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/LICENSE",
+      "sha256": "368cca1106be99d39ecd32a38d8305585d802a475effb66380b91ffc9bcf709b",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/UPSTREAM.md",
+      "sha256": "a16f652301399e40cf4024733d967cc5da0f7fdbc0e1aa1917d4a0b253e6fc95",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/wsola.cpp",
+      "sha256": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio",
+      "path": "native/crisper_dsp/wsola/wsola.h",
+      "sha256": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "package": "just_audio_web",
+      "path": "ios/just_audio_web.podspec",
+      "sha256": "d538e0be1e8cd3707e6ad8ad435deeff192f40ee7ca9b3fdd67240f6f307eaf7",
       "platforms": [
         "ios"
       ]
     },
     {
-      "package": "crisperplayer",
-      "path": "macos/RunnerTests/RunnerTests.swift",
-      "sha256": "02fa925de6d65dec0f399bf0b96745849820ba6bdaf8bf491e4fa959382c66a7",
+      "package": "just_waveform",
+      "path": "android/build.gradle",
+      "sha256": "375eacd8ce29020bcdaa75bc3689f4906836eb954c2981f186a5e9cccea9d1ec",
       "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_waveform",
+      "path": "android/settings.gradle",
+      "sha256": "2e54204f68bce890afbaae8a4e61b153881063de1e27fc9d48da71e56782050a",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "just_waveform",
+      "path": "darwin/just_waveform.podspec",
+      "sha256": "b75c2f9c228c2620ee329820db7905b943c666496ddeff5d283dd750e60dbd0f",
+      "platforms": [
+        "ios",
         "macos"
       ]
     },
     {
-      "package": "just_audio_media_kit",
-      "path": "test/processor_failure_test.dart",
-      "sha256": "30209bc356713fe3df5edb7ec1020553d695d24c0ca43dead507f5b7ed81f5e3",
+      "package": "just_waveform",
+      "path": "darwin/just_waveform/Package.swift",
+      "sha256": "7a7185f40f6c0e86b72d747ee12e70eddf3266fbe29254cddad6acf48231c126",
       "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "objective_c",
+      "path": "hook/build.dart",
+      "sha256": "4673d675678e842c83880ef88ef14dc17b3aa89a7df615fbd0a4e5bed4846525",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
         "linux",
         "windows"
       ]
     },
     {
-      "package": "crisperplayer",
-      "path": ".github/workflows/desktop-portable-audio.yml",
-      "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
+      "package": "package_info_plus",
+      "path": "android/build.gradle.kts",
+      "sha256": "1fbc4122b6e622b2a8196e00eb7a5777c2e46f0a8f32b6176d5e2164416bb8dd",
       "platforms": [
-        "linux",
+        "android"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "android/settings.gradle.kts",
+      "sha256": "721c8ab2cad39457f3a232a00cea451ecfc7eaca80ab72e70a5b3d4c3481edf5",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "ios/package_info_plus.podspec",
+      "sha256": "20f18a30bd015d3c8787cae62c09105a79b1c0a8374711e78b41ad4a7a00948c",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "ios/package_info_plus/Package.swift",
+      "sha256": "c86dfeeb8b2fdf724c52f352d9a1fd149f77684d811b841ce26c4b434f08b3ea",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "macos/package_info_plus.podspec",
+      "sha256": "c6bc6d69711a4c21951eae34ef01d85fb2fb3688666869ced2be5c939743af05",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "package_info_plus",
+      "path": "macos/package_info_plus/Package.swift",
+      "sha256": "edb65c18cf2a4e113a05d9a5b606a257a2c4aa29a268302db7ad42a7f17de333",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "permission_handler_android",
+      "path": "android/build.gradle",
+      "sha256": "93f521ab2c959c757090512d226fff6f66fdd9a1f31b40b3c0ad6935d07afc2f",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "permission_handler_android",
+      "path": "android/settings.gradle",
+      "sha256": "498e62f65c668b5686d078f4be72cf9f1ee833dc20554cb40f25c7724ac581a9",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "permission_handler_apple",
+      "path": "ios/permission_handler_apple.podspec",
+      "sha256": "79a59da810810053610dd7d9b361ed9b58f839a0825461e6fc3a4291c833b218",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "permission_handler_apple",
+      "path": "ios/permission_handler_apple/Package.swift",
+      "sha256": "f9292eca738b4ec57af61664f4f82961edd7221f769a3051f57d3459621e667a",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "permission_handler_windows",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "f877fb5c08c3ca9779cff242dcde18028097ac537c9a75a0111d011592ffe859",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "receive_sharing_intent",
+      "path": "android/build.gradle",
+      "sha256": "32f814c1bffe2ff5cafb8849832ddb33bb5b050ec5ae8afc95abb58a335e5458",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "receive_sharing_intent",
+      "path": "android/settings.gradle",
+      "sha256": "9779277eca196f39023c56ca651e61892f89b58166f5d5006f36c2d54074dadd",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "receive_sharing_intent",
+      "path": "ios/receive_sharing_intent.podspec",
+      "sha256": "a173716549546c9319324de600c783a8d18aee3be136b4f2b5fd415d1a268a70",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "android/build.gradle.kts",
+      "sha256": "0fa45ec1e7442ecdcaebd763c7edfb17f3d4904655bc55423e0d728d4be84145",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "android/settings.gradle.kts",
+      "sha256": "75a81c7820b4682ecf270b8a3419741fba483fc2ce116a0057a8597d2f9a8df5",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "ios/share_plus.podspec",
+      "sha256": "3f5582089b3329f8f63865cc082500640b6255211ba971b29787606ab612ab46",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "ios/share_plus/Package.swift",
+      "sha256": "29b0ec39e3557602fa2c1a831b2f7b5f09a8335bf5b531255fda801f6330e5a2",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "macos/share_plus.podspec",
+      "sha256": "685b10419abf09233bfd240a6d5fef92597460862802a6b44be68eb9a5ad640d",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "macos/share_plus/Package.swift",
+      "sha256": "dad5e932d5251bcc3445b64e4690779bfa9aa0212d74299f9dde65cbf6cf3eb6",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "share_plus",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "65b58d65ab272b2873ffacde510ae7e58113cae64dc4308c8ec21fc6c149ecf2",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "shared_preferences_android",
+      "path": "android/build.gradle.kts",
+      "sha256": "577face480aa551a419d6c3310d5720f34cda0c2df0b20901090174aa607621d",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "shared_preferences_android",
+      "path": "android/settings.gradle.kts",
+      "sha256": "e32bb28ef85cb9620d9397d0e152ae062fdc9f9149b2e06396525996e919339d",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "shared_preferences_foundation",
+      "path": "darwin/shared_preferences_foundation.podspec",
+      "sha256": "277fa1f0a165e6c955b056299105946fe152b736c5dca5f9bd9e1d639e95d04d",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "shared_preferences_foundation",
+      "path": "darwin/shared_preferences_foundation/Package.swift",
+      "sha256": "e0aae125c494d061044a058c54e0e52e3f1cfcb63fa7c430eaa65792b9413269",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqflite_android",
+      "path": "android/build.gradle",
+      "sha256": "52fdf4b28897b9c7bd4d3edb68da47b367a12d292acdb2300bd1b5711336dc70",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqflite_android",
+      "path": "android/settings.gradle",
+      "sha256": "659b3bdf550c06b3b68e8f11a1481aca0ffea66ff59eee25c463c4d97c1285c2",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqflite_darwin",
+      "path": "darwin/sqflite_darwin.podspec",
+      "sha256": "129d0f63c692cef848a74563b2bc8a8fdc676a65ba93802c7130462e33092605",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqflite_darwin",
+      "path": "darwin/sqflite_darwin/Package.swift",
+      "sha256": "4fb85181c3b455145523c5edd8470090615ee1ec29c434cc9552a2d39578e5df",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "android/build.gradle",
+      "sha256": "0576670c6ea5a5d0e77bbed6c2de16abe8000bd708aa763605eec0da566f841b",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "android/settings.gradle",
+      "sha256": "7997571de74728a057bf3bb3d7547cde91158f0d9de29b6677bcf546becbc104",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "darwin/sqlite3_flutter_libs.podspec",
+      "sha256": "d6df712afd1250d5cc92210fdc7e59a828e6ccfaaf76294df7d2f347193ac3cb",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "darwin/sqlite3_flutter_libs/Package.swift",
+      "sha256": "608af01d57910c3f00a9595c5eab22d9183dcc353536e42b998bfdc680c3d1f1",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "8c5f19d962af838048ddfac800b52b249eb49d796eabaff572e63900c434869d",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "sqlite3_flutter_libs",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "2d363aed62bbbb04b4e1bfea21b98de04343de5b61607042f870c3239a40edb0",
+      "platforms": [
+        "windows"
+      ]
+    },
+    {
+      "package": "url_launcher_android",
+      "path": "android/build.gradle.kts",
+      "sha256": "b7c15441541ac8a7d80d63780fb9128a518ac3067f70816e853a2c88ea8e8e45",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "url_launcher_android",
+      "path": "android/settings.gradle.kts",
+      "sha256": "48899388be4a4df328b6cfc308b756829bb09f9d286bbb5ec3957b8f85654a32",
+      "platforms": [
+        "android"
+      ]
+    },
+    {
+      "package": "url_launcher_ios",
+      "path": "ios/url_launcher_ios.podspec",
+      "sha256": "0307afd17d3408d04e375872d6563bb76457ffb1f38027aa3271647332329e93",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "url_launcher_ios",
+      "path": "ios/url_launcher_ios/Package.swift",
+      "sha256": "a084c5f43a622fa55111da7a765002d43c312f601fcd232a0b03a673927f4660",
+      "platforms": [
+        "ios"
+      ]
+    },
+    {
+      "package": "url_launcher_linux",
+      "path": "linux/CMakeLists.txt",
+      "sha256": "e629a47e833c505b7e8884d8d5f008d8b463a50ce3c675c7ebd22957cbe570b3",
+      "platforms": [
+        "linux"
+      ]
+    },
+    {
+      "package": "url_launcher_macos",
+      "path": "macos/url_launcher_macos.podspec",
+      "sha256": "4515bb8d31c88d546797e23d2c6a08392000a617da09dc9745dbd1aa7b08b454",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "url_launcher_macos",
+      "path": "macos/url_launcher_macos/Package.swift",
+      "sha256": "2094ecd1aa9ee88e3169b5f8f8f92769f8f5d81b8282c4bdb5bc120a9fcd56e8",
+      "platforms": [
+        "macos"
+      ]
+    },
+    {
+      "package": "url_launcher_windows",
+      "path": "windows/CMakeLists.txt",
+      "sha256": "fd3030d7565f31ab7a0d3a8d7ae2a7da660a2a17d29298b2798ca2e694ae5a9c",
+      "platforms": [
         "windows"
       ]
     }

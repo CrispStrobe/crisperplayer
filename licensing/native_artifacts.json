@@ -4,241 +4,6 @@
   "note": "Native evidence is separate from Dart package licenses. needs_review is not a finding that a component is GPL; it means release evidence or distribution obligations remain unresolved.",
   "components": [
     {
-      "id": "windows-libmpv-audio-2023-09-24",
-      "platforms": [
-        "windows"
-      ],
-      "version": "media_kit_libs_windows_audio 1.0.9 / mpv v0.36.0-403-g652a1dd907",
-      "license_expression": "LGPL-3.0-or-later",
-      "review_status": "needs_review",
-      "artifact": {
-        "url": "https://github.com/media-kit/libmpv-win32-audio-build/releases/download/2023-09-24/mpv-dev-x86_64-20230924-git-652a1dd.7z",
-        "sha256": "583af5a291fc99ae2641794ede1955c368eb4c19dc05f4f0a9c7f9456edeb6a8",
-        "md5": "cd738e16e2a19626d7cfa48801524f8c",
-        "binary_filename": "libmpv-2.dll",
-        "binary_sha256": "0a5a0b476866c91a639a4e511e8153968f8fa23564461b0aa09acdba816164a4"
-      },
-      "source": {
-        "repository": "https://github.com/media-kit/libmpv-win32-audio-build",
-        "revision": "2023-09-24",
-        "release_tree": "f0f6ac7483396f345820660176cc84e2dd6ba220",
-        "mpv_revision": "652a1dd90711839acdccc08004056d25514ef2d8"
-      },
-      "evidence": [
-        {
-          "path": "licensing/evidence/windows_audio_2023-09-24.json",
-          "sha256": "99a5c3602e920ef29bfce058ec3a524944b2a1bc677201a88890659125f1685a",
-          "note": "Inspected actual DLL from the pinned archive: mpv -Dgpl=false; all six FFmpeg license markers LGPL version 3 or later; --disable-gpl --disable-nonfree --enable-version3. These markers support an LGPL candidate, not complete distribution approval."
-        },
-        {
-          "url": "https://api.github.com/repos/media-kit/libmpv-win32-audio-build/git/trees/2023-09-24?recursive=1",
-          "note": "The release tag tree contains only a version marker; it is not the complete corresponding source/build manifest."
-        },
-        {
-          "path": "licensing/linux_audio_sources.json",
-          "sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
-          "note": "Same exact source pins for the optional Windows controlled build. This does not describe the older bundled DLL."
-        },
-        {
-          "path": "scripts/build_windows_audio.py",
-          "sha256": "d8d664c4226977f4506440f3507a942bae5a47e26ff2d591d8b97cb3c43a6e7f",
-          "note": "Windows-specific entry point for the controlled source recipe; no claim that the candidate DLL has been built or inspected."
-        },
-        {
-          "path": "scripts/build_linux_audio.py",
-          "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08",
-          "note": "Shared implementation builds private LGPL-configured FFmpeg and non-GPL mpv with the local portable core; never adopts prebuilt MSYS2 FFmpeg."
-        },
-        {
-          "path": "scripts/prepare_portable_mpv.py",
-          "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
-          "note": "Exact pinned-source validation and source/patch retention for the controlled mpv filter."
-        },
-        {
-          "path": "packages/just_audio/native/mpv/upstream.json",
-          "sha256": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419",
-          "note": "Pinned current mpv integration identity for the optional controlled build; distinct from the older bundled binary revision."
-        },
-        {
-          "path": "assets/licenses/DESKTOP-AUDIO.txt",
-          "sha256": "11b3ca220217f9d4a09acca95a54635cf5a6e1e28f8e41fc50f23e403dd0eb95",
-          "note": "Historical Windows binary identity and unresolved LGPL obligations remain explicit alongside the source-built alternative."
-        },
-        {
-          "path": ".github/workflows/desktop-portable-audio.yml",
-          "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
-          "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
-        }
-      ],
-      "blockers": [
-        "Establish and retain complete matching source revisions, modifications, build settings and dependency/relink materials for the static native code inside this exact DLL; a default-branch recipe is insufficient.",
-        "Review actual target packaging, notices, source delivery and library replacement/relink obligations before distribution."
-      ],
-      "controlled_alternative": {
-        "review_status": "needs_review",
-        "artifact_review_status": "not_built_or_inspected",
-        "version": "Candidate mpv 0.42.0 / FFmpeg 9.0.2 with shared portable crisperdsp filter",
-        "source_manifest": "licensing/linux_audio_sources.json",
-        "source_manifest_sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
-        "recipe": "scripts/build_windows_audio.py",
-        "platform": "windows",
-        "toolchain": "MSYS2 UCRT64; explicit private FFmpeg build; WASAPI output",
-        "scope": "An explicit source-built alternative, selected through the controlled prefix at runtime. It does not replace or approve the historical media_kit DLL recorded above. The exact produced DLL, linked dependency closure, complete corresponding source, notices and replacement/relink materials remain to be validated."
-      }
-    },
-    {
-      "id": "linux-libmpv-controlled",
-      "platforms": [
-        "linux"
-      ],
-      "version": "Candidate controlled mpv 0.42.0 with portable crisperdsp filter / FFmpeg 9.0.2; otherwise system libmpv",
-      "license_expression": null,
-      "review_status": "needs_review",
-      "source": {
-        "repository": "https://github.com/mpv-player/mpv",
-        "revision": "v0.42.0"
-      },
-      "evidence": [
-        {
-          "path": "licensing/linux_audio_sources.json",
-          "sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
-          "note": "Hash-pinned candidate sources. Default distro libmpv is not covered by this recipe."
-        },
-        {
-          "path": "scripts/build_linux_audio.py",
-          "note": "Isolated shared-library source recipe with GPL/nonfree/autodetection disabled and no Meson fallback downloads; includes the shared portable processor filter and retains candidate evidence.",
-          "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08"
-        },
-        {
-          "path": "scripts/prepare_portable_mpv.py",
-          "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
-          "note": "Validates exact original mpv files and shared DSP closure, applies the independent local filter, and retains corresponding-source patch evidence."
-        },
-        {
-          "path": "packages/just_audio/native/mpv/upstream.json",
-          "sha256": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419",
-          "note": "Exact unmodified mpv v0.42.0 archive/integration-file identity for the local crisperdsp filter preparation."
-        },
-        {
-          "path": "packages/just_audio/native/mpv/af_crisper.c",
-          "sha256": "609b73a92ee638ae636d3bdeb50f1cc380ff287472fcee5f070377fd73d3be23",
-          "note": "Local MIT filter adapter compiled into controlled LGPL-configured mpv; original native DSP and mpv/FFmpeg grants remain separate."
-        },
-        {
-          "path": "packages/just_audio/native/mpv/meson.build",
-          "sha256": "c4f4ad3387836f72c1b73a1d6f97e5401fa7bfef8547f7c422ca2b86c34ed4a4",
-          "note": "Exact source and build-option closure of the optional portable core inside controlled libmpv."
-        },
-        {
-          "path": "scripts/smoke_desktop_audio.py",
-          "sha256": "6b7fc530e409267d947e9812acab9f3e06fdc36fb1b277b315f70d0d85840ff4",
-          "note": "Actual candidate playback/render smoke test entry point including optional required portable filters; a script pin is not a successful runtime result."
-        },
-        {
-          "path": "assets/licenses/DESKTOP-AUDIO.txt",
-          "sha256": "11b3ca220217f9d4a09acca95a54635cf5a6e1e28f8e41fc50f23e403dd0eb95",
-          "note": "Retains historical binary evidence and LGPL obligations while explaining the controlled build and capability-gated processors."
-        },
-        {
-          "path": ".github/workflows/desktop-portable-audio.yml",
-          "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
-          "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
-        },
-        {
-          "path": "licensing/evidence/portable_linux_host_2026-11-11.json",
-          "sha256": "7d19ed57f47ba452db7f8d19facf398511b5f04d504ce1032b0396527c3f2c99",
-          "note": "Actual Linux x86-64 controlled source build: nine native binary hashes/marker inspections, observed runtime resolution, exact source/preparation inputs and 35 passing native PCM checks. Explicit release_approved: false; no target-package approval or evidence for another platform."
-        },
-        {
-          "path": "licensing/evidence/portable_linux_playback_2026-11-11.json",
-          "sha256": "ee3531c142b2e5c5d413649f73c27b0c585f07525b34f1083ff0b57467dca8ba",
-          "note": "Exact retained successful native playback report for seven modes at five rates; optional filter inventory/readback and native-error rejection prevent a timed fallback from passing. Report and tested libmpv binary have separate recorded hashes."
-        }
-      ],
-      "blockers": [
-        "Review and pin the complete toolchain/system dependency closure, inspect the final ELF runtime resolution, provide source/notices, and demonstrate replaceable shared-library packaging before approving a release.",
-        "System libmpv discovered by name may be a GPL build; its presence cannot satisfy this component."
-      ],
-      "artifact_review_status": "pending_release_packaging_validation",
-      "candidate_validation": {
-        "platform": "linux",
-        "architecture": "x86_64",
-        "build_status": "compiled_and_linked",
-        "native_pcm_checks_passed": 35,
-        "processor_modes": 7,
-        "release_approved": false,
-        "binary": {
-          "filename": "libmpv.so.2.6.0",
-          "sha256": "99bed290e3bd4eadf1e3d4a9a8cd072715d8dab56d3495da855170dd21bd349b",
-          "size_bytes": 2833032
-        },
-        "evidence": "licensing/evidence/portable_linux_host_2026-11-11.json",
-        "playback_report": "licensing/evidence/portable_linux_playback_2026-11-11.json",
-        "scope": "Observed host candidate only. The packaged Flutter application, target audio-device behavior, redistributable dependency closure, source/notices and replacement/relink materials remain pending."
-      }
-    },
-    {
-      "id": "desktop-ffmpeg-external",
-      "platforms": [
-        "linux",
-        "windows"
-      ],
-      "version": "Optional waveform helper resolved from PATH",
-      "license_expression": null,
-      "review_status": "needs_review",
-      "source": {
-        "repository": "https://ffmpeg.org"
-      },
-      "evidence": [
-        {
-          "path": "lib/services/audio/waveform_service.dart",
-          "note": "The waveform helper executes ffmpeg from PATH; it is not the separately verified FFmpeg code inside libmpv.",
-          "sha256": "5be1f3a560f5cde143764c6869bd4419b21d35f1050e107721782a4e2d20b037"
-        },
-        {
-          "path": "scripts/build_linux_audio.py",
-          "note": "Candidate recipe includes a controlled LGPL FFmpeg CLI for local audio decoding and PCM output; it has not been built here.",
-          "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08"
-        },
-        {
-          "path": "scripts/build_windows_audio.py",
-          "sha256": "d8d664c4226977f4506440f3507a942bae5a47e26ff2d591d8b97cb3c43a6e7f",
-          "note": "Controlled Windows build uses a private source-built FFmpeg configuration; an arbitrary separately installed FFmpeg executable remains outside that controlled candidate."
-        }
-      ],
-      "blockers": [
-        "For a controlled release, supply and select an audited helper or explicitly exclude optional external ffmpeg from the distribution. A system ffmpeg can be GPL even when libmpv is LGPL.",
-        "Record the exact helper hash, FFmpeg license/configuration and linked dependency closure for any shipped helper; do not bundle CI media-fixture tools automatically."
-      ]
-    },
-    {
-      "id": "linux-mimalloc-2.1.2",
-      "platforms": [
-        "linux"
-      ],
-      "version": "2.1.2",
-      "license_expression": "MIT",
-      "review_status": "needs_review",
-      "artifact": {
-        "url": "https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz",
-        "sha256": "2b1bff6f717f9725c70bf8d79e4786da13de8a270059e4ba0bdd262ae7be46eb",
-        "md5": "5179c8f5cf1237d2300e2d8559a7bc55"
-      },
-      "source": {
-        "repository": "https://github.com/microsoft/mimalloc",
-        "revision": "v2.1.2"
-      },
-      "evidence": [
-        {
-          "url": "https://pub.dev/packages/media_kit_libs_linux/versions/1.2.1",
-          "note": "Installed CMake downloads this source and links mimalloc.o by default. The Linux plugin itself bundles no libmpv."
-        }
-      ],
-      "blockers": [
-        "Include the exact MIT notice and record the actual linked object/source provenance in the final Linux build. A source archive hash does not identify the compiled release object."
-      ]
-    },
-    {
       "id": "libsmb2-r9",
       "platforms": [
         "android",
@@ -399,7 +164,7 @@
       "platforms": [
         "linux"
       ],
-      "version": "Host-resolved GTK/GLib/libsecret and compiler runtime",
+      "version": "Host-resolved GTK/GLib/libsecret, ALSA/PulseAudio and compiler runtime",
       "license_expression": null,
       "review_status": "needs_review",
       "evidence": [
@@ -409,7 +174,7 @@
         }
       ],
       "blockers": [
-        "Capture exact final ELF dependencies, their versions/licenses and redistribution policy; system libmpv is covered by the separate desktop component."
+        "Capture exact final ELF dependencies, dynamically loaded native audio backends, their versions/licenses and redistribution policy. Removing mpv/FFmpeg does not remove LGPL system libraries."
       ]
     },
     {
@@ -446,17 +211,17 @@
         "linux",
         "windows"
       ],
-      "version": "Shared Sonic C, Bungee Basic, Signalsmith Stretch and Chromium-derived WSOLA core; Android, Apple and controlled mpv adapters",
+      "version": "Shared Sonic C, Bungee Basic, Signalsmith Stretch and Chromium-derived WSOLA core; Android, Apple and direct Dart/native desktop adapters",
       "license_expression": "MIT AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND LicenseRef-PFFFT-FFTPACK",
       "review_status": "needs_review",
       "source_review_status": "reviewed",
       "license_review_status": "reviewed",
       "artifact_review_status": "pending_target_artifact_validation",
-      "scope": "The unchanged upstream source/license closure, derived BSD-3-Clause WSOLA fork/fixtures and independent native adapters are reviewed separately from each shipped artifact. The same seven-component source closure is used by Android, Apple local-file playback and controlled desktop mpv builds. Existing platform defaults are retained. Source review does not approve a binary, complete NDK/Maven/system closure, real-time performance, or app-store distribution.",
+      "scope": "Seven unchanged upstream DSP components and 258 original files, derived BSD WSOLA and independent adapters are reviewed separately from target artifacts. Android/Apple defaults remain; desktop Dart transport links the same core directly. No mpv/FFmpeg adapter remains in the runtime graph. Source review does not establish binary provenance, device quality or release approval.",
       "source": {
         "repository": "https://github.com/CrispStrobe/crisperplayer",
         "source_url": "https://github.com/CrispStrobe/crisperplayer/tree/bea68aca9a357ce713e83653c269de7937e9fc63/packages/just_audio/native/crisper_dsp",
-        "local_adapter_identity": "Exact just_audio and just_audio_media_kit package source-tree hashes, reviewed upstream patches/local additions and platform-scoped build-input hashes in dependencies.json. Independent DSP/Apple adapters retain MIT; the Chromium-derived WSOLA implementation/fixtures retain BSD-3-Clause. The mpv integration retains its declared license and does not relabel linked native payloads.",
+        "local_adapter_identity": "Exact just_audio and crisper_audio package source-tree hashes, original-source manifests, reversible patches and platform-scoped input hashes in dependencies.json. Independent Dart/DSP/output/Apple adapters retain MIT; derived Chromium WSOLA retains BSD-3-Clause.",
         "upstream_component_count": 7,
         "upstream_file_count": 258,
         "upstream_modified": false,
@@ -569,12 +334,12 @@
         },
         {
           "path": "packages/just_audio/UPSTREAM.patch",
-          "sha256": "7e9729bfbf80e10efbe8ef105e2a329ba5957101656c52dbbffa74ce13d6e31b",
+          "sha256": "45ac26a7e1d21a89d26d21354145102f5782c7444ea46e260cef56730aa3356f",
           "note": "Complete reviewed changes to upstream just_audio files and independently inventoried local adapter/fork/test/build additions."
         },
         {
           "path": "packages/just_audio/LOCAL_ADDITIONS.json",
-          "sha256": "0df28fd67180a6373c4f5339ec2296c95201f41db951304d004886d396c4e686",
+          "sha256": "e0d856072b940f3b676ea269774a05f6af87cf6327debfa6ca39577dad503a41",
           "note": "Exact local adapter, derived fork, reference fixture/shim and build-file list; each current hash is also recorded as a build input."
         },
         {
@@ -604,7 +369,7 @@
         },
         {
           "path": "lib/services/native_licenses.dart",
-          "sha256": "6d160ebd606ed5fcca5b8c3e6c1547809c3a9ac45fe746a7fb687307fd2e71e3",
+          "sha256": "7ecfb24ed59414c56f9fab42c1290e3577747ceac754e988d2da64b9b67b626d",
           "note": "Registers portable DSP notices and the platform/native component notices in the in-app license registry."
         },
         {
@@ -619,7 +384,7 @@
         },
         {
           "path": ".github/workflows/android-audio.yml",
-          "sha256": "931813ab5cd3d612ff8d1615667e78f0b3ebfb8cacf4ce543b966541c56741f2",
+          "sha256": "9ccae70a990fbaef26591ce8feea3598f3718554103b55a50a3fee9ffa0aeacc",
           "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
         },
         {
@@ -654,7 +419,7 @@
         },
         {
           "path": "packages/just_audio/native/crisper_dsp/README.md",
-          "sha256": "3fd9c95d5c74ed1660d1754842357d9131f80e0f9919e2d8b25a963b170fc9f9",
+          "sha256": "3c0e2167878e1da7750b7e68114cf47a8221691bfafab37288a79a5981c9dde0",
           "note": "Shared core API, source closure, integration paths, contract and validation limits. Host assertions do not establish device playback or artifact approval."
         },
         {
@@ -688,84 +453,19 @@
           "note": "Dispatches explicitly selected portable Apple processing while retaining the upstream AVPlayer path for existing platform defaults."
         },
         {
-          "path": "packages/just_audio_media_kit/UPSTREAM.json",
-          "sha256": "9a25d7f02d2782db91fa6d5c26143ffcdadeeafd26ff0344674ef91cfad8a754",
-          "note": "Exact upstream pub.dev 2.1.0 archive/hash, eight original-file hashes and local addition list for the Unlicense desktop Dart adapter."
-        },
-        {
-          "path": "packages/just_audio_media_kit/UPSTREAM.patch",
-          "sha256": "aa9077378c6c73c8d7de6c459871fe0081d6cd16eeadb41720b2483e2de49674",
-          "note": "Complete reversible desktop Dart adapter patch including explicit processor selection and runtime capability verification; no native binary."
-        },
-        {
-          "path": "packages/just_audio_media_kit/UPSTREAM.md",
-          "sha256": "6c93d866ea20ffead97d65662aee0fd2ba06a6361e6399a39d176a634fc3ad75",
-          "note": "Maintained desktop adapter boundary and upstream update procedure; the retained grant is Unlicense and native payloads remain separate."
-        },
-        {
-          "path": "packages/just_audio/native/mpv/af_crisper.c",
-          "sha256": "609b73a92ee638ae636d3bdeb50f1cc380ff287472fcee5f070377fd73d3be23",
-          "note": "Independent MIT mpv filter adapter to the shared native core. The linked mpv and FFmpeg retain their own LGPL/build/source requirements."
-        },
-        {
-          "path": "packages/just_audio/native/mpv/meson.build",
-          "sha256": "c4f4ad3387836f72c1b73a1d6f97e5401fa7bfef8547f7c422ca2b86c34ed4a4",
-          "note": "Explicit shared-core source list for controlled mpv builds, with EIGEN_MPL2_ONLY and no dependency download."
-        },
-        {
-          "path": "packages/just_audio/native/mpv/upstream.json",
-          "sha256": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419",
-          "note": "Exact mpv v0.42.0 archive and pristine integration-file hashes required before preparing the local filter patch."
-        },
-        {
-          "path": "scripts/prepare_portable_mpv.py",
-          "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
-          "note": "Validates pristine mpv integration files and the shared vendor manifest before copying the core, generating the local patch and retaining provenance evidence."
-        },
-        {
-          "path": "scripts/build_linux_audio.py",
-          "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08",
-          "note": "Controlled Linux/Windows source recipe builds the core into explicitly non-GPL mpv and private FFmpeg; retains source, patch, hashes and candidate test outputs. Source configuration is not final artifact approval."
-        },
-        {
-          "path": "scripts/build_windows_audio.py",
-          "sha256": "d8d664c4226977f4506440f3507a942bae5a47e26ff2d591d8b97cb3c43a6e7f",
-          "note": "Windows UCRT64 entry point to the pinned shared recipe; WASAPI output and a private LGPL-configured FFmpeg rather than a prebuilt MSYS2 FFmpeg."
-        },
-        {
-          "path": "scripts/smoke_desktop_audio.py",
-          "sha256": "6b7fc530e409267d947e9812acab9f3e06fdc36fb1b277b315f70d0d85840ff4",
-          "note": "Can require all four portable filter modes plus the tempo-aware atempo path on the actual loaded controlled mpv candidate. No passing full-target result is implied by this source pin."
-        },
-        {
-          "path": "scripts/run_portable_desktop.py",
-          "sha256": "f1cc88ae68904474bcfaf265f968e02d7b1df220b301697d9ee0565e51a31472",
-          "note": "Runs desktop Flutter against the explicit controlled libmpv prefix; source helper alone neither replaces nor approves bundled/default native binaries."
-        },
-        {
           "path": ".github/workflows/portable-dsp.yml",
-          "sha256": "b629d1298848916ee88129f9244f3cd8d05a5a91b5fb9f5857cfbf9a7ba83b39",
+          "sha256": "abc37a7e4d5ffe14dcaaad910950c01e948ade3298fd22ad60bf86e66814211a",
           "note": "Cross-platform shared-core build/test workflow and adapter validation; only completed retained target output can establish actual CI results."
         },
         {
-          "path": ".github/workflows/desktop-portable-audio.yml",
-          "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
-          "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
-        },
-        {
-          "path": "licensing/evidence/portable_linux_host_2026-11-11.json",
-          "sha256": "7d19ed57f47ba452db7f8d19facf398511b5f04d504ce1032b0396527c3f2c99",
-          "note": "Actual Linux x86-64 controlled source build: nine native binary hashes/marker inspections, observed runtime resolution, exact source/preparation inputs and 35 passing native PCM checks. Explicit release_approved: false; no target-package approval or evidence for another platform."
-        },
-        {
-          "path": "licensing/evidence/portable_linux_playback_2026-11-11.json",
-          "sha256": "ee3531c142b2e5c5d413649f73c27b0c585f07525b34f1083ff0b57467dca8ba",
-          "note": "Exact retained successful native playback report for seven modes at five rates; optional filter inventory/readback and native-error rejection prevent a timed fallback from passing. Report and tested libmpv binary have separate recorded hashes."
+          "path": "licensing/evidence/direct_native_audio_2026-11-11.json",
+          "sha256": "d0aaba5996120d483e2dd3bb02a5cf101fd9a5565bbbed24d6f6c3599cc0f5e6",
+          "note": "Actual Linux host artifact hash, source/runtime audit, offline Apache table regeneration and functional validation. Manual/null output only; not target-device or release approval."
         }
       ],
       "blockers": [
         "Retain target-specific compiled artifacts and inspect packaged hashes, linked dependencies and notices for Android, iOS, macOS, Linux and Windows. The shared source review is not blanket artifact approval.",
-        "Review exact source/build correspondence and source delivery for each shipped native artifact. Preserve MPL-covered source availability and all original notices; controlled desktop libmpv/FFmpeg must also satisfy its own LGPL source/replacement requirements.",
+        "Review exact source/build correspondence and source delivery for each shipped native artifact. Preserve MPL-covered source availability and all original notices.",
         "Android requires the existing APK ELF/DEX/JNI/ABI/alignment and pinned NDK runtime audit. Apple and desktop integration need target playback, seek, end-of-stream, interruption and routing validation; host signal tests alone do not establish these behaviors."
       ]
     },
@@ -812,22 +512,22 @@
         },
         {
           "path": "lib/services/native_licenses.dart",
-          "sha256": "6d160ebd606ed5fcca5b8c3e6c1547809c3a9ac45fe746a7fb687307fd2e71e3",
+          "sha256": "7ecfb24ed59414c56f9fab42c1290e3577747ceac754e988d2da64b9b67b626d",
           "note": "Registers Android DSP notices and the prepared exact NDK notice asset in the app license registry."
         },
         {
           "path": ".github/workflows/android-audio.yml",
-          "sha256": "931813ab5cd3d612ff8d1615667e78f0b3ebfb8cacf4ce543b966541c56741f2",
+          "sha256": "9ccae70a990fbaef26591ce8feea3598f3718554103b55a50a3fee9ffa0aeacc",
           "note": "Builds and inspects debug plus debug-signed R8 release APKs for arm64 and x86-64 after collecting pinned NDK notices."
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "fd2a6765e7925af69378dc41c3bab6ebb2655b2dd8488db8dbe74e25d9238c2a",
+          "sha256": "bbe5659bfa57e4fc88b52cb59a2c07d8f0a8d65cea46e03f7cf822ccbfc26d8d",
           "note": "Manual Android build prepares exact notices and audits the three-ABI release APK before artifact publication."
         },
         {
           "path": ".github/workflows/release.yml",
-          "sha256": "2b0047bf8d72e50d3b3049d18cf3d7991273c7e7b93c14e40eb3078c9fb5f96b",
+          "sha256": "e47434292760d8973dc4fe9ede315e84ae8c1a9bf8f6e784b5b4155e41272897",
           "note": "Source policy enforcement precedes generated notices. The final staged signed three-ABI APK is audited before release artifacts are published; signing and release authority remain unchanged."
         }
       ],
@@ -835,6 +535,371 @@
         "Run the exact installed-NDK notice preparation and final APK inspection, retaining per-ABI libc++_shared.so hashes, original/stripped byte comparisons, llvm-strip provenance, NDK source.properties and included notices. Script and fixture validation do not identify an actual redistributed runtime.",
         "Review the resulting runtime source/build provenance and applicable third-party notices before changing the artifact or license review status. Aggregate NDK notices also describe unshipped build tools."
       ]
+    },
+    {
+      "id": "desktop-glint-decoders",
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "version": "Pinned Glint 7b458cff0fc9c397f671c422db4770c72fc22f5c selected decoders with documented bounded-frame patches",
+      "license_expression": "MIT AND Apache-2.0",
+      "declared_license_expression": "MIT",
+      "review_status": "needs_review",
+      "source_review_status": "pinned_with_reproducible_apache_tables",
+      "license_review_status": "reviewed_selected_source_grants",
+      "artifact_review_status": "pending_target_artifact_validation",
+      "scope": "Selected Glint decoder source closure with documented bounded-frame patches. AAC numerical tables are generated offline from immutable, hash-verified Apache-2.0 vo-aacenc inputs, with all 45 arrays and 3,229 values unchanged and complete original notices. Historical reproducing revisions are recorded separately from the unknown original invocation. No encoders, whole-file convenience decoder, FFmpeg or mpv runtime is compiled.",
+      "source": {
+        "repository": "https://github.com/CrispStrobe/glint",
+        "revision": "7b458cff0fc9c397f671c422db4770c72fc22f5c"
+      },
+      "evidence": [
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/UPSTREAM.json",
+          "sha256": "f9360f99d78ca807531cb26ff53ee15a1a2ad1277e752d5a4d0ba2ed77ea8e51",
+          "note": "Exact original/current file hashes, upstream commit and local patch identity; separately checked by audit_native_audio.py."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/UPSTREAM.md",
+          "sha256": "9167a28c44a2e5d6e2396861138a5caf39fd7d744110b39b4c72b8d5a7f6755c",
+          "note": "Selected codec scope, local modifications and reproducible Apache AAC-table source treatment."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/LICENSE",
+          "sha256": "ab08fb7ec4a030bd27a9a0d1fb60a39b832f7779fb11d0f2753e85593f6f944e",
+          "note": "Exact upstream MIT declaration, not blanket closure clearance."
+        },
+        {
+          "path": "assets/licenses/DESKTOP-AUDIO.txt",
+          "sha256": "1a3511643dd344507dfd9bcf63ec66cf5d7a6821209739a2fc2338f9250adf15",
+          "note": "In-app decoder/output grants, including complete Apache table-source license and original notices."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/provenance/aac_tables.json",
+          "sha256": "1f32f516f4ff1b096e35b6210f5c42b34d0f0914a78cd035a38b1144bc648a4e",
+          "note": "Immutable original/current source pins, historical reproducing pair, Apache-only offline regeneration and unchanged table/body fingerprints."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/provenance/AAC_TABLES.md",
+          "sha256": "775cc98f4e789baad8260feba1951715fd05bc7e40aae6753f73cdf3616ceb61",
+          "note": "Source mapping, exact reconstruction method, scoped license selection and retained notices."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/provenance/vo-aacenc/COPYING",
+          "sha256": "8b3f1762349248d444ab9acbafe73941254e36e1064954da56bb9ddbd5873ddb",
+          "note": "Exact Apache-2.0 grant for the selected numerical table sources."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/provenance/vo-aacenc/NOTICE",
+          "sha256": "e2ae60e14bece975eeab49210fcaf4ee529b77e6ca13e7d6556b6bb203897b31",
+          "note": "Complete upstream root notice, retained without claiming unrelated Unicode data is selected."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/glint/provenance/vo-aacenc/AACENC_NOTICE",
+          "sha256": "38751245389e1e23f73e6f5384b5cbe7fa972cc4410c5adc9c04b082a0b9561a",
+          "note": "Complete original AAC encoder-source notice for the selected table inputs."
+        },
+        {
+          "path": "licensing/evidence/direct_native_audio_2026-11-11.json",
+          "sha256": "d0aaba5996120d483e2dd3bb02a5cf101fd9a5565bbbed24d6f6c3599cc0f5e6",
+          "note": "Actual Linux host artifact hash, source/runtime audit, offline Apache table regeneration and functional validation. Manual/null output only; not target-device or release approval."
+        }
+      ],
+      "blockers": [
+        "Validate final Windows/Linux packaged codec binaries, dependency closure, exact source/build correspondence and delivered notices. Host decoder/seek tests and reproducible source tables do not approve target artifacts."
+      ]
+    },
+    {
+      "id": "desktop-native-output",
+      "platforms": [
+        "linux",
+        "windows"
+      ],
+      "version": "crisper_audio ABI 1; miniaudio 0.11.25 pinned through CometBeat a9e4d0e553b94369ad883596c9e686e8581c62a2",
+      "license_expression": "MIT AND Unlicense",
+      "review_status": "needs_review",
+      "source_review_status": "pinned_original_bytes",
+      "license_review_status": "declared_grants_identified",
+      "artifact_review_status": "pending_target_artifact_validation",
+      "scope": "Independent MIT host plus exact miniaudio header under its public-domain/Unlicense alternative. Both original alternative grants retained. Device output only; miniaudio decoders/engine/resource manager disabled. OS audio runtimes remain separate.",
+      "source": {
+        "repository": "https://github.com/CrispStrobe/cometbeat",
+        "revision": "a9e4d0e553b94369ad883596c9e686e8581c62a2",
+        "upstream_path": "native/aec/src/vendor/miniaudio.h"
+      },
+      "evidence": [
+        {
+          "path": "packages/crisper_audio/native/vendor/miniaudio.manifest.json",
+          "sha256": "1bea7b659fb4997ea27ed370a3cb8dfbc7020fee67dd3def415464dd2046c4d5",
+          "note": "Exact source/header and dual-grant hashes checked by the native artifact audit."
+        },
+        {
+          "path": "packages/crisper_audio/native/vendor/miniaudio.LICENSE",
+          "sha256": "bde09ed161fef45da2194cba70601aab33ca6fdfe6eed2e3d95efd15b48561f9",
+          "note": "Original complete public-domain/Unlicense and MIT-0 alternative grants; Unlicense explicitly selected for this inventory."
+        },
+        {
+          "path": "packages/crisper_audio/native/crisper_output.h",
+          "sha256": "59ece8cc9fc8fa554ca0690c648f2025904f06836e010423e46c645b5a5211da",
+          "note": "Bounded queue ABI, failure contract, callback-based presentation estimate and stated timing limits."
+        },
+        {
+          "path": "scripts/audit_native_audio.py",
+          "sha256": "7fc982899e791ce713ca8cdacc1066c1f07582601301f3ae180baaa8ca26953e",
+          "note": "Loads actual native payload, exercises all four engines and output clock, queue and decoder ABI; verifies source hashes and rejects mpv/FFmpeg-family payloads."
+        },
+        {
+          "path": "licensing/evidence/direct_native_audio_2026-11-11.json",
+          "sha256": "d0aaba5996120d483e2dd3bb02a5cf101fd9a5565bbbed24d6f6c3599cc0f5e6",
+          "note": "Actual Linux host artifact hash, source/runtime audit, offline Apache table regeneration and functional validation. Manual/null output only; not target-device or release approval."
+        }
+      ],
+      "blockers": [
+        "Inspect final Windows/Linux app bundles and runtime dependencies, preserve original notices and retain exact source/build correspondence.",
+        "Validate physical output, route/interruption handling and latency on each target; the backend presentation estimate is not a hardware/DAC clock."
+      ]
     }
-  ]
+  ],
+  "retired_desktop_audio": {
+    "scope": "Historical identities before direct native desktop migration. These components are no longer in the current runtime graph. Their old source references describe commit30718ac0da888ccb77966d1500a22b49f716fce4 and are not current build inputs.",
+    "replacement_commit": "89e5f389556b02f7eb88c2162fa0be61efc14563",
+    "components": [
+      {
+        "id": "windows-libmpv-audio-2023-09-24",
+        "platforms": [
+          "windows"
+        ],
+        "version": "media_kit_libs_windows_audio 1.0.9 / mpv v0.36.0-403-g652a1dd907",
+        "license_expression": "LGPL-3.0-or-later",
+        "review_status": "needs_review",
+        "artifact": {
+          "url": "https://github.com/media-kit/libmpv-win32-audio-build/releases/download/2023-09-24/mpv-dev-x86_64-20230924-git-652a1dd.7z",
+          "sha256": "583af5a291fc99ae2641794ede1955c368eb4c19dc05f4f0a9c7f9456edeb6a8",
+          "md5": "cd738e16e2a19626d7cfa48801524f8c",
+          "binary_filename": "libmpv-2.dll",
+          "binary_sha256": "0a5a0b476866c91a639a4e511e8153968f8fa23564461b0aa09acdba816164a4"
+        },
+        "source": {
+          "repository": "https://github.com/media-kit/libmpv-win32-audio-build",
+          "revision": "2023-09-24",
+          "release_tree": "f0f6ac7483396f345820660176cc84e2dd6ba220",
+          "mpv_revision": "652a1dd90711839acdccc08004056d25514ef2d8"
+        },
+        "evidence": [
+          {
+            "path": "licensing/evidence/windows_audio_2023-09-24.json",
+            "sha256": "99a5c3602e920ef29bfce058ec3a524944b2a1bc677201a88890659125f1685a",
+            "note": "Inspected actual DLL from the pinned archive: mpv -Dgpl=false; all six FFmpeg license markers LGPL version 3 or later; --disable-gpl --disable-nonfree --enable-version3. These markers support an LGPL candidate, not complete distribution approval."
+          },
+          {
+            "url": "https://api.github.com/repos/media-kit/libmpv-win32-audio-build/git/trees/2023-09-24?recursive=1",
+            "note": "The release tag tree contains only a version marker; it is not the complete corresponding source/build manifest."
+          },
+          {
+            "path": "licensing/linux_audio_sources.json",
+            "sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
+            "note": "Same exact source pins for the optional Windows controlled build. This does not describe the older bundled DLL."
+          },
+          {
+            "path": "scripts/build_windows_audio.py",
+            "sha256": "d8d664c4226977f4506440f3507a942bae5a47e26ff2d591d8b97cb3c43a6e7f",
+            "note": "Windows-specific entry point for the controlled source recipe; no claim that the candidate DLL has been built or inspected."
+          },
+          {
+            "path": "scripts/build_linux_audio.py",
+            "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08",
+            "note": "Shared implementation builds private LGPL-configured FFmpeg and non-GPL mpv with the local portable core; never adopts prebuilt MSYS2 FFmpeg."
+          },
+          {
+            "path": "scripts/prepare_portable_mpv.py",
+            "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
+            "note": "Exact pinned-source validation and source/patch retention for the controlled mpv filter."
+          },
+          {
+            "path": "packages/just_audio/native/mpv/upstream.json",
+            "sha256": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419",
+            "note": "Pinned current mpv integration identity for the optional controlled build; distinct from the older bundled binary revision."
+          },
+          {
+            "path": "assets/licenses/DESKTOP-AUDIO.txt",
+            "sha256": "11b3ca220217f9d4a09acca95a54635cf5a6e1e28f8e41fc50f23e403dd0eb95",
+            "note": "Historical Windows binary identity and unresolved LGPL obligations remain explicit alongside the source-built alternative."
+          },
+          {
+            "path": ".github/workflows/desktop-portable-audio.yml",
+            "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
+            "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
+          }
+        ],
+        "blockers": [
+          "Establish and retain complete matching source revisions, modifications, build settings and dependency/relink materials for the static native code inside this exact DLL; a default-branch recipe is insufficient.",
+          "Review actual target packaging, notices, source delivery and library replacement/relink obligations before distribution."
+        ],
+        "controlled_alternative": {
+          "review_status": "needs_review",
+          "artifact_review_status": "not_built_or_inspected",
+          "version": "Candidate mpv 0.42.0 / FFmpeg 9.0.2 with shared portable crisperdsp filter",
+          "source_manifest": "licensing/linux_audio_sources.json",
+          "source_manifest_sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
+          "recipe": "scripts/build_windows_audio.py",
+          "platform": "windows",
+          "toolchain": "MSYS2 UCRT64; explicit private FFmpeg build; WASAPI output",
+          "scope": "An explicit source-built alternative, selected through the controlled prefix at runtime. It does not replace or approve the historical media_kit DLL recorded above. The exact produced DLL, linked dependency closure, complete corresponding source, notices and replacement/relink materials remain to be validated."
+        }
+      },
+      {
+        "id": "linux-libmpv-controlled",
+        "platforms": [
+          "linux"
+        ],
+        "version": "Candidate controlled mpv 0.42.0 with portable crisperdsp filter / FFmpeg 9.0.2; otherwise system libmpv",
+        "license_expression": null,
+        "review_status": "needs_review",
+        "source": {
+          "repository": "https://github.com/mpv-player/mpv",
+          "revision": "v0.42.0"
+        },
+        "evidence": [
+          {
+            "path": "licensing/linux_audio_sources.json",
+            "sha256": "03ff030aac33bcc718720822516ba341fc5930c87dfeb1ab6343dbfd95ca5b1b",
+            "note": "Hash-pinned candidate sources. Default distro libmpv is not covered by this recipe."
+          },
+          {
+            "path": "scripts/build_linux_audio.py",
+            "note": "Isolated shared-library source recipe with GPL/nonfree/autodetection disabled and no Meson fallback downloads; includes the shared portable processor filter and retains candidate evidence.",
+            "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08"
+          },
+          {
+            "path": "scripts/prepare_portable_mpv.py",
+            "sha256": "2e02deef27261cadbd464c0e9b619ddb24fd09395321c37f9272698b6df6c0d5",
+            "note": "Validates exact original mpv files and shared DSP closure, applies the independent local filter, and retains corresponding-source patch evidence."
+          },
+          {
+            "path": "packages/just_audio/native/mpv/upstream.json",
+            "sha256": "52f7e001ae05b3f4909757c128834462878d51cf1b961b1a43ee0e47cd1a6419",
+            "note": "Exact unmodified mpv v0.42.0 archive/integration-file identity for the local crisperdsp filter preparation."
+          },
+          {
+            "path": "packages/just_audio/native/mpv/af_crisper.c",
+            "sha256": "609b73a92ee638ae636d3bdeb50f1cc380ff287472fcee5f070377fd73d3be23",
+            "note": "Local MIT filter adapter compiled into controlled LGPL-configured mpv; original native DSP and mpv/FFmpeg grants remain separate."
+          },
+          {
+            "path": "packages/just_audio/native/mpv/meson.build",
+            "sha256": "c4f4ad3387836f72c1b73a1d6f97e5401fa7bfef8547f7c422ca2b86c34ed4a4",
+            "note": "Exact source and build-option closure of the optional portable core inside controlled libmpv."
+          },
+          {
+            "path": "scripts/smoke_desktop_audio.py",
+            "sha256": "6b7fc530e409267d947e9812acab9f3e06fdc36fb1b277b315f70d0d85840ff4",
+            "note": "Actual candidate playback/render smoke test entry point including optional required portable filters; a script pin is not a successful runtime result."
+          },
+          {
+            "path": "assets/licenses/DESKTOP-AUDIO.txt",
+            "sha256": "11b3ca220217f9d4a09acca95a54635cf5a6e1e28f8e41fc50f23e403dd0eb95",
+            "note": "Retains historical binary evidence and LGPL obligations while explaining the controlled build and capability-gated processors."
+          },
+          {
+            "path": ".github/workflows/desktop-portable-audio.yml",
+            "sha256": "47cd97625b7186f8d76d7283b865d113432da7283798ff439ebda8a8a7df34d8",
+            "note": "Controlled Linux/Windows native build and PCM integration workflow. Vulkan headers are a libplacebo build prerequisite while Vulkan rendering remains disabled. A workflow definition alone is not evidence that a target job has run."
+          },
+          {
+            "path": "licensing/evidence/portable_linux_host_2026-11-11.json",
+            "sha256": "7d19ed57f47ba452db7f8d19facf398511b5f04d504ce1032b0396527c3f2c99",
+            "note": "Actual Linux x86-64 controlled source build: nine native binary hashes/marker inspections, observed runtime resolution, exact source/preparation inputs and 35 passing native PCM checks. Explicit release_approved: false; no target-package approval or evidence for another platform."
+          },
+          {
+            "path": "licensing/evidence/portable_linux_playback_2026-11-11.json",
+            "sha256": "ee3531c142b2e5c5d413649f73c27b0c585f07525b34f1083ff0b57467dca8ba",
+            "note": "Exact retained successful native playback report for seven modes at five rates; optional filter inventory/readback and native-error rejection prevent a timed fallback from passing. Report and tested libmpv binary have separate recorded hashes."
+          }
+        ],
+        "blockers": [
+          "Review and pin the complete toolchain/system dependency closure, inspect the final ELF runtime resolution, provide source/notices, and demonstrate replaceable shared-library packaging before approving a release.",
+          "System libmpv discovered by name may be a GPL build; its presence cannot satisfy this component."
+        ],
+        "artifact_review_status": "pending_release_packaging_validation",
+        "candidate_validation": {
+          "platform": "linux",
+          "architecture": "x86_64",
+          "build_status": "compiled_and_linked",
+          "native_pcm_checks_passed": 35,
+          "processor_modes": 7,
+          "release_approved": false,
+          "binary": {
+            "filename": "libmpv.so.2.6.0",
+            "sha256": "99bed290e3bd4eadf1e3d4a9a8cd072715d8dab56d3495da855170dd21bd349b",
+            "size_bytes": 2833032
+          },
+          "evidence": "licensing/evidence/portable_linux_host_2026-11-11.json",
+          "playback_report": "licensing/evidence/portable_linux_playback_2026-11-11.json",
+          "scope": "Observed host candidate only. The packaged Flutter application, target audio-device behavior, redistributable dependency closure, source/notices and replacement/relink materials remain pending."
+        }
+      },
+      {
+        "id": "desktop-ffmpeg-external",
+        "platforms": [
+          "linux",
+          "windows"
+        ],
+        "version": "Optional waveform helper resolved from PATH",
+        "license_expression": null,
+        "review_status": "needs_review",
+        "source": {
+          "repository": "https://ffmpeg.org"
+        },
+        "evidence": [
+          {
+            "path": "lib/services/audio/waveform_service.dart",
+            "note": "The waveform helper executes ffmpeg from PATH; it is not the separately verified FFmpeg code inside libmpv.",
+            "sha256": "5be1f3a560f5cde143764c6869bd4419b21d35f1050e107721782a4e2d20b037"
+          },
+          {
+            "path": "scripts/build_linux_audio.py",
+            "note": "Candidate recipe includes a controlled LGPL FFmpeg CLI for local audio decoding and PCM output; it has not been built here.",
+            "sha256": "af956d16d71cdc6b6577de7293947ac733f75848a3eb4d681019f6a7f13dae08"
+          },
+          {
+            "path": "scripts/build_windows_audio.py",
+            "sha256": "d8d664c4226977f4506440f3507a942bae5a47e26ff2d591d8b97cb3c43a6e7f",
+            "note": "Controlled Windows build uses a private source-built FFmpeg configuration; an arbitrary separately installed FFmpeg executable remains outside that controlled candidate."
+          }
+        ],
+        "blockers": [
+          "For a controlled release, supply and select an audited helper or explicitly exclude optional external ffmpeg from the distribution. A system ffmpeg can be GPL even when libmpv is LGPL.",
+          "Record the exact helper hash, FFmpeg license/configuration and linked dependency closure for any shipped helper; do not bundle CI media-fixture tools automatically."
+        ]
+      },
+      {
+        "id": "linux-mimalloc-2.1.2",
+        "platforms": [
+          "linux"
+        ],
+        "version": "2.1.2",
+        "license_expression": "MIT",
+        "review_status": "needs_review",
+        "artifact": {
+          "url": "https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz",
+          "sha256": "2b1bff6f717f9725c70bf8d79e4786da13de8a270059e4ba0bdd262ae7be46eb",
+          "md5": "5179c8f5cf1237d2300e2d8559a7bc55"
+        },
+        "source": {
+          "repository": "https://github.com/microsoft/mimalloc",
+          "revision": "v2.1.2"
+        },
+        "evidence": [
+          {
+            "url": "https://pub.dev/packages/media_kit_libs_linux/versions/1.2.1",
+            "note": "Installed CMake downloads this source and links mimalloc.o by default. The Linux plugin itself bundles no libmpv."
+          }
+        ],
+        "blockers": [
+          "Include the exact MIT notice and record the actual linked object/source provenance in the final Linux build. A source archive hash does not identify the compiled release object."
+        ]
+      }
+    ]
+  }
 }

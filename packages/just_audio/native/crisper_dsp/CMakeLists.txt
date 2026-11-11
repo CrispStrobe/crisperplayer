@@ -40,6 +40,11 @@ target_compile_definitions(crisper_dsp PRIVATE
   EIGEN_MPL2_ONLY=1 EIGEN_DONT_PARALLELIZE=1 BUNGEE_SELF_TEST=0
   BUNGEE_VISIBILITY= BUNGEE_VERSION="61f52bf34be577d189d388772ddfa3696dee77d8"
   eigen_assert=BUNGEE_ASSERT1)
+# MSVC requires this before <math.h> for FFTPACK's M_PI constants. Keep the
+# definition on our target so the pinned upstream C sources remain unchanged.
+if(MSVC)
+  target_compile_definitions(crisper_dsp PRIVATE _USE_MATH_DEFINES)
+endif()
 # Native audio processing needs optimization even in Flutter Debug builds.
 target_compile_options(crisper_dsp PRIVATE
   $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-O2>

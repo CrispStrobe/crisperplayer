@@ -9,5 +9,8 @@
 #define MA_NO_RESOURCE_MANAGER
 #define MA_NO_NODE_GRAPH
 #define MA_NO_ENGINE
+// Use native platform output and Linux PulseAudio/ALSA, without the optional
+// JACK client-library fallback.
+#define MA_NO_JACK
 #include "vendor/miniaudio.h"
 #endif

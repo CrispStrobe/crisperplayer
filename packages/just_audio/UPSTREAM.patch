@@ -46,6 +46,429 @@
 +    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 +    androidTestImplementation("androidx.test:runner:1.6.2")
  }
+--- a/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java
++++ b/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java
+@@ -95,6 +95,8 @@
+     private IcyHeaders icyHeaders;
+     private AudioAttributes pendingAudioAttributes;
+     private LoadControl loadControl;
++    // CrisperPlayer: Sonic retains the untouched upstream playback pipeline.
++    private int crisperSpeedProcessor;
+     private boolean offloadSchedulingEnabled;
+     private AudioOffloadPreferences audioOffloadPreferences;
+     private boolean useLazyPreparation;
+@@ -180,6 +182,11 @@
+         if (audioLoadConfiguration != null) {
+             Map<?, ?> loadControlMap = (Map<?, ?>)audioLoadConfiguration.get("androidLoadControl");
+             if (loadControlMap != null) {
++                Object speedProcessor = loadControlMap.get("speedProcessor");
++                crisperSpeedProcessor = speedProcessor == null || "sonic".equals(speedProcessor) ? 0
++                    : "bungee".equals(speedProcessor) ? 1
++                    : "signalsmith".equals(speedProcessor) ? 2
++                    : "wsola".equals(speedProcessor) ? 3 : -1;
+                 DefaultLoadControl.Builder builder = new DefaultLoadControl.Builder()
+                     .setBufferDurationsMs(
+                         (int)((getLong(loadControlMap.get("minBufferDuration")))/1000),
+@@ -206,6 +213,13 @@
+                     .setMinPossibleLiveOffsetSmoothingFactor((float)((double)((Double)livePlaybackSpeedControlMap.get("minPossibleLiveOffsetSmoothingFactor"))));
+                 livePlaybackSpeedControl = builder.build();
+             }
++        }
++        if (crisperSpeedProcessor != 0) {
++            // Offload and encoded passthrough never visit the PCM processor.
++            this.offloadSchedulingEnabled = false;
++            this.audioOffloadPreferences = new AudioOffloadPreferences.Builder()
++                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
++                .build();
+         }
+     }
+ 
+@@ -432,9 +446,8 @@
+ 
+     @Override
+     public void onMethodCall(final MethodCall call, final Result result) {
+-        ensurePlayerInitialized();
+-
+         try {
++            ensurePlayerInitialized();
+             switch (call.method) {
+             case "load":
+                 Long initialPosition = getLong(call.argument("initialPosition"));
+@@ -776,8 +789,14 @@
+ 
+     private void ensurePlayerInitialized() {
+         if (player == null) {
++            if (crisperSpeedProcessor < 0) {
++                throw new IllegalArgumentException("Unknown native speed processor configuration");
++            }
++            final DefaultRenderersFactory audioRenderers = crisperSpeedProcessor == 0
++                ? new DefaultRenderersFactory(context)
++                : new CrisperRenderersFactory(context, crisperSpeedProcessor);
+             RenderersFactory renderersFactory = (eventHandler, videoListener, audioListener, textOutput, metadataOutput) -> {
+-                Renderer[] defaultRenderers = new DefaultRenderersFactory(context)
++                Renderer[] defaultRenderers = audioRenderers
+                     .createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput);
+                 Renderer[] allRenderers = Arrays.copyOf(defaultRenderers, defaultRenderers.length + 1);
+                 allRenderers[defaultRenderers.length] = new ObserverRenderer();
+@@ -1001,6 +1020,10 @@
+     }
+ 
+     public void setSpeed(final float speed) {
++        if (crisperSpeedProcessor != 0
++                && (Float.isNaN(speed) || Float.isInfinite(speed) || speed < 0.5f || speed > 3.0f)) {
++            throw new IllegalArgumentException("Native playback speed must be between 0.5 and 3.0");
++        }
+         PlaybackParameters params = player.getPlaybackParameters();
+         if (params.speed == speed) return;
+         player.setPlaybackParameters(new PlaybackParameters(speed, params.pitch));
+@@ -1010,6 +1033,9 @@
+     }
+ 
+     public void setPitch(final float pitch) {
++        if (crisperSpeedProcessor != 0 && pitch != 1.0f) {
++            throw new IllegalArgumentException("The selected native speed processor preserves the original pitch");
++        }
+         PlaybackParameters params = player.getPlaybackParameters();
+         if (params.pitch == pitch) return;
+         player.setPlaybackParameters(new PlaybackParameters(params.speed, pitch));
+@@ -1017,6 +1043,9 @@
+     }
+ 
+     public void setSkipSilenceEnabled(final boolean enabled) {
++        if (crisperSpeedProcessor != 0 && enabled) {
++            throw new IllegalArgumentException("Silence skipping is unavailable with the selected native speed processor");
++        }
+         player.setSkipSilenceEnabled(enabled);
+     }
+ 
+--- a/darwin/just_audio/Package.swift
++++ b/darwin/just_audio/Package.swift
+@@ -12,14 +12,18 @@
+     products: [
+         .library(name: "just-audio", targets: ["just_audio"])
+     ],
+-    dependencies: [],
++    dependencies: [.package(path: "../../native/crisper_dsp")],
+     targets: [
+         .target(
+             name: "just_audio",
+-            dependencies: [],
++            dependencies: [.product(name: "CrisperDsp", package: "crisper_dsp")],
++            // CocoaPods compiles the wrappers; SwiftPM compiles the same
++            // shared sources once through the local CrisperDsp dependency.
++            exclude: ["portable_dsp"],
+             cSettings: [
+                 .headerSearchPath("include/just_audio")
+             ]
+         )
+-    ]
++    ],
++    cxxLanguageStandard: .cxx20
+ )
+--- a/darwin/just_audio/Sources/just_audio/AudioPlayer.m
++++ b/darwin/just_audio/Sources/just_audio/AudioPlayer.m
+@@ -99,6 +99,8 @@
+             _loadControl.preferredForwardBufferDuration = (NSNumber *)map[@"preferredForwardBufferDuration"];
+             _loadControl.canUseNetworkResourcesForLiveStreamingWhilePaused = (BOOL)[map[@"canUseNetworkResourcesForLiveStreamingWhilePaused"] boolValue];
+             _loadControl.preferredPeakBitRate = (NSNumber *)map[@"preferredPeakBitRate"];
++            // Unknown/absent values preserve the upstream Time Domain default.
++            _loadControl.useSpectralTimePitchAlgorithm = [@"spectral" isEqual:map[@"audioTimePitchAlgorithm"]];
+             _automaticallyWaitsToMinimizeStalling = (BOOL)[map[@"automaticallyWaitsToMinimizeStalling"] boolValue];
+         }
+     }
+--- a/darwin/just_audio/Sources/just_audio/JustAudioPlugin.m
++++ b/darwin/just_audio/Sources/just_audio/JustAudioPlugin.m
+@@ -1,11 +1,12 @@
+ #import "./include/just_audio/JustAudioPlugin.h"
+ #import "./include/just_audio/AudioPlayer.h"
++#import "./include/just_audio/CrisperPortableAudioPlayer.h"
+ #import <AVFoundation/AVFoundation.h>
+ #include <TargetConditionals.h>
+ 
+ @implementation JustAudioPlugin {
+     NSObject<FlutterPluginRegistrar>* _registrar;
+-    NSMutableDictionary<NSString *, AudioPlayer *> *_players;
++    NSMutableDictionary<NSString *, id> *_players;
+ }
+ 
+ + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
+@@ -35,7 +36,19 @@
+             FlutterError *flutterError = [FlutterError errorWithCode:@"error" message:@"Platform player already exists" details:nil];
+             result(flutterError);
+         } else {
+-            AudioPlayer* player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
++            NSDictionary *darwin = [loadConfiguration isKindOfClass:[NSDictionary class]] ? loadConfiguration[@"darwinLoadControl"] : nil;
++            NSString *portable = [darwin isKindOfClass:[NSDictionary class]] ? darwin[@"portableSpeedProcessor"] : nil;
++            id player;
++            if ([portable isKindOfClass:[NSString class]] && portable.length > 0) {
++                NSInteger engine = [CrisperPortableAudioPlayer engineIdentifierForName:portable];
++                if (engine < 0) {
++                    result([FlutterError errorWithCode:@"portableAudio" message:@"Unknown portable audio processor." details:portable]);
++                    return;
++                }
++                player = [[CrisperPortableAudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId engine:engine];
++            } else {
++                player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
++            }
+             [_players setValue:player forKey:playerId];
+             result(nil);
+         }
+--- a/darwin/just_audio/Sources/just_audio/LoadControl.m
++++ b/darwin/just_audio/Sources/just_audio/LoadControl.m
+@@ -4,4 +4,5 @@
+ @synthesize preferredForwardBufferDuration;
+ @synthesize canUseNetworkResourcesForLiveStreamingWhilePaused;
+ @synthesize preferredPeakBitRate;
++@synthesize useSpectralTimePitchAlgorithm;
+ @end
+--- a/darwin/just_audio/Sources/just_audio/UriAudioSource.m
++++ b/darwin/just_audio/Sources/just_audio/UriAudioSource.m
+@@ -73,8 +73,12 @@
+         item = [[IndexedPlayerItem alloc] initWithAsset:asset];
+     }
+     if (@available(macOS 10.13, iOS 11.0, *)) {
+-        // This does the best at reducing distortion on voice with speeds below 1.0
+-        item.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain;
++        // CrisperPlayer addition: the immutable player configuration also
++        // reaches playlist items and loop copies created by this method.
++        // Time Domain preserves the upstream voice-oriented default.
++        item.audioTimePitchAlgorithm = _loadControl.useSpectralTimePitchAlgorithm
++            ? AVAudioTimePitchAlgorithmSpectral
++            : AVAudioTimePitchAlgorithmTimeDomain;
+     }
+     if (@available(macOS 10.12, iOS 10.0, *)) {
+         if (_loadControl.preferredForwardBufferDuration != (id)[NSNull null]) {
+--- a/darwin/just_audio/Sources/just_audio/include/just_audio/LoadControl.h
++++ b/darwin/just_audio/Sources/just_audio/include/just_audio/LoadControl.h
+@@ -5,5 +5,7 @@
+ @property (readwrite, nonatomic) NSNumber *preferredForwardBufferDuration;
+ @property (readwrite, nonatomic) BOOL canUseNetworkResourcesForLiveStreamingWhilePaused;
+ @property (readwrite, nonatomic) NSNumber *preferredPeakBitRate;
++// CrisperPlayer addition: defaults to NO, preserving upstream Time Domain.
++@property (readwrite, nonatomic) BOOL useSpectralTimePitchAlgorithm;
+ 
+ @end
+--- a/darwin/just_audio.podspec
++++ b/darwin/just_audio.podspec
+@@ -12,11 +12,27 @@
+   s.license          = { :file => '../LICENSE' }
+   s.author           = { 'Your Company' => 'email@example.com' }
+   s.source           = { :path => '.' }
+-  s.source_files = 'just_audio/Sources/just_audio/**/*.{h,m}'
++  # Wrapper translation units include the exact shared native sources; this
++  # keeps Android, Apple and desktop on one reviewed vendor/source closure.
++  s.source_files = 'just_audio/Sources/just_audio/**/*.{h,m,mm,c,cpp}'
+   s.public_header_files = 'just_audio/Sources/just_audio/include/**/*.h'
+   s.ios.dependency 'Flutter'
+   s.osx.dependency 'FlutterMacOS'
+   s.ios.deployment_target = '12.0'
+   s.osx.deployment_target = '10.14'
+-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
++  s.frameworks = 'AVFoundation'
++  s.libraries = 'c++'
++  s.compiler_flags = '-O2 -fwrapv'
++  native = '"${PODS_TARGET_SRCROOT}/../native/crisper_dsp'
++  s.pod_target_xcconfig = {
++    'DEFINES_MODULE' => 'YES',
++    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
++    'HEADER_SEARCH_PATHS' => [
++      '$(inherited)', native + '"', native + '/vendor"',
++      native + '/vendor/bungee"', native + '/vendor/eigen"',
++      native + '/vendor/pffft"', native + '/vendor/sonic"',
++      native + '/vendor/signalsmith-stretch"'
++    ].join(' '),
++    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) EIGEN_MPL2_ONLY=1 EIGEN_DONT_PARALLELIZE=1 BUNGEE_SELF_TEST=0 BUNGEE_VISIBILITY= BUNGEE_VERSION=\\"61f52bf34be577d189d388772ddfa3696dee77d8\\" eigen_assert=BUNGEE_ASSERT1'
++  }
+ end
+--- a/lib/just_audio.dart
++++ b/lib/just_audio.dart
+@@ -671,6 +671,17 @@
+   Duration get position => _getPositionFor(playbackEvent);
+ 
+   Duration _getPositionFor(PlaybackEvent playbackEvent) {
++    if (!kIsWeb &&
++        (defaultTargetPlatform == TargetPlatform.iOS ||
++            defaultTargetPlatform == TargetPlatform.macOS) &&
++        _audioLoadConfiguration?.darwinLoadControl?.speedProcessor != null) {
++      // The optional PCM player's source clock excludes output-starvation gaps.
++      // A worker can detect those gaps only after a queued buffer has played.
++      // Extrapolating even its last ready event would count unheard source time
++      // before the next buffering event. Use the native 200 ms snapshots for
++      // this backend; AVPlayer and every other platform keep their usual clock.
++      return playbackEvent.updatePosition;
++    }
+     if (playing && processingState == ProcessingState.ready) {
+       final result = playbackEvent.updatePosition +
+           (DateTime.now().difference(playbackEvent.updateTime)) * speed;
+@@ -2228,7 +2239,28 @@
+       );
+ }
+ 
+-/// Buffering and loading options for iOS/macOS.
++/// Pitch-preserving speed processing provided by AVFoundation on iOS/macOS.
++///
++/// This is a CrisperPlayer addition to just_audio 0.10.6. It applies when the
++/// player is created, including to every playlist item and loop copy. It does
++/// not change pitch, and is ignored by other platform implementations.
++enum DarwinTimePitchAlgorithm {
++  /// Apple's voice-oriented processor; preserves the upstream default.
++  timeDomain,
++
++  /// Apple's spectral processor, suitable for music and mixed audio.
++  /// This is an alternative, not a guarantee of better quality for every voice.
++  spectral,
++}
++
++/// Optional native PCM processors for local mono/stereo files on iOS/macOS.
++///
++/// These share CrisperPlayer's bounded streaming DSP core. The default remains
++/// AVFoundation; a portable processor is used only when explicitly selected.
++/// Unsupported sources fail explicitly instead of silently changing processors.
++enum DarwinSpeedProcessor { sonic, bungee, signalsmith, wsola }
++
++/// Buffering, loading and speed-processing options for iOS/macOS.
+ class DarwinLoadControl {
+   /// (iOS/macOS) Whether the player will wait for sufficient data to be
+   /// buffered before starting playback to avoid the likelihood of stalling.
+@@ -2246,25 +2278,72 @@
+   /// (iOS/macOS) If specified, limits the download bandwidth in bits per
+   /// second.
+   final double? preferredPeakBitRate;
++
++  /// (iOS/macOS) Pitch-preserving processing for playback speed changes.
++  ///
++  /// Immutable for this player. Changing an application preference requires
++  /// creating a new player. The default preserves just_audio's Time Domain
++  /// behavior. Only public AVFoundation algorithms are used.
++  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
++
++  /// Experimental portable PCM backend for local files. A null value preserves
++  /// AVPlayer and [audioTimePitchAlgorithm]. Selection is immutable for a player.
++  final DarwinSpeedProcessor? speedProcessor;
+ 
+   const DarwinLoadControl({
+     this.automaticallyWaitsToMinimizeStalling = true,
+     this.preferredForwardBufferDuration,
+     this.canUseNetworkResourcesForLiveStreamingWhilePaused = false,
+     this.preferredPeakBitRate,
++    this.audioTimePitchAlgorithm = DarwinTimePitchAlgorithm.timeDomain,
++    this.speedProcessor,
+   });
+ 
+-  DarwinLoadControlMessage _toMessage() => DarwinLoadControlMessage(
++  DarwinLoadControlMessage _toMessage() => _DarwinSpeedLoadControlMessage(
+         automaticallyWaitsToMinimizeStalling:
+             automaticallyWaitsToMinimizeStalling,
+         preferredForwardBufferDuration: preferredForwardBufferDuration,
+         canUseNetworkResourcesForLiveStreamingWhilePaused:
+             canUseNetworkResourcesForLiveStreamingWhilePaused,
+         preferredPeakBitRate: preferredPeakBitRate,
++        audioTimePitchAlgorithm: audioTimePitchAlgorithm,
++        speedProcessor: speedProcessor,
+       );
+ }
+ 
+-/// Buffering and loading options for Android.
++/// Extend the public message serialization without a second platform-interface
++/// fork. Other backends ignore this extra Darwin-only configuration key.
++class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
++  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
++  final DarwinSpeedProcessor? speedProcessor;
++
++  _DarwinSpeedLoadControlMessage({
++    required super.automaticallyWaitsToMinimizeStalling,
++    required super.preferredForwardBufferDuration,
++    required super.canUseNetworkResourcesForLiveStreamingWhilePaused,
++    required super.preferredPeakBitRate,
++    required this.audioTimePitchAlgorithm,
++    required this.speedProcessor,
++  });
++
++  @override
++  Map<dynamic, dynamic> toMap() => {
++        ...super.toMap(),
++        'audioTimePitchAlgorithm': audioTimePitchAlgorithm.name,
++        if (speedProcessor != null)
++          'portableSpeedProcessor': speedProcessor!.name,
++      };
++}
++
++/// Immutable Android speed processor selection.
++///
++/// Sonic preserves the upstream speech-oriented processing path. The other
++/// options use CrisperPlayer's native PCM processor and require its Android
++/// library. They support 0.5x-3.0x, mono/stereo, and preserve pitch; independent
++/// pitch changes and silence skipping are not supported by those options.
++enum AndroidSpeedProcessor { sonic, bungee, signalsmith, wsola }
++
++/// Buffering, loading and speed-processing options for Android.
+ class AndroidLoadControl {
+   /// (Android) The minimum duration of audio that should be buffered ahead of
+   /// the current position.
+@@ -2291,6 +2370,10 @@
+ 
+   /// (Android) The back buffer duration.
+   final Duration backBufferDuration;
++
++  /// Processor selected when the native player is created. Changing this
++  /// requires a new player; it never changes an active processing chain.
++  final AndroidSpeedProcessor speedProcessor;
+ 
+   const AndroidLoadControl({
+     this.minBufferDuration = const Duration(seconds: 50),
+@@ -2300,9 +2383,10 @@
+     this.targetBufferBytes,
+     this.prioritizeTimeOverSizeThresholds = false,
+     this.backBufferDuration = Duration.zero,
++    this.speedProcessor = AndroidSpeedProcessor.sonic,
+   });
+ 
+-  AndroidLoadControlMessage _toMessage() => AndroidLoadControlMessage(
++  AndroidLoadControlMessage _toMessage() => _AndroidSpeedLoadControlMessage(
+         minBufferDuration: minBufferDuration,
+         maxBufferDuration: maxBufferDuration,
+         bufferForPlaybackDuration: bufferForPlaybackDuration,
+@@ -2311,7 +2395,29 @@
+         targetBufferBytes: targetBufferBytes,
+         prioritizeTimeOverSizeThresholds: prioritizeTimeOverSizeThresholds,
+         backBufferDuration: backBufferDuration,
++        speedProcessor: speedProcessor,
+       );
++}
++
++class _AndroidSpeedLoadControlMessage extends AndroidLoadControlMessage {
++  final AndroidSpeedProcessor speedProcessor;
++
++  _AndroidSpeedLoadControlMessage({
++    required super.minBufferDuration,
++    required super.maxBufferDuration,
++    required super.bufferForPlaybackDuration,
++    required super.bufferForPlaybackAfterRebufferDuration,
++    required super.targetBufferBytes,
++    required super.prioritizeTimeOverSizeThresholds,
++    required super.backBufferDuration,
++    required this.speedProcessor,
++  });
++
++  @override
++  Map<dynamic, dynamic> toMap() => {
++        ...super.toMap(),
++        'speedProcessor': speedProcessor.name,
++      };
+ }
+ 
+ /// Speed control for live streams on Android.
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -1,6 +1,7 @@
+ name: just_audio
+ description: A feature-rich audio player for Flutter. Loop, clip and sequence any sound from any source (asset/file/URL/stream) in gapless playlists.
+-version: 0.10.6
++version: 0.10.6+crisper.4
++publish_to: none
+ repository: https://github.com/ryanheise/just_audio/tree/minor/just_audio
+ issue_tracker: https://github.com/ryanheise/just_audio/issues
+ topics:
 --- /dev/null
 +++ b/android/consumer-rules.pro
 @@ -0,0 +1,3 @@
@@ -426,101 +849,6 @@
 +    });
 +}
 +}  // extern "C"
---- a/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java
-+++ b/android/src/main/java/com/ryanheise/just_audio/AudioPlayer.java
-@@ -95,6 +95,8 @@
-     private IcyHeaders icyHeaders;
-     private AudioAttributes pendingAudioAttributes;
-     private LoadControl loadControl;
-+    // CrisperPlayer: Sonic retains the untouched upstream playback pipeline.
-+    private int crisperSpeedProcessor;
-     private boolean offloadSchedulingEnabled;
-     private AudioOffloadPreferences audioOffloadPreferences;
-     private boolean useLazyPreparation;
-@@ -180,6 +182,11 @@
-         if (audioLoadConfiguration != null) {
-             Map<?, ?> loadControlMap = (Map<?, ?>)audioLoadConfiguration.get("androidLoadControl");
-             if (loadControlMap != null) {
-+                Object speedProcessor = loadControlMap.get("speedProcessor");
-+                crisperSpeedProcessor = speedProcessor == null || "sonic".equals(speedProcessor) ? 0
-+                    : "bungee".equals(speedProcessor) ? 1
-+                    : "signalsmith".equals(speedProcessor) ? 2
-+                    : "wsola".equals(speedProcessor) ? 3 : -1;
-                 DefaultLoadControl.Builder builder = new DefaultLoadControl.Builder()
-                     .setBufferDurationsMs(
-                         (int)((getLong(loadControlMap.get("minBufferDuration")))/1000),
-@@ -206,6 +213,13 @@
-                     .setMinPossibleLiveOffsetSmoothingFactor((float)((double)((Double)livePlaybackSpeedControlMap.get("minPossibleLiveOffsetSmoothingFactor"))));
-                 livePlaybackSpeedControl = builder.build();
-             }
-+        }
-+        if (crisperSpeedProcessor != 0) {
-+            // Offload and encoded passthrough never visit the PCM processor.
-+            this.offloadSchedulingEnabled = false;
-+            this.audioOffloadPreferences = new AudioOffloadPreferences.Builder()
-+                .setAudioOffloadMode(AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED)
-+                .build();
-         }
-     }
- 
-@@ -432,9 +446,8 @@
- 
-     @Override
-     public void onMethodCall(final MethodCall call, final Result result) {
--        ensurePlayerInitialized();
--
-         try {
-+            ensurePlayerInitialized();
-             switch (call.method) {
-             case "load":
-                 Long initialPosition = getLong(call.argument("initialPosition"));
-@@ -776,8 +789,14 @@
- 
-     private void ensurePlayerInitialized() {
-         if (player == null) {
-+            if (crisperSpeedProcessor < 0) {
-+                throw new IllegalArgumentException("Unknown native speed processor configuration");
-+            }
-+            final DefaultRenderersFactory audioRenderers = crisperSpeedProcessor == 0
-+                ? new DefaultRenderersFactory(context)
-+                : new CrisperRenderersFactory(context, crisperSpeedProcessor);
-             RenderersFactory renderersFactory = (eventHandler, videoListener, audioListener, textOutput, metadataOutput) -> {
--                Renderer[] defaultRenderers = new DefaultRenderersFactory(context)
-+                Renderer[] defaultRenderers = audioRenderers
-                     .createRenderers(eventHandler, videoListener, audioListener, textOutput, metadataOutput);
-                 Renderer[] allRenderers = Arrays.copyOf(defaultRenderers, defaultRenderers.length + 1);
-                 allRenderers[defaultRenderers.length] = new ObserverRenderer();
-@@ -1001,6 +1020,10 @@
-     }
- 
-     public void setSpeed(final float speed) {
-+        if (crisperSpeedProcessor != 0
-+                && (Float.isNaN(speed) || Float.isInfinite(speed) || speed < 0.5f || speed > 3.0f)) {
-+            throw new IllegalArgumentException("Native playback speed must be between 0.5 and 3.0");
-+        }
-         PlaybackParameters params = player.getPlaybackParameters();
-         if (params.speed == speed) return;
-         player.setPlaybackParameters(new PlaybackParameters(speed, params.pitch));
-@@ -1010,6 +1033,9 @@
-     }
- 
-     public void setPitch(final float pitch) {
-+        if (crisperSpeedProcessor != 0 && pitch != 1.0f) {
-+            throw new IllegalArgumentException("The selected native speed processor preserves the original pitch");
-+        }
-         PlaybackParameters params = player.getPlaybackParameters();
-         if (params.pitch == pitch) return;
-         player.setPlaybackParameters(new PlaybackParameters(params.speed, pitch));
-@@ -1017,6 +1043,9 @@
-     }
- 
-     public void setSkipSilenceEnabled(final boolean enabled) {
-+        if (crisperSpeedProcessor != 0 && enabled) {
-+            throw new IllegalArgumentException("Silence skipping is unavailable with the selected native speed processor");
-+        }
-         player.setSkipSilenceEnabled(enabled);
-     }
- 
 --- /dev/null
 +++ b/android/src/main/java/com/ryanheise/just_audio/CrisperAudioProcessor.java
 @@ -0,0 +1,142 @@
@@ -1136,73 +1464,6 @@
 +        @Override public long outputFrames(long handle) { return streams.get(handle).deliveredFrames; }
 +    }
 +}
---- a/darwin/just_audio.podspec
-+++ b/darwin/just_audio.podspec
-@@ -12,11 +12,27 @@
-   s.license          = { :file => '../LICENSE' }
-   s.author           = { 'Your Company' => 'email@example.com' }
-   s.source           = { :path => '.' }
--  s.source_files = 'just_audio/Sources/just_audio/**/*.{h,m}'
-+  # Wrapper translation units include the exact shared native sources; this
-+  # keeps Android, Apple and desktop on one reviewed vendor/source closure.
-+  s.source_files = 'just_audio/Sources/just_audio/**/*.{h,m,mm,c,cpp}'
-   s.public_header_files = 'just_audio/Sources/just_audio/include/**/*.h'
-   s.ios.dependency 'Flutter'
-   s.osx.dependency 'FlutterMacOS'
-   s.ios.deployment_target = '12.0'
-   s.osx.deployment_target = '10.14'
--  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
-+  s.frameworks = 'AVFoundation'
-+  s.libraries = 'c++'
-+  s.compiler_flags = '-O2 -fwrapv'
-+  native = '"${PODS_TARGET_SRCROOT}/../native/crisper_dsp'
-+  s.pod_target_xcconfig = {
-+    'DEFINES_MODULE' => 'YES',
-+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
-+    'HEADER_SEARCH_PATHS' => [
-+      '$(inherited)', native + '"', native + '/vendor"',
-+      native + '/vendor/bungee"', native + '/vendor/eigen"',
-+      native + '/vendor/pffft"', native + '/vendor/sonic"',
-+      native + '/vendor/signalsmith-stretch"'
-+    ].join(' '),
-+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) EIGEN_MPL2_ONLY=1 EIGEN_DONT_PARALLELIZE=1 BUNGEE_SELF_TEST=0 BUNGEE_VISIBILITY= BUNGEE_VERSION=\\"61f52bf34be577d189d388772ddfa3696dee77d8\\" eigen_assert=BUNGEE_ASSERT1'
-+  }
- end
---- a/darwin/just_audio/Package.swift
-+++ b/darwin/just_audio/Package.swift
-@@ -12,14 +12,18 @@
-     products: [
-         .library(name: "just-audio", targets: ["just_audio"])
-     ],
--    dependencies: [],
-+    dependencies: [.package(path: "../../native/crisper_dsp")],
-     targets: [
-         .target(
-             name: "just_audio",
--            dependencies: [],
-+            dependencies: [.product(name: "CrisperDsp", package: "crisper_dsp")],
-+            // CocoaPods compiles the wrappers; SwiftPM compiles the same
-+            // shared sources once through the local CrisperDsp dependency.
-+            exclude: ["portable_dsp"],
-             cSettings: [
-                 .headerSearchPath("include/just_audio")
-             ]
-         )
--    ]
-+    ],
-+    cxxLanguageStandard: .cxx20
- )
---- a/darwin/just_audio/Sources/just_audio/AudioPlayer.m
-+++ b/darwin/just_audio/Sources/just_audio/AudioPlayer.m
-@@ -99,6 +99,8 @@
-             _loadControl.preferredForwardBufferDuration = (NSNumber *)map[@"preferredForwardBufferDuration"];
-             _loadControl.canUseNetworkResourcesForLiveStreamingWhilePaused = (BOOL)[map[@"canUseNetworkResourcesForLiveStreamingWhilePaused"] boolValue];
-             _loadControl.preferredPeakBitRate = (NSNumber *)map[@"preferredPeakBitRate"];
-+            // Unknown/absent values preserve the upstream Time Domain default.
-+            _loadControl.useSpectralTimePitchAlgorithm = [@"spectral" isEqual:map[@"audioTimePitchAlgorithm"]];
-             _automaticallyWaitsToMinimizeStalling = (BOOL)[map[@"automaticallyWaitsToMinimizeStalling"] boolValue];
-         }
-     }
 --- /dev/null
 +++ b/darwin/just_audio/Sources/just_audio/CrisperDspStream.mm
 @@ -0,0 +1,148 @@
@@ -1964,68 +2225,6 @@
 +    [_dataEvents dispose];
 +}
 +@end
---- a/darwin/just_audio/Sources/just_audio/JustAudioPlugin.m
-+++ b/darwin/just_audio/Sources/just_audio/JustAudioPlugin.m
-@@ -1,11 +1,12 @@
- #import "./include/just_audio/JustAudioPlugin.h"
- #import "./include/just_audio/AudioPlayer.h"
-+#import "./include/just_audio/CrisperPortableAudioPlayer.h"
- #import <AVFoundation/AVFoundation.h>
- #include <TargetConditionals.h>
- 
- @implementation JustAudioPlugin {
-     NSObject<FlutterPluginRegistrar>* _registrar;
--    NSMutableDictionary<NSString *, AudioPlayer *> *_players;
-+    NSMutableDictionary<NSString *, id> *_players;
- }
- 
- + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-@@ -35,7 +36,19 @@
-             FlutterError *flutterError = [FlutterError errorWithCode:@"error" message:@"Platform player already exists" details:nil];
-             result(flutterError);
-         } else {
--            AudioPlayer* player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
-+            NSDictionary *darwin = [loadConfiguration isKindOfClass:[NSDictionary class]] ? loadConfiguration[@"darwinLoadControl"] : nil;
-+            NSString *portable = [darwin isKindOfClass:[NSDictionary class]] ? darwin[@"portableSpeedProcessor"] : nil;
-+            id player;
-+            if ([portable isKindOfClass:[NSString class]] && portable.length > 0) {
-+                NSInteger engine = [CrisperPortableAudioPlayer engineIdentifierForName:portable];
-+                if (engine < 0) {
-+                    result([FlutterError errorWithCode:@"portableAudio" message:@"Unknown portable audio processor." details:portable]);
-+                    return;
-+                }
-+                player = [[CrisperPortableAudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId engine:engine];
-+            } else {
-+                player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
-+            }
-             [_players setValue:player forKey:playerId];
-             result(nil);
-         }
---- a/darwin/just_audio/Sources/just_audio/LoadControl.m
-+++ b/darwin/just_audio/Sources/just_audio/LoadControl.m
-@@ -4,4 +4,5 @@
- @synthesize preferredForwardBufferDuration;
- @synthesize canUseNetworkResourcesForLiveStreamingWhilePaused;
- @synthesize preferredPeakBitRate;
-+@synthesize useSpectralTimePitchAlgorithm;
- @end
---- a/darwin/just_audio/Sources/just_audio/UriAudioSource.m
-+++ b/darwin/just_audio/Sources/just_audio/UriAudioSource.m
-@@ -73,8 +73,12 @@
-         item = [[IndexedPlayerItem alloc] initWithAsset:asset];
-     }
-     if (@available(macOS 10.13, iOS 11.0, *)) {
--        // This does the best at reducing distortion on voice with speeds below 1.0
--        item.audioTimePitchAlgorithm = AVAudioTimePitchAlgorithmTimeDomain;
-+        // CrisperPlayer addition: the immutable player configuration also
-+        // reaches playlist items and loop copies created by this method.
-+        // Time Domain preserves the upstream voice-oriented default.
-+        item.audioTimePitchAlgorithm = _loadControl.useSpectralTimePitchAlgorithm
-+            ? AVAudioTimePitchAlgorithmSpectral
-+            : AVAudioTimePitchAlgorithmTimeDomain;
-     }
-     if (@available(macOS 10.12, iOS 10.0, *)) {
-         if (_loadControl.preferredForwardBufferDuration != (id)[NSNull null]) {
 --- /dev/null
 +++ b/darwin/just_audio/Sources/just_audio/include/just_audio/CrisperDspStream.h
 @@ -0,0 +1,30 @@
@@ -2088,16 +2287,6 @@
 +- (void)dispose:(BOOL)calledFromDealloc;
 +@end
 +NS_ASSUME_NONNULL_END
---- a/darwin/just_audio/Sources/just_audio/include/just_audio/LoadControl.h
-+++ b/darwin/just_audio/Sources/just_audio/include/just_audio/LoadControl.h
-@@ -5,5 +5,7 @@
- @property (readwrite, nonatomic) NSNumber *preferredForwardBufferDuration;
- @property (readwrite, nonatomic) BOOL canUseNetworkResourcesForLiveStreamingWhilePaused;
- @property (readwrite, nonatomic) NSNumber *preferredPeakBitRate;
-+// CrisperPlayer addition: defaults to NO, preserving upstream Time Domain.
-+@property (readwrite, nonatomic) BOOL useSpectralTimePitchAlgorithm;
- 
- @end
 --- /dev/null
 +++ b/darwin/just_audio/Sources/just_audio/portable_dsp/crisper_dsp.cpp
 @@ -0,0 +1,3 @@
@@ -2212,187 +2401,9 @@
 +// SPDX-License-Identifier: MIT
 +// Compile the one reviewed shared source; do not copy or modify vendor code.
 +#include "../../../../../native/crisper_dsp/wsola/wsola.cpp"
---- a/lib/just_audio.dart
-+++ b/lib/just_audio.dart
-@@ -671,6 +671,17 @@
-   Duration get position => _getPositionFor(playbackEvent);
- 
-   Duration _getPositionFor(PlaybackEvent playbackEvent) {
-+    if (!kIsWeb &&
-+        (defaultTargetPlatform == TargetPlatform.iOS ||
-+            defaultTargetPlatform == TargetPlatform.macOS) &&
-+        _audioLoadConfiguration?.darwinLoadControl?.speedProcessor != null) {
-+      // The optional PCM player's source clock excludes output-starvation gaps.
-+      // A worker can detect those gaps only after a queued buffer has played.
-+      // Extrapolating even its last ready event would count unheard source time
-+      // before the next buffering event. Use the native 200 ms snapshots for
-+      // this backend; AVPlayer and every other platform keep their usual clock.
-+      return playbackEvent.updatePosition;
-+    }
-     if (playing && processingState == ProcessingState.ready) {
-       final result = playbackEvent.updatePosition +
-           (DateTime.now().difference(playbackEvent.updateTime)) * speed;
-@@ -2228,7 +2239,28 @@
-       );
- }
- 
--/// Buffering and loading options for iOS/macOS.
-+/// Pitch-preserving speed processing provided by AVFoundation on iOS/macOS.
-+///
-+/// This is a CrisperPlayer addition to just_audio 0.10.6. It applies when the
-+/// player is created, including to every playlist item and loop copy. It does
-+/// not change pitch, and is ignored by other platform implementations.
-+enum DarwinTimePitchAlgorithm {
-+  /// Apple's voice-oriented processor; preserves the upstream default.
-+  timeDomain,
-+
-+  /// Apple's spectral processor, suitable for music and mixed audio.
-+  /// This is an alternative, not a guarantee of better quality for every voice.
-+  spectral,
-+}
-+
-+/// Optional native PCM processors for local mono/stereo files on iOS/macOS.
-+///
-+/// These share CrisperPlayer's bounded streaming DSP core. The default remains
-+/// AVFoundation; a portable processor is used only when explicitly selected.
-+/// Unsupported sources fail explicitly instead of silently changing processors.
-+enum DarwinSpeedProcessor { sonic, bungee, signalsmith, wsola }
-+
-+/// Buffering, loading and speed-processing options for iOS/macOS.
- class DarwinLoadControl {
-   /// (iOS/macOS) Whether the player will wait for sufficient data to be
-   /// buffered before starting playback to avoid the likelihood of stalling.
-@@ -2246,25 +2278,72 @@
-   /// (iOS/macOS) If specified, limits the download bandwidth in bits per
-   /// second.
-   final double? preferredPeakBitRate;
-+
-+  /// (iOS/macOS) Pitch-preserving processing for playback speed changes.
-+  ///
-+  /// Immutable for this player. Changing an application preference requires
-+  /// creating a new player. The default preserves just_audio's Time Domain
-+  /// behavior. Only public AVFoundation algorithms are used.
-+  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
-+
-+  /// Experimental portable PCM backend for local files. A null value preserves
-+  /// AVPlayer and [audioTimePitchAlgorithm]. Selection is immutable for a player.
-+  final DarwinSpeedProcessor? speedProcessor;
- 
-   const DarwinLoadControl({
-     this.automaticallyWaitsToMinimizeStalling = true,
-     this.preferredForwardBufferDuration,
-     this.canUseNetworkResourcesForLiveStreamingWhilePaused = false,
-     this.preferredPeakBitRate,
-+    this.audioTimePitchAlgorithm = DarwinTimePitchAlgorithm.timeDomain,
-+    this.speedProcessor,
-   });
- 
--  DarwinLoadControlMessage _toMessage() => DarwinLoadControlMessage(
-+  DarwinLoadControlMessage _toMessage() => _DarwinSpeedLoadControlMessage(
-         automaticallyWaitsToMinimizeStalling:
-             automaticallyWaitsToMinimizeStalling,
-         preferredForwardBufferDuration: preferredForwardBufferDuration,
-         canUseNetworkResourcesForLiveStreamingWhilePaused:
-             canUseNetworkResourcesForLiveStreamingWhilePaused,
-         preferredPeakBitRate: preferredPeakBitRate,
-+        audioTimePitchAlgorithm: audioTimePitchAlgorithm,
-+        speedProcessor: speedProcessor,
-       );
- }
- 
--/// Buffering and loading options for Android.
-+/// Extend the public message serialization without a second platform-interface
-+/// fork. Other backends ignore this extra Darwin-only configuration key.
-+class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
-+  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
-+  final DarwinSpeedProcessor? speedProcessor;
-+
-+  _DarwinSpeedLoadControlMessage({
-+    required super.automaticallyWaitsToMinimizeStalling,
-+    required super.preferredForwardBufferDuration,
-+    required super.canUseNetworkResourcesForLiveStreamingWhilePaused,
-+    required super.preferredPeakBitRate,
-+    required this.audioTimePitchAlgorithm,
-+    required this.speedProcessor,
-+  });
-+
-+  @override
-+  Map<dynamic, dynamic> toMap() => {
-+        ...super.toMap(),
-+        'audioTimePitchAlgorithm': audioTimePitchAlgorithm.name,
-+        if (speedProcessor != null)
-+          'portableSpeedProcessor': speedProcessor!.name,
-+      };
-+}
-+
-+/// Immutable Android speed processor selection.
-+///
-+/// Sonic preserves the upstream speech-oriented processing path. The other
-+/// options use CrisperPlayer's native PCM processor and require its Android
-+/// library. They support 0.5x-3.0x, mono/stereo, and preserve pitch; independent
-+/// pitch changes and silence skipping are not supported by those options.
-+enum AndroidSpeedProcessor { sonic, bungee, signalsmith, wsola }
-+
-+/// Buffering, loading and speed-processing options for Android.
- class AndroidLoadControl {
-   /// (Android) The minimum duration of audio that should be buffered ahead of
-   /// the current position.
-@@ -2291,6 +2370,10 @@
- 
-   /// (Android) The back buffer duration.
-   final Duration backBufferDuration;
-+
-+  /// Processor selected when the native player is created. Changing this
-+  /// requires a new player; it never changes an active processing chain.
-+  final AndroidSpeedProcessor speedProcessor;
- 
-   const AndroidLoadControl({
-     this.minBufferDuration = const Duration(seconds: 50),
-@@ -2300,9 +2383,10 @@
-     this.targetBufferBytes,
-     this.prioritizeTimeOverSizeThresholds = false,
-     this.backBufferDuration = Duration.zero,
-+    this.speedProcessor = AndroidSpeedProcessor.sonic,
-   });
- 
--  AndroidLoadControlMessage _toMessage() => AndroidLoadControlMessage(
-+  AndroidLoadControlMessage _toMessage() => _AndroidSpeedLoadControlMessage(
-         minBufferDuration: minBufferDuration,
-         maxBufferDuration: maxBufferDuration,
-         bufferForPlaybackDuration: bufferForPlaybackDuration,
-@@ -2311,7 +2395,29 @@
-         targetBufferBytes: targetBufferBytes,
-         prioritizeTimeOverSizeThresholds: prioritizeTimeOverSizeThresholds,
-         backBufferDuration: backBufferDuration,
-+        speedProcessor: speedProcessor,
-       );
-+}
-+
-+class _AndroidSpeedLoadControlMessage extends AndroidLoadControlMessage {
-+  final AndroidSpeedProcessor speedProcessor;
-+
-+  _AndroidSpeedLoadControlMessage({
-+    required super.minBufferDuration,
-+    required super.maxBufferDuration,
-+    required super.bufferForPlaybackDuration,
-+    required super.bufferForPlaybackAfterRebufferDuration,
-+    required super.targetBufferBytes,
-+    required super.prioritizeTimeOverSizeThresholds,
-+    required super.backBufferDuration,
-+    required this.speedProcessor,
-+  });
-+
-+  @override
-+  Map<dynamic, dynamic> toMap() => {
-+        ...super.toMap(),
-+        'speedProcessor': speedProcessor.name,
-+      };
- }
- 
- /// Speed control for live streams on Android.
 --- /dev/null
 +++ b/native/crisper_dsp/CMakeLists.txt
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,67 @@
 +# SPDX-License-Identifier: MIT
 +cmake_minimum_required(VERSION 3.22)
 +project(crisper_dsp LANGUAGES C CXX)
@@ -2435,6 +2446,11 @@
 +  EIGEN_MPL2_ONLY=1 EIGEN_DONT_PARALLELIZE=1 BUNGEE_SELF_TEST=0
 +  BUNGEE_VISIBILITY= BUNGEE_VERSION="61f52bf34be577d189d388772ddfa3696dee77d8"
 +  eigen_assert=BUNGEE_ASSERT1)
++# MSVC requires this before <math.h> for FFTPACK's M_PI constants. Keep the
++# definition on our target so the pinned upstream C sources remain unchanged.
++if(MSVC)
++  target_compile_definitions(crisper_dsp PRIVATE _USE_MATH_DEFINES)
++endif()
 +# Native audio processing needs optimization even in Flutter Debug builds.
 +target_compile_options(crisper_dsp PRIVATE
 +  $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-O2>
@@ -5051,14 +5067,3 @@
 +
 +} // namespace crisper_wsola
 +#endif
---- a/pubspec.yaml
-+++ b/pubspec.yaml
-@@ -1,6 +1,7 @@
- name: just_audio
- description: A feature-rich audio player for Flutter. Loop, clip and sequence any sound from any source (asset/file/URL/stream) in gapless playlists.
--version: 0.10.6
-+version: 0.10.6+crisper.4
-+publish_to: none
- repository: https://github.com/ryanheise/just_audio/tree/minor/just_audio
- issue_tracker: https://github.com/ryanheise/just_audio/issues
- topics:

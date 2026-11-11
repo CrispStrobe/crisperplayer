@@ -1,0 +1,15 @@
+{
+  "name": "miniaudio",
+  "version": "0.11.25",
+  "license": "MIT-0 OR Unlicense",
+  "source_repository": "https://github.com/CrispStrobe/cometbeat",
+  "source_commit": "a9e4d0e553b94369ad883596c9e686e8581c62a2",
+  "source_path": "native/aec/src/vendor/miniaudio.h",
+  "license_path": "native/aec/LICENSES/miniaudio.txt",
+  "upstream_repository": "https://github.com/mackron/miniaudio",
+  "modifications": [],
+  "sha256": {
+    "miniaudio.h": "ac7af4de748b7e26b777f37e01cee313a308a7296a3eb080e2906b320cc55c89",
+    "miniaudio.LICENSE": "bde09ed161fef45da2194cba70601aab33ca6fdfe6eed2e3d95efd15b48561f9"
+  }
+}

@@ -1,0 +1,26 @@
+name: crisper_audio
+description: Direct Dart FFI audio playback with bounded native decoding, processing and output.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.12.0 <4.0.0'
+  flutter: '>=3.44.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      linux:
+        ffiPlugin: true
+      windows:
+        ffiPlugin: true

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "name": "Glint decoder subset",
+  "upstream_url": "https://github.com/CrispStrobe/glint",
+  "commit": "7b458cff0fc9c397f671c422db4770c72fc22f5c",
+  "declared_license": "MIT",
+  "selected_files": [
+    {
+      "path": "LICENSE",
+      "upstream_sha256": "ab08fb7ec4a030bd27a9a0d1fb60a39b832f7779fb11d0f2753e85593f6f944e",
+      "vendored_sha256": "ab08fb7ec4a030bd27a9a0d1fb60a39b832f7779fb11d0f2753e85593f6f944e"
+    },
+    {
+      "path": "src/mp3_decoder.cpp",
+      "upstream_sha256": "316a1691e984160480017a7dc71a5ddd8366df93abd907f9daefacec6835ecf8",
+      "vendored_sha256": "316a1691e984160480017a7dc71a5ddd8366df93abd907f9daefacec6835ecf8"
+    },
+    {
+      "path": "src/mp3_decoder.hpp",
+      "upstream_sha256": "51d7847793ff847d5b87db36ddf74e717fe695df82a12478b8f6938eb933c0a3",
+      "vendored_sha256": "51d7847793ff847d5b87db36ddf74e717fe695df82a12478b8f6938eb933c0a3"
+    },
+    {
+      "path": "src/tables.hpp",
+      "upstream_sha256": "a4012945bf1559895389f9f63d424c7e5de5eac230377bf6dc84bc35347e8cb9",
+      "vendored_sha256": "a4012945bf1559895389f9f63d424c7e5de5eac230377bf6dc84bc35347e8cb9"
+    },
+    {
+      "path": "src/aac_decoder.cpp",
+      "upstream_sha256": "ad0062b6c58368fb9dd007ab4a9107070abba1abfd70e7e98a62d3aaa590a34e",
+      "vendored_sha256": "40529083556a2370834108b623c4665f91d37acccc2720fda7962b42e5019ddc"
+    },
+    {
+      "path": "src/aac_decoder.hpp",
+      "upstream_sha256": "8a69e6345cf59dc9b36723e74a9aaf12a346f4694016e030bb3fad3d1b48e7b7",
+      "vendored_sha256": "34b218fd358923d3d2eba47120247c8b457a4f0d585b7a6231dca0926ee74df6"
+    },
+    {
+      "path": "src/aac_tables.hpp",
+      "upstream_sha256": "df0118f458bb3e0e1b92ecc276b4fb75bed27dde51996a9e8b882006a6dafc51",
+      "vendored_sha256": "df0118f458bb3e0e1b92ecc276b4fb75bed27dde51996a9e8b882006a6dafc51"
+    },
+    {
+      "path": "tools/gen_aac_tables.py",
+      "upstream_sha256": "f4d10c4cee3ff01d6e8cc92365e087e8438453511ce02c9db9b78f3a0882d75e",
+      "vendored_sha256": "f4d10c4cee3ff01d6e8cc92365e087e8438453511ce02c9db9b78f3a0882d75e"
+    }
+  ],
+  "patch_file": "UPSTREAM.patch",
+  "patch_sha256": "e58b921025737b8f2d9a120ab465aaf9cc38a5c9ab8420d538fc642cc56efdd7",
+  "source_scope": "MPEG-1/2/2.5 Layer III and AAC-LC decoder implementations and required tables only; no encoders, CLI, WASM, whole-file helpers, resampler, Opus, Vorbis or FLAC.",
+  "provenance_caveat": "aac_tables.hpp describes values extracted and cross-checked from vo-aacenc (Apache-2.0) and FFmpeg libavcodec. The retained generator does not record immutable extraction commits. The Glint MIT declaration alone does not resolve attribution or derived-table licensing; no distribution clearance is asserted."
+}

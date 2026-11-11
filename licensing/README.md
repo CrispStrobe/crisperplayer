@@ -9,6 +9,14 @@ license notices remain unchanged, and the inventory records the user's
 instruction as its policy basis, without inventing published exception text.
 External native provenance and distribution requirements remain unresolved.
 
+The [audio patent record](../docs/AUDIO_PATENTS.md) separately documents current
+format positions and OS-decoder choices. Glint AAC-LC remains compiled into
+Windows/Linux and has unresolved patent coverage; its native inventory entry
+retains an explicit distribution blocker. The Apache table-provenance result
+does not clear codec patents. A recorded `patent_review_status` is descriptive
+evidence, not an automated legal opinion; the explicit blocker participates in
+the existing enforced distribution check.
+
 After resolving the committed dependencies with `flutter pub get`, run:
 
 ```sh

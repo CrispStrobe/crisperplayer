@@ -38,6 +38,22 @@ This is an engineering policy and an evidence record. A package name, a build
 flag, or a passing script does not establish legal compliance or guarantee
 acceptance by an app store.
 
+## Codec patent review is separate
+
+Permissive copyright grants do not establish clearance of all codec patents.
+Apache-2.0 includes a scoped contributor patent grant; CC0 expressly leaves
+patent rights unaffected. Keep this assessment distinct from the source and
+artifact reviews. See [the current primary-source findings and platform
+decision](AUDIO_PATENTS.md).
+
+The current Windows/Linux Glint AAC-LC implementation has unresolved patent
+coverage, including after the Apache table-provenance correction. Record that
+as a distribution blocker. Prefer OS-supplied AAC on Android, Apple and Windows;
+the Windows replacement is still planned. Do not add libxaac as a default
+bundled fallback until the distribution position is established. Linux AAC
+requires an explicit implementation/coverage decision. Neither use of an OS
+API nor dynamically loading a codec by itself proves downstream patent coverage.
+
 ## Project-owned code
 
 The project owner explicitly confirmed on 10 November 2026 that CrisperPlayer

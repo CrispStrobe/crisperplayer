@@ -5,6 +5,11 @@ the licenses of Dart packages, compiled native payloads and host libraries.
 It is a source/build inventory, not a claim that every release artifact has
 completed its license review.
 
+Codec patents are tracked separately in [the patent and OS-decoder
+record](AUDIO_PATENTS.md). In particular, the currently bundled Glint AAC-LC
+decoder has **not** received patent clearance; resolving the Apache table
+provenance did not establish patent coverage.
+
 ## media_kit is MIT
 
 The former `media_kit` 1.2.6 package is **MIT**. The former
@@ -93,6 +98,15 @@ backends, and passes the native/Dart playback checks. JACK's client library
 is LGPL, while its server has a separate GPL license; neither is bundled by
 this application. [JACK's own API/license explanation](https://jackaudio.org/api/).
 
+JACK connects audio applications in a low-latency routing graph. It is useful
+for deliberate DAW/effects routing or a JACK-only studio setup, rather than
+adding file formats or speed engines. The old miniaudio selection tried native
+Windows output, or Linux PulseAudio/ALSA, before JACK; it did not expose an app
+backend selector. Normal PipeWire desktops can already serve PulseAudio
+clients through [pipewire-pulse](https://pipewire.pages.freedesktop.org/pipewire/page_man_pipewire-pulse_1.html).
+Keep JACK disabled by default. A future opt-in needs a deliberate selector and
+tests for server loss, buffer-size changes and source-time accounting.
+
 ### Other licenses and unfinished inventories
 
 Bungee Basic, selected Eigen Core, Filen and Internxt include MPL-2.0 code.
@@ -125,10 +139,10 @@ These are researched candidates, **not implemented codecs** in this branch.
 | --- | --- | --- | --- |
 | 1 | libopusfile + libopus + libogg | BSD-3-Clause | Ogg Opus, sample seeking, pre-skip/end trimming and chained streams. Disable HTTP/opusurl so the app owns I/O and no optional OpenSSL dependency is added. |
 | 2 | libvorbisfile + libvorbis + libogg | BSD-3-Clause | Ogg Vorbis; shares libogg. Incremental float decode and 64-bit PCM positions suit long books. Handle or explicitly reject chained format changes. |
-| 3 | Ittiam/AOSP libxaac decoder/common sources | Apache-2.0 | Broader AAC-LC and HE-AAC v1/v2; upstream also implements USAC/xHE-AAC. Reuse the Dart MP4 demux. Requires output-rate/frame-size, trimming and seek validation; it is not a drop-in AAC-LC function replacement. |
-| 4 | Apple ALAC reference decoder | Apache-2.0 | ALAC in M4A/M4B after extending the MP4 sample entry/magic-cookie path. The codec alone is not an MP4 demuxer. |
-| 5 | dr_flac, or the libFLAC library source closure | MIT-0/Unlicense for dr_flac; BSD for libFLAC | Broader FLAC/Ogg-FLAC coverage. Preserve bounded reads/seeks and explicitly resolve unknown stream length. Select library code rather than differently licensed CLI tools. |
+| 3 | Apple ALAC reference decoder | Apache-2.0 | ALAC in M4A/M4B after extending the MP4 sample entry/magic-cookie path. The codec alone is not an MP4 demuxer. |
+| 4 | dr_flac, or the libFLAC library source closure | MIT-0/Unlicense for dr_flac; BSD for libFLAC | Broader FLAC/Ogg-FLAC coverage. Preserve bounded reads/seeks and explicitly resolve unknown stream length. Select library code rather than differently licensed CLI tools. |
 | Lower | dr_mp3 or minimp3 | MIT-0/Unlicense for dr_mp3; CC0 for minimp3 | Independent MP3 compatibility/reference paths if tests justify them; they do not fill a currently missing format. |
+| Deferred pending patent/distribution decision | Ittiam/AOSP libxaac decoder/common sources | Apache-2.0 | Broader AAC-LC/HE-AAC/USAC decoding, but the source license does not establish complete codec patent coverage. Prefer OS decoding on Android/Apple/Windows; do not add a default bundled AAC fallback merely to increase format count. |
 
 Primary sources: [Opus licenses](https://opus-codec.org/license/),
 [opusfile dependency split](https://github.com/xiph/opusfile),

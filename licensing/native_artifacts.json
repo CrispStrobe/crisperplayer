@@ -471,13 +471,19 @@
           "path": "licensing/evidence/native_audio_ci_2026-11-11.json",
           "sha256": "498555e636612b575f8912349c2e907c2a7295baf39f758ed249af81bbad866b",
           "note": "Observed Linux release-bundle audit and exact packaged native tests, macOS host results, Windows fix and local JACK-removal checks. Confirms bundled SMB presence, not full SMB payload/license clearance."
+        },
+        {
+          "path": "docs/AUDIO_PATENTS.md",
+          "sha256": "a511c57d28b4552e480f52a04455655e349b1cf3e6d63757774a74fb2cf09a38",
+          "note": "Dated primary-source patent findings and OS-first AAC direction. Source-license identification is separate from patent coverage; no patent clearance is asserted."
         }
       ],
       "blockers": [
         "Retain target-specific compiled artifacts and inspect packaged hashes, linked dependencies and notices for Android, iOS, macOS, Linux and Windows. The shared source review is not blanket artifact approval.",
         "Review exact source/build correspondence and source delivery for each shipped native artifact. Preserve MPL-covered source availability and all original notices.",
         "Android requires the existing APK ELF/DEX/JNI/ABI/alignment and pinned NDK runtime audit. Apple and desktop integration need target playback, seek, end-of-stream, interruption and routing validation; host signal tests alone do not establish these behaviors."
-      ]
+      ],
+      "patent_review_status": "not_established"
     },
     {
       "id": "android-ndk-runtime-28.2.13676358",
@@ -559,7 +565,7 @@
       "source_review_status": "pinned_with_reproducible_apache_tables",
       "license_review_status": "reviewed_selected_source_grants",
       "artifact_review_status": "pending_target_artifact_validation",
-      "scope": "Selected Glint decoder source closure with documented bounded-frame patches. AAC numerical tables are generated offline from immutable, hash-verified Apache-2.0 vo-aacenc inputs, with all 45 arrays and 3,229 values unchanged and complete original notices. Historical reproducing revisions are recorded separately from the unknown original invocation. No encoders, whole-file convenience decoder, FFmpeg or mpv runtime is compiled.",
+      "scope": "Selected Glint decoder source closure with documented bounded-frame patches. AAC numerical tables are generated offline from immutable, hash-verified Apache-2.0 vo-aacenc inputs, with all 45 arrays and 3,229 values unchanged and complete original notices. Historical reproducing revisions are recorded separately from the unknown original invocation. No encoders, whole-file convenience decoder, FFmpeg or mpv runtime is compiled. AAC patent coverage has not been established; see the separately recorded patent review status and distribution blocker.",
       "source": {
         "repository": "https://github.com/CrispStrobe/glint",
         "revision": "7b458cff0fc9c397f671c422db4770c72fc22f5c"
@@ -619,11 +625,18 @@
           "path": "licensing/evidence/native_audio_ci_2026-11-11.json",
           "sha256": "498555e636612b575f8912349c2e907c2a7295baf39f758ed249af81bbad866b",
           "note": "Observed Linux release-bundle audit and exact packaged native tests, macOS host results, Windows fix and local JACK-removal checks. Confirms bundled SMB presence, not full SMB payload/license clearance."
+        },
+        {
+          "path": "docs/AUDIO_PATENTS.md",
+          "sha256": "a511c57d28b4552e480f52a04455655e349b1cf3e6d63757774a74fb2cf09a38",
+          "note": "Dated primary-source patent findings and OS-first AAC direction. Source-license identification is separate from patent coverage; no patent clearance is asserted."
         }
       ],
       "blockers": [
-        "Validate final Windows/Linux packaged codec binaries, dependency closure, exact source/build correspondence and delivered notices. Host decoder/seek tests and reproducible source tables do not approve target artifacts."
-      ]
+        "Validate final Windows/Linux packaged codec binaries, dependency closure, exact source/build correspondence and delivered notices. Host decoder/seek tests and reproducible source tables do not approve target artifacts.",
+        "Establish the patent/distribution position for the currently compiled Glint AAC-LC implementation on Windows/Linux. Reproducible Apache table provenance is a copyright/source result, not AAC patent clearance. Prefer a validated OS decoder on Windows; resolve Linux coverage or exclude the implementation from that release."
+      ],
+      "patent_review_status": "not_established"
     },
     {
       "id": "desktop-native-output",

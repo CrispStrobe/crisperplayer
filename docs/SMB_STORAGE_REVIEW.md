@@ -28,3 +28,22 @@ pass. SMBJ is Android-specific; the Swift SMBClient advertises SMB2.0.
 This branch does not claim to remove LGPL. Existing notices and encryption
 defaults remain required. No engine migration or dependency pin change is
 implied by progress-notification optimization.
+
+## Implemented and validated on this branch
+Byte-progress notifications are coalesced into 100 ms windows. Byte accounting
+and pause checks still run on every chunk, while queued/retrying/importing and
+terminal phase changes notify immediately and cancel any stale timer. Disposal
+cancels pending notifications. This applies to every offline-download transport,
+including SMB; it does not alter transfer concurrency or resume semantics.
+
+The three new timer-contract tests passed in an isolated Dart harness using
+fake_async: 1,000 chunk updates publish the latest count once, a phase change
+publishes immediately without a later duplicate, and disposal suppresses all
+pending/subsequent notifications. The same assertions are committed as Flutter
+tests in `test/progress_notifications_test.dart` for normal app CI.
+
+Full Flutter startup/testing was blocked by automatic approval review because
+the SDK startup attempted to access instance metadata. No workaround for that
+access was used; the isolated checks import only the pure-Dart progress helper.
+The full app/download integration suite and on-device performance remain
+unverified here. No throughput or battery improvement has been measured.

@@ -1,0 +1,20 @@
+name: Shared SMB contract
+on:
+  push:
+    paths: ['pubspec.yaml', 'pubspec.lock', 'test/smb_backend_contract_test.dart', 'test/progress_notifications_test.dart', '.github/workflows/smb-storage.yml']
+  pull_request:
+    paths: ['pubspec.yaml', 'pubspec.lock', 'test/smb_backend_contract_test.dart', 'test/progress_notifications_test.dart', '.github/workflows/smb-storage.yml']
+  workflow_dispatch:
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          cache: true
+      - run: flutter pub get
+      - run: git diff --exit-code -- pubspec.lock
+      - run: flutter test test/smb_backend_contract_test.dart test/progress_notifications_test.dart
+      - run: python3 -m unittest discover -s scripts/tests -p test_distribution_licenses.py

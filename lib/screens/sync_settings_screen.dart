@@ -1,8 +1,10 @@
 import '../widgets/folder_sync_panel.dart';
 import '../widgets/plex_sync_panel.dart';
 import '../widgets/server_connection_dialog.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../providers/providers.dart';
 import '../services/server/remote_client.dart';
 import '../services/server/remote_library_service.dart';
@@ -204,7 +206,9 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                             : Icons.dns_outlined,
                       ),
                       title: Text(c.name),
-                      subtitle: Text(c.url.toString()),
+                      subtitle: Text(
+                        '${c.url}${c.kind == 'smb' ? '\nSMB transport: ${c.smbBackend?.name ?? 'build default'}' : ''}',
+                      ),
                       onTap: _loading
                           ? null
                           : () {
@@ -212,12 +216,34 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                               _trail.clear();
                               _browse('', c.name);
                             },
-                      trailing: IconButton(
-                        tooltip: 'Disconnect',
-                        icon: const Icon(Icons.link_off),
-                        onPressed: _loading || remote.busy
-                            ? null
-                            : () => _run(() => remote.disconnect(c.id)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (c.kind == 'smb')
+                            PopupMenuButton<SmbBackend>(
+                              tooltip: 'SMB transport',
+                              enabled: !_loading && !remote.busy,
+                              initialValue: c.smbBackend,
+                              onSelected: (backend) => _run(
+                                () => remote.setSmbBackend(c.id, backend),
+                              ),
+                              itemBuilder: (_) => [
+                                for (final backend in SmbBackend.values)
+                                  PopupMenuItem(
+                                    value: backend,
+                                    child: Text(backend.name),
+                                  ),
+                              ],
+                              icon: const Icon(Icons.settings_ethernet),
+                            ),
+                          IconButton(
+                            tooltip: 'Disconnect',
+                            icon: const Icon(Icons.link_off),
+                            onPressed: _loading || remote.busy
+                                ? null
+                                : () => _run(() => remote.disconnect(c.id)),
+                          ),
+                        ],
                       ),
                     ),
                 ],

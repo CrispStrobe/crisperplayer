@@ -38,5 +38,10 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
+    # Xcode 26 explicit modules break on the MacOSX.sdk / MacOSX26.2.sdk symlink pair
+    target.build_configurations.each do |c|
+      c.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
+      c.build_settings['CLANG_ENABLE_EXPLICIT_MODULES'] = 'NO'
+    end
   end
 end

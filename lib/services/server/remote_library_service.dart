@@ -5,17 +5,21 @@ import 'package:crisp_storage/crisp_storage.dart'
         TransferScheduler,
         ScheduledTransfer,
         TransferCancelled;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
+
 import '../library_service.dart';
 import 'credential_store.dart';
 import 'remote_client.dart';
+import 'progress_notifications.dart';
 import '../db/app_database.dart';
 
 class RemoteDownload {
@@ -75,6 +79,9 @@ class RemoteLibraryService extends ChangeNotifier {
   final List<RemoteConnection> _connections = [];
   final Map<String, RemoteDownload> _downloads = {};
   bool _loaded = false, _disposed = false, _pausing = false;
+  late final _progressNotifications = ProgressNotifications(() {
+    if (!_disposed) notifyListeners();
+  });
   late final _queue = TransferScheduler<_DownloadOperation>(
     maxConcurrent: 1,
     maxRetries: 2,
@@ -105,7 +112,7 @@ class RemoteLibraryService extends ChangeNotifier {
   List<RemoteConnection> get connections => List.unmodifiable(_connections);
   List<RemoteDownload> get downloads => List.unmodifiable(_downloads.values);
   void _changed() {
-    if (!_disposed) notifyListeners();
+    _progressNotifications.flush();
   }
 
   Future<Directory> _root() async =>
@@ -174,6 +181,7 @@ class RemoteLibraryService extends ChangeNotifier {
     String username = '',
     bool allowLocalHttp = false,
     bool requireEncryption = true,
+    SmbBackend? smbBackend,
     String? hostKey,
     String? twoFactorCode,
   }) async {
@@ -195,6 +203,7 @@ class RemoteLibraryService extends ChangeNotifier {
       username: username,
       allowLocalHttp: allowLocalHttp,
       requireEncryption: requireEncryption,
+      smbBackend: smbBackend,
       hostKey: hostKey,
     );
     final client = createClient(connection);
@@ -214,6 +223,32 @@ class RemoteLibraryService extends ChangeNotifier {
         ..clear()
         ..addAll(next);
       _changed();
+    });
+  }
+
+  /// GUI and desktop CLI share this update and credential-store transaction.
+  /// Changing transports never changes an active/queued transfer mid-flight.
+  Future<void> setSmbBackend(String id, SmbBackend backend) async {
+    await init();
+    await _saveConnections((current) {
+      if (busy)
+        throw const RemoteException(
+          'Pause active downloads before changing the SMB transport.',
+        );
+      final index = current.indexWhere((c) => c.id == id);
+      if (index < 0 || current[index].kind != 'smb') {
+        throw const FormatException('Choose an SMB connection.');
+      }
+      return [
+        for (final c in current)
+          if (c.id == id)
+            RemoteConnection.fromJson({
+              ...c.toJson(credentials: true),
+              'smbBackend': backend.name,
+            })
+          else
+            c,
+      ];
     });
   }
 
@@ -498,7 +533,7 @@ class RemoteLibraryService extends ChangeNotifier {
           onBytes: (bytes) {
             _checkPaused();
             job.bytes = completed + bytes;
-            _changed();
+            _progressNotifications.schedule();
           },
         );
         completed += await output.length();
@@ -565,6 +600,7 @@ class RemoteLibraryService extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _progressNotifications.dispose();
     _queue.dispose();
     _pausing = true;
     _activeClient?.close();

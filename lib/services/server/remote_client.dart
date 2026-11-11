@@ -1,15 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:crisp_storage/crisp_storage.dart' as shared;
 import 'package:filen_client/filen_client.dart' as filen;
 import 'package:internxt_client/internxt_client.dart' as internxt;
 import 'package:path/path.dart' as p;
 import 'package:crypto/crypto.dart';
+
 import '../../utils/folder_import.dart';
 import 'internxt_session_client.dart';
+
 export 'package:crisp_storage/crisp_storage.dart'
-    show RemoteException, RemoteEntry;
+    show RemoteException, RemoteEntry, SmbBackend, parseSmbBackend;
 
 /// Reuses CrispCloud's transports and encrypted provider clients. Session keys
 /// are serialized only by the caller's platform credential store.
@@ -32,6 +35,8 @@ class RemoteConnection implements shared.RemoteConnection {
   @override
   bool get requireEncryption => _base.requireEncryption;
   @override
+  shared.SmbBackend? get smbBackend => _base.smbBackend;
+  @override
   String? get hostKey => _base.hostKey;
   static const cloudKinds = {'filen', 'internxt'};
   RemoteConnection({
@@ -43,6 +48,7 @@ class RemoteConnection implements shared.RemoteConnection {
     required String secret,
     bool allowLocalHttp = false,
     bool requireEncryption = true,
+    shared.SmbBackend? smbBackend,
     String? hostKey,
   }) : _base = shared.RemoteConnection(
          id: id,
@@ -51,6 +57,7 @@ class RemoteConnection implements shared.RemoteConnection {
          secret: secret,
          allowLocalHttp: allowLocalHttp,
          requireEncryption: requireEncryption,
+         smbBackend: smbBackend,
          hostKey: hostKey,
          kind: cloudKinds.contains(kind) || kind == 'nextcloud'
              ? 'webdav'
@@ -95,6 +102,7 @@ class RemoteConnection implements shared.RemoteConnection {
         secret: row['secret'] as String,
         allowLocalHttp: row['allowLocalHttp'] == true,
         requireEncryption: row['requireEncryption'] != false,
+        smbBackend: shared.parseSmbBackend(row['smbBackend']),
         hostKey: row['hostKey'] as String?,
       );
   shared.RemoteConnection get transport => _base;
@@ -209,11 +217,9 @@ class RemoteClient {
     try {
       final parts = token!.split('.');
       if (parts.length != 3) return false;
-      final claims =
-          jsonDecode(
-                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-              )
-              as Map;
+      final claims = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      ) as Map;
       final expiry = claims['exp'];
       return expiry is num &&
           expiry * 1000 <= now.millisecondsSinceEpoch + 60000;
@@ -346,9 +352,9 @@ class RemoteClient {
   Future<List<shared.RemoteEntry>> tracks(String path) async =>
       _transport != null
       ? _transport!.tracks(path)
-      : (await browse(
-          path,
-        )).where((e) => e.type == 'file' && isAudio(e.name)).toList();
+      : (await browse(path))
+            .where((e) => e.type == 'file' && isAudio(e.name))
+            .toList();
   Future<void> download(
     String path,
     File output, {

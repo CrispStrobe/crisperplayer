@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:crisperplayer/utils/format.dart' show parseTimecode;
 import 'package:crisperplayer/cli/control_client.dart';
 import 'package:crisperplayer/utils/folder_import.dart';
@@ -7,6 +8,7 @@ import 'package:crisperplayer/utils/folder_import.dart';
 const usage = '''CrisperPlayer desktop CLI
 Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
 
+  server-settings ID [libsmb2|rust|auto]  Show/set the saved SMB transport
   servers                List Plex / Filen / Internxt / Nextcloud / NAS connections
   server-downloads       Show active and paused downloads
   server-cancel          Pause the active transfer; keep partial files
@@ -90,6 +92,15 @@ Future<void> main(List<String> arguments) async {
     final client = ControlClient(descriptor);
     Object? result;
     switch (command) {
+      case 'server-settings':
+        if (args.isEmpty || args.length > 2)
+          throw const FormatException(
+            'server-settings requires ID and an optional backend',
+          );
+        result = await client.command('server-settings', {
+          'connectionId': args.first,
+          if (args.length == 2) 'smbBackend': args[1],
+        });
       case 'import-library':
         final dryRun = args.remove('--dry-run');
         if (args.length != 1) {

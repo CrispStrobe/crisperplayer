@@ -211,7 +211,7 @@ The playback tests use the production coordinator and SQLite with an injected au
 flutter test integration_test/app_test.dart -d <device-id>
 ```
 
-See [architecture](docs/ARCHITECTURE.md), [Android build](docs/ANDROID_BUILD.md), [iOS build](docs/IOS_BUILD.md), and [sync design](docs/CLOUD_SYNC.md).
+See [architecture](docs/ARCHITECTURE.md), [Dart/Rust storage engines](docs/STORAGE_ENGINE_ARCHITECTURE.md), [Android build](docs/ANDROID_BUILD.md), [iOS build](docs/IOS_BUILD.md), and [sync design](docs/CLOUD_SYNC.md).
 
 ## macOS and CLI
 

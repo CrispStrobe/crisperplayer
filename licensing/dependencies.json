@@ -2,7 +2,7 @@
   "schema_version": 1,
   "reviewed_at": "2026-11-11",
   "root_package": "crisperplayer",
-  "root_pubspec_sha256": "1f7696784af2ba3f476e8c6f2eb9dfeb5d04b10d35ceab664561cfebd8b1b4f3",
+  "root_pubspec_sha256": "8f9c402fcfe3abb37dae53267a3e6a9d6424a4d5cdbee4fc218f064398d0e67d",
   "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test. The exact user-owned CrisperPlayer and crisp_storage identities have an explicit external-license policy exemption; their original license files and every external dependency remain checked.",
   "sdk": {
     "flutter_version": "3.44.4",
@@ -322,9 +322,9 @@
         "type": "git",
         "url": "https://github.com/CrispStrobe/CrispCloud",
         "path": "packages/crisp_storage",
-        "resolved-ref": "ac90899f8110dcb266d122208b3b3a879a257eee"
+        "resolved-ref": "13ca681f0c706cf24e65c7906f8a98e20421c590"
       },
-      "pubspec_sha256": "1cbcf54b572f78e8523ca52d2f34ce6a0a0c96a16d3a2b3a850261856a573f30",
+      "pubspec_sha256": "886e50e9c7dc6710dcaf24cf5bc7d2321896c3dc6eebf2b4d314030d8921d4d9",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -370,7 +370,7 @@
       "source": {
         "type": "root"
       },
-      "pubspec_sha256": "1f7696784af2ba3f476e8c6f2eb9dfeb5d04b10d35ceab664561cfebd8b1b4f3",
+      "pubspec_sha256": "8f9c402fcfe3abb37dae53267a3e6a9d6424a4d5cdbee4fc218f064398d0e67d",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -488,14 +488,14 @@
     },
     {
       "name": "dart_smb2",
-      "version": "0.2.1",
+      "version": "0.2.5+crisp.1",
       "source": {
-        "type": "hosted",
-        "name": "dart_smb2",
-        "url": "https://pub.dev",
-        "sha256": "ba54193d234f49a92e54222e5300bc4c901063457e8af2abfb4ac3153ac923eb"
+        "type": "git",
+        "url": "https://github.com/CrispStrobe/CrispCloud",
+        "path": "packages/dart_smb2",
+        "resolved-ref": "13ca681f0c706cf24e65c7906f8a98e20421c590"
       },
-      "pubspec_sha256": "ab47437c2936a804c0337026e3c59483e82238ebc56eb0c7b2197bcdae388c21",
+      "pubspec_sha256": "58550451c3bdb75176fa74a778f303a479fdfacf70094c106ac57f5dce4795d4",
       "license_expression": "BSD-3-Clause",
       "review_status": "reviewed",
       "license_files": [
@@ -506,7 +506,8 @@
         }
       ],
       "notes": [
-        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json."
+        "This grant covers package source; native payloads/build dependencies are recorded separately in native_artifacts.json.",
+        "BSD-3-Clause upstream 0.2.5 with a documented Crisp Apple packaging patch. Native libsmb2 remains LGPL-2.1-or-later and is reviewed separately."
       ]
     },
     {
@@ -830,7 +831,7 @@
           "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04"
         }
       ],
-      "source_tree_sha256": "b71e6d11f8040111ea754c2b45a552800762e774a303b5d99cf1530a1cbb64b7",
+      "source_tree_sha256": "9f242ec6172eab61d83bb50be37ac8209f7101b026638da0e4f985f571957ad9",
       "notes": [
         "File-level source and notice obligations remain; this package-level review does not approve separate native binaries.",
         "Local macOS loader patch retained under MPL-2.0. Linux/Windows optionally load OS OpenSSL; Windows can use system bcrypt. Apple uses the Dart cryptography fallback. No crypto native binary is vendored by this package."
@@ -3231,19 +3232,55 @@
           "sha256": "d47b93335401b052d79a2f5a3710e4cf7b5aed782faedf84d40fbdd6eb934ec7"
         }
       ]
+    },
+    {
+      "name": "build_cli_annotations",
+      "version": "2.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "build_cli_annotations",
+        "url": "https://pub.dev",
+        "sha256": "e563c2e01de8974566a1998410d3f6f03521788160a02503b0b1f1a46c7b3d95"
+      },
+      "pubspec_sha256": "050a4af23f69bdb67881f2e7dd8a4e5dfb2fa900bd11e5effa75c48fe5082a27",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "build_cli_annotations",
+          "path": "LICENSE",
+          "sha256": "2ba6b4fdfeda37720de46a37ebe5c654fc2f62f9e31a1f1c548f3df4c56e5553"
+        }
+      ],
+      "notes": [
+        "Dart runtime dependency of the optional Rust SMB adapter; native Cargo dependencies are recorded separately in the pinned crisp_storage source."
+      ]
+    },
+    {
+      "name": "flutter_rust_bridge",
+      "version": "2.11.1",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_rust_bridge",
+        "url": "https://pub.dev",
+        "sha256": "37ef40bc6f863652e865f0b2563ea07f0d3c58d8efad803cc01933a4b2ee067e"
+      },
+      "pubspec_sha256": "6c372714cabf6a9f751fd1c4269f05f46f5e5323ace012c13652c76dc6f3f097",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_rust_bridge",
+          "path": "LICENSE",
+          "sha256": "d56622df159a9967bd6a16c726823a2cbe8546c1f18437617283c9da27000390"
+        }
+      ],
+      "notes": [
+        "Dart runtime dependency of the optional Rust SMB adapter; native Cargo dependencies are recorded separately in the pinned crisp_storage source."
+      ]
     }
   ],
   "required_native_components": [
-    {
-      "id": "libsmb2-r9",
-      "platforms": [
-        "android",
-        "ios",
-        "macos",
-        "linux",
-        "windows"
-      ]
-    },
     {
       "id": "flutter-engine-runtime",
       "platforms": [
@@ -3309,6 +3346,16 @@
     {
       "id": "desktop-native-output",
       "platforms": [
+        "linux",
+        "windows"
+      ]
+    },
+    {
+      "id": "libsmb2-r10",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
         "linux",
         "windows"
       ]
@@ -4051,7 +4098,7 @@
     {
       "package": "dart_smb2",
       "path": "hook/build.dart",
-      "sha256": "421e56374d60053bc8f3f5abc81fe2a22931448027474cf39963aa66374b952e",
+      "sha256": "9926ad1b523f5122ac14319e28ddecdf1da0e7279c0fe3d49b1be058f9098eb2",
       "platforms": [
         "android",
         "ios",
@@ -5375,6 +5422,168 @@
       "platforms": [
         "windows"
       ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "hook/apple_build.dart",
+      "sha256": "f620835d7f722ffed437a7414e0bf93a3ce955622606d2a19bb5c51363afd9f3",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "UPSTREAM.json",
+      "sha256": "3c469ccf27afeaec834bdb562c84cc6cd169b8d0e7da15a3dbae10a0d3f7b5da",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/LICENSE",
+      "sha256": "3d980201ca4f6c78fb1a79e85485cd956151b4fdc1275ef196370d97f1b61e6e",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/licenses/libsmb2/COPYING",
+      "sha256": "fd87b0d474243809ec4b41c6c8e4a6563c143e5c1e1f4039adc54c0151babf76",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/licenses/libsmb2/LICENCE-LGPL-2.1.txt",
+      "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_compound_callbacks.py",
+      "sha256": "4429ebd6acb43e83db0c42ec9eef139389982fd512a98f3c4054c4e475dc6322",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_create_data_leaks.py",
+      "sha256": "e097d8a597a4dc8c3f14bbcf3214ff31072edfbb599ba7c421b078cd334a7602",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_nterror_reporting.py",
+      "sha256": "7cafb907b90b0a50962f9b87f076d6f1270cbea26ae5296cd5866d295542be1b",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_poll_eintr.py",
+      "sha256": "09d96e3d5b448567973a5c52ae7948413723c590f642603e214046a82534297a",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_rmdir_disposition.py",
+      "sha256": "92a9bec3930b5535cd8e219f62d0e879d1140421c25cddee23fa192f95ea41f5",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_truncate_non_directory.py",
+      "sha256": "94dca2d839a2b663a7253fa8ab8226daff0f831f3eafd4a24e122d3cdf1e138f",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_unlink_non_directory.py",
+      "sha256": "adea67bd9b6591d54cf933529fb872c67b013997e7992cbecf1766fdd4688ff4",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/patches/libsmb2/shared/patch_utimes.py",
+      "sha256": "180fc39c246386e666fb1953e148b8120688e04dd6f6ba3e2511c08577b24616",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/scripts/build_libsmb2_ios.sh",
+      "sha256": "8df9bb9f62591a3300b2e60396f43341b31c8e6c57aac0608b01b7e8e0da9cba",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/scripts/build_libsmb2_macos.sh",
+      "sha256": "e31c0e78f8b521e5364624828a59e1e46a473c47d0c86c09c7f7e0fa5d65b40a",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/scripts/shared/_helpers.sh",
+      "sha256": "48c70e9785e50fd28fde20afab785110a283df18e5c8e5288ed076dfa2c579d4",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/scripts/shared/_versions.sh",
+      "sha256": "69a518ec73ace00eeb19e5dc55d8478110da8d4104221c94db3fb72c2c14ed31",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
+    },
+    {
+      "package": "dart_smb2",
+      "path": "native/scripts/shared/config/config.h",
+      "sha256": "86a5decd64d6a08cd3c57f15b4fef156df2eab9f0efe44d16cb95ddb69c8dc5d",
+      "platforms": [
+        "ios",
+        "macos"
+      ]
     }
   ],
   "ownership_authorization": {
@@ -5394,7 +5603,7 @@
           "type": "git",
           "url": "https://github.com/CrispStrobe/CrispCloud",
           "path": "packages/crisp_storage",
-          "resolved-ref": "ac90899f8110dcb266d122208b3b3a879a257eee"
+          "resolved-ref": "13ca681f0c706cf24e65c7906f8a98e20421c590"
         }
       }
     ]

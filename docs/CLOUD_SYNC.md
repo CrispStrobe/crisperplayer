@@ -5,6 +5,10 @@ The native app supports Plex progress and encrypted progress files in your own
 Nextcloud/WebDAV, Filen or Internxt folder. The browser player currently uses
 its separate manual progress backup/restore format.
 
+Filen/Internxt currently use the Dart clients. The proposed shared Rust provider
+contract must cover these encrypted progress-file writes as well as audiobook
+reads; see [storage engines](STORAGE_ENGINE_ARCHITECTURE.md).
+
 ## Plex
 
 Download a book from Plex first. In **Cloud, servers & NAS → Plex progress sync**,

@@ -22,7 +22,42 @@ set(CRISPER_DSP_TESTS OFF CACHE BOOL "" FORCE)
 # native plugin registration and need not have a sibling plugin symlink.
 get_filename_component(CRISPER_AUDIO_PACKAGE_ROOT
   "${CMAKE_CURRENT_SOURCE_DIR}/.." REALPATH)
-add_subdirectory("${CRISPER_AUDIO_PACKAGE_ROOT}/../just_audio/native/crisper_dsp"
+set(CRISPER_DSP_SOURCE_DIR
+  "${CRISPER_AUDIO_PACKAGE_ROOT}/../just_audio/native/crisper_dsp")
+# Windows: CMake's REALPATH does not resolve Flutter's plugin symlink there,
+# so locate just_audio through the app's resolved Dart package configuration.
+if(NOT EXISTS "${CRISPER_DSP_SOURCE_DIR}/CMakeLists.txt")
+  set(_crisper_pkg_config "${CMAKE_SOURCE_DIR}/../.dart_tool/package_config.json")
+  if(NOT EXISTS "${_crisper_pkg_config}")
+    message(FATAL_ERROR "crisper_dsp not found next to crisper_audio and no "
+                        "package config at ${_crisper_pkg_config}")
+  endif()
+  file(READ "${_crisper_pkg_config}" _crisper_pkg_json)
+  string(JSON _crisper_pkg_count LENGTH "${_crisper_pkg_json}" packages)
+  math(EXPR _crisper_pkg_last "${_crisper_pkg_count} - 1")
+  foreach(_i RANGE ${_crisper_pkg_last})
+    string(JSON _name GET "${_crisper_pkg_json}" packages ${_i} name)
+    if(_name STREQUAL "just_audio")
+      string(JSON _uri GET "${_crisper_pkg_json}" packages ${_i} rootUri)
+      if(_uri MATCHES "^file:///?(.*)$")
+        set(_uri "${CMAKE_MATCH_1}")
+        if(NOT WIN32 AND NOT _uri MATCHES "^/")
+          set(_uri "/${_uri}")
+        endif()
+      else()
+        set(_uri "${CMAKE_SOURCE_DIR}/../.dart_tool/${_uri}")
+      endif()
+      string(REPLACE "%20" " " _uri "${_uri}")
+      get_filename_component(_uri "${_uri}" ABSOLUTE)
+      set(CRISPER_DSP_SOURCE_DIR "${_uri}/native/crisper_dsp")
+      break()
+    endif()
+  endforeach()
+endif()
+if(NOT EXISTS "${CRISPER_DSP_SOURCE_DIR}/CMakeLists.txt")
+  message(FATAL_ERROR "crisper_dsp sources not found at ${CRISPER_DSP_SOURCE_DIR}")
+endif()
+add_subdirectory("${CRISPER_DSP_SOURCE_DIR}"
                  "${CMAKE_CURRENT_BINARY_DIR}/crisper_dsp")
 target_link_libraries(crisper_audio PRIVATE crisper_dsp)
 

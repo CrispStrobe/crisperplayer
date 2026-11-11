@@ -22,5 +22,12 @@ linter:
 analyzer:
   exclude:
     - packages/filen_client/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
   errors:
     invalid_annotation_target: ignore

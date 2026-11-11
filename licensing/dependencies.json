@@ -362,7 +362,7 @@
         "MIT applies to the independent Dart/native host. Glint decoder originals and patches retain MIT; AAC table data is reproducibly regenerated from pinned Apache-2.0 vo-aacenc inputs with complete notices. Miniaudio and the four-engine DSP closure retain their separate native identities and notices. Target artifact reviews remain unresolved; the package-level grant does not approve them.",
         "Windows/Linux replace the media_kit/libmpv runtime with a bounded Dart worker, Glint frame decoding and native PCM output. Apple/Android continue using existing platform adapters."
       ],
-      "source_tree_sha256": "0b42f127ee4dbefdd18fab1e31f336826d368a443a7194b485ee746ed647f6ff"
+      "source_tree_sha256": "914411bae6e468e244ae3624999960278434a610bdf92085c64be17a6c75347c"
     },
     {
       "name": "crisperplayer",
@@ -3608,7 +3608,7 @@
     {
       "package": "crisper_audio",
       "path": "native/CMakeLists.txt",
-      "sha256": "99efe1460f1cce3423a45073eee24f8879efad659df9df0e054ac88caef857eb",
+      "sha256": "bad021435dbf4595402fa386aad1942b6a64dfcda73ee79157b4b990d37db34a",
       "platforms": [
         "linux",
         "windows"
@@ -4057,7 +4057,7 @@
     {
       "package": "crisperplayer",
       "path": "macos/Podfile.lock",
-      "sha256": "e068781fcb05cb58433d78f0891b2f4c4e03949a879739554784cac44249bec3",
+      "sha256": "52d6a90d6765ed3572114b4efe05d81b4eebf7051ce74450a89c22c2356877ce",
       "platforms": [
         "macos"
       ]

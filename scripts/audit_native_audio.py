@@ -148,7 +148,8 @@ def verify_source_manifests(repo: Path = REPO) -> dict:
         "host_and_adapter_sources": {path.relative_to(repo).as_posix(): sha256(path) for path in owned},
         "miniaudio": {"revision": miniaudio["source_commit"], "license": miniaudio["license"], "files_verified": 2},
         "glint": {"revision": glint["commit"], "declared_license": glint["declared_license"],
-                  "files_verified": len(expected_glint), "provenance_caveat": glint.get("provenance_caveat")},
+                  "files_verified": len(expected_glint), "provenance_caveat": glint.get("provenance_caveat"),
+                  "flac_required": "src/flac_decoder.cpp" in expected_glint},
         "dsp": {"files_verified": len(expected_dsp), "components": [
             {"id": item["id"], "revision": item["revision"], "license": item["license_expression"]}
             for item in dsp["components"]]},
@@ -164,7 +165,7 @@ def bind(library: ct.CDLL, name: str, result, arguments):
     return function
 
 
-def probe_library(path: Path) -> dict:
+def probe_library(path: Path, *, require_flac: bool = False) -> dict:
     """Called in a child process: a crash/hang cannot become a successful audit."""
     with ExitStack() as stack:
         if sys.platform == "win32":
@@ -184,6 +185,12 @@ def probe_library(path: Path) -> dict:
         presented = bind(library, "ca_output_presented_frames", u64, [pointer])
         rendered = bind(library, "ca_output_rendered_frames", u64, [pointer])
         buffered = bind(library, "ca_output_buffered_frames", u32, [pointer])
+        capacity = bind(library, "ca_output_capacity_frames", u32, [pointer])
+        latency = bind(library, "ca_output_latency_frames", u32, [pointer])
+        playing = bind(library, "ca_output_is_playing", i32, [pointer])
+        volume = bind(library, "ca_output_set_volume", i32, [pointer, f32])
+        output_error = bind(library, "ca_output_error", ct.c_char_p, [pointer])
+        bind(library, "ca_output_pump", u32, [pointer, u32])
         underrun = bind(library, "ca_output_underrun_frames", u64, [pointer])
         backend = bind(library, "ca_output_backend_name", ct.c_char_p, [pointer])
         output = output_create(16000, 2, 16, 4, 2)
@@ -192,17 +199,21 @@ def probe_library(path: Path) -> dict:
             samples = (f32 * 48)(*(i / 64 for i in range(48)))
             result = (f32 * 40)()
             require(backend(output) == b"manual", "Audit sink is not the manual backend")
+            require(capacity(output) == 16 and latency(output) == 0, "Manual queue metadata is inconsistent")
             require(write(output, samples, 24) == 16, "Output did not enforce bounded partial writes")
             require(write(output, samples, 1) == 0, "Full output queue accepted extra audio")
             require(start(output) == 0, "Manual output failed to start")
+            require(playing(output) == 1 and volume(output, 0.5) == 0, "Output state/volume failed")
             require(render(output, result, 20) == 16, "Manual output consumed the wrong frame count")
-            require(list(result) == list(samples)[:32] + [0.0] * 8, "Output PCM order or underrun silence changed")
+            require(list(result) == [sample * 0.5 for sample in list(samples)[:32]] + [0.0] * 8,
+                    "Output PCM order, volume or underrun silence changed")
             require(rendered(output) == presented(output) == 16 and underrun(output) == 4,
                     "Underrun silence advanced the music clock")
             require(pause(output) == 0 and write(output, samples, 2) == 2, "Paused queue did not preserve PCM")
             require(render(output, result, 3) == 0 and buffered(output) == 2, "Pause consumed queued PCM")
             require(reset(output) == 0 and buffered(output) == rendered(output) == presented(output) == 0,
                     "Reset did not establish a clean source epoch")
+            require(playing(output) == 0 and output_error(output) == b"", "Reset left an active or failed output")
         finally:
             output_destroy(output)
 
@@ -225,6 +236,14 @@ def probe_library(path: Path) -> dict:
         finish = bind(library, "cp_dsp_finish", i32, [pointer])
         ended = bind(library, "cp_dsp_ended", i32, [pointer])
         source_frames = bind(library, "cp_dsp_source_frames", ct.c_int64, [pointer])
+        accepted_frames = bind(library, "cp_dsp_input_frames", ct.c_int64, [pointer])
+        output_frames = bind(library, "cp_dsp_output_frames", ct.c_int64, [pointer])
+        dsp_reset = bind(library, "cp_dsp_reset", i32, [pointer, ct.c_double])
+        bind(library, "cp_dsp_last_error", ct.c_char_p, [])
+        bind(library, "cp_dsp_available", i32, [pointer])
+        bind(library, "cp_dsp_latency_frames", i32, [pointer])
+        bind(library, "cp_dsp_write_s16", i32, [pointer, ct.POINTER(ct.c_int16), i32])
+        bind(library, "cp_dsp_read_s16", i32, [pointer, ct.POINTER(ct.c_int16), i32])
         input_frames = 4097
         signal = (f32 * input_frames)(*(0.25 * math.sin(2 * math.pi * 440 * i / 16000)
                                        for i in range(input_frames)))
@@ -259,9 +278,13 @@ def probe_library(path: Path) -> dict:
                 require(written == input_frames and delivered == int(input_frames / 1.5 + 0.5),
                         f"{name} output duration bypassed the selected speed")
                 require(source_frames(handle) == input_frames, f"{name} source clock did not reach EOF")
+                require(accepted_frames(handle) == written and output_frames(handle) == delivered,
+                        f"{name} ABI counters disagree with processed PCM")
                 require(energy > 0.01, f"{name} produced only silence")
                 engines.append({"id": engine_id, "name": name, "speed": 1.5,
                                 "input_frames": written, "output_frames": delivered})
+                require(dsp_reset(handle, 1.0) == 0 and source_frames(handle) == output_frames(handle) == 0,
+                        f"{name} reset retained an old source clock")
             finally:
                 destroy(handle)
 
@@ -283,19 +306,43 @@ def probe_library(path: Path) -> dict:
                         "Glint accepted an invalid compressed frame")
             finally:
                 glint_destroy(handle)
+
+        codecs = ["mp3", "aac-lc"]
+        if require_flac:
+            class FlacInfo(ct.Structure):
+                _fields_ = [("first_frame", ct.c_int64), ("frames", i32), ("encoded_bytes", i32)]
+
+            bytes_pointer = ct.POINTER(ct.c_uint8)
+            flac_info = bind(library, "ca_glint_flac_frame_info", i32,
+                             [bytes_pointer, bytes_pointer, i32, ct.POINTER(FlacInfo)])
+            flac_decode = bind(library, "ca_glint_flac_decode", i32,
+                               [bytes_pointer, bytes_pointer, i32, floats, i32, ct.POINTER(FlacInfo)])
+            streaminfo = (ct.c_uint8 * 34)()
+            info = FlacInfo()
+            require(flac_info(streaminfo, invalid, len(invalid), ct.byref(info)) < 0,
+                    "FLAC parser accepted invalid stream/frame data")
+            require(flac_decode(streaminfo, invalid, len(invalid), decoded, len(decoded), ct.byref(info)) < 0,
+                    "FLAC decoder accepted invalid stream/frame data")
+            codecs.append("flac")
         return {"passed": True, "output_abi": abi, "sink": "manual",
                 "checks": ["bounded queue", "PCM equality", "underrun clock", "pause", "reset", "cancellation"],
-                "engines": engines, "glint_contexts": ["mp3", "aac-lc"],
-                "glint_check": "Context creation and invalid-frame rejection; valid codec fixtures run in Dart CI"}
+                "engines": engines, "glint_decoders": codecs,
+                "glint_check": "Decoder ABI and invalid-frame rejection; valid codec fixtures run in Dart CI"}
 
 
-def run_probe(path: Path) -> dict:
-    process = subprocess.run([sys.executable, str(Path(__file__).resolve()), "--probe-library", str(path.resolve())],
+def run_probe(path: Path, *, require_flac: bool = False) -> dict:
+    command = [sys.executable, str(Path(__file__).resolve()), "--probe-library", str(path.resolve())]
+    if require_flac:
+        command.append("--require-flac")
+    process = subprocess.run(command,
                              capture_output=True, text=True, timeout=60)
     require(process.returncode == 0,
             f"Native ABI probe failed (exit {process.returncode}): {(process.stderr or process.stdout)[-4000:]}")
     result = json.loads(process.stdout)
     require(result.get("passed") is True, "Native ABI probe did not report success")
+    if require_flac:
+        require("flac" in result.get("glint_decoders", []),
+                "Source manifest requires FLAC but runtime probe did not exercise it")
     return result
 
 
@@ -328,7 +375,7 @@ def audit(*, bundle: Path | None = None, library: Path | None = None,
         report["source"] = verify_source_manifests(repo)
         revision = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True)
         report["source_revision"] = revision.stdout.strip() if revision.returncode == 0 else None
-        report["runtime"] = run_probe(library)
+        report["runtime"] = run_probe(library, require_flac=report["source"]["glint"]["flac_required"])
         report["status"] = "passed"
     except (AuditError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         report["findings"].append(str(error))
@@ -343,10 +390,11 @@ def main() -> int:
     location.add_argument("--probe-library", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--expected-sha256")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--require-flac", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.probe_library is not None:
         try:
-            print(json.dumps(probe_library(args.probe_library)))
+            print(json.dumps(probe_library(args.probe_library, require_flac=args.require_flac)))
             return 0
         except (AuditError, OSError, ValueError) as error:
             print(f"Native ABI probe: {error}", file=sys.stderr)

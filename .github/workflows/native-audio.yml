@@ -1,0 +1,146 @@
+name: Direct native audio
+
+on:
+  push:
+    branches: [master, feature/portable-speed-engines]
+    paths:
+      - 'packages/crisper_audio/**'
+      - 'packages/just_audio/native/crisper_dsp/**'
+      - 'lib/services/audio/**'
+      - 'lib/main.dart'
+      - 'test/native_audio_backend_test.dart'
+      - 'scripts/audit_native_audio.py'
+      - 'scripts/tests/test_native_audio_audit.py'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'linux/**'
+      - 'windows/**'
+      - '.github/workflows/native-audio.yml'
+  pull_request:
+    paths:
+      - 'packages/crisper_audio/**'
+      - 'packages/just_audio/native/crisper_dsp/**'
+      - 'lib/services/audio/**'
+      - 'lib/main.dart'
+      - 'test/native_audio_backend_test.dart'
+      - 'scripts/audit_native_audio.py'
+      - 'scripts/tests/test_native_audio_audit.py'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'linux/**'
+      - 'windows/**'
+      - '.github/workflows/native-audio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-audio-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Native audio (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: linux
+            library: libcrisper_audio.so
+            bundle: build/linux/x64/release/bundle
+          - runner: windows-2022
+            target: windows
+            library: crisper_audio.dll
+            bundle: build/windows/x64/runner/Release
+          - runner: macos-15
+            target: macos
+            library: libcrisper_audio.dylib
+            bundle: ''
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      CRISPER_REQUIRE_NATIVE_AUDIO: '1'
+      NATIVE_LIBRARY_NAME: ${{ matrix.library }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Preserve pinned vendor bytes on Windows
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Linux build dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libasound2-dev
+      - name: Audit failure regressions
+        run: python -m unittest discover -s scripts/tests -p test_native_audio_audit.py -v
+      - name: Build the actual native decoder, four processors, and output host
+        run: |
+          cmake -S packages/crisper_audio/native -B build/native-audio -DCMAKE_BUILD_TYPE=Release -DCRISPER_AUDIO_TESTS=ON
+          cmake --build build/native-audio --config Release --parallel 3
+          ctest --test-dir build/native-audio -C Release --output-on-failure
+      - name: Select the freshly built host library
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          matches = [p for p in Path('build/native-audio').rglob(os.environ['NATIVE_LIBRARY_NAME']) if p.is_file()]
+          if len(matches) != 1:
+              raise SystemExit(f'Expected exactly one native library, found {matches}')
+          library = matches[0].resolve().as_posix()
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as stream:
+              stream.write(f'CRISPER_AUDIO_LIBRARY_PATH={library}\n')
+          PY
+      - name: Exercise real host ABI and verify pinned sources
+        run: >-
+          python scripts/audit_native_audio.py
+          --library "$CRISPER_AUDIO_LIBRARY_PATH"
+          --output build/native-audio-evidence/host.json
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          cache: true
+      - run: flutter pub get
+      - name: Require real Dart FFI decoder, transport, clock, and app-adapter tests
+        run: flutter test --no-pub packages/crisper_audio/test test/native_audio_backend_test.dart
+      - name: Build the actual Flutter desktop bundle
+        if: matrix.target != 'macos'
+        run: |
+          dart run build_runner build --build-filter lib/services/db/app_database.g.dart
+          flutter build ${{ matrix.target }} --release --no-pub
+      - name: Verify the packaged library and reject legacy audio payloads
+        if: matrix.target != 'macos'
+        run: >-
+          python scripts/audit_native_audio.py
+          --bundle "${{ matrix.bundle }}"
+          --output build/native-audio-evidence/bundle.json
+      - name: Select the exact packaged library for Dart smoke tests
+        if: matrix.target != 'macos'
+        env:
+          NATIVE_BUNDLE: ${{ matrix.bundle }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          candidates = list(Path(os.environ['NATIVE_BUNDLE']).rglob(os.environ['NATIVE_LIBRARY_NAME']))
+          if len(candidates) != 1 or not candidates[0].is_file():
+              raise SystemExit(f'Missing or ambiguous packaged native library: {candidates}')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as stream:
+              stream.write(f'CRISPER_AUDIO_LIBRARY_PATH={candidates[0].resolve().as_posix()}\n')
+          PY
+      - name: Execute actual packaged codec and playback ABI through Dart FFI
+        if: matrix.target != 'macos'
+        run: flutter test --no-pub packages/crisper_audio/test test/native_audio_backend_test.dart
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: direct-native-audio-${{ matrix.target }}
+          path: build/native-audio-evidence/
+          if-no-files-found: warn

@@ -155,7 +155,7 @@ final class RunnerTests: XCTestCase {
       XCTAssertEqual(events.last?["updatePosition"] as? Int, 0, "Queued DSP output must not advance source time")
       _ = try portableCommand(player, "setSpeed", ["speed": 1.5])
       let firstPlay = expectation(description: "Pause resolves play")
-      player.handleMethodCall(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
+      player.handle(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
         XCTAssertFalse(result is FlutterError)
         firstPlay.fulfill()
       }
@@ -178,7 +178,7 @@ final class RunnerTests: XCTestCase {
       XCTAssertEqual(events.last?["updatePosition"] as? Int, 500_000)
       _ = try portableCommand(player, "setSpeed", ["speed": 2.0])
       let ended = expectation(description: "Finite node drain resolves play")
-      player.handleMethodCall(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
+      player.handle(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
         XCTAssertFalse(result is FlutterError)
         ended.fulfill()
       }
@@ -211,7 +211,7 @@ final class RunnerTests: XCTestCase {
       ])
       _ = try portableCommand(player, "setLoopMode", ["loopMode": loop])
       let ended = expectation(description: "Empty playlist terminates with loop \(loop)")
-      player.handleMethodCall(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
+      player.handle(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
         XCTAssertFalse(result is FlutterError)
         ended.fulfill()
       }
@@ -244,7 +244,7 @@ final class RunnerTests: XCTestCase {
   ) throws -> Any? {
     let done = expectation(description: method)
     var response: Any?
-    player.handleMethodCall(FlutterMethodCall(methodName: method, arguments: arguments)) {
+    player.handle(FlutterMethodCall(methodName: method, arguments: arguments)) {
       response = $0
       done.fulfill()
     }
@@ -276,7 +276,7 @@ final class RunnerTests: XCTestCase {
     _ = try portableCommand(player, "load", [
       "audioSource": portablePlaylist([portableFile(url, id: "book")]), "initialPosition": 0, "initialIndex": 0,
     ])
-    player.handleMethodCall(FlutterMethodCall(methodName: "play", arguments: [:])) { _ in }
+    player.handle(FlutterMethodCall(methodName: "play", arguments: [:])) { _ in }
     // Queue renders before completion-refill jobs can run. The real graph
     // exhausts its four PCM buffers and renders silence until the worker
     // catches up; that silence must not count as listened-to source audio.
@@ -320,7 +320,7 @@ final class RunnerTests: XCTestCase {
         ]), "initialPosition": 0, "initialIndex": 0,
       ])
       let ended = expectation(description: "Removal eventually completes active play")
-      player.handleMethodCall(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
+      player.handle(FlutterMethodCall(methodName: "play", arguments: [:])) { result in
         XCTAssertFalse(result is FlutterError)
         ended.fulfill()
       }

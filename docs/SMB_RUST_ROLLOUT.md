@@ -82,3 +82,9 @@ server and shared service for all three choices, persistence, secret redaction,
 invalid input and busy-transfer protection. `test/server_connection_ui_test.dart`
 checks the actual connection selector. Both are part of the Shared SMB contract
 workflow, alongside existing browse/download CLI and progress regression tests.
+
+The settings screen labels legacy profiles as `build default`, because their
+transport can be set by `CRISP_SMB_BACKEND`. An explicit saved choice always wins.
+The shared macOS Dart test job currently exposes an upstream prebuilt libsmb2
+install-name/header-padding failure. Keep macOS native-asset packaging as a
+blocking rollout check; passing Linux fixture tests does not clear that gate.

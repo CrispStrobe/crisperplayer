@@ -207,7 +207,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                       ),
                       title: Text(c.name),
                       subtitle: Text(
-                        '${c.url}${c.kind == 'smb' ? '\nSMB transport: ${c.smbBackend?.name ?? 'libsmb2'}' : ''}',
+                        '${c.url}${c.kind == 'smb' ? '\nSMB transport: ${c.smbBackend?.name ?? 'build default'}' : ''}',
                       ),
                       onTap: _loading
                           ? null
@@ -223,7 +223,7 @@ class _RemoteLibraryState extends ConsumerState<SyncSettingsScreen> {
                             PopupMenuButton<SmbBackend>(
                               tooltip: 'SMB transport',
                               enabled: !_loading && !remote.busy,
-                              initialValue: c.smbBackend ?? SmbBackend.libsmb2,
+                              initialValue: c.smbBackend,
                               onSelected: (backend) => _run(
                                 () => remote.setSmbBackend(c.id, backend),
                               ),

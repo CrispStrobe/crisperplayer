@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed_at_utc": "2026-11-10",
+  "reviewed_at_utc": "2026-11-11",
   "note": "Native evidence is separate from Dart package licenses. needs_review is not a finding that a component is GPL; it means release evidence or distribution obligations remain unresolved.",
   "components": [
     {
@@ -602,6 +602,33 @@
       "blockers": [
         "Run the exact installed-NDK notice preparation and final APK inspection, retaining per-ABI libc++_shared.so hashes, original/stripped byte comparisons, llvm-strip provenance, NDK source.properties and included notices. Script and fixture validation do not identify an actual redistributed runtime.",
         "Review the resulting runtime source/build provenance and applicable third-party notices before changing the artifact or license review status. Aggregate NDK notices also describe unshipped build tools."
+      ]
+    },
+    {
+      "id": "experimental-crisp-smb-rust",
+      "platforms": [
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
+      ],
+      "version": "crisp_smb 0.1.0 / smb2 0.43.0 / flutter_rust_bridge 2.11.1",
+      "license_expression": "MIT AND Apache-2.0 AND Unicode-3.0",
+      "review_status": "needs_review",
+      "source": {
+        "repository": "https://github.com/CrispStrobe/CrispCloud",
+        "revision": "ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2"
+      },
+      "evidence": [
+        {
+          "url": "https://github.com/CrispStrobe/CrispCloud/blob/ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2/packages/crisp_storage/licensing/rust_dependencies.json",
+          "note": "Exact all-target Cargo source grants and file hashes; 143 packages. This is not packaged-artifact approval."
+        }
+      ],
+      "blockers": [
+        "Experimental backend is opt-in; no Rust native library is bundled by the default app build. Before a Rust-enabled release, verify platform embedding/signing, final binary hashes, complete notices and runtime dependency closure.",
+        "Qualify required signing/encryption and transfers on real SMB3 NAS/device combinations before changing the libsmb2 default."
       ]
     }
   ]

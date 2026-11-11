@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "reviewed_at": "2026-11-10",
+  "reviewed_at": "2026-11-11",
   "root_package": "crisperplayer",
-  "root_pubspec_sha256": "7d4f854488a6698f557d9315730ebb9e597911d8ebd375693f683c40d835baa6",
+  "root_pubspec_sha256": "6cb69e3a7f570a740a770e493bb237395f5a9215add1bb661c3cd82371c18835",
   "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test. The exact user-owned CrisperPlayer and crisp_storage identities have an explicit external-license policy exemption; their original license files and every external dependency remain checked.",
   "sdk": {
     "flutter_version": "3.44.4",
@@ -236,6 +236,29 @@
       ]
     },
     {
+      "name": "build_cli_annotations",
+      "version": "2.1.1",
+      "source": {
+        "type": "hosted",
+        "name": "build_cli_annotations",
+        "url": "https://pub.dev",
+        "sha256": "e563c2e01de8974566a1998410d3f6f03521788160a02503b0b1f1a46c7b3d95"
+      },
+      "pubspec_sha256": "050a4af23f69bdb67881f2e7dd8a4e5dfb2fa900bd11e5effa75c48fe5082a27",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "build_cli_annotations",
+          "path": "LICENSE",
+          "sha256": "2ba6b4fdfeda37720de46a37ebe5c654fc2f62f9e31a1f1c548f3df4c56e5553"
+        }
+      ],
+      "notes": [
+        "Dart runtime dependency of the optional Rust SMB adapter; native Cargo dependencies are recorded separately in the pinned crisp_storage source."
+      ]
+    },
+    {
       "name": "characters",
       "version": "1.4.1",
       "source": {
@@ -342,9 +365,9 @@
         "type": "git",
         "url": "https://github.com/CrispStrobe/CrispCloud",
         "path": "packages/crisp_storage",
-        "resolved-ref": "ac90899f8110dcb266d122208b3b3a879a257eee"
+        "resolved-ref": "ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2"
       },
-      "pubspec_sha256": "1cbcf54b572f78e8523ca52d2f34ce6a0a0c96a16d3a2b3a850261856a573f30",
+      "pubspec_sha256": "f43f51e8352ec74e9ad22d085ebda8b790a9e1f45d1c88aa41fe27f4a255a04d",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -366,7 +389,7 @@
       "source": {
         "type": "root"
       },
-      "pubspec_sha256": "7d4f854488a6698f557d9315730ebb9e597911d8ebd375693f683c40d835baa6",
+      "pubspec_sha256": "6cb69e3a7f570a740a770e493bb237395f5a9215add1bb661c3cd82371c18835",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -929,6 +952,29 @@
           "path": "LICENSE",
           "sha256": "757d9c09a9a2a701144328c0fd596234ea287ff62952b39cd22f9ad4caed1171"
         }
+      ]
+    },
+    {
+      "name": "flutter_rust_bridge",
+      "version": "2.11.1",
+      "source": {
+        "type": "hosted",
+        "name": "flutter_rust_bridge",
+        "url": "https://pub.dev",
+        "sha256": "37ef40bc6f863652e865f0b2563ea07f0d3c58d8efad803cc01933a4b2ee067e"
+      },
+      "pubspec_sha256": "6c372714cabf6a9f751fd1c4269f05f46f5e5323ace012c13652c76dc6f3f097",
+      "license_expression": "MIT",
+      "review_status": "reviewed",
+      "license_files": [
+        {
+          "package": "flutter_rust_bridge",
+          "path": "LICENSE",
+          "sha256": "d56622df159a9967bd6a16c726823a2cbe8546c1f18437617283c9da27000390"
+        }
+      ],
+      "notes": [
+        "Dart runtime dependency of the optional Rust SMB adapter; native Cargo dependencies are recorded separately in the pinned crisp_storage source."
       ]
     },
     {
@@ -4704,7 +4750,7 @@
           "type": "git",
           "url": "https://github.com/CrispStrobe/CrispCloud",
           "path": "packages/crisp_storage",
-          "resolved-ref": "ac90899f8110dcb266d122208b3b3a879a257eee"
+          "resolved-ref": "ffeae11d53054190cf6f3a6fbcec2eb44b32dfb2"
         }
       }
     ]

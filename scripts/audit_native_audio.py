@@ -41,6 +41,13 @@ def require(condition: bool, message: str) -> None:
         raise AuditError(message)
 
 
+def checked_ended(state: int, engine: str) -> bool:
+    # The C ABI returns -1 on failure. Python truthiness would mistake that
+    # for successful EOF even if the final PCM and counters happened to match.
+    require(state in (0, 1), f"{engine} returned invalid drain state {state}")
+    return state == 1
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -271,7 +278,7 @@ def probe_library(path: Path, *, require_flac: bool = False) -> dict:
                     require(all(math.isfinite(value) for value in values), f"{name} emitted non-finite PCM")
                     energy += sum(value * value for value in values)
                     delivered += count
-                    if finishing and ended(handle):
+                    if finishing and checked_ended(ended(handle), name):
                         break
                 else:
                     raise AuditError(f"{name} did not drain")
@@ -409,6 +416,8 @@ def main() -> int:
     else:
         print(encoded, end="")
     print(f"Direct native audio audit: {report['status']}", file=sys.stderr)
+    for finding in report["findings"]:
+        print(f"  {finding}", file=sys.stderr)
     return int(report["status"] != "passed")
 
 

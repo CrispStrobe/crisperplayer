@@ -44,6 +44,9 @@ elseif(ANDROID)
 elseif(UNIX)
   find_package(Threads REQUIRED)
   target_link_libraries(crisper_audio PRIVATE Threads::Threads ${CMAKE_DL_LIBS} m)
+  # The FFI library must load independently of the Flutter executable. Catch
+  # missing runtime dependencies at link time, not only when Dart opens it.
+  target_link_options(crisper_audio PRIVATE "-Wl,--no-undefined")
 endif()
 
 if(CRISPER_AUDIO_TESTS)

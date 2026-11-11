@@ -86,11 +86,20 @@ jobs:
           --ndk "$ANDROID_HOME/ndk/28.2.13676358"
           --output build/android-audio-evidence/ndk-notices.json
       - name: Compile arm64 and x86-64 debug integration
-        run: flutter build apk --debug --no-pub --target-platform android-arm64,android-x64
+        # Flutter 3.44's --no-pub also skips mode-specific plugin registrant
+        # generation. Let each build regenerate its own debug/release list.
+        run: flutter build apk --debug --target-platform android-arm64,android-x64
       - name: Compile R8 release integration with the local debug key
         # No release signing secrets are supplied. The app's Gradle configuration
         # uses its local debug key while still running R8 and resource shrinking.
-        run: flutter build apk --release --no-pub --target-platform android-arm64,android-x64
+        run: |
+          flutter build apk --release --target-platform android-arm64,android-x64
+          python3 - <<'PY'
+          from pathlib import Path
+          registrant = Path('android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java').read_text()
+          if 'dev.flutter.plugins.integration_test.IntegrationTestPlugin' in registrant:
+              raise SystemExit('Release registrant still includes the development-only integration_test plugin')
+          PY
       - name: Inspect the final debug and release APK payloads
         env:
           AUDIT_SOURCE_REVISION: ${{ github.sha }}

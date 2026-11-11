@@ -32,11 +32,11 @@ class NativeAudioAuditTest(unittest.TestCase):
     def test_linux_and_windows_exact_bundle_paths(self):
         linux = self.put("lib/libcrisper_audio.so")
         found, report = audit.discover_bundle(self.bundle, "linux")
-        self.assertEqual(found, linux)
+        self.assertEqual(found, linux.resolve())
         self.assertEqual(report["native_library"], "lib/libcrisper_audio.so")
         linux.unlink()
         windows = self.put("crisper_audio.dll")
-        self.assertEqual(audit.discover_bundle(self.bundle, "win32")[0], windows)
+        self.assertEqual(audit.discover_bundle(self.bundle, "win32")[0], windows.resolve())
 
     def test_missing_packaged_library_never_falls_back_to_system(self):
         external = self.root / audit.expected_name(sys.platform)
@@ -124,6 +124,15 @@ class NativeAudioAuditTest(unittest.TestCase):
                 audit.subprocess, "run", return_value=result
             ), self.assertRaises(audit.AuditError):
                 audit.run_probe(self.root / "libcrisper_audio.so")
+
+    def test_negative_native_eof_status_is_an_error_not_completion(self):
+        self.assertFalse(audit.checked_ended(0, "sonic"))
+        self.assertTrue(audit.checked_ended(1, "sonic"))
+        for state in (-1, -2, 2):
+            with self.subTest(state=state), self.assertRaisesRegex(
+                audit.AuditError, "invalid drain state"
+            ):
+                audit.checked_ended(state, "sonic")
 
     def test_runtime_failure_preserves_failed_audit(self):
         library = self.put(audit.expected_name(sys.platform))

@@ -36,7 +36,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: native-audio-${{ github.ref }}
+  group: native-audio-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -83,6 +83,9 @@ jobs:
         run: python -m unittest discover -s scripts/tests -p test_native_audio_audit.py -v
       - name: Build the actual native decoder, four processors, and output host
         run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            export CC=clang CXX=clang++
+          fi
           cmake -S packages/crisper_audio/native -B build/native-audio -DCMAKE_BUILD_TYPE=Release -DCRISPER_AUDIO_TESTS=ON
           cmake --build build/native-audio --config Release --parallel 3
           ctest --test-dir build/native-audio -C Release --output-on-failure
@@ -114,7 +117,7 @@ jobs:
         if: matrix.target != 'macos'
         run: |
           dart run build_runner build --build-filter lib/services/db/app_database.g.dart
-          flutter build ${{ matrix.target }} --release --no-pub
+          flutter build ${{ matrix.target }} --release
       - name: Verify the packaged library and reject legacy audio payloads
         if: matrix.target != 'macos'
         run: >-

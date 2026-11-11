@@ -263,9 +263,14 @@ CaOutput* ca_output_create(int32_t sample_rate, int32_t channels,
     output->capacity = capacity_frames;
     output->period = period_frames;
     output->backend = backend;
-    if (!output->rendered.is_lock_free() || !output->presented.is_lock_free() ||
-        !output->underrun.is_lock_free() || !output->volume.is_lock_free() ||
-        !output->active.is_lock_free() || !output->error.is_lock_free()) {
+    // A runtime is_lock_free() query can emit __atomic_is_lock_free under
+    // Clang/libstdc++, creating an otherwise unnecessary libatomic dependency.
+    // The callback requires an unconditional lock-free guarantee for these
+    // types; ask the C++17 compile-time traits instead.
+    if constexpr (!std::atomic<uint64_t>::is_always_lock_free ||
+                  !std::atomic<float>::is_always_lock_free ||
+                  !std::atomic<bool>::is_always_lock_free ||
+                  !std::atomic<int32_t>::is_always_lock_free) {
         create_error = kAtomic;
         cleanup(output);
         return nullptr;

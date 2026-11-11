@@ -47,7 +47,7 @@ def verify_vendor():
                 blob = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
                 if blob != item.get('git_blob_sha1'):
                     raise RuntimeError(f'Upstream Git blob hash does not match: {path}')
-    actual = {str(p.relative_to(vendor)) for p in vendor.rglob('*') if p.is_file()} - {'manifest.json'}
+    actual = {p.relative_to(vendor).as_posix() for p in vendor.rglob('*') if p.is_file()} - {'manifest.json'}
     if actual != expected:
         raise RuntimeError(f'Unreviewed source closure: {sorted(actual ^ expected)}')
     if (vendor / 'eigen/unsupported').exists():

@@ -106,7 +106,8 @@ jobs:
           python3 scripts/audit_android_audio.py prepare-notices
           --ndk "$ANDROID_HOME/ndk/28.2.13676358"
           --output build/android-audio-evidence/ndk-notices.json
-      - run: flutter build apk --release --no-pub --target-platform android-arm,android-arm64,android-x64
+      # Regenerate the release registrant so development-only plugins stay out.
+      - run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
       - name: Verify and stage signed APK
         run: |
           mkdir -p dist

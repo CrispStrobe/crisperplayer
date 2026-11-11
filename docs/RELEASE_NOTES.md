@@ -1,3 +1,12 @@
+CrisperPlayer 0.1.0 build 20
+
+- Return Trail: protected replay of recently played passages, listening-gap navigation and cumulative coverage, with native controls and CLI support.
+- Dated listening journal with passage lookup, backups and filtered report export.
+- Optional speed processors (Bungee, Signalsmith, Chromium-derived WSOLA, Apple Spectral) with source-accurate positions; the default playback path is unchanged.
+- Desktop playback moved from mpv to bounded Dart/Glint decoding (incl. FLAC) and direct native output.
+- SMB: backend settings shared between the Player GUI and the desktop CLI; libsmb2 stays the default and the Rust SMB backend remains experimental and unbundled.
+- Internal TestFlight build: the new native components are still pending artifact-level license review; this build was released by explicit owner override of the release license gate.
+
 CrisperPlayer 0.1.0 build 18
 
 - Reused CrispCloud’s Filen macOS sandbox compatibility patch; native encryption/decryption and authentication rejection were verified in the Brickwright-signed Mac app.

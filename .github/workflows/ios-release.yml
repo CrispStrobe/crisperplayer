@@ -13,6 +13,10 @@ on:
         description: Retry internal distribution for the version already uploaded
         type: boolean
         default: false
+      license_gate_override:
+        description: Owner override for internal TestFlight only; report license blockers instead of failing (tag pushes always enforce)
+        type: boolean
+        default: false
 
 concurrency:
   group: ios-release
@@ -40,9 +44,16 @@ jobs:
           cache: true
       - name: Enforce external dependency policy before signing
         if: ${{ !inputs.distribute_only }}
+        env:
+          LICENSE_GATE_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && inputs.license_gate_override }}
         run: |
           flutter pub get
-          python3 scripts/check_distribution_licenses.py --enforce --platform ios
+          if [ "$LICENSE_GATE_OVERRIDE" = "true" ]; then
+            echo "::warning::License gate overridden by repository owner (${GITHUB_ACTOR}) for internal TestFlight; blockers below are reported, not resolved."
+            python3 scripts/check_distribution_licenses.py --report --platform ios
+          else
+            python3 scripts/check_distribution_licenses.py --enforce --platform ios
+          fi
       - name: Check signing configuration
         env:
           ASC_APP_ID: ${{ secrets.ASC_APP_ID }}

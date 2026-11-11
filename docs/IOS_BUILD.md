@@ -68,6 +68,12 @@ The local SDK/cache tools can stall on this machine. CI is the binary-build veri
 The host, share extension and CocoaPods deployment targets are all iOS 15.0 or newer. IPA verification rejects a lower minimum or missing document-opening configuration. `LSSupportsOpeningDocumentsInPlace` is explicitly false because imports copy audio into app-owned storage.
 
 
+Manual dispatch also offers `license_gate_override` (default off). It exists for
+owner-approved internal TestFlight builds while native artifact reviews are still
+open: the license check then runs in report mode and the run carries a warning
+naming the actor. It never applies to `v*` tag pushes, which always enforce, and it
+does not mark any component as reviewed.
+
 ## Versioned releases
 
 Tags matching the complete pubspec version/build (for example `v0.1.0+13`) trigger

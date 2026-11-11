@@ -18,3 +18,18 @@ jobs:
       - run: git diff --exit-code -- pubspec.lock
       - run: flutter test test/smb_backend_contract_test.dart test/progress_notifications_test.dart test/smb_settings_test.dart test/server_connection_ui_test.dart test/remote_library_test.dart
       - run: python3 -m unittest discover -s scripts/tests -p test_distribution_licenses.py
+      - name: Verify SMB source and native recipe evidence
+        run: |
+          python3 scripts/check_distribution_licenses.py --report --output smb-license-report.json
+          python3 - <<'PYTHON'
+          import json
+          report = json.load(open('smb-license-report.json'))
+          relevant = {'crisperplayer', 'crisp_storage', 'dart_smb2', 'pubspec.yaml', 'inventory', 'ownership'}
+          failures = [f for f in report['findings'] if f['component'] in relevant]
+          assert not failures, failures
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smb-license-evidence
+          path: smb-license-report.json

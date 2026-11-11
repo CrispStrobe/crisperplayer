@@ -88,3 +88,16 @@ transport can be set by `CRISP_SMB_BACKEND`. An explicit saved choice always win
 The shared macOS Dart test job currently exposes an upstream prebuilt libsmb2
 install-name/header-padding failure. Keep macOS native-asset packaging as a
 blocking rollout check; passing Linux fixture tests does not clear that gate.
+
+## Fallback packaging and verification
+
+GUI and authenticated desktop CLI use the same shared transport and persisted
+backend setting. The pinned shared source now includes dart_smb2 0.2.5+crisp.1:
+Apple builds compile the r10 libsmb2 source with install-name padding; Linux,
+Windows and Android use checksum-verified r10 binaries. Default and fallback
+selection are unchanged. Apple compilation requires Xcode tools, Python 3, curl
+and zip. See the pinned package's CRISP_PATCHES.md for source and license details.
+
+The distribution inventory records the fork and build inputs. Locally compiled
+Apple binaries need their own final hashes and LGPL distribution materials;
+upstream binary hashes cannot be reused for rebuilt or re-signed artifacts.

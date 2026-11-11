@@ -127,7 +127,7 @@
       ]
     },
     {
-      "id": "libsmb2-r9",
+      "id": "libsmb2-r10",
       "platforms": [
         "android",
         "ios",
@@ -135,71 +135,60 @@
         "linux",
         "windows"
       ],
-      "version": "7.0.0-dev+git20261011.e94eee9",
+      "version": "7.0.0-dev+git20261105.4d9ce67",
       "license_expression": "LGPL-2.1-or-later",
       "review_status": "needs_review",
       "artifacts": [
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_android-arm64-v8a.so",
-          "sha256": "d9af2446788f5eb298065312fcb21b11ebd7af83510bbfb0c09d8a6075bb2cf2"
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/libsmb2_android-arm64-v8a.so",
+          "sha256": "af27ac23a6c25843dbd3ae47023f1131b9593344125238374ed5e5577e33d73e"
         },
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_android-armeabi-v7a.so",
-          "sha256": "54d3e5c85fe824f426da21028500a825d1ee4ae7dd46a2cfc8e74f2e4e603d36"
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/libsmb2_android-armeabi-v7a.so",
+          "sha256": "9074910ca1f1bc347f3b65f1a92d6b7f77ec70a9280918e4f7f22ea2f707612e"
         },
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_android-x86_64.so",
-          "sha256": "e740406fb7e97c2b6aa1eb65864b348a9b720b07c1ff90b75e6e5be12beee205"
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/libsmb2_android-x86_64.so",
+          "sha256": "5db4be4402f379f6091f3710d7230de1bbba54c8360054930e915a418cbbf01f"
         },
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_ios.xcframework.zip",
-          "sha256": "a1f0b15bf0f173165e36abcfcea3b944f469fc2c7e3bd2b6d3d16df7a6c38f63"
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/libsmb2_linux-aarch64.so",
+          "sha256": "ed0b1858e97f74b117206a01aa2fc1be70c45027bb7fa92702ab4eee09e9aa23"
         },
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_linux-aarch64.so",
-          "sha256": "def2a4a9e74f7c5722007e4ef65a2be1f7ff84e49ff13932a344182c9a67718b"
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/libsmb2_linux-x86_64.so",
+          "sha256": "4612ed4499f4c066d0db295679469c62545c6252849bfa61eb5f45ec1bbd3577"
         },
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_linux-x86_64.so",
-          "sha256": "b4df2a237b72f50630deade0f3937cdceba4f34efca98126268242fc4c1e99dc"
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/libsmb2_windows-arm64.dll",
+          "sha256": "3ce1899948bdc16108d18669ca3d4c7428cfa31b7b9efab72a4dff1d40cf7819"
         },
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_macos.xcframework.zip",
-          "sha256": "922defa3509e550d32d66d7e8f84ef95ddf53fb9bb96a8ff85e01537765129e6"
-        },
-        {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_windows-arm64.dll",
-          "sha256": "48805c5d5af757cb8feb975d21cf3c7388727a0607872504d983aaac940b8a84"
-        },
-        {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/libsmb2_windows-x86_64.dll",
-          "sha256": "62fa825bfb67354c66af9a6be0055506f8c10c16ba97c333d64cdffbec2e046f"
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/libsmb2_windows-x86_64.dll",
+          "sha256": "e0aba8b2feb469b053abbfa6c305b362fee7a88c13edcddddf430d33a920377c"
         }
       ],
       "source": {
         "repository": "https://github.com/ales-drnz/libsmb2-scripts",
-        "revision": "f2695f24c0db8984cd0593738b72004ab48cfe1b",
-        "upstream_revision": "e94eee9465d55ed094ace2c038a8705b4822dada",
-        "upstream_tarball_sha256": "7f347c08c8cb66a94e42d1cac4686e71a093a7022e7e77cb5cc9325b8369b0ce"
+        "revision": "eca28a3ef007d6c268ebfd4a4950a0c28de6335c",
+        "upstream_revision": "4d9ce67863332462236d86bf76c85617a0b2897d",
+        "upstream_tarball_sha256": "6c34870b2aef319b5415e9912b406f922e03f127c072764ceca78139e6d94b7a"
       },
       "evidence": [
         {
-          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r9/manifest.json",
-          "sha256": "602f58babb062c32adc3a99f2d254cf70625027fbaae000384b7816d54345d2d",
-          "note": "Release manifest pins upstream source, build-script commit, patch list, all nine binaries and LGPL notice hashes. Matches dart_smb2 0.2.1 build-hook SHA-256 pins."
+          "url": "https://github.com/ales-drnz/dart_smb2/releases/download/libsmb2-r10/manifest.json",
+          "sha256": "47c6988d67051090c616b353ba62d1a64c3e163d063cafcc718396fdaea7ecc0",
+          "note": "Exact r10 manifest. Seven non-Apple binaries match the vendored hook. Apple binaries are rebuilt locally and are deliberately not identified by upstream binary hashes."
         },
         {
-          "url": "https://github.com/ales-drnz/libsmb2-scripts/blob/f2695f24c0db8984cd0593738b72004ab48cfe1b/scripts/build_libsmb2_ios.sh",
-          "note": "Exact r9 recipe builds dynamic Apple frameworks; the newer default branch has different sources/dependencies and is not evidence for r9."
-        },
-        {
-          "url": "https://github.com/ales-drnz/libsmb2-scripts/blob/f2695f24c0db8984cd0593738b72004ab48cfe1b/scripts/shared/_versions.sh",
-          "note": "Exact revision uses e94eee9 upstream; r9 recipe does not include the OpenSSL dependency introduced by later releases."
+          "url": "https://github.com/CrispStrobe/CrispCloud/blob/445c20bfc9d15b40ed65fde07bd0f0198963ff30/packages/dart_smb2/CRISP_PATCHES.md",
+          "note": "Pinned r10 recipe plus install-name padding. No OpenSSL. Source and recipe hashes are recorded in native_build_inputs; final compiled and signed Apple artifact hashes remain required."
         }
       ],
       "blockers": [
         "Finish target-specific LGPL distribution materials and demonstrate the applicable modification/replacement route for the signed Apple artifacts. A dynamic framework and source URL alone do not establish this.",
-        "No final app artifact has been inspected to verify its embedded libsmb2 binary hashes, linkage, and included notices."
+        "No final app artifact has been inspected to verify its embedded libsmb2 binary hashes, linkage, and included notices.",
+        "Record hashes of the rebuilt Apple frameworks after final install-name edits and signing; upstream r10 Apple hashes do not describe these binaries."
       ]
     },
     {
@@ -618,11 +607,11 @@
       "review_status": "needs_review",
       "source": {
         "repository": "https://github.com/CrispStrobe/CrispCloud",
-        "revision": "4b44dc4d44ef05a18d2da2579d2e3b866b245643"
+        "revision": "445c20bfc9d15b40ed65fde07bd0f0198963ff30"
       },
       "evidence": [
         {
-          "url": "https://github.com/CrispStrobe/CrispCloud/blob/4b44dc4d44ef05a18d2da2579d2e3b866b245643/packages/crisp_storage/licensing/rust_dependencies.json",
+          "url": "https://github.com/CrispStrobe/CrispCloud/blob/445c20bfc9d15b40ed65fde07bd0f0198963ff30/packages/crisp_storage/licensing/rust_dependencies.json",
           "note": "Exact all-target Cargo source grants and file hashes; 143 packages. This is not packaged-artifact approval."
         }
       ],

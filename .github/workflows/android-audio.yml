@@ -65,6 +65,9 @@ jobs:
         with:
           flutter-version: '3.44.4'
           cache: true
+      - name: Rust targets for the bundled SMB bridge
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
       - uses: android-actions/setup-android@v3
         with:
           # The legacy SDK package named "tools" is no longer published.

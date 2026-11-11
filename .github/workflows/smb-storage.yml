@@ -14,6 +14,9 @@ jobs:
         with:
           flutter-version: '3.44.4'
           cache: true
+      - name: Rust targets for the bundled SMB bridge
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
       - run: flutter pub get
       - run: git diff --exit-code -- pubspec.lock
       - run: flutter test test/smb_backend_contract_test.dart test/progress_notifications_test.dart test/smb_settings_test.dart test/server_connection_ui_test.dart test/remote_library_test.dart

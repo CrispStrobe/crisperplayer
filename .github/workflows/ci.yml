@@ -19,12 +19,17 @@ jobs:
         with:
           flutter-version: '3.44.4'
           cache: true
+      - name: Rust targets for the bundled SMB bridge
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
       - name: Check release automation
         run: |
           python3 -m venv "$RUNNER_TEMP/release-checks"
           "$RUNNER_TEMP/release-checks/bin/pip" install --quiet cryptography paramiko impacket
           "$RUNNER_TEMP/release-checks/bin/python" -m unittest discover -s scripts/tests -v
       - run: flutter pub get
+      - name: In-app Rust SMB notice matches the pinned Cargo inventory
+        run: python3 scripts/rust_smb_notice.py --check
       - name: Report distribution license blockers
         run: python3 scripts/check_distribution_licenses.py --report --platform all --output build/licensing/report.json
       - uses: actions/upload-artifact@v4
@@ -76,6 +81,9 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.4'
+      - name: Rust targets for the bundled SMB bridge
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -155,6 +163,9 @@ jobs:
         with:
           flutter-version: '3.44.4'
           cache: true
+      - name: Rust targets for the bundled SMB bridge
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
       - run: flutter pub get
       - run: flutter config --no-enable-swift-package-manager
       - run: flutter build ios --simulator --debug --no-codesign --no-pub

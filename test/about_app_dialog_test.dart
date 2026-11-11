@@ -19,6 +19,7 @@ void main() {
         containsAll([
           'CrisperPlayer',
           'libsmb2',
+          'Rust SMB backend (crisp_smb, smb2 and Rust crates)',
           'SQLite',
           'GNU LGPL 2.1',
           'GNU LGPL 3.0',
@@ -31,6 +32,19 @@ void main() {
         own.paragraphs.map((paragraph) => paragraph.text).join(' '),
         contains('AFFERO GENERAL PUBLIC LICENSE'),
       );
+      final rust = entries.firstWhere(
+        (entry) => entry.packages.any((p) => p.startsWith('Rust SMB backend')),
+      );
+      final rustText = rust.paragraphs.map((p) => p.text).join('\n');
+      for (final crate in [
+        'smb2 ',
+        'flutter_rust_bridge 2.11.1',
+        'unicode-ident',
+      ]) {
+        expect(rustText, contains(crate));
+      }
+      expect(rustText, contains('Permission is hereby granted'));
+      expect(rustText, contains('UNICODE LICENSE'));
     },
   );
 

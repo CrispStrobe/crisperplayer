@@ -1,6 +1,7 @@
 import 'package:crisp_storage/crisp_storage.dart' show SmbBackend;
 import 'package:flutter/material.dart';
 
+import '../services/server/remote_client.dart' show appDefaultSmbBackend;
 import '../services/server/remote_library_service.dart';
 import '../services/server/sftp_reader.dart';
 
@@ -20,7 +21,7 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
   String? _error, _hostKey;
   bool _localHttp = false, _connecting = false, _trustHostKey = false;
   bool _requireEncryption = true;
-  SmbBackend _smbBackend = SmbBackend.libsmb2;
+  SmbBackend _smbBackend = appDefaultSmbBackend;
   void _clearTrust() {
     _hostKey = null;
     _trustHostKey = false;
@@ -175,21 +176,23 @@ class _ServerConnectionDialogState extends State<ServerConnectionDialog> {
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'SMB transport',
-                    helperText: 'Auto falls back only if Rust cannot load. Rust requires a native-enabled build.',
+                    helperText:
+                        'Auto uses the Rust engine and falls back to libsmb2 only '
+                        'if Rust cannot load on this device.',
                     helperMaxLines: 3,
                   ),
                   items: const [
                     DropdownMenuItem(
                       value: SmbBackend.libsmb2,
-                      child: Text('libsmb2 (compatible)'),
+                      child: Text('libsmb2 (legacy)'),
                     ),
                     DropdownMenuItem(
                       value: SmbBackend.rust,
-                      child: Text('Rust (experimental)'),
+                      child: Text('Rust only'),
                     ),
                     DropdownMenuItem(
                       value: SmbBackend.auto,
-                      child: Text('Auto'),
+                      child: Text('Auto (Rust, recommended)'),
                     ),
                   ],
                   onChanged: _connecting

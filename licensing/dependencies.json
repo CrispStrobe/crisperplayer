@@ -2,7 +2,7 @@
   "schema_version": 1,
   "reviewed_at": "2026-11-11",
   "root_package": "crisperplayer",
-  "root_pubspec_sha256": "8f9c402fcfe3abb37dae53267a3e6a9d6424a4d5cdbee4fc218f064398d0e67d",
+  "root_pubspec_sha256": "d58b391b9a63836ab688a483d377187c91bb4a802bc650f4077b06cfbffe3d4b",
   "scope": "Package-level declared grants and exact resolved source/license evidence. Reviewed means the recorded package grant was identified; it is not approval of copied third-party code, native transitive payloads, final artifacts, patent rights, or store distribution. Known unresolved native closure is recorded separately. Dev-only graph branches are excluded; packages reachable through production dependencies remain included even if named test. The exact user-owned CrisperPlayer and crisp_storage identities have an explicit external-license policy exemption; their original license files and every external dependency remain checked.",
   "sdk": {
     "flutter_version": "3.44.4",
@@ -322,9 +322,9 @@
         "type": "git",
         "url": "https://github.com/CrispStrobe/CrispCloud",
         "path": "packages/crisp_storage",
-        "resolved-ref": "13ca681f0c706cf24e65c7906f8a98e20421c590"
+        "resolved-ref": "c9c0f58ae1c4c73f64417e807901549e33fd77a8"
       },
-      "pubspec_sha256": "886e50e9c7dc6710dcaf24cf5bc7d2321896c3dc6eebf2b4d314030d8921d4d9",
+      "pubspec_sha256": "2d921ce27c515bef07683e3fb8c90261cd2ad0a4f3a78336a6838d67bf476676",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -366,11 +366,11 @@
     },
     {
       "name": "crisperplayer",
-      "version": "0.1.0+20",
+      "version": "0.1.0+21",
       "source": {
         "type": "root"
       },
-      "pubspec_sha256": "8f9c402fcfe3abb37dae53267a3e6a9d6424a4d5cdbee4fc218f064398d0e67d",
+      "pubspec_sha256": "d58b391b9a63836ab688a483d377187c91bb4a802bc650f4077b06cfbffe3d4b",
       "license_expression": "AGPL-3.0-only",
       "review_status": "reviewed",
       "license_files": [
@@ -493,7 +493,7 @@
         "type": "git",
         "url": "https://github.com/CrispStrobe/CrispCloud",
         "path": "packages/dart_smb2",
-        "resolved-ref": "13ca681f0c706cf24e65c7906f8a98e20421c590"
+        "resolved-ref": "c9c0f58ae1c4c73f64417e807901549e33fd77a8"
       },
       "pubspec_sha256": "58550451c3bdb75176fa74a778f303a479fdfacf70094c106ac57f5dce4795d4",
       "license_expression": "BSD-3-Clause",
@@ -3923,7 +3923,7 @@
     {
       "package": "crisperplayer",
       "path": ".github/workflows/android-audio.yml",
-      "sha256": "9ccae70a990fbaef26591ce8feea3598f3718554103b55a50a3fee9ffa0aeacc",
+      "sha256": "588c16d8386f0d41b82f54c38527bd9e130b9a54f7e269228c4bddaf62dc1593",
       "platforms": [
         "android"
       ]
@@ -3931,7 +3931,7 @@
     {
       "package": "crisperplayer",
       "path": ".github/workflows/ci.yml",
-      "sha256": "bbe5659bfa57e4fc88b52cb59a2c07d8f0a8d65cea46e03f7cf822ccbfc26d8d",
+      "sha256": "1feb130ba04829178b5ba32fcb5d1490de6b740d64cf763bd954467940d45c5e",
       "platforms": [
         "android"
       ]
@@ -3939,7 +3939,7 @@
     {
       "package": "crisperplayer",
       "path": ".github/workflows/native-audio.yml",
-      "sha256": "ef86759c6cf4832526ff04f7daf391dc0dd74b14434fa0dc3454fc8f16e9370a",
+      "sha256": "5b93ab90ff3da0e41ffbab81749bfa034c0fe9c45ac1123545e290c6ca89d78c",
       "platforms": [
         "linux",
         "windows"
@@ -3960,7 +3960,7 @@
     {
       "package": "crisperplayer",
       "path": ".github/workflows/release.yml",
-      "sha256": "e47434292760d8973dc4fe9ede315e84ae8c1a9bf8f6e784b5b4155e41272897",
+      "sha256": "b2965a8b5fe9f8536a3fe846dccb343896e0d0b29ed90914a2d8144c67265b35",
       "platforms": [
         "android"
       ]
@@ -4021,7 +4021,7 @@
     {
       "package": "crisperplayer",
       "path": "ios/Podfile.lock",
-      "sha256": "20a46db4da8c44f8bee71415f2159447efc12b2a652a197cfc9bc5457efc9650",
+      "sha256": "052fbe07b5c154e21dc8fc33f794131fa77b054497acddfabb81f45dbf60e598",
       "platforms": [
         "ios"
       ]
@@ -4037,7 +4037,7 @@
     {
       "package": "crisperplayer",
       "path": "lib/services/native_licenses.dart",
-      "sha256": "7ecfb24ed59414c56f9fab42c1290e3577747ceac754e988d2da64b9b67b626d",
+      "sha256": "6e85f6f4f829fd80fa9d1a5ad5801e89bb3a7713aa8f0d302f33fd01d8d37e3a",
       "platforms": [
         "android",
         "ios",
@@ -5603,7 +5603,7 @@
           "type": "git",
           "url": "https://github.com/CrispStrobe/CrispCloud",
           "path": "packages/crisp_storage",
-          "resolved-ref": "13ca681f0c706cf24e65c7906f8a98e20421c590"
+          "resolved-ref": "c9c0f58ae1c4c73f64417e807901549e33fd77a8"
         }
       }
     ]

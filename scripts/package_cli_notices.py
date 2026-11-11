@@ -22,3 +22,8 @@ for package in packages:
     license_file = root / 'LICENSE'
     if license_file.is_file():
         (notices / (package['name'] + '-LICENSE.txt')).write_bytes(license_file.read_bytes())
+
+# The Rust SMB bridge (crisp_storage build hook) is bundled when enabled.
+if any((bundle / 'lib').glob('*crisp_smb_bridge*')):
+    rust_notice = Path(__file__).resolve().parents[1] / 'assets/licenses/RUST-SMB.txt'
+    (bundle / 'NOTICE-RUST-SMB.txt').write_bytes(rust_notice.read_bytes())

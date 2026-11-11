@@ -1,7 +1,7 @@
 name: crisperplayer
 description: "CrisperPlayer — versatile cross-platform audiobook player (Flutter). Plays m4b/m4a/mp3/flac/ogg/wav/aac/opus/wma/aiff. Resume, auto/manual bookmarks, listening history. Android+iOS+Desktop."
 publish_to: 'none'
-version: 0.1.0+20
+version: 0.1.0+21
 
 environment:
   sdk: '>=3.12.0 <4.0.0'
@@ -60,7 +60,7 @@ dependencies:
   crisp_storage:
     git:
       url: https://github.com/CrispStrobe/CrispCloud
-      ref: 13ca681f0c706cf24e65c7906f8a98e20421c590
+      ref: c9c0f58ae1c4c73f64417e807901549e33fd77a8
       path: packages/crisp_storage
   # Same MPL-2.0 macOS sandbox loader fix used by CrispCloud.
   filen_client:
@@ -85,6 +85,12 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.4.7
   drift_dev: ^2.28.2
+
+# Bundle the Rust SMB bridge (crisp_storage build hook; needs rustup targets).
+hooks:
+  user_defines:
+    crisp_storage:
+      rust_smb: true
 
 flutter:
   config:

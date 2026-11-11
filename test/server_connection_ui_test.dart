@@ -116,9 +116,11 @@ void main() {
       await tester.tap(find.text('Require SMB3 encryption'));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('smb-backend')));
+      // New SMB connections default to Auto (Rust first).
+      expect(find.text('Auto (Rust, recommended)'), findsOneWidget);
       await tester.tap(find.byKey(const Key('smb-backend')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Rust (experimental)').last);
+      await tester.tap(find.text('Rust only').last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Connect'));
       await tester.pumpAndSettle();

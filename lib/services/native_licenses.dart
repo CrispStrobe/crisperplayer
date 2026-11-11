@@ -11,6 +11,9 @@ void registerNativeLicenses() {
     );
     yield const LicenseEntryWithLineBreaks(['libsmb2'], smbLicense);
     yield LicenseEntryWithLineBreaks([
+      'Rust SMB backend (crisp_smb, smb2 and Rust crates)',
+    ], await rootBundle.loadString('assets/licenses/RUST-SMB.txt'));
+    yield LicenseEntryWithLineBreaks([
       'Filen / Internxt source notices',
     ], await rootBundle.loadString('assets/licenses/CLOUD-SDKS.txt'));
     yield LicenseEntryWithLineBreaks([

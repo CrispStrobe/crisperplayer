@@ -42,6 +42,9 @@ jobs:
         with:
           flutter-version: '3.44.4'
           cache: true
+      - name: Rust targets for the bundled SMB bridge
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
       - run: flutter pub get
       - name: Check audio configuration transport and controls
         run: flutter test --no-pub test/apple_speed_processing_test.dart test/portable_speed_processing_test.dart test/speed_controls_test.dart

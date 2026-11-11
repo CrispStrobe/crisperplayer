@@ -56,24 +56,28 @@ void main() {
       );
       try {
         await remote.init();
-        expect(remote.connections.single.smbBackend, isNull);
+        // Profiles saved before the choice existed use the app default.
+        expect(remote.connections.single.smbBackend, appDefaultSmbBackend);
+        expect(appDefaultSmbBackend, SmbBackend.auto);
         await control.start();
         final cli = ControlClient(control.descriptor);
         for (final backend in SmbBackend.values) {
           // The settings screen calls this exact service method.
           await remote.setSmbBackend('nas', backend);
-          final read = await cli.command('server-settings', {
-            'connectionId': 'nas',
-          }) as Map;
+          final read =
+              await cli.command('server-settings', {'connectionId': 'nas'})
+                  as Map;
           expect(read['smbBackend'], backend.name);
           expect(jsonEncode(read), isNot(contains('smb-password')));
           expect(read.containsKey('secret'), isFalse);
           final selected =
               SmbBackend.values[(backend.index + 1) % SmbBackend.values.length];
-          final result = await cli.command('server-settings', {
-            'connectionId': 'nas',
-            'smbBackend': selected.name,
-          }) as Map;
+          final result =
+              await cli.command('server-settings', {
+                    'connectionId': 'nas',
+                    'smbBackend': selected.name,
+                  })
+                  as Map;
           expect(result['smbBackend'], selected.name);
           expect(remote.connections.single.smbBackend, selected);
           expect(remote.connections.single.secret, 'smb-password');

@@ -1,11 +1,9 @@
-Build 20: Return Trail, listening journal and optional speed processing.
+Build 21: faster SMB/NAS access with the new Rust engine.
 
-Return Trail: after skipping or seeking away, use Return Trail from the player to replay recently played passages. Check that it never overwrites your saved position, that lock-screen/headset controls keep working during a trail, and that the played-sections view and gap navigation match what you actually listened to.
+SMB connections now use the Rust engine by default ("Auto (Rust, recommended)" in the connection dialog). Please test with your own NAS:
+- Add or reopen an SMB library, browse folders (including names with spaces, umlauts or #), import a book and play it while it downloads.
+- Large downloads: check speed, progress and that pausing/resuming or losing Wi-Fi mid-download completes correctly afterwards.
+- Your NAS must allow SMB3; encryption is required by default. If your server has no encryption, the connection is refused unless you untick "Require SMB3 encryption".
+- If anything fails, switch the connection's SMB transport to "libsmb2 (legacy)" and tell us whether that works.
 
-Listening journal: open the journal, jump between dates, open a passage to start playback there, and export a filtered report. Check backups include the journal.
-
-Speed processing: in playback settings, try the optional speed processors at 0.75x, 1.5x and 2x. Listen for artifacts, check that chapter positions, seeking and resume stay exact, and that switching back to the default restores normal playback.
-
-SMB: re-check an existing SMB library and a new connection with saved settings; libsmb2 remains the default backend.
-
-Regression checks: local M4B/multi-track imports, chapters, bookmarks, sleep timer, queue, waveform, background playback and interruptions (calls, other audio apps). Requires iOS 15 or newer.
+Also in this build: everything from build 20 (Return Trail, listening journal, optional speed processors). Requires iOS 15 or newer.

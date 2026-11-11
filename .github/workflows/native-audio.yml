@@ -110,6 +110,9 @@ jobs:
         with:
           flutter-version: '3.44.4'
           cache: true
+      - name: Rust targets for the bundled SMB bridge
+        if: runner.os == 'macOS'
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
       - run: flutter pub get
       - name: Require real Dart FFI decoder, transport, clock, and app-adapter tests
         run: flutter test --no-pub packages/crisper_audio/test test/native_audio_backend_test.dart

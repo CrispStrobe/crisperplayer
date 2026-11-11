@@ -1,3 +1,11 @@
+CrisperPlayer 0.1.0 build 21
+
+- SMB now uses the Rust engine (crisp_smb / smb2) by default on iOS and macOS, bundled in the app. Saved SMB connections without an explicit choice switch to "Auto": Rust first, libsmb2 only if Rust cannot load (for example on Android). Connections explicitly set to libsmb2 keep it.
+- The Rust engine requires SMB3 signing and, by default, encryption, and refuses unencrypted servers unless you opt out. In live tests against an encrypted Samba server it read and wrote byte-exactly and downloaded about three times faster than libsmb2.
+- Many parallel transfers in one connection now queue instead of failing.
+- About → Licenses lists the Rust crates and their license texts.
+- Internal TestFlight build released by owner override of the release license gate; artifact-level license reviews for the native components remain open.
+
 CrisperPlayer 0.1.0 build 20
 
 - Return Trail: protected replay of recently played passages, listening-gap navigation and cumulative coverage, with native controls and CLI support.

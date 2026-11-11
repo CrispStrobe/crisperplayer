@@ -47,6 +47,25 @@ Follow the account protocol in `../appstore.md`:
 
 Signing keys, profiles and passwords must stay outside git. Internal TestFlight does not require an App Store privacy label or external Beta App Review. Testers use the TestFlight app signed in with their existing App Store Connect Apple ID.
 
+## Rust SMB bridge
+
+The app sets `hooks.user_defines.crisp_storage.rust_smb: true`, so every
+iOS/macOS/Linux/Windows build compiles crisp_storage's Rust SMB bridge with
+Cargo and embeds it (`crisp_smb_bridge.framework` on Apple). Install rustup
+and the Apple targets once:
+
+```sh
+rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch64-apple-darwin x86_64-apple-darwin
+```
+
+CI workflows add these targets on macOS runners. Android builds skip the
+bridge and keep libsmb2. Regenerate the in-app notice with
+`scripts/rust_smb_notice.py` whenever the crisp_storage revision changes
+(`--check` verifies it). Live SMB3 qualification:
+`test/smb3_backend_qualification_test.dart` (host) and
+`integration_test/smb3_backend_qualification_test.dart` (iOS/macOS app,
+configured with `--dart-define`).
+
 ## Local checks
 
 ```sh

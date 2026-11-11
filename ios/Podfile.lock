@@ -130,7 +130,7 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_secure_storage_darwin: 46e401699982ee74142909676535e0f6a7321e58
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
-  just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
+  just_audio: c1dbdc923b6c14b9a1332a3f137a4387f54d64e9
   just_waveform: be2cb6dec86096cb972bf8b73c893fe16bf1cff4
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   permission_handler_apple: 92d754bbaa7361d436db2d6c3c1c2a0fdcec462e

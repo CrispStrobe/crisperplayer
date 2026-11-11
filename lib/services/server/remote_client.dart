@@ -14,6 +14,14 @@ import 'internxt_session_client.dart';
 export 'package:crisp_storage/crisp_storage.dart'
     show RemoteException, RemoteEntry, SmbBackend, parseSmbBackend;
 
+/// SMB engine for connections without an explicit choice (including profiles
+/// saved before the choice existed): Rust first, libsmb2 only when the bundled
+/// Rust bridge cannot load on this platform. Emergency override at build time:
+/// `--dart-define=CRISPER_SMB_DEFAULT=libsmb2`.
+final shared.SmbBackend appDefaultSmbBackend = shared.parseSmbBackend(
+  const String.fromEnvironment('CRISPER_SMB_DEFAULT', defaultValue: 'auto'),
+)!;
+
 /// Reuses CrispCloud's transports and encrypted provider clients. Session keys
 /// are serialized only by the caller's platform credential store.
 class RemoteConnection implements shared.RemoteConnection {
@@ -57,7 +65,8 @@ class RemoteConnection implements shared.RemoteConnection {
          secret: secret,
          allowLocalHttp: allowLocalHttp,
          requireEncryption: requireEncryption,
-         smbBackend: smbBackend,
+         smbBackend:
+             smbBackend ?? (kind == 'smb' ? appDefaultSmbBackend : null),
          hostKey: hostKey,
          kind: cloudKinds.contains(kind) || kind == 'nextcloud'
              ? 'webdav'
@@ -217,9 +226,11 @@ class RemoteClient {
     try {
       final parts = token!.split('.');
       if (parts.length != 3) return false;
-      final claims = jsonDecode(
-        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-      ) as Map;
+      final claims =
+          jsonDecode(
+                utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+              )
+              as Map;
       final expiry = claims['exp'];
       return expiry is num &&
           expiry * 1000 <= now.millisecondsSinceEpoch + 60000;
@@ -352,9 +363,9 @@ class RemoteClient {
   Future<List<shared.RemoteEntry>> tracks(String path) async =>
       _transport != null
       ? _transport!.tracks(path)
-      : (await browse(path))
-            .where((e) => e.type == 'file' && isAudio(e.name))
-            .toList();
+      : (await browse(
+          path,
+        )).where((e) => e.type == 'file' && isAudio(e.name)).toList();
   Future<void> download(
     String path,
     File output, {

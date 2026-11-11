@@ -26,7 +26,8 @@ dependencies:
     path: packages/just_audio
   audio_session: ^0.2.3
   # Native audio changes require a fresh license/provenance review.
-  just_audio_media_kit: 2.1.0
+  just_audio_media_kit:
+    path: packages/just_audio_media_kit
   media_kit_libs_windows_audio: 1.0.9
   media_kit_libs_linux: 1.2.1
   audio_service: ^0.18.18

@@ -347,7 +347,7 @@ class DistributionLicenseTests(unittest.TestCase):
                 self.assertIn("invalid_native_source_manifest", self.codes())
 
     def add_reviewed_pffft_notice(self):
-        component = "android-native-speed-processors"
+        component = "portable-native-speed-processors"
         identifier = "LicenseRef-PFFFT-FFTPACK"
         policy = check.REVIEWED_NATIVE_LICENSE_REFS[(component, identifier)]
         repository = Path(__file__).resolve().parents[2]
@@ -365,6 +365,49 @@ class DistributionLicenseTests(unittest.TestCase):
         self.assertEqual(self.findings(), [])
         path.write_text("A different grant using the same identifier")
         self.assertTrue({"native_license_ref_changed", "native_license_policy"}.issubset(self.codes()))
+
+    def test_shared_processor_grant_is_checked_on_every_native_platform(self):
+        path = self.add_reviewed_pffft_notice()
+        targets = sorted(check.PLATFORMS)
+        self.native["components"][0]["platforms"] = targets
+        self.inventory["required_native_components"][0]["platforms"] = targets
+        for platform in targets:
+            with self.subTest(platform=platform):
+                self.assertEqual(self.findings(platform), [])
+        path.write_text("Changed upstream grant")
+        for platform in targets:
+            with self.subTest(platform=platform):
+                self.assertIn("native_license_ref_changed", self.codes(platform))
+
+    def test_shared_processor_evidence_cannot_omit_a_required_native_platform(self):
+        self.add_reviewed_pffft_notice()
+        self.inventory["required_native_components"][0]["platforms"] = sorted(check.PLATFORMS)
+        for platform in ("ios", "macos", "linux", "windows"):
+            with self.subTest(platform=platform):
+                self.assertIn("native_platform_mismatch", self.codes(platform))
+
+    def test_shared_source_artifact_review_requires_the_selected_target_binary(self):
+        self.add_native_source_manifest()
+        entry = self.native["components"][0]
+        entry["platforms"] = ["android", "ios"]
+        self.inventory["required_native_components"][0]["platforms"] = entry["platforms"]
+        # The inherited generic hash cannot stand in for two target artifacts.
+        self.assertIn("missing_native_platform_artifact", self.codes("ios"))
+        entry["artifacts"] = [{"platform": "android", "sha256": "a" * 64}]
+        self.assertEqual(self.findings("android"), [])
+        self.assertIn("missing_native_platform_artifact", self.codes("ios"))
+        self.assertIn("missing_native_platform_artifact", self.codes("all"))
+        entry["artifacts"].append({"platform": "ios", "sha256": "b" * 64})
+        self.assertEqual(self.findings("all"), [])
+
+    def test_pending_shared_source_review_stays_separate_from_artifacts(self):
+        self.add_native_source_manifest()
+        entry = self.native["components"][0]
+        entry.update({"platforms": ["android", "ios"], "review_status": "needs_review",
+                      "artifact_review_status": "pending_target_artifact_validation"})
+        self.inventory["required_native_components"][0]["platforms"] = entry["platforms"]
+        self.assertEqual(self.codes(), {"native_review_required"})
+        self.assertTrue(check.audit(self.root)["native_source_reviews"][0]["source_manifest_verified"])
 
     def test_custom_license_reference_cannot_spread_to_other_native_or_dart_components(self):
         self.add_reviewed_pffft_notice()

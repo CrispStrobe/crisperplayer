@@ -66,30 +66,34 @@ recognized as a permissive grant; the exception does not approve a different
 base license or any uninspected LLVM third-party code. See the
 [upstream LLVM grant](https://llvm.org/LICENSE.txt).
 
-## Android native source evidence
+## Shared native processor source evidence
 
-The `android-native-speed-processors` entry separates three review states:
+The `portable-native-speed-processors` entry is required on Android, iOS,
+macOS, Linux and Windows. It separates three review states:
 
 | Evidence | Current scope |
 | --- | --- |
-| Source review | Reviewed: six exact upstream revisions and archive hashes, with 252 source and notice files verified against the vendored manifest. |
-| License review | Reviewed: independent MIT adapters; Sonic Apache-2.0; Signalsmith Stretch/Linear MIT; Bungee Basic MPL-2.0; selected Eigen Core MPL-2.0 with retained BSD/Apache notices; exact permissive PFFFT/FFTPACK notice. |
-| Android artifact review | Pending: target ABI builds, packaged native hashes and dependencies, source/build correspondence, included notices, and Android validation remain separate checks. |
+| Source review | Reviewed: seven exact upstream revisions, six archive hashes and the Chromium Git snapshot, with 258 original source and notice files verified against the vendored manifest. |
+| License review | Reviewed: independent MIT core/Apple adapters; Sonic Apache-2.0; Signalsmith Stretch/Linear MIT; Chromium WSOLA BSD-3-Clause; Bungee Basic MPL-2.0; selected Eigen Core MPL-2.0 with retained BSD/Apache notices; exact permissive PFFFT/FFTPACK notice. Desktop wrappers and linked mpv/FFmpeg retain their separate grants. |
+| Target artifact review | Pending: Android ABI/APK checks, Apple library/application builds and controlled desktop libmpv builds each need packaged native hashes, dependency inspection, source/build correspondence, notices and playback validation. |
 
 The checker reads the pinned native source manifest as well as the bundle's
 top-level license declaration. A new or changed file, stale manifest, missing
 source pin, or forbidden transitive declaration is a blocker. The app package
 also pins the complete vendor tree, reviewed upstream patch, local additions,
-Gradle/CMake recipes, JNI and Java adapters, and source-test files. The app's
-Android DSP notice and license registration are separately hashed as evidence.
+Gradle/CMake/CocoaPods/SwiftPM recipes, JNI/Java/Apple adapters and source-test
+files. The vendored desktop adapter has its own original hashes and source-tree
+pin. Shared DSP notices and license registration are separately hashed as
+evidence. The asset keeps its historical `ANDROID-DSP.txt` filename while
+identifying all platforms that use the shared core.
 
 `LicenseRef-PFFFT-FFTPACK` identifies the actual NCAR/UCAR permissive notice;
 it is not substituted with an inaccurate standard license name. The checker
-recognizes that reference only for the exact Android DSP component, PFFFT
+recognizes that reference only for the exact portable DSP component, PFFFT
 source component, notice path and SHA-256 already reviewed. Copying the string
 into another package or native component does not create an approval.
 
-The source files match the [immutable published vendor tree](https://github.com/CrispStrobe/crisperplayer/tree/349e2be81165dab7acdd3dfe3e6df79ad138322d/packages/just_audio/native/crisper_dsp/vendor).
+The source files match the [immutable published vendor tree](https://github.com/CrispStrobe/crisperplayer/tree/bea68aca9a357ce713e83653c269de7937e9fc63/packages/just_audio/native/crisper_dsp/vendor).
 The original MPL-covered files are unmodified. Unsupported and GPL-only Eigen
 modules are omitted, and the build enforces `EIGEN_MPL2_ONLY`. The app preserves the
 upstream notices and gives the corresponding-source URL. Host signal and
@@ -107,6 +111,10 @@ review nor an allowed upstream runtime license removes that requirement.
 Machine reports expose `native_source_reviews` separately from distribution
 findings. A verified source manifest is not an artifact approval; an explicitly
 pending artifact cannot pass merely by changing an overall review label.
+When a vendored source manifest is shared by several targets, a reviewed entry
+must include an exact artifact hash identified with each selected `platform`.
+A Linux artifact cannot satisfy an iOS, macOS, Android or Windows review just
+because the source files are the same.
 
 ## Exact ownership scope
 

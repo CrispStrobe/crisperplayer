@@ -2,6 +2,16 @@
 cmake_minimum_required(VERSION 3.22)
 project(crisper_dsp LANGUAGES C CXX)
 
+# Static linking remains the application default. The shared target lets the
+# same streaming contract run against actual Windows/macOS/Linux compilers.
+option(CRISPER_DSP_SHARED "Build a shared library for native integration tests" OFF)
+option(CRISPER_DSP_TESTS "Build native regression executables" OFF)
+if(CRISPER_DSP_SHARED)
+  set(CRISPER_DSP_LIBRARY_TYPE SHARED)
+else()
+  set(CRISPER_DSP_LIBRARY_TYPE STATIC)
+endif()
+
 # Offline, explicit source list: no FetchContent and no optional/proprietary DSP.
 set(BUNGEE_SOURCES
   vendor/bungee/src/Assert.cpp
@@ -18,7 +28,7 @@ set(BUNGEE_SOURCES
   vendor/bungee/src/Timing.cpp
   vendor/bungee/src/Window.cpp
   vendor/bungee/src/version.cpp)
-add_library(crisper_dsp STATIC crisper_dsp.cpp wsola/wsola.cpp ${BUNGEE_SOURCES}
+add_library(crisper_dsp ${CRISPER_DSP_LIBRARY_TYPE} crisper_dsp.cpp wsola/wsola.cpp ${BUNGEE_SOURCES}
   vendor/pffft/pffft.c vendor/pffft/fftpack.c vendor/sonic/sonic.c)
 set_target_properties(crisper_dsp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(crisper_dsp PUBLIC cxx_std_20)
@@ -32,10 +42,19 @@ target_compile_definitions(crisper_dsp PRIVATE
   eigen_assert=BUNGEE_ASSERT1)
 # Native audio processing needs optimization even in Flutter Debug builds.
 target_compile_options(crisper_dsp PRIVATE
-  $<$<C_COMPILER_ID:GNU,Clang>:-O2>
-  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fwrapv>)
+  $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-O2>
+  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fwrapv>
+  $<$<C_COMPILER_ID:MSVC>:/O2>)
 if(ANDROID)
   target_link_libraries(crisper_dsp PRIVATE log)
 elseif(UNIX)
   target_link_libraries(crisper_dsp PRIVATE m)
+endif()
+
+if(CRISPER_DSP_TESTS)
+  enable_testing()
+  add_executable(crisper_dsp_wsola_search tools/test_wsola_search.cpp wsola/wsola.cpp)
+  target_compile_features(crisper_dsp_wsola_search PRIVATE cxx_std_20)
+  target_include_directories(crisper_dsp_wsola_search PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  add_test(NAME wsola_search COMMAND crisper_dsp_wsola_search)
 endif()

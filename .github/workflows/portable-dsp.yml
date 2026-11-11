@@ -1,0 +1,52 @@
+name: Portable audio DSP
+
+on:
+  pull_request:
+    paths:
+      - 'packages/just_audio/native/crisper_dsp/**'
+      - '.github/workflows/portable-dsp.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  streaming:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            library: build/portable-dsp/libcrisper_dsp.so
+          - os: macos-15
+            library: build/portable-dsp/libcrisper_dsp.dylib
+          - os: windows-latest
+            library: build/portable-dsp/Release/crisper_dsp.dll
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify the pinned source closure
+        shell: bash
+        run: |
+          python -c "import sys; sys.path.insert(0, 'packages/just_audio/native/crisper_dsp/tools'); from build_host import verify_vendor; verify_vendor()"
+      - name: Configure the real native processors
+        run: >-
+          cmake -S packages/just_audio/native/crisper_dsp -B build/portable-dsp
+          -DCMAKE_BUILD_TYPE=Release -DCRISPER_DSP_SHARED=ON -DCRISPER_DSP_TESTS=ON
+      - run: cmake --build build/portable-dsp --config Release --parallel 2
+      - run: ctest --test-dir build/portable-dsp -C Release --output-on-failure
+      - name: Check duration, pitch, boundaries and source clocks
+        run: >-
+          python packages/just_audio/native/crisper_dsp/tools/test_streaming.py
+          --library ${{ matrix.library }}
+          --report build/portable-dsp/streaming-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portable-dsp-${{ matrix.os }}
+          path: build/portable-dsp/streaming-report.json
+          if-no-files-found: warn

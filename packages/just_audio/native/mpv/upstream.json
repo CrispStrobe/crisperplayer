@@ -1,0 +1,12 @@
+{
+  "version": "0.42.0",
+  "repository": "https://github.com/mpv-player/mpv",
+  "revision": "v0.42.0",
+  "archive_sha256": "8e5f930836acbc702c0057cbe0674d821ad0bc9bedb31b05eb034c4e4af13cdc",
+  "license": "LGPL-2.1-or-later (configure with -Dgpl=false)",
+  "files": {
+    "meson.build": "04754acaf772220d3fbba3a8415167c6d923b81cc9fc95ef47e1811d43a875db",
+    "filters/user_filters.c": "405a36d4ed0ac4f3d2ee65c50ccb327cfcb910391ced6232749e517cf1ceea4a",
+    "filters/user_filters.h": "1b44a49ab3d0ba3bab75176bbeebb0c62e9445aeacea5c93ad34ac28ae0e6ed3"
+  }
+}

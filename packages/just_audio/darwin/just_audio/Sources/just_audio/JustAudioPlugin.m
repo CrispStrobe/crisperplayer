@@ -1,11 +1,12 @@
 #import "./include/just_audio/JustAudioPlugin.h"
 #import "./include/just_audio/AudioPlayer.h"
+#import "./include/just_audio/CrisperPortableAudioPlayer.h"
 #import <AVFoundation/AVFoundation.h>
 #include <TargetConditionals.h>
 
 @implementation JustAudioPlugin {
     NSObject<FlutterPluginRegistrar>* _registrar;
-    NSMutableDictionary<NSString *, AudioPlayer *> *_players;
+    NSMutableDictionary<NSString *, id> *_players;
 }
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
@@ -35,7 +36,19 @@
             FlutterError *flutterError = [FlutterError errorWithCode:@"error" message:@"Platform player already exists" details:nil];
             result(flutterError);
         } else {
-            AudioPlayer* player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
+            NSDictionary *darwin = [loadConfiguration isKindOfClass:[NSDictionary class]] ? loadConfiguration[@"darwinLoadControl"] : nil;
+            NSString *portable = [darwin isKindOfClass:[NSDictionary class]] ? darwin[@"portableSpeedProcessor"] : nil;
+            id player;
+            if ([portable isKindOfClass:[NSString class]] && portable.length > 0) {
+                NSInteger engine = [CrisperPortableAudioPlayer engineIdentifierForName:portable];
+                if (engine < 0) {
+                    result([FlutterError errorWithCode:@"portableAudio" message:@"Unknown portable audio processor." details:portable]);
+                    return;
+                }
+                player = [[CrisperPortableAudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId engine:engine];
+            } else {
+                player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
+            }
             [_players setValue:player forKey:playerId];
             result(nil);
         }

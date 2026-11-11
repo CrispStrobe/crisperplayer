@@ -13,7 +13,7 @@
   BSD-3-Clause. The separately pinned DSP dependencies retain their own
   permissive or MPL licenses; see
   [the native component manifest](native/crisper_dsp/vendor/manifest.json).
-- Local package version: **0.10.6+crisper.3**, `publish_to: none`.
+- Local package version: **0.10.6+crisper.4**, `publish_to: none`.
 
 The 38 original source, platform build, documentation and notice files are
 listed with their original SHA-256 values in [UPSTREAM_SHA256.json](UPSTREAM_SHA256.json).
@@ -48,6 +48,33 @@ global preferences are used. The public option is immutable for a player and
 is included again if just_audio recreates that player's native instance.
 CrisperPlayer presents it as a restart-required preference so active playback
 is never reconfigured mid-passage.
+
+### Optional Apple PCM playback
+
+`DarwinSpeedProcessor` and nullable `DarwinLoadControl.speedProcessor` transport
+`portableSpeedProcessor` without changing the default AVPlayer configuration.
+The plugin creates `CrisperPortableAudioPlayer` only for an explicit portable
+selection. `CrisperDspStream` decodes local files with `AVAudioFile`, streams
+bounded mono/stereo float PCM through the existing four-engine C ABI, and drains
+the exact finite output. `AVAudioPlayerNode` schedules a bounded output queue;
+the clock maps played frames to original source time and excludes queued audio,
+processor lookahead, hardware latency and output-starvation gaps. Seeking and
+speed changes replace buffered audio at the current source position. File queues,
+clipping, loop/shuffle order and local playlist operations retain the native
+method-channel contract. Network/unsupported inputs report an explicit error.
+
+CocoaPods compiles wrapper translation units including the same pinned native
+source files. SwiftPM uses the local `native/crisper_dsp` package and excludes
+those wrappers to avoid duplicate symbols. Apple Time Domain and Spectral retain
+the upstream `AVQueuePlayer`; neither instantiates the portable playback path.
+
+### Optional desktop mpv filter
+
+`native/mpv` contains the independently maintained `crisperdsp` filter and build
+fragment for a controlled, source-built LGPL mpv. It reuses the same C ABI and
+participates in mpv's speed-command and source-timestamp protocols. The desktop
+adapter is documented separately in `../just_audio_media_kit/UPSTREAM.md`.
+Stock libmpv builds remain supported and expose only their detected processors.
 
 ### Android streaming processors
 

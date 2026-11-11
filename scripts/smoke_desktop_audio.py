@@ -14,6 +14,7 @@ import ctypes
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import struct
 import sys
@@ -32,6 +33,11 @@ class EndFile(ctypes.Structure):
 
 class NativePlayer:
     def __init__(self, library: Path):
+        self._dll_directories = []
+        if sys.platform == 'win32':
+            # Python 3.8+ does not search PATH for dependent native DLLs.
+            for directory in {library.resolve().parent, Path(sys.executable).parent}:
+                self._dll_directories.append(os.add_dll_directory(str(directory)))
         self.lib = ctypes.CDLL(str(library.resolve()))
         self.lib.mpv_create.restype = ctypes.c_void_p
         self.lib.mpv_initialize.argtypes = [ctypes.c_void_p]
@@ -65,6 +71,9 @@ class NativePlayer:
         if self.handle:
             self.lib.mpv_terminate_destroy(self.handle)
             self.handle = None
+        for directory in self._dll_directories:
+            directory.close()
+        self._dll_directories = []
 
 
 def fixture(path: Path, seconds: int = 6) -> None:
@@ -117,20 +126,25 @@ def pcm_measurements(path: Path) -> tuple[float, float]:
 
 
 def render_options(output: Path, rate: float, mode: str) -> dict[str, str]:
-    if mode not in {"automatic", "legacy_scaletempo"}:
+    portable = {'sonic', 'wsola', 'signalsmith', 'bungee'}
+    if mode not in {"automatic", "legacy_scaletempo", 'atempo', *portable}:
         raise ValueError("Unknown speed-processing mode")
     options = {
             "config": "no", "terminal": "no", "vid": "no", "audio-display": "no",
             "ao": "pcm", "ao-pcm-file": str(output), "ao-pcm-waveheader": "yes",
             "audio-format": "s16", "audio-channels": "mono", "audio-samplerate": "48000",
             "gapless-audio": "no", "idle": "yes",
-            "speed": str(rate) if mode == "automatic" else "1.0",
-            "audio-pitch-correction": "yes" if mode == "automatic" else "no",
+            "speed": "1.0" if mode == 'legacy_scaletempo' else str(rate),
+            "audio-pitch-correction": "no" if mode == 'legacy_scaletempo' else "yes",
     }
     if mode == "legacy_scaletempo":
         # Match media_kit 1.2.6 setRate with independent pitch enabled and the
         # app's pitch fixed at 1.0: tempo is the filter scale; mpv speed is pitch.
         options["af"] = f"scaletempo:scale={rate:.8f}"
+    elif mode in portable:
+        options['af'] = f'crisperdsp=engine={mode}'
+    elif mode == 'atempo':
+        options['af'] = 'lavfi-tempo=filter=atempo'
     return options
 
 
@@ -171,13 +185,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument('--require-portable', action='store_true',
+                        help='Require all four crisperdsp engines and native lavfi-tempo/atempo.')
     args = parser.parse_args()
     results = []
     with tempfile.TemporaryDirectory(prefix="crisper-audio-smoke-") as directory:
         directory = Path(directory)
         source = directory / "tone.wav"
         fixture(source)
-        for mode in ("automatic", "legacy_scaletempo"):
+        modes = ['automatic', 'legacy_scaletempo']
+        if args.require_portable:
+            modes += ['sonic', 'wsola', 'signalsmith', 'bungee', 'atempo']
+        for mode in modes:
             for rate in (.5, 1, 1.5, 2, 3):
                 results.append(render(args.library, source, directory / f"{mode}-{rate}.wav", rate, mode))
     report = {"schema_version": 1, "binary_sha256": hashlib.sha256(args.library.read_bytes()).hexdigest(), "checks": results, "claim": "Generated-tone duration and pitch smoke test only; speech quality and licensing are separate reviews.", "release_approved": False}

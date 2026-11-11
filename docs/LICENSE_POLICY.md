@@ -1,6 +1,6 @@
 # External dependency license policy and audio processors
 
-Reviewed 10 November 2026. The project requirement is an openly distributable
+Reviewed 11 November 2026. The project requirement is an openly distributable
 application that can also be submitted to app stores, without GPL-only or
 AGPL-only **external** dependencies. MIT, Apache-2.0, BSD and comparable
 permissive licenses are preferred. MPL and LGPL are permitted when their
@@ -67,10 +67,12 @@ permissive DSP on Apple platforms to avoid adding this burden to audio.
 | Processor | License or platform basis | Decision |
 | --- | --- | --- |
 | Apple Time Domain / Spectral | AVFoundation system API; the maintained just_audio adapter is MIT. | Offer both on iOS/macOS. Time Domain remains the voice default; Spectral is an optional, more computationally intensive alternative. |
-| Sonic | Apache-2.0 native library and implementation in AndroidX Media3. | First choice for audiobook speech, including high rates; keep the existing Android default and use it as the comparison baseline. |
+| Sonic | Apache-2.0 native library and implementation in AndroidX Media3. | Keep Media3 Sonic as Android's default. Reuse the already pinned C core as an optional processor on Apple local files and controlled desktop builds. |
 | mpv scaletempo2 / scaletempo | Available in an appropriately built LGPL libmpv. | Retain the existing choices subject to native artifact verification; processor choice does not waive packaging obligations. |
-| Bungee Basic | MPL-2.0; the selected Eigen Core and PFFFT source and original notices are pinned. | Experimental Android option for comparison on speech mixed with music or ambience. `EIGEN_MPL2_ONLY` excludes GPL modules; proprietary Bungee Pro is not included. |
-| Signalsmith Stretch | MIT, with the selected MIT Signalsmith Linear implementation. | Experimental Android option for moderate rate changes. Upstream describes best time-stretch quality around 0.75×–1.5×; do not assume a 2×–3× speech improvement. |
+| Bungee Basic | MPL-2.0; the selected Eigen Core and PFFFT source and original notices are pinned. | Optional shared native processor for Android, Apple local files and controlled desktop builds. `EIGEN_MPL2_ONLY` excludes GPL modules; proprietary Bungee Pro is not included. |
+| Signalsmith Stretch | MIT, with the selected MIT Signalsmith Linear implementation. | Optional shared native processor for moderate rate changes. Upstream describes best time-stretch quality around 0.75×–1.5×; do not assume a 2×–3× speech improvement. |
+| Chromium WSOLA fork | BSD-3-Clause; retained upstream originals and the maintained extraction have separate provenance. | Reuse the existing portable processor on the same native paths. The fork does not bring Chromium's browser/media runtime or mpv's source license into the shared core. |
+| FFmpeg atempo | Part of the selected LGPL FFmpeg build. | Additional desktop option only when the loaded mpv exposes the required tempo filter. It does not introduce an extra GPL processor; libmpv/FFmpeg artifact obligations still apply. |
 | SoundTouch | LGPL-2.1. | A possible alternative with the same source/relinking review needed for LGPL components. It is not assumed better for every voice. |
 | Rubber Band | GPL-2.0-or-later or a separately purchased commercial license. | Excluded from the openly reproducible default dependency set under this policy. A commercial license for one publisher does not give all open-source recipients the same commercial redistribution rights. |
 
@@ -79,10 +81,21 @@ claim that one algorithm beats every other algorithm. Compare the same speech
 and speech-with-music passages at matched level and several speeds, and measure
 CPU/battery use, seek latency and interruption behavior on target devices.
 
-The [Android processor record](ANDROID_AUDIO_PROCESSORS.md) documents the exact
-source revisions, native integration and validation limits. The entire selected
-external source closure is included with per-file hashes; app notices link to an
-immutable public source snapshot. The independent adapter is MIT licensed.
+The [portable processor record](PORTABLE_AUDIO_PROCESSORS.md) describes platform
+integration and availability; the [Android record](ANDROID_AUDIO_PROCESSORS.md)
+retains the Media3/JNI details. The shared core reuses the same seven upstream
+components and 258 retained source/notice files, without introducing a new
+external DSP license. Per-file hashes and original notices remain included.
+The independent core and Apple adapters are MIT licensed; the maintained
+Chromium extraction remains BSD-3-Clause. Any desktop mpv modifications and
+linked libraries retain their separate license and source obligations.
+
+`portable-native-speed-processors` is required in the native inventory for all
+five native targets. Its source manifest and exact permissive PFFFT notice are
+checked for each target; the prior Android-only scope cannot exempt Apple or
+desktop. The shared source review does not promote target binaries to reviewed
+status. Device, simulator, desktop and package-specific artifact evidence remains
+pending until it is actually collected.
 
 ## Enforced checks and current evidence
 

@@ -38,6 +38,19 @@ candidate recipe is supplied separately, but its native build and complete
 runtime dependency closure have not yet been validated or release-approved.
 Android, iOS and macOS use their native playback backends.
 
+Optional Sonic C, Bungee Basic, Signalsmith Stretch and Chromium-derived WSOLA
+processing uses the separately inventoried portable core. Desktop availability
+requires a controlled libmpv build with the CrisperPlayer filter; a system mpv
+or the historical Windows DLL does not gain these engines from the Flutter
+wrapper alone. The optional FFmpeg atempo route is used only when supported by
+the loaded mpv. Processor notices and immutable source pins are in
+ANDROID-DSP.txt, whose historical filename is retained on all platforms.
+
+The source-controlled desktop adapter is derived from just_audio_media_kit
+2.1.0 under the Unlicense. Original source hashes and the local patch are
+retained with that package. The adapter's grant does not change the licenses
+of libmpv, FFmpeg or the portable processor sources.
+
 Windows places its native library alongside the executable. Replacement of
 compatible LGPL shared libraries and reverse engineering for debugging those
 modifications are permitted under the applicable upstream licenses. A release

@@ -20,6 +20,7 @@ import tarfile
 import urllib.request
 
 from audit_desktop_audio import inspect, sha256
+from prepare_portable_mpv import prepare as prepare_portable_mpv
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -84,12 +85,15 @@ def extract(archive: Path, destination: Path) -> Path:
     return roots[0]
 
 
-def build_commands(source_roots: dict[str, Path], workspace: Path, jobs: int) -> list[dict]:
+def build_commands(source_roots: dict[str, Path], workspace: Path, jobs: int,
+                   target: str = 'linux') -> list[dict]:
     prefix = workspace / "prefix"
     builds = workspace / "build"
     commands = [{
         "cwd": str(builds / "ffmpeg"),
-        "argv": [str(source_roots["ffmpeg"] / "configure"), f"--prefix={prefix}", *FFMPEG_OPTIONS],
+        "argv": [*(['bash'] if target == 'windows' else []),
+                 (source_roots["ffmpeg"] / "configure").as_posix(), f"--prefix={prefix.as_posix()}", *FFMPEG_OPTIONS,
+                 *(['--disable-pthreads', '--enable-w32threads'] if target == 'windows' else [])],
     }, {
         "cwd": str(builds / "ffmpeg"), "argv": ["make", f"-j{jobs}"],
     }, {
@@ -97,8 +101,13 @@ def build_commands(source_roots: dict[str, Path], workspace: Path, jobs: int) ->
     }]
     for name in ("libass", "libplacebo", "mpv"):
         build = builds / name
+        options = MESON_OPTIONS[name]
+        if name == 'mpv' and target == 'windows':
+            options = [option for option in options
+                       if option not in ('-Dalsa=enabled', '-Dpulse=enabled')]
+            options += ['-Dwasapi=enabled']
         commands.extend([
-            {"cwd": str(workspace), "argv": ["meson", "setup", str(build), str(source_roots[name]), f"--prefix={prefix}", *MESON_COMMON, *MESON_OPTIONS[name]]},
+            {"cwd": str(workspace), "argv": ["meson", "setup", str(build), str(source_roots[name]), f"--prefix={prefix}", *MESON_COMMON, *options]},
             {"cwd": str(workspace), "argv": ["meson", "compile", "-C", str(build), "-j", str(jobs)]},
             {"cwd": str(workspace), "argv": ["meson", "install", "-C", str(build)]},
         ])
@@ -109,7 +118,7 @@ def capture(argv: list[str], environment: dict) -> str:
     return subprocess.check_output(argv, env=environment, text=True, stderr=subprocess.STDOUT).strip()
 
 
-def main() -> int:
+def main(target: str = 'linux') -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", type=Path, required=True, help="An isolated output directory; never /usr or an existing installation.")
     parser.add_argument("--source-cache", type=Path, help="Optional reusable download cache, always hash checked.")
@@ -130,7 +139,11 @@ def main() -> int:
         raise ValueError("The reviewed build plan requires exactly FFmpeg, mpv, libass and libplacebo")
     hypothetical = {name: workspace / "source" / name / "upstream-root" for name in sources}
     if not args.prepare_sources and not args.build:
-        print(json.dumps({"status": "plan_only_not_release_approved", "sources": lock["sources"], "system_packages": SYSTEM_PACKAGES, "commands": build_commands(hypothetical, workspace, args.jobs)}, indent=2))
+        print(json.dumps({"status": "plan_only_not_release_approved", "target": target,
+                          "sources": lock["sources"],
+                          "system_packages": SYSTEM_PACKAGES if target == 'linux' else SYSTEM_PACKAGES[:3],
+                          "portable_dsp": "Sonic, Chromium WSOLA, Signalsmith Stretch, Bungee Basic",
+                          "commands": build_commands(hypothetical, workspace, args.jobs, target)}, indent=2))
         return 0
     if (workspace / "source").exists() or (workspace / "prefix").exists():
         raise ValueError("Use a new workspace; source or install trees already exist")
@@ -147,25 +160,33 @@ def main() -> int:
     compliance.mkdir()
     shutil.copy2(LOCK, compliance / LOCK.name)
     shutil.copy2(__file__, compliance / Path(__file__).name)
-    command_plan = build_commands(source_roots, workspace, args.jobs)
+    prepare_portable_mpv(source_roots['mpv'], compliance / 'portable-dsp-source.json')
+    shutil.copytree(source_roots['mpv'] / 'crisper-dsp', compliance / 'portable-dsp-sources')
+    shutil.copy2(source_roots['mpv'] / 'audio/filter/af_crisper.c', compliance / 'af_crisper.c')
+    command_plan = build_commands(source_roots, workspace, args.jobs, target)
     (compliance / "commands.json").write_text(json.dumps(command_plan, indent=2) + "\n")
     if args.prepare_sources:
         print(f"Verified source archives and recorded the plan in {workspace}; no native build or release approval performed.")
         return 0
-    if not sys.platform.startswith("linux"):
-        raise ValueError("This candidate recipe is for Linux only")
-    for tool in ("cc", "make", "meson", "ninja", "pkg-config", "nasm", "readelf"):
+    if target == 'linux' and not sys.platform.startswith('linux'):
+        raise ValueError('Use Linux for this recipe or build_windows_audio.py under MSYS2 UCRT64')
+    if target == 'windows' and sys.platform != 'win32':
+        raise ValueError('The Windows candidate requires native MSYS2 UCRT64 Python and toolchain')
+    binary_tool = 'readelf' if target == 'linux' else 'objdump'
+    for tool in ("cc", "make", "meson", "ninja", "pkg-config", "nasm", binary_tool):
         if not shutil.which(tool):
             raise ValueError(f"Missing build tool: {tool}; see docs/DESKTOP_AUDIO_BUILD.md")
     environment = dict(os.environ)
     prefix = workspace / "prefix"
-    environment["PKG_CONFIG_PATH"] = str(prefix / "lib/pkgconfig")
+    environment["PKG_CONFIG_PATH"] = os.pathsep.join(filter(None, (
+        str(prefix / 'lib/pkgconfig'), environment.get('PKG_CONFIG_PATH'))))
     environment["LD_LIBRARY_PATH"] = str(prefix / "lib")
+    environment['PATH'] = str(prefix / 'bin') + os.pathsep + environment['PATH']
     environment["LC_ALL"] = "C"
     environment["SOURCE_DATE_EPOCH"] = "1793836800"
     inventory = {
         "tools": {tool: capture([tool, "--version"], environment) for tool in ("cc", "make", "meson", "ninja", "pkg-config", "nasm")},
-        "system_packages": {name: {"version": capture(["pkg-config", "--modversion", name], environment), "link_flags": capture(["pkg-config", "--libs", name], environment)} for name in SYSTEM_PACKAGES},
+        "system_packages": {name: {"version": capture(["pkg-config", "--modversion", name], environment), "link_flags": capture(["pkg-config", "--libs", name], environment)} for name in (SYSTEM_PACKAGES if target == 'linux' else SYSTEM_PACKAGES[:3])},
         "status": "candidate_not_release_approved",
         "source_date_epoch": environment["SOURCE_DATE_EPOCH"],
     }
@@ -181,13 +202,14 @@ def main() -> int:
             subprocess.run(command["argv"], cwd=command["cwd"], env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
     binaries = {}
     inspections = []
-    for path in sorted((prefix / "lib").glob("*.so*")):
+    candidates = (prefix / 'lib').glob('*.so*') if target == 'linux' else (prefix / 'bin').glob('*.dll')
+    for path in sorted(candidates):
         if path.is_symlink() or not path.is_file():
             continue
-        binaries[path.name] = {"sha256": sha256(path), "dynamic_section": capture(["readelf", "-d", str(path)], environment)}
+        binaries[path.name] = {"sha256": sha256(path), "dynamic_section": capture([binary_tool, '-d' if target == 'linux' else '-p', str(path)], environment)}
         if path.name.startswith("libmpv"):
             inspections.append(inspect(path, role="mpv"))
-        elif path.name.startswith(("libav", "libsw")):
+        elif path.name.startswith(("libav", "libsw", "avcodec-", "avfilter-", "avformat-", "avutil-", "swresample-", "swscale-")):
             inspections.append(inspect(path, role="ffmpeg"))
     if not any(item["role"] == "mpv" for item in inspections) or len(inspections) < 7:
         raise ValueError("The expected libmpv and six FFmpeg libraries were not all produced")
@@ -203,7 +225,10 @@ def main() -> int:
         for path in source.iterdir():
             if path.is_file() and path.name.upper().startswith(("LICENSE", "COPYING", "COPYRIGHT", "NOTICE")):
                 shutil.copy2(path, notices / name / path.name)
-    subprocess.run([sys.executable, str(REPOSITORY / "scripts/smoke_desktop_audio.py"), "--library", str(prefix / "lib/libmpv.so"), "--output", str(compliance / "playback-smoke.json")], env=environment, check=True)
+    player_library = prefix / ('lib/libmpv.so' if target == 'linux' else 'bin/libmpv-2.dll')
+    subprocess.run([sys.executable, str(REPOSITORY / "scripts/smoke_desktop_audio.py"),
+                    '--library', str(player_library), '--require-portable',
+                    '--output', str(compliance / 'playback-smoke.json')], env=environment, check=True)
     print(f"Candidate built in {prefix}. Review {compliance}, full dependency closure, and target distribution obligations before changing any license-gate status.")
     return 0
 

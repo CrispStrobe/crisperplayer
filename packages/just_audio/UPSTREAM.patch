@@ -141,6 +141,30 @@
          player.setSkipSilenceEnabled(enabled);
      }
  
+--- a/darwin/just_audio/Package.swift
++++ b/darwin/just_audio/Package.swift
+@@ -12,14 +12,18 @@
+     products: [
+         .library(name: "just-audio", targets: ["just_audio"])
+     ],
+-    dependencies: [],
++    dependencies: [.package(path: "../../native/crisper_dsp")],
+     targets: [
+         .target(
+             name: "just_audio",
+-            dependencies: [],
++            dependencies: [.product(name: "CrisperDsp", package: "crisper_dsp")],
++            // CocoaPods compiles the wrappers; SwiftPM compiles the same
++            // shared sources once through the local CrisperDsp dependency.
++            exclude: ["portable_dsp"],
+             cSettings: [
+                 .headerSearchPath("include/just_audio")
+             ]
+         )
+-    ]
++    ],
++    cxxLanguageStandard: .cxx20
+ )
 --- a/darwin/just_audio/Sources/just_audio/AudioPlayer.m
 +++ b/darwin/just_audio/Sources/just_audio/AudioPlayer.m
 @@ -99,6 +99,8 @@
@@ -152,6 +176,43 @@
              _automaticallyWaitsToMinimizeStalling = (BOOL)[map[@"automaticallyWaitsToMinimizeStalling"] boolValue];
          }
      }
+--- a/darwin/just_audio/Sources/just_audio/JustAudioPlugin.m
++++ b/darwin/just_audio/Sources/just_audio/JustAudioPlugin.m
+@@ -1,11 +1,12 @@
+ #import "./include/just_audio/JustAudioPlugin.h"
+ #import "./include/just_audio/AudioPlayer.h"
++#import "./include/just_audio/CrisperPortableAudioPlayer.h"
+ #import <AVFoundation/AVFoundation.h>
+ #include <TargetConditionals.h>
+ 
+ @implementation JustAudioPlugin {
+     NSObject<FlutterPluginRegistrar>* _registrar;
+-    NSMutableDictionary<NSString *, AudioPlayer *> *_players;
++    NSMutableDictionary<NSString *, id> *_players;
+ }
+ 
+ + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
+@@ -35,7 +36,19 @@
+             FlutterError *flutterError = [FlutterError errorWithCode:@"error" message:@"Platform player already exists" details:nil];
+             result(flutterError);
+         } else {
+-            AudioPlayer* player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
++            NSDictionary *darwin = [loadConfiguration isKindOfClass:[NSDictionary class]] ? loadConfiguration[@"darwinLoadControl"] : nil;
++            NSString *portable = [darwin isKindOfClass:[NSDictionary class]] ? darwin[@"portableSpeedProcessor"] : nil;
++            id player;
++            if ([portable isKindOfClass:[NSString class]] && portable.length > 0) {
++                NSInteger engine = [CrisperPortableAudioPlayer engineIdentifierForName:portable];
++                if (engine < 0) {
++                    result([FlutterError errorWithCode:@"portableAudio" message:@"Unknown portable audio processor." details:portable]);
++                    return;
++                }
++                player = [[CrisperPortableAudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId engine:engine];
++            } else {
++                player = [[AudioPlayer alloc] initWithRegistrar:_registrar playerId:playerId loadConfiguration:loadConfiguration useLazyPreparation:useLazyPreparation];
++            }
+             [_players setValue:player forKey:playerId];
+             result(nil);
+         }
 --- a/darwin/just_audio/Sources/just_audio/LoadControl.m
 +++ b/darwin/just_audio/Sources/just_audio/LoadControl.m
 @@ -4,4 +4,5 @@
@@ -187,6 +248,38 @@
 +@property (readwrite, nonatomic) BOOL useSpectralTimePitchAlgorithm;
  
  @end
+--- a/darwin/just_audio.podspec
++++ b/darwin/just_audio.podspec
+@@ -12,11 +12,27 @@
+   s.license          = { :file => '../LICENSE' }
+   s.author           = { 'Your Company' => 'email@example.com' }
+   s.source           = { :path => '.' }
+-  s.source_files = 'just_audio/Sources/just_audio/**/*.{h,m}'
++  # Wrapper translation units include the exact shared native sources; this
++  # keeps Android, Apple and desktop on one reviewed vendor/source closure.
++  s.source_files = 'just_audio/Sources/just_audio/**/*.{h,m,mm,c,cpp}'
+   s.public_header_files = 'just_audio/Sources/just_audio/include/**/*.h'
+   s.ios.dependency 'Flutter'
+   s.osx.dependency 'FlutterMacOS'
+   s.ios.deployment_target = '12.0'
+   s.osx.deployment_target = '10.14'
+-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
++  s.frameworks = 'AVFoundation'
++  s.libraries = 'c++'
++  s.compiler_flags = '-O2 -fwrapv'
++  native = '"${PODS_TARGET_SRCROOT}/../native/crisper_dsp'
++  s.pod_target_xcconfig = {
++    'DEFINES_MODULE' => 'YES',
++    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
++    'HEADER_SEARCH_PATHS' => [
++      '$(inherited)', native + '"', native + '/vendor"',
++      native + '/vendor/bungee"', native + '/vendor/eigen"',
++      native + '/vendor/pffft"', native + '/vendor/sonic"',
++      native + '/vendor/signalsmith-stretch"'
++    ].join(' '),
++    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) EIGEN_MPL2_ONLY=1 EIGEN_DONT_PARALLELIZE=1 BUNGEE_SELF_TEST=0 BUNGEE_VISIBILITY= BUNGEE_VERSION=\\"61f52bf34be577d189d388772ddfa3696dee77d8\\" eigen_assert=BUNGEE_ASSERT1'
++  }
+ end
 --- a/lib/just_audio.dart
 +++ b/lib/just_audio.dart
 @@ -2228,7 +2228,28 @@
@@ -353,7 +446,7 @@
  name: just_audio
  description: A feature-rich audio player for Flutter. Loop, clip and sequence any sound from any source (asset/file/URL/stream) in gapless playlists.
 -version: 0.10.6
-+version: 0.10.6+crisper.3
++version: 0.10.6+crisper.4
 +publish_to: none
  repository: https://github.com/ryanheise/just_audio/tree/minor/just_audio
  issue_tracker: https://github.com/ryanheise/just_audio/issues
@@ -1354,11 +1447,893 @@
 +    }
 +}
 --- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/CrisperDspStream.mm
+@@ -0,0 +1,148 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++#import "./include/just_audio/CrisperDspStream.h"
++#include "../../../../native/crisper_dsp/crisper_dsp.h"
++#include <algorithm>
++#include <cmath>
++#include <vector>
++
++namespace {
++NSError *streamError(NSString *message) {
++    return [NSError errorWithDomain:@"CrisperPortableAudio" code:1
++                          userInfo:@{NSLocalizedDescriptionKey: message}];
++}
++NSError *dspError() {
++    return streamError([NSString stringWithUTF8String:cp_dsp_last_error()]);
++}
++}
++
++@implementation CrisperDspStream {
++    AVAudioFile *_file;
++    AVAudioPCMBuffer *_decodeBuffer;
++    cp_dsp *_dsp;
++    std::vector<float> _pending;
++    std::vector<float> _output;
++    int _pendingFrames;
++    int _pendingOffset;
++    int _channels;
++    double _sampleRate;
++    double _rate;
++    int64_t _clipStartFrame;
++    int64_t _endFrame;
++    int64_t _startFrame;
++    BOOL _finishedInput;
++}
++
++- (instancetype)initWithURL:(NSURL *)url engine:(NSInteger)engine rate:(double)rate
++                 clipStart:(int64_t)clipStart clipEnd:(int64_t)clipEnd
++                  position:(int64_t)position error:(NSError **)error {
++    self = [super init];
++    if (!self) return nil;
++    if (!url.isFileURL) {
++        if (error) *error = streamError(@"Portable processors require a downloaded local audio file. Choose an Apple processor for streaming URLs.");
++        return nil;
++    }
++    _file = [[AVAudioFile alloc] initForReading:url commonFormat:AVAudioPCMFormatFloat32
++                                  interleaved:NO error:error];
++    if (!_file) return nil;
++    _format = _file.processingFormat;
++    _sampleRate = _format.sampleRate;
++    _channels = (int)_format.channelCount;
++    _rate = rate;
++    if (!std::isfinite(_sampleRate) || _sampleRate < 8000 || _sampleRate > 192000 ||
++        (_channels != 1 && _channels != 2) ||
++        std::fabs(_sampleRate - std::round(_sampleRate)) > 0.001) {
++        if (error) *error = streamError(@"Portable processors support mono/stereo audio at 8–192 kHz. Choose an Apple processor for this file.");
++        return nil;
++    }
++    if (clipStart < 0 || (clipEnd >= 0 && clipEnd < clipStart) || position < 0) {
++        if (error) *error = streamError(@"Invalid audio clip or seek position.");
++        return nil;
++    }
++    auto toFrame = [self](int64_t micros) {
++        // Bound before conversion, including an arbitrarily large seek request.
++        return int64_t(std::min(double(_file.length), std::round(double(micros) * _sampleRate / 1000000.0)));
++    };
++    _clipStartFrame = toFrame(clipStart);
++    _endFrame = clipEnd < 0 ? _file.length : toFrame(clipEnd);
++    _startFrame = _clipStartFrame + std::min(_endFrame - _clipStartFrame, toFrame(position));
++    _file.framePosition = _startFrame;
++    _durationMicroseconds = (int64_t)std::llround(double(_endFrame - _clipStartFrame) * 1000000.0 / _sampleRate);
++    _dsp = cp_dsp_create((int)engine, (int)std::llround(_sampleRate), _channels, rate);
++    if (!_dsp) {
++        if (error) *error = dspError();
++        return nil;
++    }
++    _decodeBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:_format frameCapacity:4096];
++    _pending.resize(4096 * _channels);
++    return self;
++}
++
++- (BOOL)isEnded {
++    return _dsp && cp_dsp_ended(_dsp) == 1;
++}
++
++- (int64_t)mediaPositionForOutputFrames:(int64_t)frames {
++    const double source = std::min(double(_endFrame), double(_startFrame) + std::max(int64_t(0), frames) * _rate);
++    return (int64_t)std::llround((source - _clipStartFrame) * 1000000.0 / _sampleRate);
++}
++
++- (int64_t)decodedPositionMicroseconds {
++    const int64_t accepted = _dsp ? cp_dsp_input_frames(_dsp) : 0;
++    return (int64_t)std::llround(double(std::min(_endFrame, _startFrame + accepted) - _clipStartFrame) * 1000000.0 / _sampleRate);
++}
++
++- (AVAudioPCMBuffer *)readFrames:(AVAudioFrameCount)frames error:(NSError **)error {
++    if (frames == 0 || frames > 16384) {
++        if (error) *error = streamError(@"Invalid portable audio read size.");
++        return nil;
++    }
++    AVAudioPCMBuffer *buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:_format frameCapacity:frames];
++    _output.resize(frames * _channels);
++    int delivered = 0;
++    int iterations = 0;
++    while (delivered < (int)frames) {
++        const int count = cp_dsp_read_f32(_dsp, _output.data() + delivered * _channels, (int)frames - delivered);
++        if (count < 0) { if (error) *error = dspError(); return nil; }
++        delivered += count;
++        if (delivered == (int)frames || self.isEnded) break;
++        // Every pass either delivers output, accepts pending input, decodes a
++        // bounded block or starts the one finite drain. Catch a stalled engine.
++        if (++iterations > 4096) {
++            if (error) *error = streamError(@"The selected processor stopped making progress.");
++            return nil;
++        }
++        if (_pendingOffset < _pendingFrames) {
++            const int written = cp_dsp_write_f32(_dsp, _pending.data() + _pendingOffset * _channels,
++                                                 _pendingFrames - _pendingOffset);
++            if (written < 0) { if (error) *error = dspError(); return nil; }
++            _pendingOffset += written;
++        } else if (!_finishedInput) {
++            const AVAudioFrameCount wanted = (AVAudioFrameCount)std::min(int64_t(4096), _endFrame - _file.framePosition);
++            if (wanted > 0) {
++                if (![_file readIntoBuffer:_decodeBuffer frameCount:wanted error:error]) return nil;
++                _pendingFrames = (int)_decodeBuffer.frameLength;
++                _pendingOffset = 0;
++                for (int f = 0; f < _pendingFrames; ++f)
++                    for (int c = 0; c < _channels; ++c)
++                        _pending[f * _channels + c] = _decodeBuffer.floatChannelData[c][f];
++            } else {
++                _pendingFrames = _pendingOffset = 0;
++            }
++            if (wanted == 0 || _pendingFrames == 0) {
++                if (cp_dsp_finish(_dsp) < 0) { if (error) *error = dspError(); return nil; }
++                _finishedInput = YES;
++            }
++        }
++    }
++    buffer.frameLength = (AVAudioFrameCount)delivered;
++    for (int f = 0; f < delivered; ++f)
++        for (int c = 0; c < _channels; ++c)
++            buffer.floatChannelData[c][f] = _output[f * _channels + c];
++    return buffer;
++}
++
++- (void)dealloc {
++    cp_dsp_destroy(_dsp);
++}
++@end
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/CrisperPortableAudioPlayer.m
+@@ -0,0 +1,550 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++#import "./include/just_audio/CrisperPortableAudioPlayer.h"
++#import "./include/just_audio/CrisperDspStream.h"
++#import "./include/just_audio/BetterEventChannel.h"
++#import <math.h>
++
++static NSError *portableError(NSString *message) {
++    return [NSError errorWithDomain:@"CrisperPortableAudio" code:1
++                          userInfo:@{NSLocalizedDescriptionKey: message}];
++}
++static int64_t optionalInteger(id value, int64_t fallback) {
++    return [value isKindOfClass:[NSNumber class]] ? [value longLongValue] : fallback;
++}
++static NSMutableDictionary *mutableTree(NSDictionary *source) {
++    NSMutableDictionary *tree = [source mutableCopy];
++    if ([source[@"children"] isKindOfClass:[NSArray class]]) {
++        NSMutableArray *children = [NSMutableArray array];
++        for (NSDictionary *child in source[@"children"]) [children addObject:mutableTree(child)];
++        tree[@"children"] = children;
++    }
++    if ([source[@"child"] isKindOfClass:[NSDictionary class]]) tree[@"child"] = mutableTree(source[@"child"]);
++    return tree;
++}
++
++@implementation CrisperPortableAudioPlayer {
++    FlutterMethodChannel *_methodChannel;
++    BetterEventChannel *_events;
++    BetterEventChannel *_dataEvents;
++    dispatch_queue_t _queue;
++    dispatch_source_t _timer;
++    AVAudioEngine *_audioEngine;
++    AVAudioPlayerNode *_node;
++    CrisperDspStream *_stream;
++    NSMutableDictionary *_sourceTree;
++    NSMutableArray<NSDictionary *> *_sources;
++    NSArray<NSNumber *> *_shuffleOrder;
++    NSInteger _engine;
++    NSInteger _index;
++    NSInteger _generation;
++    NSInteger _queuedBuffers;
++    int64_t _scheduledFrames;
++    int64_t _completedFrames;
++    int64_t _timelineScheduledEnd;
++    NSMutableArray<NSDictionary *> *_scheduledSegments;
++    int64_t _lastPosition;
++    double _rate;
++    float _volume;
++    enum ProcessingState _state;
++    enum LoopMode _loopMode;
++    BOOL _shuffle;
++    BOOL _playing;
++    BOOL _disposed;
++    FlutterResult _playResult;
++    void (^_eventHandler)(NSDictionary *);
++    id _configurationObserver;
++    id _interruptionObserver;
++    id _routeObserver;
++}
++
+++ (NSInteger)engineIdentifierForName:(NSString *)name {
++    if ([name isEqualToString:@"sonic"]) return 0;
++    if ([name isEqualToString:@"bungee"]) return 1;
++    if ([name isEqualToString:@"signalsmith"]) return 2;
++    if ([name isEqualToString:@"wsola"]) return 3;
++    return -1;
++}
++
++- (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar
++                        playerId:(NSString *)playerId engine:(NSInteger)engine {
++    self = [self initWithEngine:engine eventHandler:nil];
++    if (!self) return nil;
++    _methodChannel = [FlutterMethodChannel methodChannelWithName:[@"com.ryanheise.just_audio.methods." stringByAppendingString:playerId]
++                                               binaryMessenger:registrar.messenger];
++    _events = [[BetterEventChannel alloc] initWithName:[@"com.ryanheise.just_audio.events." stringByAppendingString:playerId]
++                                          messenger:registrar.messenger];
++    _dataEvents = [[BetterEventChannel alloc] initWithName:[@"com.ryanheise.just_audio.data." stringByAppendingString:playerId]
++                                              messenger:registrar.messenger];
++    __weak CrisperPortableAudioPlayer *weakSelf = self;
++    [_methodChannel setMethodCallHandler:^(FlutterMethodCall *call, FlutterResult result) {
++        CrisperPortableAudioPlayer *strongSelf = weakSelf;
++        if (!strongSelf) { result(FlutterMethodNotImplemented); return; }
++        [strongSelf handleMethodCall:call result:result];
++    }];
++    return self;
++}
++
++- (instancetype)initWithEngine:(NSInteger)engine eventHandler:(void (^)(NSDictionary *))eventHandler {
++    self = [super init];
++    if (!self) return nil;
++    _engine = engine;
++    _rate = 1;
++    _volume = 1;
++    _state = psIdle;
++    _eventHandler = [eventHandler copy];
++    _queue = dispatch_queue_create("com.crisperplayer.portable-audio", DISPATCH_QUEUE_SERIAL);
++    __weak CrisperPortableAudioPlayer *weakSelf = self;
++    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, _queue);
++    dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 200 * NSEC_PER_MSEC),
++                             200 * NSEC_PER_MSEC, 20 * NSEC_PER_MSEC);
++    dispatch_source_set_event_handler(_timer, ^{
++        CrisperPortableAudioPlayer *strongSelf = weakSelf;
++        if (strongSelf && strongSelf->_playing && strongSelf->_state != psCompleted) [strongSelf broadcast:nil];
++    });
++    dispatch_resume(_timer);
++    _configurationObserver = [[NSNotificationCenter defaultCenter]
++        addObserverForName:AVAudioEngineConfigurationChangeNotification object:nil queue:nil
++        usingBlock:^(NSNotification *notification) {
++            CrisperPortableAudioPlayer *strongSelf = weakSelf;
++            if (!strongSelf) return;
++            dispatch_async(strongSelf->_queue, ^{
++                if (strongSelf->_disposed || notification.object != strongSelf->_audioEngine || !strongSelf->_stream) return;
++                NSError *error = nil;
++                int64_t position = [strongSelf currentPosition];
++                if (![strongSelf openIndex:strongSelf->_index position:position error:&error]) [strongSelf fail:error];
++                else [strongSelf broadcast:nil];
++            });
++        }];
++#if !TARGET_OS_OSX
++    _interruptionObserver = [[NSNotificationCenter defaultCenter]
++        addObserverForName:AVAudioSessionInterruptionNotification object:nil queue:nil
++        usingBlock:^(NSNotification *notification) {
++            if ([notification.userInfo[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue] != AVAudioSessionInterruptionTypeBegan) return;
++            CrisperPortableAudioPlayer *strongSelf = weakSelf;
++            if (strongSelf) dispatch_async(strongSelf->_queue, ^{ [strongSelf pauseForSystem]; });
++        }];
++    _routeObserver = [[NSNotificationCenter defaultCenter]
++        addObserverForName:AVAudioSessionRouteChangeNotification object:nil queue:nil
++        usingBlock:^(NSNotification *notification) {
++            if ([notification.userInfo[AVAudioSessionRouteChangeReasonKey] unsignedIntegerValue] != AVAudioSessionRouteChangeReasonOldDeviceUnavailable) return;
++            CrisperPortableAudioPlayer *strongSelf = weakSelf;
++            if (strongSelf) dispatch_async(strongSelf->_queue, ^{ [strongSelf pauseForSystem]; });
++        }];
++#endif
++    return self;
++}
++
++- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
++    dispatch_async(_queue, ^{ [self handleCall:call result:result]; });
++}
++
++- (void)reply:(FlutterResult)result value:(id)value {
++    if (result) dispatch_async(dispatch_get_main_queue(), ^{ result(value); });
++}
++
++- (void)finishPlay {
++    FlutterResult result = _playResult;
++    _playResult = nil;
++    [self reply:result value:@{}];
++}
++
++- (int64_t)currentPosition {
++    if (!_stream || !_node || !_playing) return _lastPosition;
++    int64_t frames = _completedFrames;
++    AVAudioTime *renderTime = _node.lastRenderTime;
++    AVAudioTime *playerTime = renderTime ? [_node playerTimeForNodeTime:renderTime] : nil;
++    if (playerTime.isSampleTimeValid) {
++        // Rendering can run ahead of the device. Never count queued PCM as
++        // heard media, and never move behind a dataPlayedBack boundary.
++        int64_t latency = (int64_t)llround(_node.outputPresentationLatency * _stream.format.sampleRate);
++        int64_t heardTime = MAX(0, playerTime.sampleTime - latency);
++        // A slow decode may leave a silent gap on the node's timeline. Count
++        // only intervals containing scheduled PCM, never that silence.
++        for (NSDictionary *segment in _scheduledSegments) {
++            int64_t start = [segment[@"timelineStart"] longLongValue];
++            int64_t end = [segment[@"timelineEnd"] longLongValue];
++            if (heardTime < start) break;
++            int64_t output = [segment[@"outputStart"] longLongValue] + MIN(heardTime, end) - start;
++            frames = MAX(frames, output);
++            if (heardTime < end) break;
++        }
++    }
++    _lastPosition = MAX(_lastPosition, [_stream mediaPositionForOutputFrames:frames]);
++    return _lastPosition;
++}
++
++- (void)broadcast:(NSError *)error {
++    if (_disposed) return;
++    NSDictionary *event = @{
++        @"processingState": @(_state),
++        @"updatePosition": @([self currentPosition]),
++        @"updateTime": @((int64_t)llround(NSDate.date.timeIntervalSince1970 * 1000)),
++        @"bufferedPosition": @(_stream ? _stream.decodedPositionMicroseconds : _lastPosition),
++        @"icyMetadata": @{},
++        @"duration": _stream ? @(_stream.durationMicroseconds) : [NSNull null],
++        @"currentIndex": @(_index),
++        @"errorCode": error ? @1001 : [NSNull null],
++        @"errorMessage": error ? error.localizedDescription : [NSNull null]
++    };
++    dispatch_async(dispatch_get_main_queue(), ^{
++        if (!self->_disposed) {
++            [self->_events sendEvent:event];
++            if (self->_eventHandler) self->_eventHandler(event);
++        }
++    });
++}
++
++- (void)resetOutput {
++    ++_generation;
++    [_node stop];
++    [_audioEngine stop];
++    _node = nil;
++    _audioEngine = nil;
++    _stream = nil;
++    _queuedBuffers = 0;
++    _scheduledFrames = _completedFrames = 0;
++    _timelineScheduledEnd = 0;
++    _scheduledSegments = [NSMutableArray array];
++}
++
++- (void)fail:(NSError *)error {
++    if (!error) error = portableError(@"Portable audio playback failed.");
++    [self currentPosition];
++    [self resetOutput];
++    _playing = NO;
++    _state = psIdle;
++    [self finishPlay];
++    [self broadcast:error];
++    dispatch_async(dispatch_get_main_queue(), ^{ if (!self->_disposed) [self->_dataEvents sendEvent:@{@"playing": @NO}]; });
++}
++
++- (void)pauseForSystem {
++    if (_disposed || !_playing) return;
++    [self currentPosition];
++    [_node pause];
++    [_audioEngine pause];
++    _playing = NO;
++    [self finishPlay];
++    [self broadcast:nil];
++    dispatch_async(dispatch_get_main_queue(), ^{ if (!self->_disposed) [self->_dataEvents sendEvent:@{@"playing": @NO}]; });
++}
++
++// Flatten the standard just_audio source tree while retaining its recursive
++// shuffle order. The application supplies progressive local book-file queues.
++- (NSArray<NSNumber *> *)flatten:(NSDictionary *)source start:(int64_t)start end:(int64_t)end
++                           depth:(NSUInteger)depth error:(NSError **)error {
++    if (depth > 32 || _sources.count >= 10000) { *error = portableError(@"Audio playlist is too large or deeply nested."); return nil; }
++    NSString *type = source[@"type"];
++    if ([type isEqualToString:@"progressive"]) {
++        NSURL *url = [NSURL URLWithString:source[@"uri"]];
++        if (!url.isFileURL) { *error = portableError(@"Portable processors require downloaded local files. Choose an Apple processor for streaming URLs."); return nil; }
++        NSNumber *index = @(_sources.count);
++        [_sources addObject:@{@"uri": url, @"id": source[@"id"] ?: @"", @"start": @(start), @"end": @(end)}];
++        return @[index];
++    }
++    if ([type isEqualToString:@"clipping"]) {
++        int64_t clipStart = optionalInteger(source[@"start"], 0);
++        int64_t clipEnd = optionalInteger(source[@"end"], -1);
++        if (clipStart < 0 || (clipEnd >= 0 && clipEnd < clipStart) || start > INT64_MAX - clipStart || (clipEnd >= 0 && start > INT64_MAX - clipEnd)) {
++            *error = portableError(@"Invalid clip bounds."); return nil;
++        }
++        int64_t absoluteEnd = clipEnd < 0 ? end : (end < 0 ? start + clipEnd : MIN(end, start + clipEnd));
++        return [self flatten:source[@"child"] start:start + clipStart end:absoluteEnd depth:depth + 1 error:error];
++    }
++    if ([type isEqualToString:@"looping"]) {
++        NSInteger count = [source[@"count"] integerValue];
++        if (count < 0 || count > 10000) { *error = portableError(@"Invalid loop count."); return nil; }
++        NSMutableArray *order = [NSMutableArray array];
++        for (NSInteger n = 0; n < count; ++n) {
++            NSArray *child = [self flatten:source[@"child"] start:start end:end depth:depth + 1 error:error];
++            if (!child) return nil;
++            [order addObjectsFromArray:child];
++        }
++        return order;
++    }
++    if ([type isEqualToString:@"concatenating"]) {
++        NSMutableArray<NSArray *> *groups = [NSMutableArray array];
++        for (NSDictionary *child in source[@"children"]) {
++            NSArray *group = [self flatten:child start:start end:end depth:depth + 1 error:error];
++            if (!group) return nil;
++            [groups addObject:group];
++        }
++        NSArray *shuffle = source[@"shuffleOrder"];
++        NSMutableArray *order = [NSMutableArray array];
++        NSMutableIndexSet *seen = [NSMutableIndexSet indexSet];
++        if ([shuffle isKindOfClass:[NSArray class]] && shuffle.count == groups.count) {
++            for (NSNumber *value in shuffle) {
++                NSInteger index = value.integerValue;
++                if (index < 0 || index >= (NSInteger)groups.count || [seen containsIndex:index]) { *error = portableError(@"Invalid playlist shuffle order."); return nil; }
++                [seen addIndex:index];
++                [order addObjectsFromArray:groups[index]];
++            }
++        } else for (NSArray *group in groups) [order addObjectsFromArray:group];
++        return order;
++    }
++    *error = portableError(@"This source needs an Apple processor. Portable processors support downloaded local audio files.");
++    return nil;
++}
++
++- (BOOL)rebuildSources:(NSError **)error {
++    _sources = [NSMutableArray array];
++    _shuffleOrder = [self flatten:_sourceTree start:0 end:-1 depth:0 error:error];
++    return _shuffleOrder != nil;
++}
++
++- (BOOL)openIndex:(NSInteger)index position:(int64_t)position error:(NSError **)error {
++    [self resetOutput];
++    _index = index;
++    _lastPosition = MAX(0, position);
++    if (_sources.count == 0) { _index = 0; _lastPosition = 0; _state = psCompleted; return YES; }
++    if (index < 0 || index >= (NSInteger)_sources.count) { *error = portableError(@"Audio playlist index is out of range."); return NO; }
++    NSDictionary *source = _sources[index];
++    _stream = [[CrisperDspStream alloc] initWithURL:source[@"uri"] engine:_engine rate:_rate
++                                       clipStart:[source[@"start"] longLongValue] clipEnd:[source[@"end"] longLongValue]
++                                        position:MAX(0, position) error:error];
++    if (!_stream) return NO;
++    _lastPosition = [_stream mediaPositionForOutputFrames:0];
++    _audioEngine = [[AVAudioEngine alloc] init];
++    _node = [[AVAudioPlayerNode alloc] init];
++    [_audioEngine attachNode:_node];
++    [_audioEngine connect:_node to:_audioEngine.mainMixerNode format:_stream.format];
++    _node.volume = _volume;
++    [_audioEngine prepare];
++    _state = psReady;
++    if (![self fillBuffers:error]) return NO;
++    if (_playing && _queuedBuffers > 0) {
++        if (![_audioEngine startAndReturnError:error]) return NO;
++        [_node play];
++    }
++    if (_queuedBuffers == 0 && _stream.isEnded) _state = psCompleted;
++    return YES;
++}
++
++- (BOOL)fillBuffers:(NSError **)error {
++    // Four buffers bound queued output to 16,384 frames. All decoding/DSP runs
++    // on this worker queue, never on the real-time render callback.
++    while (_queuedBuffers < 4 && !_stream.isEnded) {
++        AVAudioPCMBuffer *buffer = [_stream readFrames:4096 error:error];
++        if (!buffer) return NO;
++        if (buffer.frameLength == 0) break;
++        NSInteger generation = _generation;
++        int64_t timelineStart = _timelineScheduledEnd;
++        AVAudioTime *renderTime = _node.lastRenderTime;
++        AVAudioTime *playerTime = renderTime ? [_node playerTimeForNodeTime:renderTime] : nil;
++        if (playerTime.isSampleTimeValid && playerTime.sampleTime > timelineStart) {
++            // Recovery after starvation: explicitly schedule in the future and
++            // retain the gap in the clock map instead of skipping source time.
++            timelineStart = playerTime.sampleTime + 512;
++        }
++        int64_t completed = _scheduledFrames + buffer.frameLength;
++        _timelineScheduledEnd = timelineStart + buffer.frameLength;
++        [_scheduledSegments addObject:@{@"timelineStart": @(timelineStart), @"timelineEnd": @(_timelineScheduledEnd),
++                                         @"outputStart": @(_scheduledFrames), @"outputEnd": @(completed)}];
++        _scheduledFrames = completed;
++        ++_queuedBuffers;
++        __weak CrisperPortableAudioPlayer *weakSelf = self;
++        AVAudioTime *time = [AVAudioTime timeWithSampleTime:timelineStart atRate:_stream.format.sampleRate];
++        [_node scheduleBuffer:buffer atTime:time options:0
++          completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack
++          completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
++            CrisperPortableAudioPlayer *strongSelf = weakSelf;
++            if (!strongSelf) return;
++            dispatch_async(strongSelf->_queue, ^{
++                if (strongSelf->_disposed || generation != strongSelf->_generation) return;
++                strongSelf->_completedFrames = MAX(strongSelf->_completedFrames, completed);
++                --strongSelf->_queuedBuffers;
++                while (strongSelf->_scheduledSegments.count &&
++                       [strongSelf->_scheduledSegments.firstObject[@"outputEnd"] longLongValue] <= strongSelf->_completedFrames) {
++                    [strongSelf->_scheduledSegments removeObjectAtIndex:0];
++                }
++                NSError *nextError = nil;
++                if (![strongSelf fillBuffers:&nextError]) { [strongSelf fail:nextError]; return; }
++                if (strongSelf->_queuedBuffers == 0 && strongSelf->_stream.isEnded) [strongSelf advance];
++            });
++        }];
++    }
++    return YES;
++}
++
++- (void)advance {
++    // At most one traversal: an empty file/clip in an all-empty looping list
++    // must terminate, never spin the worker or leave a play future hanging.
++    for (NSUInteger skipped = 0; skipped < MAX((NSUInteger)1, _sources.count); ++skipped) {
++        _lastPosition = _stream.durationMicroseconds;
++        NSInteger next = _index + 1;
++        if (_loopMode == lmLoopOne) {
++            if (_stream.durationMicroseconds == 0) break;
++            next = _index;
++        } else if (_shuffle) {
++            NSUInteger at = [_shuffleOrder indexOfObject:@(_index)];
++            next = at != NSNotFound && at + 1 < _shuffleOrder.count ? _shuffleOrder[at + 1].integerValue : _sources.count;
++        }
++        if (next >= (NSInteger)_sources.count && _loopMode == lmLoopAll && _sources.count) next = _shuffle ? _shuffleOrder.firstObject.integerValue : 0;
++        if (next >= (NSInteger)_sources.count) break;
++        NSError *error = nil;
++        if (![self openIndex:next position:0 error:&error]) { [self fail:error]; return; }
++        if (_queuedBuffers > 0) { [self broadcast:nil]; return; }
++    }
++    [_node pause];
++    [_audioEngine pause];
++    _state = psCompleted;
++    [self finishPlay];
++    [self broadcast:nil];
++}
++
++- (NSMutableDictionary *)findSource:(NSString *)identifier inTree:(NSMutableDictionary *)tree {
++    if ([tree[@"id"] isEqual:identifier]) return tree;
++    for (NSMutableDictionary *child in tree[@"children"]) {
++        NSMutableDictionary *match = [self findSource:identifier inTree:child];
++        if (match) return match;
++    }
++    return tree[@"child"] ? [self findSource:identifier inTree:tree[@"child"]] : nil;
++}
++
++- (void)copyShuffle:(NSDictionary *)incoming toTree:(NSMutableDictionary *)tree {
++    if (incoming[@"shuffleOrder"]) tree[@"shuffleOrder"] = incoming[@"shuffleOrder"];
++    NSArray *children = incoming[@"children"];
++    NSMutableArray *targets = tree[@"children"];
++    for (NSUInteger i = 0; i < MIN(children.count, targets.count); ++i) [self copyShuffle:children[i] toTree:targets[i]];
++    if (incoming[@"child"] && tree[@"child"]) [self copyShuffle:incoming[@"child"] toTree:tree[@"child"]];
++}
++
++- (void)handleCall:(FlutterMethodCall *)call result:(FlutterResult)result {
++    if (_disposed) { [self reply:result value:[FlutterError errorWithCode:@"disposed" message:@"Audio player is disposed." details:nil]]; return; }
++    @try {
++        NSDictionary *request = call.arguments;
++        NSString *method = call.method;
++        NSError *error = nil;
++        if ([method isEqualToString:@"load"]) {
++            _state = psLoading;
++            [self resetOutput];
++            _lastPosition = 0;
++            [self broadcast:nil];
++            _sourceTree = mutableTree(request[@"audioSource"]);
++            if ([self rebuildSources:&error]) [self openIndex:optionalInteger(request[@"initialIndex"], 0) position:optionalInteger(request[@"initialPosition"], 0) error:&error];
++            if (!error) {
++                if (_playing && _state == psCompleted) [self advance];
++                [self broadcast:nil];
++                [self reply:result value:@{@"duration": _stream ? @(_stream.durationMicroseconds) : [NSNull null]}];
++                return;
++            }
++        } else if ([method isEqualToString:@"play"]) {
++            if (_playResult) [self finishPlay];
++            _playResult = result;
++            _playing = YES;
++            if (_state == psCompleted) {
++                if (_stream.durationMicroseconds == 0 && _sources.count) [self advance];
++                else [self finishPlay];
++                return;
++            }
++            if (_node) {
++                if (![_audioEngine startAndReturnError:&error]) { /* reported below */ }
++                else [_node play];
++            }
++            if (!error) { [self broadcast:nil]; return; }
++            _playResult = nil;
++        } else if ([method isEqualToString:@"pause"]) {
++            [self currentPosition];
++            [_node pause];
++            [_audioEngine pause];
++            _playing = NO;
++            [self finishPlay];
++            [self broadcast:nil];
++        } else if ([method isEqualToString:@"setVolume"]) {
++            double volume = [request[@"volume"] doubleValue];
++            if (!isfinite(volume) || volume < 0 || volume > 1) error = portableError(@"Volume must be between 0 and 1.");
++            else { _volume = (float)volume; _node.volume = _volume; }
++        } else if ([method isEqualToString:@"setSpeed"]) {
++            double rate = [request[@"speed"] doubleValue];
++            if (!isfinite(rate) || rate < .5 || rate > 3) error = portableError(@"Portable playback speed must be between 0.5 and 3.0.");
++            else if (rate != _rate) {
++                int64_t position = [self currentPosition];
++                _rate = rate;
++                if (_stream) [self openIndex:_index position:position error:&error];
++                [self broadcast:nil];
++            }
++        } else if ([method isEqualToString:@"seek"]) {
++            NSInteger index = optionalInteger(request[@"index"], _index);
++            [self openIndex:index position:optionalInteger(request[@"position"], 0) error:&error];
++            if (!error && _playing && _state == psCompleted) [self advance];
++            [self broadcast:nil];
++        } else if ([method isEqualToString:@"setLoopMode"]) {
++            NSInteger mode = [request[@"loopMode"] integerValue];
++            if (mode < lmLoopOff || mode > lmLoopAll) error = portableError(@"Invalid loop mode.");
++            else _loopMode = (enum LoopMode)mode;
++        } else if ([method isEqualToString:@"setShuffleMode"]) {
++            _shuffle = [request[@"shuffleMode"] integerValue] == 1;
++        } else if ([method isEqualToString:@"setShuffleOrder"]) {
++            if (_sourceTree) { [self copyShuffle:request[@"audioSource"] toTree:_sourceTree]; [self rebuildSources:&error]; }
++        } else if ([method hasPrefix:@"concatenating"]) {
++            int64_t position = [self currentPosition];
++            NSString *currentId = _index < (NSInteger)_sources.count ? _sources[_index][@"id"] : nil;
++            NSMutableDictionary *target = [self findSource:request[@"id"] inTree:_sourceTree];
++            NSMutableArray *children = target[@"children"];
++            if (!children) error = portableError(@"Playlist source was not found.");
++            else {
++                if ([method isEqualToString:@"concatenatingInsertAll"]) {
++                    NSInteger at = [request[@"index"] integerValue];
++                    if (at < 0) at = children.count;
++                    for (NSDictionary *child in request[@"children"]) [children insertObject:mutableTree(child) atIndex:at++];
++                } else if ([method isEqualToString:@"concatenatingRemoveRange"]) {
++                    NSInteger start = [request[@"startIndex"] integerValue];
++                    NSInteger end = [request[@"endIndex"] integerValue];
++                    if (end < 0) end = children.count;
++                    [children removeObjectsInRange:NSMakeRange(start, end - start)];
++                } else if ([method isEqualToString:@"concatenatingMove"]) {
++                    NSInteger from = [request[@"currentIndex"] integerValue];
++                    id child = children[from];
++                    [children removeObjectAtIndex:from];
++                    [children insertObject:child atIndex:[request[@"newIndex"] integerValue]];
++                } else error = portableError(@"Unknown playlist operation.");
++                if (!error) {
++                    target[@"shuffleOrder"] = request[@"shuffleOrder"];
++                    if ([self rebuildSources:&error]) {
++                        NSInteger next = MIN(_index, MAX(0, (NSInteger)_sources.count - 1));
++                        BOOL found = NO;
++                        for (NSInteger i = 0; i < (NSInteger)_sources.count; ++i) if ([_sources[i][@"id"] isEqual:currentId]) { next = i; found = YES; break; }
++                        [self openIndex:next position:found ? position : 0 error:&error];
++                        [self broadcast:nil];
++                    }
++                }
++            }
++        } else if ([method isEqualToString:@"setSkipSilence"]) {
++            if ([request[@"enabled"] boolValue]) error = portableError(@"Skip silence is unavailable with portable Apple processors.");
++        } else if ([method isEqualToString:@"setAllowsExternalPlayback"]) {
++            if ([request[@"allowsExternalPlayback"] boolValue]) error = portableError(@"External AVPlayer playback requires an Apple processor.");
++        } else if ([method isEqualToString:@"setAutomaticallyWaitsToMinimizeStalling"] ||
++                   [method isEqualToString:@"setCanUseNetworkResourcesForLiveStreamingWhilePaused"] ||
++                   [method isEqualToString:@"setPreferredPeakBitRate"] ||
++                   [method isEqualToString:@"setAndroidAudioAttributes"]) {
++            // These AVPlayer network preferences have no effect on local PCM.
++        } else { [self reply:result value:FlutterMethodNotImplemented]; return; }
++        if (error) {
++            [self fail:error];
++            [self reply:result value:[FlutterError errorWithCode:@"portableAudio" message:error.localizedDescription details:nil]];
++        } else [self reply:result value:@{}];
++    } @catch (NSException *exception) {
++        NSError *error = portableError(exception.reason ?: @"Invalid portable audio operation.");
++        [self fail:error];
++        [self reply:result value:[FlutterError errorWithCode:@"portableAudio" message:error.localizedDescription details:nil]];
++    }
++}
++
++- (void)dispose:(BOOL)calledFromDealloc {
++    [_methodChannel setMethodCallHandler:nil];
++    if (_configurationObserver) [[NSNotificationCenter defaultCenter] removeObserver:_configurationObserver];
++    if (_interruptionObserver) [[NSNotificationCenter defaultCenter] removeObserver:_interruptionObserver];
++    if (_routeObserver) [[NSNotificationCenter defaultCenter] removeObserver:_routeObserver];
++    dispatch_sync(_queue, ^{
++        if (self->_disposed) return;
++        self->_disposed = YES;
++        dispatch_source_cancel(self->_timer);
++        [self resetOutput];
++        if (!calledFromDealloc) [self finishPlay];
++        else self->_playResult = nil;
++    });
++    [_events dispose];
++    [_dataEvents dispose];
++}
++@end
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/include/just_audio/CrisperDspStream.h
+@@ -0,0 +1,30 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++#import <AVFoundation/AVFoundation.h>
++
++NS_ASSUME_NONNULL_BEGIN
++
++/// Bounded file decoder and stretcher. Access each instance on one serial queue.
++/// Source positions are relative to the clip, in original-media microseconds.
++@interface CrisperDspStream : NSObject
++@property(nonatomic, readonly) AVAudioFormat *format;
++@property(nonatomic, readonly) int64_t durationMicroseconds;
++@property(nonatomic, readonly) int64_t decodedPositionMicroseconds;
++@property(nonatomic, readonly, getter=isEnded) BOOL ended;
++
++- (nullable instancetype)initWithURL:(NSURL *)url
++                             engine:(NSInteger)engine
++                               rate:(double)rate
++                          clipStart:(int64_t)clipStart
++                            clipEnd:(int64_t)clipEnd
++                           position:(int64_t)position
++                              error:(NSError * _Nullable * _Nullable)error
++    NS_SWIFT_NAME(init(url:engine:rate:clipStart:clipEnd:position:));
++
++/// Returns an empty buffer only after a complete finite DSP drain.
++- (nullable AVAudioPCMBuffer *)readFrames:(AVAudioFrameCount)frames
++                                   error:(NSError * _Nullable * _Nullable)error NS_SWIFT_NAME(read(frames:));
++- (int64_t)mediaPositionForOutputFrames:(int64_t)frames NS_SWIFT_NAME(mediaPosition(outputFrames:));
++@end
++
++NS_ASSUME_NONNULL_END
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/include/just_audio/CrisperPortableAudioPlayer.h
+@@ -0,0 +1,18 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++#import "AudioPlayer.h"
++
++/// Optional local-file playback path. The normal AVQueuePlayer stays unchanged.
++@interface CrisperPortableAudioPlayer : NSObject
+++ (NSInteger)engineIdentifierForName:(NSString *)name NS_SWIFT_NAME(engineIdentifier(for:));
++- (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar
++                        playerId:(NSString *)playerId
++                          engine:(NSInteger)engine;
++/// Native entry point used by the integration harness without a FlutterEngine.
++/// Commands and event callbacks retain the same channel message contract.
++- (instancetype)initWithEngine:(NSInteger)engine
++                  eventHandler:(void (^)(NSDictionary *event))eventHandler
++    NS_SWIFT_NAME(init(engine:eventHandler:));
++- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result;
++- (void)dispose:(BOOL)calledFromDealloc;
++@end
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/crisper_dsp.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/crisper_dsp.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Assert.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Assert.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Fourier.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Fourier.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Grain.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Grain.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Grains.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Grains.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Input.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Input.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Instrumentation.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Instrumentation.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Output.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Output.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Partials.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Partials.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Stretch.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Stretch.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Stretcher.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Stretcher.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Synthesis.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Synthesis.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Timing.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Timing.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_Window.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/Window.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_bungee_src_version.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/bungee/src/version.cpp"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_pffft_fftpack.c
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/pffft/fftpack.c"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_pffft_pffft.c
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/pffft/pffft.c"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/vendor_sonic_sonic.c
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/vendor/sonic/sonic.c"
+--- /dev/null
++++ b/darwin/just_audio/Sources/just_audio/portable_dsp/wsola_wsola.cpp
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Compile the one reviewed shared source; do not copy or modify vendor code.
++#include "../../../../../native/crisper_dsp/wsola/wsola.cpp"
+--- /dev/null
 +++ b/native/crisper_dsp/CMakeLists.txt
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,60 @@
 +# SPDX-License-Identifier: MIT
 +cmake_minimum_required(VERSION 3.22)
 +project(crisper_dsp LANGUAGES C CXX)
++
++# Static linking remains the application default. The shared target lets the
++# same streaming contract run against actual Windows/macOS/Linux compilers.
++option(CRISPER_DSP_SHARED "Build a shared library for native integration tests" OFF)
++option(CRISPER_DSP_TESTS "Build native regression executables" OFF)
++if(CRISPER_DSP_SHARED)
++  set(CRISPER_DSP_LIBRARY_TYPE SHARED)
++else()
++  set(CRISPER_DSP_LIBRARY_TYPE STATIC)
++endif()
 +
 +# Offline, explicit source list: no FetchContent and no optional/proprietary DSP.
 +set(BUNGEE_SOURCES
@@ -1376,7 +2351,7 @@
 +  vendor/bungee/src/Timing.cpp
 +  vendor/bungee/src/Window.cpp
 +  vendor/bungee/src/version.cpp)
-+add_library(crisper_dsp STATIC crisper_dsp.cpp wsola/wsola.cpp ${BUNGEE_SOURCES}
++add_library(crisper_dsp ${CRISPER_DSP_LIBRARY_TYPE} crisper_dsp.cpp wsola/wsola.cpp ${BUNGEE_SOURCES}
 +  vendor/pffft/pffft.c vendor/pffft/fftpack.c vendor/sonic/sonic.c)
 +set_target_properties(crisper_dsp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 +target_compile_features(crisper_dsp PUBLIC cxx_std_20)
@@ -1390,12 +2365,21 @@
 +  eigen_assert=BUNGEE_ASSERT1)
 +# Native audio processing needs optimization even in Flutter Debug builds.
 +target_compile_options(crisper_dsp PRIVATE
-+  $<$<C_COMPILER_ID:GNU,Clang>:-O2>
-+  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>:-fwrapv>)
++  $<$<C_COMPILER_ID:GNU,Clang,AppleClang>:-O2>
++  $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fwrapv>
++  $<$<C_COMPILER_ID:MSVC>:/O2>)
 +if(ANDROID)
 +  target_link_libraries(crisper_dsp PRIVATE log)
 +elseif(UNIX)
 +  target_link_libraries(crisper_dsp PRIVATE m)
++endif()
++
++if(CRISPER_DSP_TESTS)
++  enable_testing()
++  add_executable(crisper_dsp_wsola_search tools/test_wsola_search.cpp wsola/wsola.cpp)
++  target_compile_features(crisper_dsp_wsola_search PRIVATE cxx_std_20)
++  target_include_directories(crisper_dsp_wsola_search PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
++  add_test(NAME wsola_search COMMAND crisper_dsp_wsola_search)
 +endif()
 --- /dev/null
 +++ b/native/crisper_dsp/LICENSE
@@ -1426,6 +2410,50 @@
 +Vendored upstream code retains the separate licenses listed in vendor/manifest.json.
 +The Chromium-derived portable WSOLA implementation and derived semantic tests
 +retain BSD-3-Clause instead; see wsola/LICENSE and wsola/UPSTREAM.md.
+--- /dev/null
++++ b/native/crisper_dsp/Package.swift
+@@ -0,0 +1,41 @@
++// swift-tools-version: 5.9
++// SPDX-License-Identifier: MIT
++import PackageDescription
++
++let package = Package(
++    name: "CrisperDsp",
++    platforms: [.iOS("12.0"), .macOS("10.14")],
++    products: [.library(name: "CrisperDsp", targets: ["CrisperDsp"])],
++    targets: [
++        .target(
++            name: "CrisperDsp",
++            path: ".",
++            exclude: ["tools", "README.md", "CMakeLists.txt", "LICENSE", "wsola/UPSTREAM.md"],
++            sources: [
++                "crisper_dsp.cpp", "wsola/wsola.cpp",
++                "vendor/sonic/sonic.c", "vendor/pffft/pffft.c", "vendor/pffft/fftpack.c",
++                "vendor/bungee/src/Assert.cpp", "vendor/bungee/src/Fourier.cpp",
++                "vendor/bungee/src/Grain.cpp", "vendor/bungee/src/Grains.cpp",
++                "vendor/bungee/src/Input.cpp", "vendor/bungee/src/Instrumentation.cpp",
++                "vendor/bungee/src/Output.cpp", "vendor/bungee/src/Partials.cpp",
++                "vendor/bungee/src/Stretch.cpp", "vendor/bungee/src/Stretcher.cpp",
++                "vendor/bungee/src/Synthesis.cpp", "vendor/bungee/src/Timing.cpp",
++                "vendor/bungee/src/Window.cpp", "vendor/bungee/src/version.cpp"
++            ],
++            publicHeadersPath: "include",
++            cSettings: [.headerSearchPath("vendor/pffft"), .headerSearchPath("vendor/sonic")],
++            cxxSettings: [
++                .headerSearchPath("."), .headerSearchPath("vendor"),
++                .headerSearchPath("vendor/bungee"), .headerSearchPath("vendor/eigen"),
++                .headerSearchPath("vendor/pffft"), .headerSearchPath("vendor/sonic"),
++                .headerSearchPath("vendor/signalsmith-stretch"),
++                .define("EIGEN_MPL2_ONLY", to: "1"), .define("EIGEN_DONT_PARALLELIZE", to: "1"),
++                .define("BUNGEE_SELF_TEST", to: "0"), .define("BUNGEE_VISIBILITY", to: ""),
++                .define("BUNGEE_VERSION", to: "\"61f52bf34be577d189d388772ddfa3696dee77d8\""),
++                .define("eigen_assert", to: "BUNGEE_ASSERT1")
++            ],
++            linkerSettings: [.linkedLibrary("c++")]
++        )
++    ],
++    cxxLanguageStandard: .cxx20
++)
 --- /dev/null
 +++ b/native/crisper_dsp/README.md
 @@ -0,0 +1,177 @@
@@ -2167,6 +3195,12 @@
 +}
 +#endif
 +#endif
+--- /dev/null
++++ b/native/crisper_dsp/include/crisper_dsp.h
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: MIT
++// Public SwiftPM module contains only the stable C ABI, not vendor C++ headers.
++#include "../crisper_dsp.h"
 --- /dev/null
 +++ b/native/crisper_dsp/tools/build_host.py
 @@ -0,0 +1,130 @@
@@ -3895,3 +4929,322 @@
 +
 +} // namespace crisper_wsola
 +#endif
+--- /dev/null
++++ b/native/mpv/af_crisper.c
+@@ -0,0 +1,258 @@
++// SPDX-License-Identifier: MIT
++// Copyright (c) 2026 CrisperPlayer contributors
++// Optional source-built libmpv filter; uses mpv's LGPL internal filter API.
++#include <math.h>
++
++#include "audio/aframe.h"
++#include "audio/format.h"
++#include "common/common.h"
++#include "filters/f_autoconvert.h"
++#include "filters/filter_internal.h"
++#include "filters/user_filters.h"
++#include "options/m_option.h"
++#include "crisper_dsp.h"
++
++struct crisper_options {
++    int engine;
++};
++
++struct crisper_priv {
++    struct crisper_options *options;
++    struct mp_pin *input;
++    struct mp_aframe *pending;
++    struct mp_aframe *format;
++    struct mp_aframe_pool *pool;
++    cp_dsp *dsp;
++    double requested_speed, running_speed;
++    double origin_pts, input_speed;
++    bool finishing, eof;
++};
++
++static void clear_segment(struct crisper_priv *p)
++{
++    cp_dsp_destroy(p->dsp);
++    p->dsp = NULL;
++    p->finishing = false;
++    p->origin_pts = MP_NOPTS_VALUE;
++    mp_aframe_reset(p->format);
++}
++
++static bool begin_segment(struct mp_filter *f)
++{
++    struct crisper_priv *p = f->priv;
++    mp_assert(p->pending && !p->dsp);
++    const int rate = mp_aframe_get_rate(p->pending);
++    const int channels = mp_aframe_get_channels(p->pending);
++    if (mp_aframe_get_format(p->pending) != AF_FORMAT_FLOAT) {
++        MP_ERR(f, "crisperdsp requires interleaved float PCM\n");
++        return false;
++    }
++    p->dsp = cp_dsp_create(p->options->engine, rate, channels,
++                          p->requested_speed);
++    if (!p->dsp) {
++        MP_ERR(f, "crisperdsp: %s\n", cp_dsp_last_error());
++        return false;
++    }
++    mp_aframe_config_copy(p->format, p->pending);
++    mp_aframe_copy_attributes(p->format, p->pending);
++    p->origin_pts = mp_aframe_get_pts(p->pending);
++    p->input_speed = mp_aframe_get_speed(p->pending);
++    p->running_speed = p->requested_speed;
++    p->finishing = false;
++    return true;
++}
++
++static bool finish_segment(struct crisper_priv *p)
++{
++    if (!p->dsp || p->finishing) return true;
++    if (cp_dsp_finish(p->dsp) < 0) return false;
++    p->finishing = true;
++    return true;
++}
++
++static void crisper_process(struct mp_filter *f)
++{
++    struct crisper_priv *p = f->priv;
++    if (!mp_pin_in_needs_data(f->ppins[1])) return;
++
++    // Work and storage are bounded. Output is pulled before accepting more
++    // input; no native frame is released until every input sample is consumed.
++    for (int iteration = 0; iteration < 64; ++iteration) {
++        if (p->dsp && p->running_speed != p->requested_speed &&
++            !finish_segment(p)) goto error;
++
++        if (p->dsp) {
++            const int available = cp_dsp_available(p->dsp);
++            if (available < 0) goto error;
++            if (available > 0) {
++                struct mp_aframe *out = mp_aframe_new_ref(p->format);
++                const int capacity = MPMIN(available, 4096);
++                if (mp_aframe_pool_allocate(p->pool, out, capacity) < 0) {
++                    talloc_free(out);
++                    goto error;
++                }
++                const int64_t source = cp_dsp_source_frames(p->dsp);
++                uint8_t **planes = mp_aframe_get_data_rw(out);
++                const int count = cp_dsp_read_f32(p->dsp,
++                                                 (float *)planes[0], capacity);
++                if (count <= 0) {
++                    talloc_free(out);
++                    goto error;
++                }
++                mp_aframe_set_size(out, count);
++                mp_aframe_set_speed(out, p->input_speed * p->running_speed);
++                // PTS is source time represented by PCM delivered to mpv,
++                // not decoded lookahead, queued input, or device wall time.
++                mp_aframe_set_pts(out, p->origin_pts == MP_NOPTS_VALUE
++                    ? MP_NOPTS_VALUE
++                    : p->origin_pts + (double)source * p->input_speed /
++                      mp_aframe_get_rate(p->format));
++                mp_pin_in_write(f->ppins[1], MAKE_FRAME(MP_FRAME_AUDIO, out));
++                return;
++            }
++            if (p->finishing) {
++                if (!cp_dsp_ended(p->dsp)) goto error;
++                clear_segment(p);
++                continue;
++            }
++        }
++
++        if (p->pending && !mp_aframe_get_size(p->pending))
++            TA_FREEP(&p->pending);
++
++        if (!p->pending && !p->eof) {
++            const struct mp_frame frame = mp_pin_out_read(p->input);
++            if (frame.type == MP_FRAME_AUDIO) {
++                p->pending = frame.data;
++            } else if (frame.type == MP_FRAME_EOF) {
++                p->eof = true;
++            } else if (frame.type) {
++                struct mp_frame unexpected = frame;
++                mp_frame_unref(&unexpected);
++                MP_ERR(f, "crisperdsp received non-audio input\n");
++                goto error;
++            } else {
++                return;
++            }
++        }
++
++        if (p->eof && !p->pending) {
++            if (p->dsp) {
++                if (!finish_segment(p)) goto error;
++                continue;
++            }
++            p->eof = false;
++            mp_pin_in_write(f->ppins[1], MP_EOF_FRAME);
++            return;
++        }
++        if (!p->pending) continue;
++        if (!mp_aframe_get_size(p->pending)) continue;
++
++        if (p->dsp) {
++            const double expected = p->origin_pts == MP_NOPTS_VALUE
++                ? MP_NOPTS_VALUE : p->origin_pts +
++                  (double)cp_dsp_input_frames(p->dsp) * p->input_speed /
++                  mp_aframe_get_rate(p->format);
++            const double pts = mp_aframe_get_pts(p->pending);
++            const bool discontinuity = expected != MP_NOPTS_VALUE &&
++                pts != MP_NOPTS_VALUE && fabs(expected - pts) > .001;
++            if (!mp_aframe_config_equals(p->format, p->pending) ||
++                p->input_speed != mp_aframe_get_speed(p->pending) ||
++                discontinuity) {
++                if (!finish_segment(p)) goto error;
++                continue;
++            }
++        } else if (!begin_segment(f)) {
++            goto error;
++        }
++
++        uint8_t **planes = mp_aframe_get_data_ro(p->pending);
++        const int consumed = cp_dsp_write_f32(p->dsp, (float *)planes[0],
++                                              mp_aframe_get_size(p->pending));
++        if (consumed < 0) goto error;
++        mp_aframe_skip_samples(p->pending, consumed);
++    }
++    mp_filter_internal_mark_progress(f);
++    return;
++
++error:
++    MP_ERR(f, "crisperdsp processing failed: %s\n", cp_dsp_last_error());
++    mp_filter_internal_mark_failed(f);
++}
++
++static bool crisper_command(struct mp_filter *f, struct mp_filter_command *cmd)
++{
++    struct crisper_priv *p = f->priv;
++    if (cmd->type != MP_FILTER_COMMAND_SET_SPEED) return false;
++    if (!isfinite(cmd->speed) || cmd->speed < .5 || cmd->speed > 3) {
++        MP_ERR(f, "crisperdsp supports speeds from 0.5 to 3.0\n");
++        mp_filter_internal_mark_failed(f);
++        return true;
++    }
++    // Drain old-rate PCM before adopting the new rate, preserving all accepted
++    // source frames. A seek reset deliberately discards old audio instead.
++    p->requested_speed = cmd->speed;
++    return true;
++}
++
++static void crisper_reset(struct mp_filter *f)
++{
++    struct crisper_priv *p = f->priv;
++    clear_segment(p);
++    TA_FREEP(&p->pending);
++    p->eof = false;
++}
++
++static void crisper_destroy(struct mp_filter *f) { crisper_reset(f); }
++
++static const struct mp_filter_info crisper_filter = {
++    .name = "crisperdsp",
++    .priv_size = sizeof(struct crisper_priv),
++    .process = crisper_process,
++    .command = crisper_command,
++    .reset = crisper_reset,
++    .destroy = crisper_destroy,
++};
++
++static struct mp_filter *crisper_create(struct mp_filter *parent, void *options)
++{
++    struct mp_filter *f = mp_filter_create(parent, &crisper_filter);
++    if (!f) {
++        talloc_free(options);
++        return NULL;
++    }
++    mp_filter_add_pin(f, MP_PIN_IN, "in");
++    mp_filter_add_pin(f, MP_PIN_OUT, "out");
++    struct crisper_priv *p = f->priv;
++    p->options = talloc_steal(p, options);
++    p->requested_speed = p->running_speed = p->input_speed = 1.0;
++    p->origin_pts = MP_NOPTS_VALUE;
++    p->format = talloc_steal(p, mp_aframe_create());
++    p->pool = mp_aframe_pool_create(p);
++    struct mp_autoconvert *convert = mp_autoconvert_create(f);
++    if (!convert) {
++        talloc_free(f);
++        return NULL;
++    }
++    mp_autoconvert_add_afmt(convert, AF_FORMAT_FLOAT);
++    mp_pin_connect(convert->f->pins[0], f->ppins[0]);
++    p->input = convert->f->pins[1];
++    return f;
++}
++
++#define OPT_BASE_STRUCT struct crisper_options
++const struct mp_user_filter_entry af_crisper = {
++    .desc = {
++        .description = "CrisperPlayer portable pitch-preserving tempo engines",
++        .name = "crisperdsp",
++        .priv_size = sizeof(OPT_BASE_STRUCT),
++        .priv_defaults = &(const OPT_BASE_STRUCT) {.engine = CP_DSP_SONIC},
++        .options = (const struct m_option[]) {
++            {"engine", OPT_CHOICE(engine,
++                {"sonic", CP_DSP_SONIC}, {"bungee", CP_DSP_BUNGEE_BASIC},
++                {"signalsmith", CP_DSP_SIGNALSMITH}, {"wsola", CP_DSP_WSOLA})},
++            {0},
++        },
++    },
++    .create = crisper_create,
++};
+--- /dev/null
++++ b/native/mpv/meson.build
+@@ -0,0 +1,40 @@
++# SPDX-License-Identifier: MIT
++# Copied with the reviewed native source closure by prepare_portable_mpv.py.
++add_languages('cpp', required: true)
++crisper_cpp = meson.get_compiler('cpp')
++crisper_c = meson.get_compiler('c')
++crisper_includes = include_directories(
++  'core', 'core/vendor', 'core/vendor/bungee', 'core/vendor/eigen',
++  'core/vendor/pffft', 'core/vendor/sonic', 'core/vendor/signalsmith-stretch')
++crisper_definitions = [
++  '-DEIGEN_MPL2_ONLY=1', '-DEIGEN_DONT_PARALLELIZE=1', '-DBUNGEE_SELF_TEST=0',
++  '-DBUNGEE_VISIBILITY=',
++  '-DBUNGEE_VERSION="61f52bf34be577d189d388772ddfa3696dee77d8"',
++  '-Deigen_assert=BUNGEE_ASSERT1',
++]
++crisper_library = static_library('crisper_dsp',
++  'core/crisper_dsp.cpp', 'core/wsola/wsola.cpp',
++  'core/vendor/sonic/sonic.c',
++  'core/vendor/pffft/pffft.c', 'core/vendor/pffft/fftpack.c',
++  'core/vendor/bungee/src/Assert.cpp',
++  'core/vendor/bungee/src/Fourier.cpp',
++  'core/vendor/bungee/src/Grain.cpp',
++  'core/vendor/bungee/src/Grains.cpp',
++  'core/vendor/bungee/src/Input.cpp',
++  'core/vendor/bungee/src/Instrumentation.cpp',
++  'core/vendor/bungee/src/Output.cpp',
++  'core/vendor/bungee/src/Partials.cpp',
++  'core/vendor/bungee/src/Stretch.cpp',
++  'core/vendor/bungee/src/Stretcher.cpp',
++  'core/vendor/bungee/src/Synthesis.cpp',
++  'core/vendor/bungee/src/Timing.cpp',
++  'core/vendor/bungee/src/Window.cpp',
++  'core/vendor/bungee/src/version.cpp',
++  include_directories: crisper_includes,
++  c_args: crisper_definitions + crisper_c.get_supported_arguments('-O2'),
++  cpp_args: crisper_definitions + crisper_cpp.get_supported_arguments('-O2', '-fwrapv'),
++  pic: true,
++  override_options: ['cpp_std=c++20'])
++dependencies += declare_dependency(
++  link_with: crisper_library,
++  include_directories: include_directories('core'))
+--- /dev/null
++++ b/native/mpv/upstream.json
+@@ -0,0 +1,12 @@
++{
++  "version": "0.42.0",
++  "repository": "https://github.com/mpv-player/mpv",
++  "revision": "v0.42.0",
++  "archive_sha256": "8e5f930836acbc702c0057cbe0674d821ad0bc9bedb31b05eb034c4e4af13cdc",
++  "license": "LGPL-2.1-or-later (configure with -Dgpl=false)",
++  "files": {
++    "meson.build": "04754acaf772220d3fbba3a8415167c6d923b81cc9fc95ef47e1811d43a875db",
++    "filters/user_filters.c": "405a36d4ed0ac4f3d2ee65c50ccb327cfcb910391ced6232749e517cf1ceea4a",
++    "filters/user_filters.h": "1b44a49ab3d0ba3bab75176bbeebb0c62e9445aeacea5c93ad34ac28ae0e6ed3"
++  }
++}

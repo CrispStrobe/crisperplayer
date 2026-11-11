@@ -19,13 +19,11 @@ class SettingsService extends ChangeNotifier {
       _changed(_p.setBool('listening_journal_enabled', value));
   String get desktopSpeedProcessing {
     final value = _p.getString('desktop_speed_processing') ?? 'automatic';
-    return ['automatic', 'legacyScaletempo'].contains(value)
-        ? value
-        : 'automatic';
+    return _desktopProcessors.contains(value) ? value : 'automatic';
   }
 
   set desktopSpeedProcessing(String value) {
-    if (!['automatic', 'legacyScaletempo'].contains(value)) {
+    if (!_desktopProcessors.contains(value)) {
       throw const FormatException('Unknown desktop speed processing mode');
     }
     _changed(_p.setString('desktop_speed_processing', value));
@@ -33,15 +31,33 @@ class SettingsService extends ChangeNotifier {
 
   String get appleSpeedProcessing {
     final value = _p.getString('apple_speed_processing') ?? 'timeDomain';
-    return ['timeDomain', 'spectral'].contains(value) ? value : 'timeDomain';
+    return _appleProcessors.contains(value) ? value : 'timeDomain';
   }
 
   set appleSpeedProcessing(String value) {
-    if (!['timeDomain', 'spectral'].contains(value)) {
+    if (!_appleProcessors.contains(value)) {
       throw const FormatException('Unknown Apple speed processing mode');
     }
     _changed(_p.setString('apple_speed_processing', value));
   }
+
+  static const _desktopProcessors = [
+    'automatic',
+    'legacyScaletempo',
+    'sonic',
+    'wsola',
+    'signalsmith',
+    'bungee',
+    'atempo',
+  ];
+  static const _appleProcessors = [
+    'timeDomain',
+    'spectral',
+    'sonic',
+    'wsola',
+    'signalsmith',
+    'bungee',
+  ];
 
   String get androidSpeedProcessing {
     final value = _p.getString('android_speed_processing') ?? 'sonic';

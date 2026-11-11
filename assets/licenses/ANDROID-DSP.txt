@@ -1,8 +1,15 @@
-Optional Android audio processors — sources and notices
+Portable native audio processors — sources and notices
 
-CrisperPlayer includes Bungee Basic, Signalsmith Stretch and Chromium-derived
-WSOLA as optional native speed processors. Android's default path continues to use AndroidX Media3's
-Sonic implementation. The native comparison adapter also includes Sonic C.
+CrisperPlayer includes Sonic C, Bungee Basic, Signalsmith Stretch and
+Chromium-derived WSOLA in its shared native speed processor core. Android's
+default path continues to use AndroidX Media3's Sonic implementation. Optional
+Apple local-file playback and controlled desktop libmpv builds reuse the native
+core; Apple Time Domain and the ordinary mpv path remain the defaults.
+
+All components keep the notices below on every platform. Compiling this source
+does not establish that an arbitrary system libmpv or its dependencies use the
+same licenses. Desktop libmpv/FFmpeg notices are recorded separately in
+DESKTOP-AUDIO.txt. This asset retains its historical ANDROID-DSP.txt filename.
 
 Exact selected processor source, original notices and per-file SHA-256 values are
 available without charge at:
@@ -51,6 +58,37 @@ Source: https://bitbucket.org/jpommier/pffft/get/02fe7715a5bf8bfd914681c53429600
 chromium-wsola: ddd30ef8aa98443509bf4ce006cb36b4e2296c0b
 License: BSD-3-Clause
 Source: https://chromium.googlesource.com/chromium/src.git/+/ddd30ef8aa98443509bf4ce006cb36b4e2296c0b/
+
+
+Independent CrisperPlayer native adapters
+========================================
+
+MIT License
+
+Copyright (c) 2026 CrisperPlayer contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+This license covers the CrisperPlayer adapter and its build/test harness.
+Vendored upstream code retains the separate licenses listed in vendor/manifest.json.
+The Chromium-derived portable WSOLA implementation and derived semantic tests
+retain BSD-3-Clause instead; see wsola/LICENSE and wsola/UPSTREAM.md.
 
 
 sonic/LICENSE

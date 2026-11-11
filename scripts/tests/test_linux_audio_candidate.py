@@ -68,6 +68,29 @@ class LinuxAudioCandidateTest(unittest.TestCase):
         self.assertEqual(legacy['audio-pitch-correction'], 'no')
         self.assertEqual(legacy['af'], 'scaletempo:scale=1.50000000')
 
+    def test_portable_filters_use_mpv_speed_and_preserve_its_source_clock(self):
+        for engine in ('sonic', 'wsola', 'signalsmith', 'bungee'):
+            options = smoke_desktop_audio.render_options(Path('/output/tone.wav'), 2.5, engine)
+            self.assertEqual(options['speed'], '2.5')
+            self.assertEqual(options['audio-pitch-correction'], 'yes')
+            self.assertEqual(options['af'], f'crisperdsp=engine={engine}')
+        atempo = smoke_desktop_audio.render_options(Path('/output/tone.wav'), 1.75, 'atempo')
+        self.assertEqual(atempo['speed'], '1.75')
+        self.assertEqual(atempo['af'], 'lavfi-tempo=filter=atempo')
+
+    def test_windows_recipe_builds_its_own_lgpl_ffmpeg_and_uses_wasapi(self):
+        commands = build.build_commands({name: Path('/source') / name for name in ('ffmpeg', 'mpv', 'libass', 'libplacebo')}, Path('/output'), 2, 'windows')
+        configure = commands[0]['argv']
+        self.assertEqual(configure[0], 'bash')
+        self.assertIn('--disable-gpl', configure)
+        self.assertIn('--enable-w32threads', configure)
+        self.assertIn('--disable-pthreads', configure)
+        mpv = [entry['argv'] for entry in commands if entry['argv'][:2] == ['meson', 'setup']][-1]
+        self.assertIn('-Dwasapi=enabled', mpv)
+        self.assertIn('-Dgpl=false', mpv)
+        self.assertNotIn('-Dalsa=enabled', mpv)
+        self.assertNotIn('-Dpulse=enabled', mpv)
+
     def test_pcm_measurement_rejects_non_audio_output(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'tone.wav'

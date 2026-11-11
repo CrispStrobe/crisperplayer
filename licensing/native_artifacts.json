@@ -326,21 +326,25 @@
       ]
     },
     {
-      "id": "android-native-speed-processors",
+      "id": "portable-native-speed-processors",
       "platforms": [
-        "android"
+        "android",
+        "ios",
+        "macos",
+        "linux",
+        "windows"
       ],
-      "version": "just_audio 0.10.6+crisper.3 / pinned Bungee Basic, Signalsmith Stretch, Chromium-derived WSOLA fork and comparison core",
+      "version": "Shared Sonic C, Bungee Basic, Signalsmith Stretch and Chromium-derived WSOLA core; Android, Apple and controlled mpv adapters",
       "license_expression": "MIT AND Apache-2.0 AND BSD-3-Clause AND MPL-2.0 AND LicenseRef-PFFFT-FFTPACK",
       "review_status": "needs_review",
       "source_review_status": "reviewed",
       "license_review_status": "reviewed",
-      "artifact_review_status": "pending_android_artifact_validation",
-      "scope": "The exact unchanged upstream source/license closure, derived BSD-3-Clause WSOLA fork/fixtures and independent MIT adapters were reviewed. This source review does not approve an Android binary, complete NDK/Maven closure, performance, or app-store distribution.",
+      "artifact_review_status": "pending_target_artifact_validation",
+      "scope": "The unchanged upstream source/license closure, derived BSD-3-Clause WSOLA fork/fixtures and independent native adapters are reviewed separately from each shipped artifact. The same seven-component source closure is used by Android, Apple local-file playback and controlled desktop mpv builds. Existing platform defaults are retained. Source review does not approve a binary, complete NDK/Maven/system closure, real-time performance, or app-store distribution.",
       "source": {
         "repository": "https://github.com/CrispStrobe/crisperplayer",
         "source_url": "https://github.com/CrispStrobe/crisperplayer/tree/bea68aca9a357ce713e83653c269de7937e9fc63/packages/just_audio/native/crisper_dsp",
-        "local_adapter_identity": "Exact package source-tree hash, 38 local additions, reviewed upstream patch, and build-input hashes in dependencies.json. Independent adapters retain MIT; the derived Chromium WSOLA implementation and inherited fixtures retain BSD-3-Clause.",
+        "local_adapter_identity": "Exact just_audio and just_audio_media_kit package source-tree hashes, reviewed upstream patches/local additions and platform-scoped build-input hashes in dependencies.json. Independent DSP/Apple adapters retain MIT; the Chromium-derived WSOLA implementation/fixtures retain BSD-3-Clause. The mpv integration retains its declared license and does not relabel linked native payloads.",
         "upstream_component_count": 7,
         "upstream_file_count": 258,
         "upstream_modified": false,
@@ -437,8 +441,8 @@
         "android_ndk": "28.2.13676358",
         "cmake": "3.22.1",
         "stl": "c++_shared; separately inventoried NDK runtime must ship with the app",
-        "target_artifact_validation": "Pending Android ABI builds, APK packaged-library hashes/dependencies, R8/JNI retention and 16 KB page-alignment checks.",
-        "device_validation": "Pending Android/emulator instrumentation and device listening/performance; host measurements are not Android results."
+        "target_artifact_validation": "Pending Android ABI/APK audits, Apple device/simulator/universal-library and app-bundle checks, and controlled Linux/Windows libmpv hashes, linked-dependency inspection and source/build correspondence. A host DSP build does not approve another platform artifact.",
+        "device_validation": "Pending target listening, interruptions, output routing and CPU/battery measurements. Host tests and source configuration are not device acceptance."
       },
       "evidence": [
         {
@@ -454,7 +458,7 @@
         {
           "path": "packages/just_audio/UPSTREAM.patch",
           "sha256": "06948fe3aa77c9edaef2782ccb393266568f22df04bf463151b7f7eb7eec879e",
-          "note": "Complete verified changes to 9 original files plus 38 local adapter/fork/test/build additions."
+          "note": "Complete reviewed changes to upstream just_audio files and independently inventoried local adapter/fork/test/build additions."
         },
         {
           "path": "packages/just_audio/LOCAL_ADDITIONS.json",
@@ -484,12 +488,12 @@
         {
           "path": "assets/licenses/ANDROID-DSP.txt",
           "sha256": "fdef880fd3ef0a92bd5907f1b1652792b8e4f184f77b23e992c048ccadab328e",
-          "note": "In-app original notices and immutable public source URLs for the selected upstream closure and maintained BSD WSOLA fork; actual grants preserved independently of the wrapper license."
+          "note": "Shared native processor notices on every native platform; historical filename retained. Original grants and immutable source URLs remain separate from wrapper licenses."
         },
         {
           "path": "lib/services/native_licenses.dart",
           "sha256": "6bc6a1508bb460854314cd4365b421ae0bb464ca83fdafc7f7114399dc22984b",
-          "note": "Registers Android DSP notices and the prepared exact NDK notice asset in the app license registry."
+          "note": "Registers portable DSP notices and the platform/native component notices in the in-app license registry."
         },
         {
           "path": "licensing/evidence/native_dsp_host_2026-11-10.json",
@@ -533,8 +537,9 @@
         }
       ],
       "blockers": [
-        "Run the APK audit on actual Android debug and release builds and retain per-ABI hashes, linked dependencies, JNI retention/alignment and included notices. No actual APK has been inspected in this Linux workspace; synthetic fixtures and host JNI validation do not establish Android artifact provenance.",
-        "Review exact source/build correspondence and source delivery for the shipped native artifact. Packaging inspection alone does not establish a reproducible build or Android playback/device acceptance."
+        "Retain target-specific compiled artifacts and inspect packaged hashes, linked dependencies and notices for Android, iOS, macOS, Linux and Windows. The shared source review is not blanket artifact approval.",
+        "Review exact source/build correspondence and source delivery for each shipped native artifact. Preserve MPL-covered source availability and all original notices; controlled desktop libmpv/FFmpeg must also satisfy its own LGPL source/replacement requirements.",
+        "Android requires the existing APK ELF/DEX/JNI/ABI/alignment and pinned NDK runtime audit. Apple and desktop integration need target playback, seek, end-of-stream, interruption and routing validation; host signal tests alone do not establish these behaviors."
       ]
     },
     {

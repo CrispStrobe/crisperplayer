@@ -3,30 +3,76 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 
 enum DesktopSpeedProcessing {
-  automatic('automatic', 'Automatic'),
-  legacyScaletempo('legacyScaletempo', 'Legacy scaletempo');
+  automatic('automatic', 'Automatic', MediaKitSpeedProcessor.automatic),
+  legacyScaletempo(
+    'legacyScaletempo',
+    'Legacy scaletempo',
+    MediaKitSpeedProcessor.legacyScaletempo,
+  ),
+  sonic('sonic', 'Sonic', MediaKitSpeedProcessor.sonic),
+  wsola('wsola', 'WSOLA', MediaKitSpeedProcessor.wsola),
+  signalsmith(
+    'signalsmith',
+    'Signalsmith Stretch',
+    MediaKitSpeedProcessor.signalsmith,
+  ),
+  bungee('bungee', 'Bungee Basic', MediaKitSpeedProcessor.bungee),
+  atempo('atempo', 'FFmpeg atempo', MediaKitSpeedProcessor.atempo);
 
   final String id;
   final String label;
+  final MediaKitSpeedProcessor processor;
 
-  const DesktopSpeedProcessing(this.id, this.label);
+  const DesktopSpeedProcessing(this.id, this.label, this.processor);
 
   static DesktopSpeedProcessing parse(String value) =>
-      value == legacyScaletempo.id ? legacyScaletempo : automatic;
+      values.firstWhere((mode) => mode.id == value, orElse: () => automatic);
 }
 
 enum AppleSpeedProcessing {
   timeDomain('timeDomain', 'Time Domain', DarwinTimePitchAlgorithm.timeDomain),
-  spectral('spectral', 'Spectral', DarwinTimePitchAlgorithm.spectral);
+  spectral('spectral', 'Spectral', DarwinTimePitchAlgorithm.spectral),
+  sonic(
+    'sonic',
+    'Sonic',
+    DarwinTimePitchAlgorithm.timeDomain,
+    processor: DarwinSpeedProcessor.sonic,
+  ),
+  wsola(
+    'wsola',
+    'WSOLA',
+    DarwinTimePitchAlgorithm.timeDomain,
+    processor: DarwinSpeedProcessor.wsola,
+  ),
+  signalsmith(
+    'signalsmith',
+    'Signalsmith Stretch',
+    DarwinTimePitchAlgorithm.timeDomain,
+    processor: DarwinSpeedProcessor.signalsmith,
+  ),
+  bungee(
+    'bungee',
+    'Bungee Basic',
+    DarwinTimePitchAlgorithm.timeDomain,
+    processor: DarwinSpeedProcessor.bungee,
+  );
 
   final String id;
   final String label;
   final DarwinTimePitchAlgorithm algorithm;
+  final DarwinSpeedProcessor? processor;
 
-  const AppleSpeedProcessing(this.id, this.label, this.algorithm);
+  const AppleSpeedProcessing(
+    this.id,
+    this.label,
+    this.algorithm, {
+    this.processor,
+  });
+
+  bool get isPortable => processor != null;
 
   static AppleSpeedProcessing parse(String value) =>
-      value == spectral.id ? spectral : timeDomain;
+      values.firstWhere((mode) => mode.id == value, orElse: () => timeDomain);
 }
 
 enum AndroidSpeedProcessing {
@@ -74,6 +120,13 @@ abstract final class SpeedProcessing {
   static AppleSpeedProcessing get activeAppleMode => _activeAppleMode;
   static AndroidSpeedProcessing get activeAndroidMode => _activeAndroidMode;
 
+  /// Probed from the actual loaded libmpv, not inferred from the host OS.
+  static List<DesktopSpeedProcessing> get availableDesktopModes => [
+    for (final mode in DesktopSpeedProcessing.values)
+      if (JustAudioMediaKit.supportedSpeedProcessors.contains(mode.processor))
+        mode,
+  ];
+
   static bool supportsDesktopChoice({TargetPlatform? platform, bool? isWeb}) =>
       !(isWeb ?? kIsWeb) &&
       switch (platform ?? defaultTargetPlatform) {
@@ -107,9 +160,18 @@ abstract final class SpeedProcessing {
     String savedMode, {
     TargetPlatform? platform,
     bool? isWeb,
+    Set<MediaKitSpeedProcessor>? availableProcessors,
   }) {
     if (!supportsDesktopChoice(platform: platform, isWeb: isWeb)) return;
-    final mode = DesktopSpeedProcessing.parse(savedMode);
+    final requested = DesktopSpeedProcessing.parse(savedMode);
+    final available =
+        availableProcessors ?? JustAudioMediaKit.supportedSpeedProcessors;
+    // Keep the saved preference, but make startup usable if a different system
+    // libmpv lacks the selected filter. The sheet shows the actual active mode
+    // and explains that the saved choice is unavailable in this installation.
+    final mode = available.contains(requested.processor)
+        ? requested
+        : DesktopSpeedProcessing.automatic;
     // This flag controls *independent pitch shifting*, not pitch preservation.
     // With false, media_kit changes mpv's speed while leaving its default
     // audio-pitch-correction enabled. Current mpv uses scaletempo2 for that path.
@@ -117,6 +179,7 @@ abstract final class SpeedProcessing {
     // automatic pitch correction. Both modes preserve pitch at the app's 1.0
     // pitch setting; CrisperPlayer does not expose independent pitch shifting.
     JustAudioMediaKit.pitch = mode == DesktopSpeedProcessing.legacyScaletempo;
+    JustAudioMediaKit.speedProcessor = mode.processor;
     _activeDesktopMode = mode;
   }
 
@@ -168,6 +231,7 @@ abstract final class SpeedProcessing {
       ? AudioLoadConfiguration(
           darwinLoadControl: DarwinLoadControl(
             audioTimePitchAlgorithm: activeAppleMode.algorithm,
+            speedProcessor: activeAppleMode.processor,
           ),
         )
       : null;
@@ -199,15 +263,18 @@ abstract final class SpeedProcessing {
             : 'Sonic changes playback speed while preserving the narrator’s '
                   'pitch. Additional processors are not available in this build.',
       TargetPlatform.iOS || TargetPlatform.macOS =>
-        'Both Apple processors preserve pitch when speed changes. Time Domain '
-            'is designed for voice. Spectral is an alternative for music and '
-            'mixed audio, and uses more processing power. Choose what sounds '
-            'best for the recording.',
+        'Time Domain remains the Apple voice default; Spectral is an alternative '
+            'for music and mixed audio. Sonic, WSOLA, Signalsmith Stretch and '
+            'Bungee Basic are experimental alternatives for downloaded or local '
+            'mono/stereo books. All preserve pitch when speed changes. '
+            'Portable processors support the formats Apple can decode locally; '
+            'choose an Apple processor for network streams.',
       TargetPlatform.linux || TargetPlatform.windows =>
         'Automatic uses the installed mpv engine’s default pitch-preserving '
             'processor. Current mpv versions use scaletempo2; the exact processor '
             'depends on the installed engine. Legacy uses the previous scaletempo '
-            'path. Try it if a recording sounds better that way.',
+            'path. Additional choices are shown when supported by the installed '
+            'audio engine. Compare them with the same recording and speed.',
       _ => 'Playback speed is handled by the platform audio player.',
     };
   }

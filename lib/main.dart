@@ -72,8 +72,9 @@ Future<void> main() async {
     SpeedProcessing.configureAppleForStartup(settings.appleSpeedProcessing);
     SpeedProcessing.configureAndroidForStartup(settings.androidSpeedProcessing);
     if (Platform.isWindows || Platform.isLinux) {
-      SpeedProcessing.configureForStartup(settings.desktopSpeedProcessing);
       JustAudioMediaKit.ensureInitialized();
+      await JustAudioMediaKit.probeSpeedProcessors();
+      SpeedProcessing.configureForStartup(settings.desktopSpeedProcessing);
     }
     final database = db = AppDatabase();
     player = AudioPlayer(

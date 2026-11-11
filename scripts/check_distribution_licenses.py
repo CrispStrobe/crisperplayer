@@ -38,7 +38,7 @@ ALLOWED_LICENSES = {
 # license into a GPL grant. Only this exact reviewed base/exception pair is known.
 ALLOWED_EXCEPTION_PAIRS = {("Apache-2.0", "LLVM-exception")}
 REVIEWED_NATIVE_LICENSE_REFS = {
-    ("android-native-speed-processors", "LicenseRef-PFFFT-FFTPACK"): {
+    ("portable-native-speed-processors", "LicenseRef-PFFFT-FFTPACK"): {
         "path": "packages/just_audio/native/crisper_dsp/vendor/pffft/LICENSE.txt",
         "sha256": "deffd5aa43d83be2e0818b5c5b8b21425bb769df9c585a45f633e6f979015fde",
         "source_component": "pffft",
@@ -612,6 +612,20 @@ def audit(root: Path, platform: str = "all") -> dict:
                 artifacts = entry.get("artifacts", [artifact])
                 if not artifacts or any(not isinstance(a.get("sha256"), str) or not SHA256.fullmatch(a["sha256"]) for a in artifacts):
                     issue("missing_native_hash", component, "Reviewed native artifacts require exact SHA-256 hashes")
+                if entry.get("source_manifest") is not None and len(targets) > 1:
+                    # One shared source closure can produce several unrelated
+                    # native binaries. A Linux hash must not approve an Apple
+                    # or Android artifact merely because the source is shared.
+                    selected_targets = set(targets) if platform == "all" else {platform}
+                    artifact_targets = {a.get("platform") for a in artifacts
+                                        if isinstance(a.get("platform"), str)
+                                        and isinstance(a.get("sha256"), str)
+                                        and SHA256.fullmatch(a["sha256"])}
+                    missing = selected_targets - artifact_targets
+                    if missing:
+                        issue("missing_native_platform_artifact", component,
+                              "Shared source review requires exact artifact evidence for: "
+                              + ", ".join(sorted(missing)))
                 if not entry.get("source", {}).get("revision") or not entry.get("evidence"):
                     issue("missing_native_provenance", component, "Reviewed native artifacts require source revision and evidence")
             for item in entry.get("evidence", []):

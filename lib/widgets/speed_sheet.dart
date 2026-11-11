@@ -323,6 +323,8 @@ class _SpeedProcessingPanel extends StatelessWidget {
       svc.settings?.desktopSpeedProcessing ?? 'automatic',
     );
     final current = SpeedProcessing.activeDesktopMode;
+    final desktopModes = SpeedProcessing.availableDesktopModes;
+    final desktopSelectionAvailable = desktopModes.contains(selected);
     final appleSelected = AppleSpeedProcessing.parse(
       svc.settings?.appleSpeedProcessing ?? 'timeDomain',
     );
@@ -389,16 +391,27 @@ class _SpeedProcessingPanel extends StatelessWidget {
             },
             child: Column(
               children: [
-                for (final mode in DesktopSpeedProcessing.values)
+                for (final mode in desktopModes)
                   RadioListTile<DesktopSpeedProcessing>(
                     key: ValueKey('speed-processing-${mode.id}'),
                     contentPadding: EdgeInsets.zero,
                     title: Text(mode.label),
-                    subtitle: Text(
-                      mode == DesktopSpeedProcessing.automatic
-                          ? 'Use the audio engine’s default pitch preservation.'
-                          : 'Use the previous processing path.',
-                    ),
+                    subtitle: Text(switch (mode) {
+                      DesktopSpeedProcessing.automatic =>
+                        'Use the audio engine’s default pitch preservation.',
+                      DesktopSpeedProcessing.legacyScaletempo =>
+                        'Use the previous processing path.',
+                      DesktopSpeedProcessing.sonic =>
+                        'Experimental · speech and high speeds.',
+                      DesktopSpeedProcessing.wsola =>
+                        'Experimental · Chromium speech alternative.',
+                      DesktopSpeedProcessing.signalsmith =>
+                        'Experimental · recommended for 0.75×–1.5×.',
+                      DesktopSpeedProcessing.bungee =>
+                        'Experimental · music and ambience.',
+                      DesktopSpeedProcessing.atempo =>
+                        'Alternative speech processing from FFmpeg.',
+                    }),
                     value: mode,
                   ),
               ],
@@ -406,7 +419,9 @@ class _SpeedProcessingPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            selected == current
+            !desktopSelectionAvailable
+                ? '${selected.label} is not available in this installed audio engine. Currently using ${current.label}. Choose an available processor or install a build that supports your saved choice.'
+                : selected == current
                 ? 'In use: ${current.label}. Changes apply after restarting CrisperPlayer and affect all books.'
                 : 'Saved for next launch: ${selected.label}. Restart CrisperPlayer to apply. Currently using ${current.label}.',
             key: const ValueKey('speed-processing-restart'),
@@ -428,11 +443,20 @@ class _SpeedProcessingPanel extends StatelessWidget {
                     key: ValueKey('speed-processing-apple-${mode.id}'),
                     contentPadding: EdgeInsets.zero,
                     title: Text(mode.label),
-                    subtitle: Text(
-                      mode == AppleSpeedProcessing.timeDomain
-                          ? 'Voice processing · current app default.'
-                          : 'Music and mixed audio · more processing power.',
-                    ),
+                    subtitle: Text(switch (mode) {
+                      AppleSpeedProcessing.timeDomain =>
+                        'Voice processing · current app default.',
+                      AppleSpeedProcessing.spectral =>
+                        'Music and mixed audio · more processing power.',
+                      AppleSpeedProcessing.sonic =>
+                        'Experimental · local books · speech and high speeds.',
+                      AppleSpeedProcessing.wsola =>
+                        'Experimental · local books · Chromium speech alternative.',
+                      AppleSpeedProcessing.signalsmith =>
+                        'Experimental · local books · recommended for 0.75×–1.5×.',
+                      AppleSpeedProcessing.bungee =>
+                        'Experimental · local books · music and ambience.',
+                    }),
                     value: mode,
                   ),
               ],

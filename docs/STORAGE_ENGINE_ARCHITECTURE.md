@@ -209,3 +209,7 @@ GET retry behavior. These are SDK compatibility findings, not live-account or
 GUI qualification. Dart retries an Internxt listing 503; Rust currently returns
 the error. Rejection is compared at the API boundary; exception classes/messages
 are language-specific. See each CI run’s report for its actual source results.
+
+The provider conformance workflow separately runs app unit tests for AES key
+validation, Internxt sessions, remote libraries/resume and progress notifications
+under Flutter. These remain app regressions alongside the cross-language probes.

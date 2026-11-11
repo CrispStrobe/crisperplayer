@@ -41,3 +41,15 @@ jobs:
             _provider_conformance/conformance/dart/pubspec.lock
             _provider_conformance/conformance/rust/Cargo.lock
           retention-days: 14
+  app-unit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          cache: true
+      - run: flutter pub get
+      - name: App provider and transfer regression tests
+        run: flutter test test/filen_aes_key_validation_test.dart test/internxt_session_test.dart test/remote_library_test.dart test/remote_resume_test.dart test/progress_notifications_test.dart

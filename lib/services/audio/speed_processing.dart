@@ -1,32 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_media_kit/just_audio_media_kit.dart';
+import 'package:crisper_audio/crisper_audio.dart';
 
 enum DesktopSpeedProcessing {
-  automatic('automatic', 'Automatic', MediaKitSpeedProcessor.automatic),
-  legacyScaletempo(
-    'legacyScaletempo',
-    'Legacy scaletempo',
-    MediaKitSpeedProcessor.legacyScaletempo,
-  ),
-  sonic('sonic', 'Sonic', MediaKitSpeedProcessor.sonic),
-  wsola('wsola', 'WSOLA', MediaKitSpeedProcessor.wsola),
+  sonic('sonic', 'Sonic', NativeSpeedEngine.sonic),
+  wsola('wsola', 'WSOLA', NativeSpeedEngine.wsola),
   signalsmith(
     'signalsmith',
     'Signalsmith Stretch',
-    MediaKitSpeedProcessor.signalsmith,
+    NativeSpeedEngine.signalsmith,
   ),
-  bungee('bungee', 'Bungee Basic', MediaKitSpeedProcessor.bungee),
-  atempo('atempo', 'FFmpeg atempo', MediaKitSpeedProcessor.atempo);
+  bungee('bungee', 'Bungee Basic', NativeSpeedEngine.bungee);
 
   final String id;
   final String label;
-  final MediaKitSpeedProcessor processor;
+  final NativeSpeedEngine processor;
 
   const DesktopSpeedProcessing(this.id, this.label, this.processor);
 
   static DesktopSpeedProcessing parse(String value) =>
-      values.firstWhere((mode) => mode.id == value, orElse: () => automatic);
+      values.firstWhere((mode) => mode.id == value, orElse: () => sonic);
 }
 
 enum AppleSpeedProcessing {
@@ -108,9 +101,10 @@ abstract final class SpeedProcessing {
   // checks. These alternatives remain an explicit experimental opt-in; host
   // checks do not establish audio quality or performance on every Android device.
   static const experimentalAndroidProcessorsAvailable = true;
-  // Match the adapter's upstream default until startup explicitly configures it.
+  // All desktop builds link the same four engines. Historical mpv preferences
+  // migrate to Sonic; the user's portable engine preference remains unchanged.
   static DesktopSpeedProcessing _activeDesktopMode =
-      DesktopSpeedProcessing.legacyScaletempo;
+      DesktopSpeedProcessing.sonic;
   static AppleSpeedProcessing _activeAppleMode =
       AppleSpeedProcessing.timeDomain;
   static AndroidSpeedProcessing _activeAndroidMode =
@@ -120,12 +114,8 @@ abstract final class SpeedProcessing {
   static AppleSpeedProcessing get activeAppleMode => _activeAppleMode;
   static AndroidSpeedProcessing get activeAndroidMode => _activeAndroidMode;
 
-  /// Probed from the actual loaded libmpv, not inferred from the host OS.
-  static List<DesktopSpeedProcessing> get availableDesktopModes => [
-    for (final mode in DesktopSpeedProcessing.values)
-      if (JustAudioMediaKit.supportedSpeedProcessors.contains(mode.processor))
-        mode,
-  ];
+  static List<DesktopSpeedProcessing> get availableDesktopModes =>
+      DesktopSpeedProcessing.values;
 
   static bool supportsDesktopChoice({TargetPlatform? platform, bool? isWeb}) =>
       !(isWeb ?? kIsWeb) &&
@@ -160,27 +150,9 @@ abstract final class SpeedProcessing {
     String savedMode, {
     TargetPlatform? platform,
     bool? isWeb,
-    Set<MediaKitSpeedProcessor>? availableProcessors,
   }) {
     if (!supportsDesktopChoice(platform: platform, isWeb: isWeb)) return;
-    final requested = DesktopSpeedProcessing.parse(savedMode);
-    final available =
-        availableProcessors ?? JustAudioMediaKit.supportedSpeedProcessors;
-    // Keep the saved preference, but make startup usable if a different system
-    // libmpv lacks the selected filter. The sheet shows the actual active mode
-    // and explains that the saved choice is unavailable in this installation.
-    final mode = available.contains(requested.processor)
-        ? requested
-        : DesktopSpeedProcessing.automatic;
-    // This flag controls *independent pitch shifting*, not pitch preservation.
-    // With false, media_kit changes mpv's speed while leaving its default
-    // audio-pitch-correction enabled. Current mpv uses scaletempo2 for that path.
-    // With true, media_kit instead installs legacy scaletempo and disables mpv's
-    // automatic pitch correction. Both modes preserve pitch at the app's 1.0
-    // pitch setting; CrisperPlayer does not expose independent pitch shifting.
-    JustAudioMediaKit.pitch = mode == DesktopSpeedProcessing.legacyScaletempo;
-    JustAudioMediaKit.speedProcessor = mode.processor;
-    _activeDesktopMode = mode;
+    _activeDesktopMode = DesktopSpeedProcessing.parse(savedMode);
   }
 
   static void configureAppleForStartup(
@@ -270,11 +242,11 @@ abstract final class SpeedProcessing {
             'Portable processors support the formats Apple can decode locally; '
             'choose an Apple processor for network streams.',
       TargetPlatform.linux || TargetPlatform.windows =>
-        'Automatic uses the installed mpv engine’s default pitch-preserving '
-            'processor. Current mpv versions use scaletempo2; the exact processor '
-            'depends on the installed engine. Legacy uses the previous scaletempo '
-            'path. Additional choices are shown when supported by the installed '
-            'audio engine. Compare them with the same recording and speed.',
+        'Sonic is the speech default. WSOLA is a speech alternative, '
+            'Signalsmith Stretch is useful at moderate speeds, and Bungee Basic '
+            'is an alternative for music and ambience. All four preserve pitch '
+            'and process local mono/stereo books. Compare them with the same '
+            'recording and speed.',
       _ => 'Playback speed is handled by the platform audio player.',
     };
   }

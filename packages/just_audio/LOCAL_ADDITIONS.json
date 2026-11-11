@@ -61,11 +61,5 @@
   "native/crisper_dsp/wsola/LICENSE",
   "native/crisper_dsp/wsola/UPSTREAM.md",
   "native/crisper_dsp/wsola/wsola.cpp",
-  "native/crisper_dsp/wsola/wsola.h",
-  "native/mpv/af_crisper.c",
-  "native/mpv/meson.build",
-  "native/mpv/tests/filter_contract.c",
-  "native/mpv/tests/run_contract.py",
-  "native/mpv/tests/test_api.h",
-  "native/mpv/upstream.json"
+  "native/crisper_dsp/wsola/wsola.h"
 ]

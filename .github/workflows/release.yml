@@ -46,7 +46,7 @@ jobs:
         env:
           CRISPER_SFTP_PYTHON: ${{ runner.temp }}/checks/bin/python
           CRISPER_SMB_PYTHON: ${{ runner.temp }}/checks/bin/python
-        run: flutter test --no-pub test packages/just_audio_media_kit/test
+        run: flutter test --no-pub test packages/crisper_audio/test
       - name: Browser player tests
         run: |
           npm ci
@@ -207,7 +207,7 @@ jobs:
         if: matrix.target == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libmpv-dev libasound2-dev
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libasound2-dev
       - name: Configure unsigned Mac archive for this architecture
         if: matrix.target == 'macos'
         env:
@@ -221,19 +221,17 @@ jobs:
           echo "XCODE_XCCONFIG_FILE=$RUNNER_TEMP/Release.xcconfig" >> "$GITHUB_ENV"
       - run: flutter pub get
       - run: flutter build ${{ matrix.target }} --release --dart-define=CRISPERPLAYER_CLI=true
-      - name: Verify the actual Windows audio DLL
-        if: matrix.target == 'windows'
+      - name: Inspect the direct native desktop audio library
+        if: matrix.target != 'macos'
         run: >-
-          python scripts/audit_desktop_audio.py
-          build/windows/x64/runner/Release/libmpv-2.dll
-          --expected-sha256 0a5a0b476866c91a639a4e511e8153968f8fa23564461b0aa09acdba816164a4
-          --require-compatible-markers
-          --output build/license-evidence/windows-audio.json
+          python scripts/audit_native_audio.py
+          --bundle ${{ matrix.app }}
+          --output build/license-evidence/native-audio.json
       - uses: actions/upload-artifact@v4
-        if: matrix.target == 'windows'
+        if: matrix.target != 'macos'
         with:
-          name: windows-audio-license-evidence
-          path: build/license-evidence/windows-audio.json
+          name: native-audio-evidence-${{ matrix.target }}
+          path: build/license-evidence/native-audio.json
           if-no-files-found: error
       - name: Ad-hoc sign complete Mac app
         if: matrix.target == 'macos'

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
+import 'package:crisper_audio/crisper_audio.dart';
 import 'package:flutter/foundation.dart' show compute, ChangeNotifier;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -168,75 +169,11 @@ class WaveformService extends ChangeNotifier {
         if (await output.exists()) await output.delete();
       }
     }
-    return _ffmpeg(path, duration, progress);
+    final decoded = await NativeAudioProbe.waveform(path, bins: 512);
+    progress(1);
+    return AudioWaveform(decoded.peaks, decoded.metadata.duration);
   }
 
-  static Future<AudioWaveform> _ffmpeg(
-    String path,
-    Duration duration,
-    void Function(double) progress,
-  ) async {
-    if (duration <= Duration.zero) {
-      throw const FormatException('Load the track duration first');
-    }
-    Process process;
-    try {
-      process = await Process.start('ffmpeg', [
-        '-v',
-        'error',
-        '-nostdin',
-        '-i',
-        path,
-        '-vn',
-        '-ac',
-        '1',
-        '-ar',
-        '8000',
-        '-f',
-        's16le',
-        'pipe:1',
-      ]);
-    } on ProcessException {
-      throw const FileSystemException(
-        'Install FFmpeg to generate compressed-audio waveforms on Windows/Linux. PCM WAV works without it.',
-      );
-    }
-    // Drain diagnostics without retaining an unbounded log or source paths.
-    final errors = process.stderr.drain<void>();
-    final bins = List.filled(512, 0.0);
-    final expected = math.max(1, duration.inMicroseconds * 8000 ~/ 1000000);
-    var samples = 0;
-    int? low;
-    try {
-      await for (final chunk in process.stdout) {
-        for (final byte in chunk) {
-          if (low == null) {
-            low = byte;
-            continue;
-          }
-          var sample = low | byte << 8;
-          low = null;
-          if (sample >= 32768) sample -= 65536;
-          final bin = math.min(511, samples * 512 ~/ expected);
-          bins[bin] = math.max(bins[bin], sample.abs() / 32768);
-          samples++;
-        }
-        progress((samples / expected).clamp(0, .99));
-      }
-      final code = await process.exitCode;
-      await errors;
-      if (code != 0 || samples == 0) {
-        throw const FormatException('FFmpeg could not decode this audio');
-      }
-      progress(1);
-      return AudioWaveform(
-        bins,
-        Duration(microseconds: samples * 1000000 ~/ 8000),
-      );
-    } finally {
-      process.kill();
-    }
-  }
 }
 
 /// Stream PCM WAV directly on every platform; never retain a book's PCM in RAM.

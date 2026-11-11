@@ -14,7 +14,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/playback_harness.dart';
@@ -223,7 +222,7 @@ void main() {
     () {
       final apple = SpeedProcessing.activeAppleMode;
       final desktop = SpeedProcessing.activeDesktopMode;
-      final desktopPitch = JustAudioMediaKit.pitch;
+      final desktopProcessor = SpeedProcessing.activeDesktopMode;
       for (final platform in [
         TargetPlatform.iOS,
         TargetPlatform.macOS,
@@ -247,7 +246,7 @@ void main() {
       expect(SpeedProcessing.activeAndroidMode, AndroidSpeedProcessing.sonic);
       expect(SpeedProcessing.activeAppleMode, apple);
       expect(SpeedProcessing.activeDesktopMode, desktop);
-      expect(JustAudioMediaKit.pitch, desktopPitch);
+      expect(SpeedProcessing.activeDesktopMode, desktopProcessor);
       expect(SpeedProcessing.supportsAndroidChoice(isWeb: true), isFalse);
       expect(SpeedProcessing.supportsSkipSilence(isWeb: true), isFalse);
     },

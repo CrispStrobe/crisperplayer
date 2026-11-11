@@ -17,7 +17,12 @@ target_compile_definitions(crisper_audio PRIVATE DART_SHARED_LIB)
 # the core is a static archive and the only external callers are Dart FFI.
 set(CRISPER_DSP_SHARED OFF CACHE BOOL "" FORCE)
 set(CRISPER_DSP_TESTS OFF CACHE BOOL "" FORCE)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../just_audio/native/crisper_dsp"
+# Flutter invokes this project through .plugin_symlinks/crisper_audio. Resolve
+# that symlink BEFORE moving to a sibling; just_audio has no Linux/Windows
+# native plugin registration and need not have a sibling plugin symlink.
+get_filename_component(CRISPER_AUDIO_PACKAGE_ROOT
+  "${CMAKE_CURRENT_SOURCE_DIR}/.." REALPATH)
+add_subdirectory("${CRISPER_AUDIO_PACKAGE_ROOT}/../just_audio/native/crisper_dsp"
                  "${CMAKE_CURRENT_BINARY_DIR}/crisper_dsp")
 target_link_libraries(crisper_audio PRIVATE crisper_dsp)
 

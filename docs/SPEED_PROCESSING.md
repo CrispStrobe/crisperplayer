@@ -8,24 +8,14 @@ failed changes, and stops controlling a book when another one becomes active.
 
 ## What the installed app uses
 
-This assessment is based on the dependency versions in `pubspec.lock`:
-`just_audio 0.10.6+crisper.4` (a maintained MIT-licensed adapter to 0.10.6,
-with separately licensed native processors),
-`just_audio_media_kit 2.1.0+crisper.1`, and `media_kit 1.2.6`.
+The installed app uses the maintained `just_audio 0.10.6+crisper.4` native
+Android/Apple adapters and the local `crisper_audio` Dart FFI package on desktop.
 
-| Platform | Current speed processing | Choice available in this app |
+| Platform | Default | Optional processors |
 | --- | --- | --- |
-| Android, Sonic | Media3 1.4.1's Sonic processor on the normal decoded PCM path, with audio offload disabled. | Default; selectable. Keeps the existing speech and skip-silence behavior. |
-| Android, Bungee Basic | A native, MPL-2.0 phase-vocoder processor with the pinned Eigen/PFFFT source closure. | Experimental opt-in; compare on narration mixed with music or ambience. |
-| Android, Signalsmith Stretch | A native MIT processor, using the MIT Signalsmith Linear FFT implementation. | Experimental opt-in; recommended comparison range is 0.75×–1.5×. |
-| Android, WSOLA | A maintained portable fork of Chromium's waveform-similarity overlap-and-add processing, under BSD-3-Clause. | Experimental opt-in; compare speech at moderate rates. |
-| iOS and macOS, Time Domain | AVFoundation `AVAudioTimePitchAlgorithmTimeDomain`, the upstream voice-oriented default. | Default; selectable. |
-| iOS and macOS, Spectral | AVFoundation `AVAudioTimePitchAlgorithmSpectral`, Apple's music-oriented alternative with higher computational cost. | Optional; selectable. |
-| iOS and macOS, portable engines | Sonic C, Chromium WSOLA, Signalsmith Stretch and Bungee Basic through the shared native core. | Experimental local/downloaded mono/stereo file playback using AVAudioFile and AVAudioEngine. |
-| Windows and Linux, Automatic | mpv's default pitch-preserving speed path, through media_kit. Current mpv documentation specifies `scaletempo2`; the exact implementation depends on the bundled or installed mpv version. | Default for new launches; selectable. |
-| Windows and Linux, Legacy scaletempo | media_kit's independent pitch-control path, with pitch left at 1.0. It installs `scaletempo:scale=...` and turns off mpv's separate automatic pitch-correction filter. | Compatibility alternative; selectable. |
-| Windows and Linux, portable engines | The shared four-engine core via the `crisperdsp` mpv audio filter. | Selectable when using the controlled source build; unavailable in stock libmpv binaries. |
-| Windows and Linux, FFmpeg atempo | mpv's tempo-aware `lavfi-tempo` wrapper around the linked FFmpeg atempo filter. | Selectable only when both filters are detected. |
+| Android | Media3 Sonic | Chromium WSOLA, Signalsmith Stretch, Bungee Basic through the existing JNI processor chain. |
+| iOS/macOS | Apple Time Domain | Apple Spectral, or all four portable processors for supported local/downloaded mono/stereo files. |
+| Windows/Linux | Sonic C through direct Dart/native playback | Chromium WSOLA, Signalsmith Stretch and Bungee Basic from the same shared core. |
 
 The separate Pages browser player uses browser media playback; this document
 describes the native Flutter app.
@@ -67,43 +57,24 @@ measurements. See [Android validation](ANDROID_AUDIO_PROCESSORS.md).
 
 ## Desktop choice
 
-Open **Speed → Speed processing**. **Automatic** and **Legacy scaletempo**
-remain available. The application probes the actual loaded libmpv before creating
-its player, exposing **Sonic**, **WSOLA**, **Signalsmith Stretch**, **Bungee Basic**
-and **FFmpeg atempo** when their native filters are present.
+Open **Speed → Speed processing** and choose **Sonic**, **WSOLA**,
+**Signalsmith Stretch** or **Bungee Basic**. Sonic is the speech default.
 The preference applies to all books **after restarting CrisperPlayer**. The
-sheet identifies the mode used by the current process and a pending selection
-separately. It never claims to switch the running decoder when only a preference
-has changed. If a saved optional processor is missing after changing the installed
-libmpv, startup uses Automatic, retains the saved preference and explains the
-unavailability in the sheet. Direct adapter requests for unavailable processors
-fail explicitly.
+sheet identifies the active processor separately from a pending selection.
+Older Automatic, Legacy scaletempo and atempo settings migrate to Sonic.
 
-Automatic is configured before player creation using the public
-`JustAudioMediaKit.pitch = false` option. Despite that option's name, it disables
-*independent pitch shifting*, **not pitch preservation**. With that option off,
-media_kit changes mpv's playback `speed` and leaves mpv's default
-`audio-pitch-correction` enabled. With it on, media_kit uses its legacy
-`scaletempo` route. CrisperPlayer does not expose independent pitch shifting.
+Dart owns a streaming decoder/DSP/output worker. All four engines link into
+one native library; selecting one does not depend on a system mpv filter
+inventory. The pipeline preserves source timing through partial writes,
+seek/reset and finite end-of-file drain. Decoder lookahead and underrun zeros
+do not move the source clock. The output clock includes an estimated backend
+buffer delay and is not an exact hardware/DAC timestamp.
 
-Before this change, the adapter's `pitch = true` default implicitly selected the
-legacy route on Windows and Linux. The app now makes this behavior explicit and
-offers the normal engine-default path, while retaining the previous path for
-recordings where the listener prefers it.
-
-The portable `crisperdsp` filter participates in mpv's speed-command protocol,
-handles variable PCM duration and carries original-source timestamps. Speed
-transitions drain the old segment; seeking discards old buffered audio. The
-atempo option requires `lavfi-tempo`, because adding a plain fixed lavfi atempo
-filter does not by itself satisfy mpv's speed and source-clock contract. The
-controlled v0.42.0 build includes the required wrapper; older Windows libraries
-are capability checked rather than assumed equivalent.
-
-Build and run instructions, source pins and the separate release-evidence limits
-are in [PORTABLE_AUDIO_PROCESSORS.md](PORTABLE_AUDIO_PROCESSORS.md) and
-[DESKTOP_AUDIO_BUILD.md](DESKTOP_AUDIO_BUILD.md). Ordinary Windows builds retain
-the existing bundled library; Linux may load a system library. The custom
-source build is needed to enable all four portable desktop choices.
+Duration probing and waveform extraction use the same bounded decoder.
+The current format/profile boundaries, source pins and testing limits are
+in [PORTABLE_AUDIO_PROCESSORS.md](PORTABLE_AUDIO_PROCESSORS.md) and
+[DESKTOP_AUDIO_BUILD.md](DESKTOP_AUDIO_BUILD.md). No mpv or FFmpeg runtime is
+needed for this native path. There is no independent pitch-shift control.
 
 ## Apple choice
 
@@ -161,13 +132,8 @@ The broader app/distribution license review is tracked separately in
   make future updates reviewable. Chromium's browser/runtime and mpv are not
   dependencies of this Android processor. This fork is an additional listening
   choice; signal tests do not establish that it sounds better than Sonic.
-- **scaletempo2** uses Chromium's waveform similarity overlap-and-add (WSOLA)
-  approach. Current mpv selects it automatically for pitch-corrected speed
-  changes. The mpv manual describes improved quality relative to older
-  scaletempo and Rubber Band's R2 engine; this is an upstream characterization,
-  not a CrisperPlayer listening benchmark.
 - **Signalsmith Stretch** and its current **Signalsmith Linear** dependency use
-  MIT licenses. The shared native implementation has Android, Apple-local and controlled-mpv PCM integrations.
+  MIT licenses. The shared native implementation has Android, Apple-local and direct Dart/native desktop PCM integrations.
   The author says time stretching sounds best for modest changes around
   0.75×–1.5×, so it should not be assumed to improve 2×–3× audiobook speech.
   Its adapter handles input/output latency, seek priming and flush behavior to
@@ -189,12 +155,12 @@ The broader app/distribution license review is tracked separately in
   dependency policy, so it is excluded from the open-source processor options.
 
 The four shared engines now have platform adapters for Android, Apple local
-files and controlled Linux/Windows libmpv builds. The existing Apple and mpv
-processors remain defaults. FFmpeg atempo adds a desktop alternative without a
-new source dependency when the native tempo-aware wrapper is present. SoundTouch
-remains an unintegrated candidate; it adds a separate LGPL source/relinking burden
-without improving platform reach over the four existing cores. Browser playback
-is unchanged, and this work adds no independent pitch slider.
+files and direct Dart/native Windows/Linux playback. Apple Time Domain remains
+the Apple default; desktop uses Sonic C. SoundTouch adds LGPL obligations without
+increasing platform reach and is not integrated. Rubber Band's GPL route is
+excluded. Browser playback is unchanged, and this work adds no independent pitch
+slider. Further engines should demonstrate a useful quality/performance tradeoff
+before adding another maintenance and provenance burden.
 
 No algorithm is claimed to sound best for every narrator, recording, speed,
 device or listener. A processor listening comparison should use the same
@@ -205,8 +171,6 @@ audible superiority.
 
 ## Primary references
 
-- [just_audio_media_kit configuration and public pitch option](https://pub.dev/packages/just_audio_media_kit)
-- [media_kit source: native setRate/setPitch paths](https://github.com/media-kit/media-kit/blob/main/media_kit/lib/src/player/native/player/real.dart)
 - [just_audio source: Apple UriAudioSource](https://github.com/ryanheise/just_audio/blob/minor/just_audio/darwin/just_audio/Sources/just_audio/UriAudioSource.m)
 - [Android: DefaultAudioSink.Builder and speed processing](https://developer.android.com/reference/androidx/media3/exoplayer/audio/DefaultAudioSink.Builder)
 - [Android: SonicAudioProcessor](https://developer.android.com/reference/androidx/media3/common/audio/SonicAudioProcessor)

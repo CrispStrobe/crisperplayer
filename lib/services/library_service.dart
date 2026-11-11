@@ -1,3 +1,4 @@
+import 'package:crisper_audio/crisper_audio.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../models/book_preferences.dart';
@@ -515,6 +516,9 @@ class LibraryService {
   }
 
   static Future<Duration?> _probeDuration(String path) async {
+    if (Platform.isWindows || Platform.isLinux) {
+      return (await NativeAudioProbe.probe(path)).duration;
+    }
     final player = AudioPlayer();
     try {
       return await player

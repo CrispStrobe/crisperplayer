@@ -71,13 +71,12 @@ source files. SwiftPM uses the local `native/crisper_dsp` package and excludes
 those wrappers to avoid duplicate symbols. Apple Time Domain and Spectral retain
 the upstream `AVQueuePlayer`; neither instantiates the portable playback path.
 
-### Optional desktop mpv filter
+### Direct native desktop reuse
 
-`native/mpv` contains the independently maintained `crisperdsp` filter and build
-fragment for a controlled, source-built LGPL mpv. It reuses the same C ABI and
-participates in mpv's speed-command and source-timestamp protocols. The desktop
-adapter is documented separately in `../just_audio_media_kit/UPSTREAM.md`.
-Stock libmpv builds remain supported and expose only their detected processors.
+`../crisper_audio` links `native/crisper_dsp` directly through its C ABI. Dart
+owns desktop transport and Glint decoding; its native host owns PCM output.
+The former `native/mpv` adapter is removed. No desktop platform implementation
+is registered through just_audio, and Apple/Android keep their own adapters.
 
 ### Android streaming processors
 

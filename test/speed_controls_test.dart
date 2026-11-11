@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'support/playback_harness.dart';
@@ -116,72 +115,23 @@ void main() {
     },
   );
 
-  test(
-    'desktop startup selects supported adapter path and never changes Apple or web',
-    () {
-      final previous = SpeedProcessing.activeDesktopMode;
-      addTearDown(
-        () => SpeedProcessing.configureForStartup(
-          previous.id,
-          platform: TargetPlatform.linux,
-        ),
-      );
-      SpeedProcessing.configureForStartup(
-        'legacyScaletempo',
-        platform: TargetPlatform.windows,
-      );
-      expect(JustAudioMediaKit.pitch, isTrue);
-      expect(
-        SpeedProcessing.activeDesktopMode,
-        DesktopSpeedProcessing.legacyScaletempo,
-      );
-      SpeedProcessing.configureForStartup(
-        'automatic',
-        platform: TargetPlatform.iOS,
-      );
-      expect(JustAudioMediaKit.pitch, isTrue);
-      SpeedProcessing.configureForStartup(
-        'automatic',
-        platform: TargetPlatform.windows,
-        isWeb: true,
-      );
-      expect(JustAudioMediaKit.pitch, isTrue);
-      SpeedProcessing.configureForStartup(
-        'automatic',
-        platform: TargetPlatform.linux,
-      );
-      expect(
-        JustAudioMediaKit.pitch,
-        isFalse,
-        reason:
-            'Disable independent pitch shifting so mpv retains its own pitch-corrected speed path',
-      );
-      expect(
-        SpeedProcessing.activeDesktopMode,
-        DesktopSpeedProcessing.automatic,
-      );
-      expect(
-        SpeedProcessing.supportsChoice(platform: TargetPlatform.android),
-        SpeedProcessing.experimentalAndroidProcessorsAvailable,
-      );
-      expect(
-        SpeedProcessing.supportsChoice(platform: TargetPlatform.macOS),
-        isTrue,
-      );
-      expect(
-        SpeedProcessing.supportsDesktopChoice(platform: TargetPlatform.macOS),
-        isFalse,
-      );
-      expect(
-        SpeedProcessing.processorLabel(platform: TargetPlatform.android),
-        contains('Sonic'),
-      );
-      expect(
-        SpeedProcessing.processorLabel(platform: TargetPlatform.macOS),
-        contains('Time Domain'),
-      );
-    },
-  );
+  test('desktop startup selects a native engine and isolates other platforms', () {
+    final previous = SpeedProcessing.activeDesktopMode;
+    addTearDown(() => SpeedProcessing.configureForStartup(
+      previous.id, platform: TargetPlatform.linux));
+    SpeedProcessing.configureForStartup('wsola', platform: TargetPlatform.windows);
+    expect(SpeedProcessing.activeDesktopMode, DesktopSpeedProcessing.wsola);
+    SpeedProcessing.configureForStartup('sonic', platform: TargetPlatform.iOS);
+    expect(SpeedProcessing.activeDesktopMode, DesktopSpeedProcessing.wsola);
+    SpeedProcessing.configureForStartup('sonic', platform: TargetPlatform.windows, isWeb: true);
+    expect(SpeedProcessing.activeDesktopMode, DesktopSpeedProcessing.wsola);
+    SpeedProcessing.configureForStartup('legacyScaletempo', platform: TargetPlatform.linux);
+    expect(SpeedProcessing.activeDesktopMode, DesktopSpeedProcessing.sonic);
+    expect(SpeedProcessing.supportsChoice(platform: TargetPlatform.android),
+      SpeedProcessing.experimentalAndroidProcessorsAvailable);
+    expect(SpeedProcessing.supportsChoice(platform: TargetPlatform.macOS), isTrue);
+    expect(SpeedProcessing.supportsDesktopChoice(platform: TargetPlatform.macOS), isFalse);
+  });
 
   test(
     'Android preferences default to Sonic and validate every saved choice',
@@ -247,7 +197,7 @@ void main() {
     'Apple startup configuration is explicit and isolated from other engines',
     () {
       final previous = SpeedProcessing.activeAppleMode;
-      final desktopPitch = JustAudioMediaKit.pitch;
+      final desktopProcessor = SpeedProcessing.activeDesktopMode;
       addTearDown(
         () => SpeedProcessing.configureAppleForStartup(
           previous.id,
@@ -277,7 +227,7 @@ void main() {
         isWeb: true,
       );
       expect(SpeedProcessing.activeAppleMode, AppleSpeedProcessing.spectral);
-      expect(JustAudioMediaKit.pitch, desktopPitch);
+      expect(SpeedProcessing.activeDesktopMode, desktopProcessor);
       SpeedProcessing.configureAppleForStartup(
         'corrupt',
         platform: TargetPlatform.macOS,
@@ -379,7 +329,7 @@ void main() {
           platform: TargetPlatform.linux,
         ),
       );
-      SpeedProcessing.configureForStartup('automatic');
+      SpeedProcessing.configureForStartup('sonic');
       final h = PlaybackHarness();
       await tester.runAsync(h.init);
       try {
@@ -388,21 +338,20 @@ void main() {
         await tester.ensureVisible(panel);
         await tester.tap(panel);
         await tester.pumpAndSettle();
-        final legacy = find.byKey(
-          const ValueKey('speed-processing-legacyScaletempo'),
+        final alternative = find.byKey(
+          const ValueKey('speed-processing-wsola'),
         );
-        await tester.ensureVisible(legacy);
-        await tester.tap(legacy);
+        await tester.ensureVisible(alternative);
+        await tester.tap(alternative);
         await tester.pumpAndSettle();
-        expect(h.settings.desktopSpeedProcessing, 'legacyScaletempo');
-        expect(JustAudioMediaKit.pitch, isFalse);
+        expect(h.settings.desktopSpeedProcessing, 'wsola');
         expect(
           SpeedProcessing.activeDesktopMode,
-          DesktopSpeedProcessing.automatic,
+          DesktopSpeedProcessing.sonic,
         );
         expect(
           find.text(
-            'Saved for next launch: Legacy scaletempo. Restart CrisperPlayer to apply. Currently using Automatic.',
+            'Saved for next launch: WSOLA. Restart CrisperPlayer to apply. Currently using Sonic.',
           ),
           findsOneWidget,
         );
@@ -551,13 +500,13 @@ void main() {
   );
 
   testWidgets(
-    'unavailable saved desktop engine keeps a truthful active label',
+    'all four native desktop engines are available in the speed sheet',
     (tester) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.linux;
       final previous = SpeedProcessing.activeDesktopMode;
       final h = PlaybackHarness();
       await tester.runAsync(h.init);
-      SpeedProcessing.configureForStartup('automatic');
+      SpeedProcessing.configureForStartup('sonic');
       h.settings.desktopSpeedProcessing = 'sonic';
       try {
         await _show(tester, h.playback);
@@ -565,21 +514,15 @@ void main() {
         await tester.ensureVisible(panel);
         await tester.tap(panel);
         await tester.pumpAndSettle();
-        expect(find.text('Desktop · Automatic'), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('speed-processing-sonic')),
-          findsNothing,
-        );
-        expect(
-          find.textContaining(
-            'Sonic is not available in this installed audio engine',
-          ),
-          findsOneWidget,
-        );
+        expect(find.text('Desktop · Sonic'), findsOneWidget);
+        for (final mode in DesktopSpeedProcessing.values) {
+          expect(find.byKey(ValueKey('speed-processing-${mode.id}')), findsOneWidget);
+        }
+        expect(find.textContaining('not available in this installed audio engine'), findsNothing);
         expect(h.settings.desktopSpeedProcessing, 'sonic');
         expect(
           SpeedProcessing.activeDesktopMode,
-          DesktopSpeedProcessing.automatic,
+          DesktopSpeedProcessing.sonic,
         );
       } finally {
         try {

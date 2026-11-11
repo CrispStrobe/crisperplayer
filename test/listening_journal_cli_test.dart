@@ -236,15 +236,15 @@ void main() {
   test('desktop processing preference is explicit and validated', () async {
     expect(
       (await client.command('settings') as Map)['desktopSpeedProcessing'],
-      'automatic',
+      'sonic',
     );
     final changed =
         await client.command('settings', {
               'key': 'desktopSpeedProcessing',
-              'value': 'legacyScaletempo',
+              'value': 'wsola',
             })
             as Map;
-    expect(changed['desktopSpeedProcessing'], 'legacyScaletempo');
+    expect(changed['desktopSpeedProcessing'], 'wsola');
     await expectLater(
       client.command('settings', {
         'key': 'desktopSpeedProcessing',
@@ -252,7 +252,7 @@ void main() {
       }),
       throwsStateError,
     );
-    expect(h.settings.desktopSpeedProcessing, 'legacyScaletempo');
+    expect(h.settings.desktopSpeedProcessing, 'wsola');
     expect(h.backend.speed, 1);
   });
 }

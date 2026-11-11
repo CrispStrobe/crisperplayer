@@ -18,8 +18,10 @@ class SettingsService extends ChangeNotifier {
   set listeningJournalEnabled(bool value) =>
       _changed(_p.setBool('listening_journal_enabled', value));
   String get desktopSpeedProcessing {
-    final value = _p.getString('desktop_speed_processing') ?? 'automatic';
-    return _desktopProcessors.contains(value) ? value : 'automatic';
+    final value = _p.getString('desktop_speed_processing') ?? 'sonic';
+    // Older Automatic/Legacy/atempo choices belonged to the retired mpv path.
+    // Keep an existing portable choice and otherwise adopt the speech default.
+    return _desktopProcessors.contains(value) ? value : 'sonic';
   }
 
   set desktopSpeedProcessing(String value) {
@@ -42,13 +44,10 @@ class SettingsService extends ChangeNotifier {
   }
 
   static const _desktopProcessors = [
-    'automatic',
-    'legacyScaletempo',
     'sonic',
     'wsola',
     'signalsmith',
     'bungee',
-    'atempo',
   ];
   static const _appleProcessors = [
     'timeDomain',

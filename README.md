@@ -17,7 +17,7 @@ Keep your place, organize your books, and download from Plex, Filen, Internxt, N
 
 Extract desktop archives completely before launching; keep their libraries and data together.
 Windows builds are unsigned and Mac downloads are ad-hoc signed, not notarized.
-Windows needs the Microsoft Visual C++ runtime (x64); Linux needs system libmpv, GTK and libsecret. See [installation details](docs/RELEASES.md).
+Windows needs the Microsoft Visual C++ runtime (x64); Linux needs GTK, libsecret and a native audio output backend. See [installation details](docs/RELEASES.md).
 Release checksums and separate CLI bundles are attached to each versioned GitHub release.
 
 ## Return Trail: get back into the story
@@ -63,11 +63,10 @@ resume positions. Explicit metadata backups include the journal. See
 
 Choose exact playback rates from **0.50× to 3.00×**, adjust in **0.05×** steps,
 and see the remaining listening time. Rates are remembered per book. On
-Windows/Linux, **Speed → Speed processing** keeps Automatic (the engine's
-default pitch-preserving route) and Legacy scaletempo. Controlled libmpv builds
-also offer Sonic, Chromium WSOLA, Signalsmith Stretch and Bungee Basic; FFmpeg
-Atempo appears when the loaded library supports its tempo integration. Only
-processors available in that library are offered.
+Windows/Linux, **Speed → Speed processing** offers **Sonic** (the speech
+default), **Chromium WSOLA**, **Signalsmith Stretch** and **Bungee Basic**.
+Dart controls the streaming Glint decoder, shared native DSP and native audio
+output directly. The desktop build no longer depends on mpv/media_kit.
 
 On iOS/macOS the same panel keeps Time Domain (the voice default) and Spectral,
 and adds the four portable processors for supported local/downloaded files.
@@ -172,7 +171,7 @@ the playhead and tint. Generation is explicit because long tracks may take time.
 Results are cached by file identity; changing the audio invalidates its cache.
 Use the eye button to hide/show the waveform. PCM WAV analysis works on every
 native platform. Android/iOS/macOS decode compressed audio natively; Windows/Linux
-also need an installed `ffmpeg` executable on PATH for compressed-file waveforms.
+use the same bounded native decoder for compressed-file waveforms.
 Playback remains available if analysis is unsupported or fails. No audio is uploaded.
 
 The desktop CLI shares these operations:

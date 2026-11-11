@@ -38,7 +38,7 @@ jobs:
         env:
           CRISPER_SFTP_PYTHON: ${{ runner.temp }}/release-checks/bin/python
           CRISPER_SMB_PYTHON: ${{ runner.temp }}/release-checks/bin/python
-        run: nice -n 10 flutter test test packages/just_audio_media_kit/test
+        run: nice -n 10 flutter test test packages/crisper_audio/test
       - name: Compile CLI bundle
         run: |
           nice -n 10 dart build cli -o build/cli

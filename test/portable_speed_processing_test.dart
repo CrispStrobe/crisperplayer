@@ -3,7 +3,6 @@ import 'package:crisperplayer/services/settings_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -15,7 +14,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final settings = SettingsService(await SharedPreferences.getInstance());
       expect(settings.appleSpeedProcessing, 'timeDomain');
-      expect(settings.desktopSpeedProcessing, 'automatic');
+      expect(settings.desktopSpeedProcessing, 'sonic');
       expect(settings.androidSpeedProcessing, 'sonic');
       for (final mode in AppleSpeedProcessing.values) {
         settings.appleSpeedProcessing = mode.id;
@@ -67,63 +66,34 @@ void main() {
     expect(DarwinSpeedProcessor.values, hasLength(4));
   });
 
-  test('desktop only selects engines present in the loaded native library', () {
+  test('desktop choices map to the shared native engines', () {
     final previous = SpeedProcessing.activeDesktopMode;
-    addTearDown(
-      () => SpeedProcessing.configureForStartup(
-        previous.id,
-        platform: TargetPlatform.linux,
-        availableProcessors: MediaKitSpeedProcessor.values.toSet(),
-      ),
-    );
+    addTearDown(() => SpeedProcessing.configureForStartup(
+      previous.id, platform: TargetPlatform.linux));
+    expect(DesktopSpeedProcessing.values, hasLength(4));
     for (final mode in DesktopSpeedProcessing.values) {
-      SpeedProcessing.configureForStartup(
-        mode.id,
-        platform: TargetPlatform.linux,
-        availableProcessors: MediaKitSpeedProcessor.values.toSet(),
-      );
+      SpeedProcessing.configureForStartup(mode.id, platform: TargetPlatform.linux);
       expect(SpeedProcessing.activeDesktopMode, mode);
-      expect(JustAudioMediaKit.speedProcessor, mode.processor);
-      expect(
-        JustAudioMediaKit.pitch,
-        mode == DesktopSpeedProcessing.legacyScaletempo,
-      );
+      expect(SpeedProcessing.processorLabel(platform: TargetPlatform.windows),
+        'Desktop · ${mode.label}');
     }
-
-    SpeedProcessing.configureForStartup(
-      'signalsmith',
-      platform: TargetPlatform.windows,
-      availableProcessors: MediaKitSpeedProcessor.supportedBy(const []),
-    );
-    expect(SpeedProcessing.activeDesktopMode, DesktopSpeedProcessing.automatic);
-    expect(JustAudioMediaKit.speedProcessor, MediaKitSpeedProcessor.automatic);
-    expect(JustAudioMediaKit.pitch, isFalse);
+    expect(DesktopSpeedProcessing.values.map((mode) => mode.processor).toSet(), hasLength(4));
   });
 
-  test(
-    'plain atempo cannot masquerade as a clock-correct mpv tempo filter',
-    () {
-      expect(
-        MediaKitSpeedProcessor.supportedBy(['atempo']),
-        isNot(contains(MediaKitSpeedProcessor.atempo)),
-      );
-      expect(
-        MediaKitSpeedProcessor.supportedBy(['lavfi-tempo']),
-        isNot(contains(MediaKitSpeedProcessor.atempo)),
-      );
-      expect(
-        MediaKitSpeedProcessor.supportedBy(['lavfi-tempo', 'atempo']),
-        contains(MediaKitSpeedProcessor.atempo),
-      );
-      final portable = MediaKitSpeedProcessor.supportedBy(['crisperdsp']);
-      for (final processor in [
-        MediaKitSpeedProcessor.sonic,
-        MediaKitSpeedProcessor.wsola,
-        MediaKitSpeedProcessor.signalsmith,
-        MediaKitSpeedProcessor.bungee,
-      ]) {
-        expect(portable, contains(processor));
-      }
-    },
-  );
+  test('legacy desktop settings migrate to Sonic and retain portable choices', () async {
+    for (final old in ['automatic', 'legacyScaletempo', 'atempo', 'unknown']) {
+      SharedPreferences.setMockInitialValues({'desktop_speed_processing': old});
+      final settings = SettingsService(await SharedPreferences.getInstance());
+      expect(settings.desktopSpeedProcessing, 'sonic');
+      expect(DesktopSpeedProcessing.parse(old), DesktopSpeedProcessing.sonic);
+      expect(() => settings.desktopSpeedProcessing = old, throwsFormatException);
+      settings.dispose();
+    }
+    for (final mode in DesktopSpeedProcessing.values) {
+      SharedPreferences.setMockInitialValues({'desktop_speed_processing': mode.id});
+      final settings = SettingsService(await SharedPreferences.getInstance());
+      expect(settings.desktopSpeedProcessing, mode.id);
+      settings.dispose();
+    }
+  });
 }

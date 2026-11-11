@@ -1,60 +1,127 @@
-Desktop audio components
+CrisperPlayer direct native desktop audio
+========================================
 
-Windows uses media_kit_libs_windows_audio 1.0.9 and its libmpv/FFmpeg build.
-The plugin pins the mpv-dev-x86_64-20230924-git-652a1dd.7z binary:
-https://github.com/media-kit/libmpv-win32-audio-build/releases/tag/2023-09-24
-Plugin source and download/checksum configuration:
-https://github.com/media-kit/media-kit/tree/main/libs/windows/media_kit_libs_windows_audio
-Archive SHA-256:
-583af5a291fc99ae2641794ede1955c368eb4c19dc05f4f0a9c7f9456edeb6a8
-Extracted libmpv-2.dll SHA-256:
-0a5a0b476866c91a639a4e511e8153968f8fa23564461b0aa09acdba816164a4
-Builder repository:
-https://github.com/media-kit/libmpv-win32-audio-build
-libmpv source: https://github.com/mpv-player/mpv
-FFmpeg source: https://ffmpeg.org/download.html
+Windows/Linux use Dart transport and bounded Glint decoding, the shared native
+Sonic/Chromium WSOLA/Signalsmith Stretch/Bungee Basic processors, and miniaudio
+PCM output. No libmpv or FFmpeg runtime is linked or shipped by this audio path.
+The shared DSP source and original grants are in ANDROID-DSP.txt (historical
+filename). Unrelated system/application libraries retain their own licenses.
 
-Inspection of that exact DLL found mpv's -Dgpl=false configuration and six
-FFmpeg library license markers stating LGPL version 3 or later. The embedded
-FFmpeg configuration includes --disable-gpl --disable-nonfree --enable-version3.
-These findings support an LGPL build; they do not establish complete source,
-dependency, relinking, distribution, or app-store compliance. The release tag
-contains only a version marker, and the binary archive contains headers, an
-import library and the DLL, without a complete source/build manifest.
+Glint decoder sources
+---------------------
+https://github.com/CrispStrobe/glint/tree/7b458cff0fc9c397f671c422db4770c72fc22f5c
+Exact selected files, original/current hashes and local decoder patches:
+packages/crisper_audio/native/vendor/glint/UPSTREAM.json and UPSTREAM.patch
 
-Matching corresponding source and target-specific distribution obligations
-remain under review. See licensing/native_artifacts.json and
-docs/DESKTOP_AUDIO_BUILD.md in the source distribution for the exact evidence
-and remaining release blockers. The LGPL license texts are included in this
-directory, including GPL-3.0 as incorporated by LGPL-3.0. Including that required
-license text does not mean the application uses a GPL-only audio component.
-Individual upstream components retain their copyrights and licenses. This
-notice grants no new rights and does not approve distribution.
+Glint declares MIT. The retained AAC-table generator describes extraction and
+cross-checking against vo-aacenc (Apache-2.0) and FFmpeg libavcodec without exact
+extraction commits. Its derived-table attribution/license treatment remains
+unresolved, as also recorded by CrispAudio. The MIT declaration is not treated
+as blanket distribution clearance. No FFmpeg implementation is linked here.
 
-The current Linux loader can resolve system libmpv and its codec dependencies.
-Their licenses depend on the actual distribution build; a system package must
-not be assumed LGPL merely from its name. A source-pinned controlled Linux
-candidate recipe is supplied separately, but its native build and complete
-runtime dependency closure have not yet been validated or release-approved.
-Android, iOS and macOS use their native playback backends.
+MIT License
 
-Optional Sonic C, Bungee Basic, Signalsmith Stretch and Chromium-derived WSOLA
-processing uses the separately inventoried portable core. Desktop availability
-requires a controlled libmpv build with the CrisperPlayer filter; a system mpv
-or the historical Windows DLL does not gain these engines from the Flutter
-wrapper alone. The optional FFmpeg atempo route is used only when supported by
-the loaded mpv. Processor notices and immutable source pins are in
-ANDROID-DSP.txt, whose historical filename is retained on all platforms.
+Copyright (c) 2026 glint contributors
 
-The source-controlled desktop adapter is derived from just_audio_media_kit
-2.1.0 under the Unlicense. Original source hashes and the local patch are
-retained with that package. The adapter's grant does not change the licenses
-of libmpv, FFmpeg or the portable processor sources.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Windows places its native library alongside the executable. Replacement of
-compatible LGPL shared libraries and reverse engineering for debugging those
-modifications are permitted under the applicable upstream licenses. A release
-must preserve the required replacement/relink route, source access and notices;
-signing or store packaging must not be assumed to preserve those rights without
-target-specific review.
-Dart/Flutter package notices are also available in Settings > About > Licenses.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+miniaudio 0.11.25
+----------------
+Exact header from CometBeat native/aec at:
+https://github.com/CrispStrobe/cometbeat/tree/a9e4d0e553b94369ad883596c9e686e8581c62a2/native/aec
+SHA-256 and source identity: packages/crisper_audio/native/vendor/miniaudio.manifest.json
+The complete alternative grants below are retained; the distribution inventory
+records the explicit Unlicense selection. Only device output is enabled.
+
+This software is available as a choice of the following licenses. Choose
+whichever you prefer.
+
+===============================================================================
+ALTERNATIVE 1 - Public Domain (www.unlicense.org)
+===============================================================================
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
+software, either in source code form or as a compiled binary, for any purpose,
+commercial or non-commercial, and by any means.
+
+In jurisdictions that recognize copyright laws, the author or authors of this
+software dedicate any and all copyright interest in the software to the public
+domain. We make this dedication for the benefit of the public at large and to
+the detriment of our heirs and successors. We intend this dedication to be an
+overt act of relinquishment in perpetuity of all present and future rights to
+this software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <http://unlicense.org/>
+
+===============================================================================
+ALTERNATIVE 2 - MIT No Attribution
+===============================================================================
+Copyright 2026 David Reid
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Independent Dart/native transport and output host
+------------------------------------------------
+MIT License
+
+Copyright (c) 2026 CrisperPlayer contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Third-party source keeps its own license. miniaudio is MIT-0 OR Unlicense
+(native/vendor/miniaudio.LICENSE); Glint is MIT (native/vendor/glint/LICENSE).
+The sibling just_audio/native/crisper_dsp source and its reviewed vendors keep
+their existing MIT, Apache-2.0, BSD and MPL-2.0 notices and exact source pins.

@@ -320,11 +320,10 @@ class _SpeedProcessingPanel extends StatelessWidget {
     final canChooseApple = SpeedProcessing.supportsAppleChoice();
     final canChooseAndroid = SpeedProcessing.supportsAndroidChoice();
     final selected = DesktopSpeedProcessing.parse(
-      svc.settings?.desktopSpeedProcessing ?? 'automatic',
+      svc.settings?.desktopSpeedProcessing ?? 'sonic',
     );
     final current = SpeedProcessing.activeDesktopMode;
     final desktopModes = SpeedProcessing.availableDesktopModes;
-    final desktopSelectionAvailable = desktopModes.contains(selected);
     final appleSelected = AppleSpeedProcessing.parse(
       svc.settings?.appleSpeedProcessing ?? 'timeDomain',
     );
@@ -397,20 +396,14 @@ class _SpeedProcessingPanel extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     title: Text(mode.label),
                     subtitle: Text(switch (mode) {
-                      DesktopSpeedProcessing.automatic =>
-                        'Use the audio engine’s default pitch preservation.',
-                      DesktopSpeedProcessing.legacyScaletempo =>
-                        'Use the previous processing path.',
                       DesktopSpeedProcessing.sonic =>
-                        'Experimental · speech and high speeds.',
+                        'Speech and high speeds · desktop default.',
                       DesktopSpeedProcessing.wsola =>
                         'Experimental · Chromium speech alternative.',
                       DesktopSpeedProcessing.signalsmith =>
                         'Experimental · recommended for 0.75×–1.5×.',
                       DesktopSpeedProcessing.bungee =>
                         'Experimental · music and ambience.',
-                      DesktopSpeedProcessing.atempo =>
-                        'Alternative speech processing from FFmpeg.',
                     }),
                     value: mode,
                   ),
@@ -419,9 +412,7 @@ class _SpeedProcessingPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            !desktopSelectionAvailable
-                ? '${selected.label} is not available in this installed audio engine. Currently using ${current.label}. Choose an available processor or install a build that supports your saved choice.'
-                : selected == current
+            selected == current
                 ? 'In use: ${current.label}. Changes apply after restarting CrisperPlayer and affect all books.'
                 : 'Saved for next launch: ${selected.label}. Restart CrisperPlayer to apply. Currently using ${current.label}.',
             key: const ValueKey('speed-processing-restart'),

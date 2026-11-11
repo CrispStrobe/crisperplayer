@@ -93,7 +93,7 @@ class _AppAboutDialogState extends State<AppAboutDialog> {
             ),
             _section(
               'Playback and storage',
-              'Android, iOS and macOS use native audio playback. Windows and Linux use media_kit / libmpv. The local database uses SQLite. SMB2/3 access uses libsmb2 through dart_smb2. Codec support depends on the platform and decoder.',
+              'Android, iOS and macOS use native audio playback. Windows and Linux use direct Dart playback with Glint decoding and native audio output. The local database uses SQLite. SMB2/3 access uses libsmb2 through dart_smb2. Codec support depends on the platform and decoder.',
             ),
             _section(
               'Disclaimer',

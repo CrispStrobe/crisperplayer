@@ -6,9 +6,9 @@ New binary and TestFlight builds enforce the
 [external dependency license policy](LICENSE_POLICY.md). The owner's confirmed
 distribution authority covers CrisperPlayer and `crisp_storage`; their own
 AGPL declarations are not blockers and are not being replaced. External native
-LGPL artifacts require matching-source and distribution evidence. The Windows audio-only DLL's LGPL
-build markers do not remove those obligations, and arbitrary Linux system mpv
-builds are not approved by this policy.
+LGPL artifacts require matching-source and distribution evidence. The direct desktop audio path removes the previous mpv/FFmpeg payload, but
+Glint's AAC-table provenance and target artifact reviews remain open. Other
+application/system libraries retain their separate requirements.
 
 Run `flutter pub get`, then
 `python3 scripts/check_distribution_licenses.py --report --platform all` to
@@ -46,7 +46,7 @@ only an executable. `BUILD.json` records the version, build and exact Git revisi
   the app through System Settings → Privacy & Security. A Developer ID signing and
   notarization setup is still required for routine Gatekeeper-trusted distribution.
 - **Linux x64:** extract the tar archive, install runtime dependencies (for Ubuntu/Debian:
-  `sudo apt install libmpv2 libgtk-3-0 libsecret-1-0`), then run
+  `sudo apt install libgtk-3-0 libsecret-1-0 libasound2t64`), then run
   `CrisperPlayer/crisperplayer`. Other distributions may use different package names.
   These binaries are built on Ubuntu 24.04 and require compatible system libraries.
 - **CLI:** desktop archives include `cli/bin/crisperplayer` (`.exe` on Windows).
@@ -113,7 +113,7 @@ user's default keychain or export its signing identity for a public archive.
 
 
 Waveform analysis uses native Android/Apple decoders for compressed audio. Windows/Linux
-users can install FFmpeg and put it on PATH for compressed-file waveform generation.
+use the same direct native decoder for compressed-file waveform generation.
 PCM WAV analysis needs no external executable. This optional dependency is independent
 of normal native playback. Waveform caches contain measured peaks, not audio copies.
 Publication compares semantic versions/builds so a slower older build cannot replace

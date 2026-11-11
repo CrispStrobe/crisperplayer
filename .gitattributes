@@ -1,2 +1,9 @@
 # Blank context lines are required by unified-diff syntax.
 packages/just_audio/UPSTREAM.patch whitespace=-blank-at-eol
+# Keep source-pin bytes identical on Windows, including upstream whitespace.
+packages/just_audio/native/crisper_dsp/vendor/** -text -whitespace
+packages/crisper_audio/native/vendor/** -text -whitespace
+packages/crisper_audio/test/fixtures/*.mp3 -text
+packages/crisper_audio/test/fixtures/*.aac -text
+packages/crisper_audio/test/fixtures/*.m4b -text
+packages/crisper_audio/test/fixtures/*.flac -text

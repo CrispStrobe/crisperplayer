@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'providers/providers.dart';
@@ -27,6 +26,7 @@ import 'services/server/remote_library_service.dart';
 import 'services/db/app_database.dart';
 import 'services/audio/audio_handler.dart';
 import 'services/audio/playback_service.dart';
+import 'services/audio/native_audio_backend.dart';
 import 'services/audio/speed_processing.dart';
 import 'services/library_service.dart';
 import 'services/bookmark_service.dart';
@@ -71,16 +71,17 @@ Future<void> main() async {
     final settings = SettingsService(prefs);
     SpeedProcessing.configureAppleForStartup(settings.appleSpeedProcessing);
     SpeedProcessing.configureAndroidForStartup(settings.androidSpeedProcessing);
-    if (Platform.isWindows || Platform.isLinux) {
-      JustAudioMediaKit.ensureInitialized();
-      await JustAudioMediaKit.probeSpeedProcessors();
+    final nativeDesktop = Platform.isWindows || Platform.isLinux;
+    if (nativeDesktop) {
       SpeedProcessing.configureForStartup(settings.desktopSpeedProcessing);
     }
     final database = db = AppDatabase();
-    player = AudioPlayer(
-      handleInterruptions: false,
-      audioLoadConfiguration: SpeedProcessing.audioLoadConfiguration,
-    );
+    if (!nativeDesktop) {
+      player = AudioPlayer(
+        handleInterruptions: false,
+        audioLoadConfiguration: SpeedProcessing.audioLoadConfiguration,
+      );
+    }
     final library = LibraryService(database);
     final remote = RemoteLibraryService(library);
     final service = playback = PlaybackService(
@@ -90,6 +91,9 @@ Future<void> main() async {
       history: HistoryService(database),
       settings: settings,
       audioPlayer: player,
+      backend: nativeDesktop
+          ? NativeAudioBackend(engine: SpeedProcessing.activeDesktopMode.processor)
+          : null,
     );
     if (Platform.isAndroid || Platform.isIOS) {
       final handler = await AudioService.init<CrisperAudioHandler>(

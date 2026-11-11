@@ -17,7 +17,7 @@ void registerNativeLicenses() {
       'Mozilla Public License 2.0',
     ], await rootBundle.loadString('assets/licenses/MPL-2.0.txt'));
     yield LicenseEntryWithLineBreaks([
-      'Native playback: libmpv / FFmpeg (Windows/Linux)',
+      'Native playback: Glint and miniaudio (Windows/Linux)',
     ], await rootBundle.loadString('assets/licenses/DESKTOP-AUDIO.txt'));
     yield LicenseEntryWithLineBreaks([
       'Portable speed processing: Bungee Basic, Signalsmith Stretch, WSOLA, Sonic',

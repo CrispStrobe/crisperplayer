@@ -1,194 +1,123 @@
 # Portable native speed processors
 
-## Native playback direction
-
-Architecture correction recorded on 11 November 2026: maximize useful engine
-coverage while reducing mpv/FFmpeg and LGPL dependence. The shared C ABI, four
-existing DSP engines, Android integration and new Apple PCM backend fit this
-direction. The custom desktop mpv adapter is a working prototype; its successful
-Linux tests do not make expanding that dependency the preferred design. The
-current draft requires desktop restructuring before it represents this goal.
-
-The desktop replacements below are proposed work, not implemented backends:
-
-| Platform | Intended PCM path | Next requirement |
-| --- | --- | --- |
-| Android | Existing Media3 decoding/output with the existing processor chain | Preserve the established native route. |
-| iOS/macOS | AVAudioFile, shared DSP and AVAudioEngine; retain Apple defaults | Validate the implemented Apple backend on its actual targets. |
-| Windows | Media Foundation Source Reader, shared DSP and WASAPI | Implement the just_audio native platform contract; verify content-based M4B opening, seeks and device lifecycle. |
-| Linux | Explicit small decoders, shared DSP and native device output | Prove codec/container coverage, especially AAC profiles inside M4B, before replacing the compatibility backend. |
-
-Windows is the clearest next implementation milestone. Media Foundation can
-decode to PCM and its AAC decoder supports AAC-LC and HE-AAC variants. WASAPI
-accepts PCM for output. A Windows implementation in the existing just_audio
-platform contract can cover both playback and the application's duration
-probes. Reuse decoding for waveform peaks as well: switching only the main
-player would leave the separate external FFmpeg waveform path in place.
-
-Linux needs separate decisions for decoding and device output. miniaudio's
-permissive implementation is a candidate for native output, with built-in
-WAV/FLAC/MP3 decoding. It does not provide AAC/M4B decoding. Symphonia's MPL-2.0
-ISO/MP4 demuxer and AAC-LC/ALAC decoders are a candidate for those files through
-a small owned C ABI bridge; HE-AAC and complete audiobook compatibility remain
-unproven. Vorbis/Opus coverage also needs explicit selected decoders. Using
-system audio services must not be described as removing every LGPL dependency
-from the operating system.
-
-Keep engine selection separate from backend selection. A backend supplies
-decoded PCM, output-device timing and lifecycle; the shared core supplies the
-chosen processor. Preserve the existing bounded queues, source-frame accounting,
-seek/reset, finite drain and explicit failure behavior. Native replacement is
-complete only when supported files, duration probes and waveforms work without
-loading or shipping mpv/FFmpeg for that native path. Unsupported formats must
-be identified explicitly during migration.
-
-Primary implementation references:
-
-- [Media Foundation Source Reader](https://learn.microsoft.com/en-us/windows/win32/medfound/processing-media-data-with-the-source-reader)
-- [Microsoft AAC decoder](https://learn.microsoft.com/en-us/windows/win32/medfound/aac-decoder)
-- [WASAPI rendering](https://learn.microsoft.com/en-us/windows/win32/coreaudio/rendering-a-stream)
-- [miniaudio decoder/device APIs](https://miniaud.io/docs/manual/) and [license](https://github.com/mackron/miniaudio/blob/master/LICENSE)
-- [Symphonia codec/container support and MPL-2.0 license](https://github.com/pdeljanov/Symphonia)
-
-## Current prototype implementation
-
-CrisperPlayer reuses its existing Sonic C, Chromium-derived WSOLA, Signalsmith
-Stretch and Bungee Basic source across native playback integrations. Android
-keeps Media3 Sonic, Apple keeps Time Domain, and Windows/Linux keep mpv
-Automatic as their defaults. An optional processor must have a working decoder,
-PCM processing and output path before the application treats it as available.
+CrisperPlayer uses four portable engines through the same bounded PCM core:
+**Sonic C, Chromium WSOLA, Signalsmith Stretch and Bungee Basic**. The desktop
+implementation is controlled directly from Dart. It does not register a
+just_audio desktop backend, load mpv, or invoke FFmpeg for duration or waveform
+work. Apple and Android retain their existing native playback paths.
 
 ## Platform coverage
 
-| Platform | Default route | Optional portable route | Availability boundary |
+| Platform | Default | Other choices | Decoder and output |
 | --- | --- | --- | --- |
-| Android | Media3 Sonic | Existing Media3/JNI integration for WSOLA, Signalsmith and Bungee Basic | Native processor library must be packaged for the device ABI. Sonic continues to use Media3. |
-| iOS and macOS | AVFoundation Time Domain; Spectral remains selectable | Local audio decoded by Apple's APIs, processed by the shared core and rendered through AVAudioEngine | Portable choices are for supported local files. They do not make the AVPlayer streaming decoder a custom PCM source. |
-| Linux and Windows | Existing mpv Automatic; Legacy scaletempo remains selectable | The CrisperPlayer filter compiled into a controlled libmpv links the shared core | The loaded library must expose the custom filter. A stock system library or historical Windows DLL does not acquire the filter from a Flutter package update. |
-| Browser | Existing browser media playback | No new portable processor integration in this change | The separate Pages player remains on its browser-controlled audio route. |
+| Android | Media3 Sonic | Chromium WSOLA, Signalsmith Stretch, Bungee Basic | Existing Media3/JNI integration and AudioTrack. |
+| iOS/macOS | Apple Time Domain | Apple Spectral and all four portable engines | Apple defaults use AVQueuePlayer; portable modes use local AVAudioFile → shared DSP → AVAudioEngine. |
+| Windows | Sonic C | Chromium WSOLA, Signalsmith Stretch, Bungee Basic | Dart file/container reader, Glint frame decoding, shared DSP and a native miniaudio output callback. |
+| Linux | Sonic C | Chromium WSOLA, Signalsmith Stretch, Bungee Basic | The same Dart/native pipeline, with the host's native audio output backend. |
+| Browser | Browser-controlled playback in the separate Pages player | No new portable engine | The installed Flutter app still displays its unsupported-browser screen. |
 
-The desktop adapter checks capabilities of the library actually loaded. The
-controlled mpv route keeps the existing decoder, output device and source
-timeline. FFmpeg atempo is an additional desktop choice only where the loaded
-mpv exposes its tempo integration. Processor selection must not append another
-pitch-correcting speed stage or silently label a fallback as the selected engine.
+Every processor selection is immutable for a player session. The UI shows the
+active engine and a saved choice that takes effect after restart. Desktop
+Automatic, Legacy scaletempo and atempo preferences migrate to Sonic. Existing
+Sonic/WSOLA/Signalsmith/Bungee preferences retain their meaning. There is no
+silent engine substitution if the selected processor fails.
 
-Controlled desktop builders use the pinned mpv 0.42.0 and FFmpeg source manifest,
-apply the reviewed CrisperPlayer filter, and retain the added source with build
-evidence. Use a fresh build workspace:
+The core supports mono/stereo 8–192 kHz PCM and **0.50×–3.00×** speed, with pitch
+preserved. It passes through samples at 1×. These are functional bounds, not a
+claim of equal perceived quality throughout that range. Signalsmith's upstream
+comparison range is approximately 0.75×–1.5×. CrisperPlayer still has no
+independent pitch-shift control. Skip silence remains an Android Sonic feature.
 
-```sh
-# Linux, with the development toolchain/dependencies described in DESKTOP_AUDIO_BUILD.md
-python3 scripts/build_linux_audio.py --workspace build/linux-audio --build
+## Direct Dart/native desktop path
 
-# Windows, from an MSYS2 UCRT64 shell with the documented build dependencies
-python scripts/build_windows_audio.py --workspace build/windows-audio --build
-```
+`packages/crisper_audio` owns one worker isolate per player. It opens the file,
+reads bounded compressed packets, calls Glint's stateful decoder and the
+selected DSP through FFI, then fills a bounded native float PCM queue. The
+output callback only consumes prepared PCM; it never calls Dart or runs a
+decoder. Partial writes preserve their unaccepted remainder.
 
-The Windows builder compiles its private FFmpeg configuration with GPL/nonfree
-features excluded; it does not link an arbitrary MSYS2 FFmpeg package. These
-source recipes enable an optional playback path. A candidate still needs actual
-build, loading, packaging and license evidence before it replaces a release's
-recorded native artifact.
+The UI isolate sends transport commands. Seek, stop, replacement load and rate
+changes invalidate earlier commands using a generation token; long header
+scans check that token and close their resources when cancelled. Disposal waits
+for worker cleanup. Real decoder/device failures remain visible and stop the
+affected session. Duration probing and desktop waveform extraction use the same
+bounded decoder on separate worker isolates.
 
-The shared core accepts mono/stereo 8–192 kHz PCM and speeds from 0.50× to
-3.00×. Its public contract preserves pitch at 1.0; selecting these processors
-does not imply a new independent pitch-shift control. At unity speed the core
-passes samples through unchanged. Algorithm support over this range is separate
-from a claim about perceptual quality: Signalsmith's upstream guidance remains
-approximately 0.75×–1.5×, and comparisons should use the same narration and
-music-backed passages at matched listening levels.
+The desktop source clock maps presented output-frame spans back to original
+book frames. Decode lookahead, queued DSP output and underrun silence do not
+advance it. The native sink includes a backend-buffer delay estimate and ages
+PCM credits through later silence, allowing the final partial buffer to finish.
+This is **not a hardware/DAC timestamp or a bound on acoustic latency**. Bluetooth,
+audio servers and hardware can add unreported delay. Physical-device checks
+remain necessary. Pause preserves queued PCM; a submitted backend tail can
+finish. Seek/rate replacement starts a new decoder/DSP/output epoch, dropping
+stale queues rather than mixing speed mappings.
 
-## Source time and stream boundaries
+### Decoder scope
 
-Resume positions, bookmarks, chapters, played ranges and journal entries use
-the original audio timeline. The native core reports source frames represented
-by output already delivered, separately from decoded input and queued output.
-Adapters must account for output still waiting in the device or player queue.
-Decoded lookahead cannot advance the displayed source position.
+The initial streaming codec path supports PCM/float WAV, MPEG-1/2/2.5 Layer III
+MP3, AAC-LC ADTS and unencrypted AAC-LC in M4A/M4B/MP4. MP3 seeks restore the
+reservoir/synthesis state with preroll; MP4 uses on-disk paged sample tables,
+64-bit chunk offsets, and supported priming/presentation trims. AAC seek noise
+state is per decoder and tied to the absolute packet ordinal.
 
-The bounded streaming interface accepts partial writes, preserves unconsumed
-input, and reports how many output frames were read. End-of-stream performs a
-finite drain and produces exactly the rounded input-frame count divided by the
-speed. Seek/reset discards old input, output and lookahead. Speed changes must
-drain or explicitly restart the current processing segment; a setting change
-cannot leave audio from two different speed mappings in one untracked queue.
+This is not general MP4 or all-profile AAC support. HE-AAC/SBR/PS, ALAC,
+encryption, fragmented MP4, multichannel audio and complex edit lists are
+rejected explicitly. Unsupported formats are not passed to an invisible mpv
+fallback. Consult the package README for the current additional codec scope.
+Apple/Android format support remains governed by their own decoders.
 
-The existing Bungee adapter deliberately uses its granular interface with a
-rebased input origin. It does not replace that implementation with a cumulative
-32-bit `Stream` input counter, which would be unsuitable for long audiobooks.
+## Reuse of the other CrispStrobe projects
 
-## License and provenance
+The implementation follows source inspected at these immutable revisions:
 
-The seven upstream components and 258 retained original source/notice files
-remain unchanged. Their exact revisions and hashes are in
-[`vendor/manifest.json`](../packages/just_audio/native/crisper_dsp/vendor/manifest.json):
+- [Glint `7b458cff`](https://github.com/CrispStrobe/glint/tree/7b458cff0fc9c397f671c422db4770c72fc22f5c):
+  reuse the owned C++ codec internals through a bounded frame ABI. Its existing
+  Dart convenience API decodes whole files, so it is not the audiobook transport.
+- [CometBeat `a9e4d0e`](https://github.com/CrispStrobe/cometbeat/tree/a9e4d0e553b94369ad883596c9e686e8581c62a2/native/aec):
+  reuse the independently MIT-licensed native package's explicit library loading,
+  FFI packaging and miniaudio/SPSC design. This host adds playback backpressure,
+  frame accounting and stereo float output; it does not use SoLoud or the
+  practice player's whole-file PCM/stopwatch model.
+- [CrispAudio `6a4cf2ec`](https://github.com/CrispStrobe/crispaudio/tree/6a4cf2ecf34d680a5062f4edd7d89a6f6251defd):
+  adopt session generations, ordered teardown, bounded output, persistent
+  errors and the separation between queued and played audio. Its macOS
+  AudioQueue path and predecoded editor snapshots are not copied as a desktop
+  audiobook backend.
 
-| Component | Grant retained |
+## Licenses and original source
+
+The existing seven-component DSP closure and 258 retained originals are pinned
+in [the shared manifest](../packages/just_audio/native/crisper_dsp/vendor/manifest.json):
+
+| Component | Retained grant |
 | --- | --- |
 | Sonic C | Apache-2.0 |
-| Chromium WSOLA originals and maintained derived implementation | BSD-3-Clause |
-| Signalsmith Stretch and Signalsmith Linear | MIT |
+| Chromium-derived WSOLA | BSD-3-Clause |
+| Signalsmith Stretch and Linear | MIT |
 | Bungee Basic | MPL-2.0 |
-| Selected Eigen Core closure | MPL-2.0, with original BSD/Apache notices |
-| PFFFT/FFTPACK | Original permissive NCAR/UCAR grant, recorded as `LicenseRef-PFFFT-FFTPACK` |
+| Selected Eigen Core | MPL-2.0 with original BSD/Apache notices |
+| PFFFT/FFTPACK | Original permissive NCAR/UCAR grant |
 
-All native integrations retain `EIGEN_MPL2_ONLY`. Bungee Pro, unsupported Eigen
-modules, Sonic Speedy, external FFT backends and runtime processor downloads
-remain excluded. The independent core and Apple adapters retain MIT. The
-maintained Chromium fork remains separately BSD-3-Clause. The desktop Flutter
-adapter retains its upstream Unlicense; the custom mpv integration and linked
-libmpv/FFmpeg keep their separately declared grants and obligations.
+The independent host and Dart code are MIT. miniaudio's exact 0.11.25 header,
+MIT-0/public-domain notices and source hash are retained. Glint's selected source
+and local patches have original/current file hashes and a reversible patch.
+Glint declares MIT, but the AAC-table extraction provenance noted by CrispAudio
+is still unresolved; that fact remains in the source manifest and distribution
+gate. No top-level wrapper license is used to approve a native payload.
 
-Original notices are registered in the app on every native platform. The shared
-notice asset keeps its historical `assets/licenses/ANDROID-DSP.txt` filename.
-It includes immutable source links and the original license texts. MPL source
-availability requirements apply to every binary that includes the covered code.
-The controlled desktop library additionally needs matching LGPL source/build
-materials and the applicable library replacement/relink route.
+The new desktop audio dependency graph removes media_kit/libmpv and FFmpeg. This
+does not remove LGPL components from the rest of the application or the host OS.
+MPL source availability, original notices and the existing distribution policy
+still apply. Historical mpv prototype commits and evidence remain in Git; they
+are not the current build path.
 
-The distribution checker requires `portable-native-speed-processors` on all
-five native targets. It checks the exact native manifest and restricts the
-PFFFT license reference to the reviewed notice bytes and source component.
-Wrapper/package grants do not approve native payloads. See
-[the policy](LICENSE_POLICY.md) and [recorded evidence](../licensing/README.md).
+## Verification
 
-## Verification boundaries
-
-The native host tools execute all four actual algorithms and test timing,
-preserved tone pitch, channel handling, stream boundaries, backpressure and
-reset behavior. They can be run without downloading a new DSP dependency:
-
-```sh
-python3 packages/just_audio/native/crisper_dsp/tools/build_host.py --jobs 2
-python3 packages/just_audio/native/crisper_dsp/tools/test_streaming.py \
-  --library build/native-dsp/libcrisper_dsp.so \
-  --report build/native-dsp/test-report.json
-python3 -m unittest scripts.tests.test_distribution_licenses
-```
-
-A controlled Linux x86-64 libmpv build has also passed 35 actual native PCM
-checks: Automatic, Legacy scaletempo, Sonic, WSOLA, Signalsmith, Bungee and
-atempo at 0.5×, 1×, 1.5×, 2× and 3×. The smoke test checks the installed
-optional filter and rejects native error messages, so a correctly timed
-fallback cannot silently satisfy it. Exact candidate and report hashes are
-recorded in [the host evidence](../licensing/evidence/portable_linux_host_2026-11-11.json).
-This is synthetic file-output evidence; Flutter app packaging, audio-device
-playback and the other native targets retain their separate validation needs.
-
-After resolving the real Flutter dependency graph, the existing distribution
-report checks the complete production dependency inventory and native evidence:
-
-```sh
-flutter pub get
-python3 scripts/check_distribution_licenses.py --report --platform all \
-  --output build/licensing/portable-processors.json
-```
-
-An absent SDK/package graph is an incomplete audit, not a clean report. Native
-source verification and unit tests do not establish Apple device playback,
-Windows/Linux package loading, background operation, interruption handling,
-Bluetooth routing, listening quality or battery cost. Each target artifact
-remains pending in the inventory until that evidence is collected; the shared
-source review does not approve all platform binaries at once. Existing release
-and TestFlight enforcement remains enabled.
+See [desktop build and checks](DESKTOP_AUDIO_BUILD.md),
+[the native package contract](../packages/crisper_audio/README.md), and
+[Apple/Android processor details](SPEED_PROCESSING.md). Host native/manual-output
+tests exercise actual compiled algorithms and decoder PCM. They do not establish
+speaker output, interruption behavior, latency, battery use or listening quality
+on a physical device. Platform workflows must run and retain their results before
+target build claims are made. Distribution approval remains a separate gate.

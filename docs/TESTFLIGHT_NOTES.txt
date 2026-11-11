@@ -1,11 +1,11 @@
-Build 15: custom sleep timers and reliable expiry.
+Build 20: Return Trail, listening journal and optional speed processing.
 
-Open the sleep-timer sheet from the player and test a custom duration: enter 1–1440 minutes and press Enter or Start custom timer. Reopen the sheet and check that the last custom duration is remembered. Invalid values must leave playback and the current timer unchanged.
+Return Trail: after skipping or seeking away, use Return Trail from the player to replay recently played passages. Check that it never overwrites your saved position, that lock-screen/headset controls keep working during a trail, and that the played-sections view and gap navigation match what you actually listened to.
 
-While a timer is active, test +5 minutes and +15 minutes. Extensions must add to the remaining time and preserve “finish the chapter” mode, including when already waiting for a chapter boundary. Cancel must prevent a later automatic pause.
+Listening journal: open the journal, jump between dates, open a passage to start playback there, and export a filtered report. Check backups include the journal.
 
-Test timer expiry with the screen locked and after returning from the background. A delayed callback must not restart a full countdown. Immediate expiry pauses and saves progress; chapter-end mode finishes the chapter playing when the timer expires. Timers do not survive app termination and are canceled when changing books.
+Speed processing: in playback settings, try the optional speed processors at 0.75x, 1.5x and 2x. Listen for artifacts, check that chapter positions, seeking and resume stay exact, and that switching back to the default restores normal playback.
 
-Regression checks: local M4B/multi-track imports, chapter navigation, headset/lock-screen controls, bookmarks, resume, queue, speed, editable elapsed time, volume/mute restoration, and generating a measured waveform while playback continues. Check the sleep sheet and player with VoiceOver and enlarged text.
+SMB: re-check an existing SMB library and a new connection with saved settings; libsmb2 remains the default backend.
 
-Offline NAS libraries support Plex, WebDAV, SFTP and SMB downloads. Cloud/progress sync is unavailable. JSON metadata exports do not include audio. Requires iOS 15 or newer.
+Regression checks: local M4B/multi-track imports, chapters, bookmarks, sleep timer, queue, waveform, background playback and interruptions (calls, other audio apps). Requires iOS 15 or newer.

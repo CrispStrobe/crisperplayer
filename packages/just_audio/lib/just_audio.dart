@@ -2242,6 +2242,13 @@ enum DarwinTimePitchAlgorithm {
   spectral,
 }
 
+/// Optional native PCM processors for local mono/stereo files on iOS/macOS.
+///
+/// These share CrisperPlayer's bounded streaming DSP core. The default remains
+/// AVFoundation; a portable processor is used only when explicitly selected.
+/// Unsupported sources fail explicitly instead of silently changing processors.
+enum DarwinSpeedProcessor { sonic, bungee, signalsmith, wsola }
+
 /// Buffering, loading and speed-processing options for iOS/macOS.
 class DarwinLoadControl {
   /// (iOS/macOS) Whether the player will wait for sufficient data to be
@@ -2268,12 +2275,17 @@ class DarwinLoadControl {
   /// behavior. Only public AVFoundation algorithms are used.
   final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
 
+  /// Experimental portable PCM backend for local files. A null value preserves
+  /// AVPlayer and [audioTimePitchAlgorithm]. Selection is immutable for a player.
+  final DarwinSpeedProcessor? speedProcessor;
+
   const DarwinLoadControl({
     this.automaticallyWaitsToMinimizeStalling = true,
     this.preferredForwardBufferDuration,
     this.canUseNetworkResourcesForLiveStreamingWhilePaused = false,
     this.preferredPeakBitRate,
     this.audioTimePitchAlgorithm = DarwinTimePitchAlgorithm.timeDomain,
+    this.speedProcessor,
   });
 
   DarwinLoadControlMessage _toMessage() => _DarwinSpeedLoadControlMessage(
@@ -2284,6 +2296,7 @@ class DarwinLoadControl {
             canUseNetworkResourcesForLiveStreamingWhilePaused,
         preferredPeakBitRate: preferredPeakBitRate,
         audioTimePitchAlgorithm: audioTimePitchAlgorithm,
+        speedProcessor: speedProcessor,
       );
 }
 
@@ -2291,6 +2304,7 @@ class DarwinLoadControl {
 /// fork. Other backends ignore this extra Darwin-only configuration key.
 class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
   final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
+  final DarwinSpeedProcessor? speedProcessor;
 
   _DarwinSpeedLoadControlMessage({
     required super.automaticallyWaitsToMinimizeStalling,
@@ -2298,12 +2312,15 @@ class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
     required super.canUseNetworkResourcesForLiveStreamingWhilePaused,
     required super.preferredPeakBitRate,
     required this.audioTimePitchAlgorithm,
+    required this.speedProcessor,
   });
 
   @override
   Map<dynamic, dynamic> toMap() => {
         ...super.toMap(),
         'audioTimePitchAlgorithm': audioTimePitchAlgorithm.name,
+        if (speedProcessor != null)
+          'portableSpeedProcessor': speedProcessor!.name,
       };
 }
 

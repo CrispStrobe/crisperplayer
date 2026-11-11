@@ -126,6 +126,42 @@ void main() {
     );
   }
 
+  for (final processor in DarwinSpeedProcessor.values) {
+    test('portable $processor selection survives native recreation', () async {
+      final transport = _NativeTransport()..install();
+      final player = AudioPlayer(
+        handleInterruptions: false,
+        androidApplyAudioAttributes: false,
+        handleAudioSessionActivation: false,
+        audioLoadConfiguration: AudioLoadConfiguration(
+          darwinLoadControl: DarwinLoadControl(speedProcessor: processor),
+        ),
+      );
+      try {
+        await player.setAudioSources([
+          AudioSource.uri(Uri.file('/portable-first.wav')),
+        ]);
+        await player.setSpeed(2.5);
+        await player.stop();
+        await player.setAudioSources([
+          AudioSource.uri(Uri.file('/portable-second.wav')),
+        ]);
+        expect(transport.requests, hasLength(2));
+        for (final request in transport.requests) {
+          final configuration = request['audioLoadConfiguration']! as Map;
+          final darwin = configuration['darwinLoadControl'] as Map;
+          expect(darwin['portableSpeedProcessor'], processor.name);
+          expect(darwin['audioTimePitchAlgorithm'], 'timeDomain');
+          expect(configuration['androidLoadControl'], isNull);
+        }
+        expect(player.speed, 2.5);
+      } finally {
+        await player.dispose();
+        transport.close();
+      }
+    });
+  }
+
   test(
     'upstream default remains Time Domain and non-Apple startup stays unchanged',
     () async {
@@ -133,6 +169,7 @@ void main() {
         const DarwinLoadControl().audioTimePitchAlgorithm,
         DarwinTimePitchAlgorithm.timeDomain,
       );
+      expect(const DarwinLoadControl().speedProcessor, isNull);
       final transport = _NativeTransport()..install();
       final previous = debugDefaultTargetPlatformOverride;
       debugDefaultTargetPlatformOverride = TargetPlatform.android;

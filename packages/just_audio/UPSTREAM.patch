@@ -189,7 +189,7 @@
  @end
 --- a/lib/just_audio.dart
 +++ b/lib/just_audio.dart
-@@ -2228,7 +2228,21 @@
+@@ -2228,7 +2228,28 @@
        );
  }
  
@@ -208,11 +208,18 @@
 +  spectral,
 +}
 +
++/// Optional native PCM processors for local mono/stereo files on iOS/macOS.
++///
++/// These share CrisperPlayer's bounded streaming DSP core. The default remains
++/// AVFoundation; a portable processor is used only when explicitly selected.
++/// Unsupported sources fail explicitly instead of silently changing processors.
++enum DarwinSpeedProcessor { sonic, bungee, signalsmith, wsola }
++
 +/// Buffering, loading and speed-processing options for iOS/macOS.
  class DarwinLoadControl {
    /// (iOS/macOS) Whether the player will wait for sufficient data to be
    /// buffered before starting playback to avoid the likelihood of stalling.
-@@ -2246,25 +2260,62 @@
+@@ -2246,25 +2267,72 @@
    /// (iOS/macOS) If specified, limits the download bandwidth in bits per
    /// second.
    final double? preferredPeakBitRate;
@@ -223,6 +230,10 @@
 +  /// creating a new player. The default preserves just_audio's Time Domain
 +  /// behavior. Only public AVFoundation algorithms are used.
 +  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
++
++  /// Experimental portable PCM backend for local files. A null value preserves
++  /// AVPlayer and [audioTimePitchAlgorithm]. Selection is immutable for a player.
++  final DarwinSpeedProcessor? speedProcessor;
  
    const DarwinLoadControl({
      this.automaticallyWaitsToMinimizeStalling = true,
@@ -230,6 +241,7 @@
      this.canUseNetworkResourcesForLiveStreamingWhilePaused = false,
      this.preferredPeakBitRate,
 +    this.audioTimePitchAlgorithm = DarwinTimePitchAlgorithm.timeDomain,
++    this.speedProcessor,
    });
  
 -  DarwinLoadControlMessage _toMessage() => DarwinLoadControlMessage(
@@ -241,6 +253,7 @@
              canUseNetworkResourcesForLiveStreamingWhilePaused,
          preferredPeakBitRate: preferredPeakBitRate,
 +        audioTimePitchAlgorithm: audioTimePitchAlgorithm,
++        speedProcessor: speedProcessor,
        );
  }
  
@@ -249,6 +262,7 @@
 +/// fork. Other backends ignore this extra Darwin-only configuration key.
 +class _DarwinSpeedLoadControlMessage extends DarwinLoadControlMessage {
 +  final DarwinTimePitchAlgorithm audioTimePitchAlgorithm;
++  final DarwinSpeedProcessor? speedProcessor;
 +
 +  _DarwinSpeedLoadControlMessage({
 +    required super.automaticallyWaitsToMinimizeStalling,
@@ -256,12 +270,15 @@
 +    required super.canUseNetworkResourcesForLiveStreamingWhilePaused,
 +    required super.preferredPeakBitRate,
 +    required this.audioTimePitchAlgorithm,
++    required this.speedProcessor,
 +  });
 +
 +  @override
 +  Map<dynamic, dynamic> toMap() => {
 +        ...super.toMap(),
 +        'audioTimePitchAlgorithm': audioTimePitchAlgorithm.name,
++        if (speedProcessor != null)
++          'portableSpeedProcessor': speedProcessor!.name,
 +      };
 +}
 +
@@ -277,7 +294,7 @@
  class AndroidLoadControl {
    /// (Android) The minimum duration of audio that should be buffered ahead of
    /// the current position.
-@@ -2291,6 +2342,10 @@
+@@ -2291,6 +2359,10 @@
  
    /// (Android) The back buffer duration.
    final Duration backBufferDuration;
@@ -288,7 +305,7 @@
  
    const AndroidLoadControl({
      this.minBufferDuration = const Duration(seconds: 50),
-@@ -2300,9 +2355,10 @@
+@@ -2300,9 +2372,10 @@
      this.targetBufferBytes,
      this.prioritizeTimeOverSizeThresholds = false,
      this.backBufferDuration = Duration.zero,
@@ -300,7 +317,7 @@
          minBufferDuration: minBufferDuration,
          maxBufferDuration: maxBufferDuration,
          bufferForPlaybackDuration: bufferForPlaybackDuration,
-@@ -2311,7 +2367,29 @@
+@@ -2311,7 +2384,29 @@
          targetBufferBytes: targetBufferBytes,
          prioritizeTimeOverSizeThresholds: prioritizeTimeOverSizeThresholds,
          backBufferDuration: backBufferDuration,

@@ -1,0 +1,748 @@
+{
+  "schema_version": 1,
+  "recorded_date": "2026-11-11",
+  "release_approved": false,
+  "scope": "Observed Linux packaged native audio and macOS native-host CI results, plus the later removal of optional JACK loading. Physical devices and complete distribution review remain separate.",
+  "ci": {
+    "workflow_run_id": 42983252883,
+    "feature_head": "494a32d9c3264de4e9bc4a1773d8ee87020a7b93",
+    "tested_merge_commit": "d931e7c03056f91aebf8c6012b5ff2e2f200aa18",
+    "workflow_url": "https://github.com/CrispStrobe/crisperplayer/actions/runs/42983252883",
+    "linux": {
+      "job_id": 130398366235,
+      "conclusion": "success",
+      "host_native_dart_tests": 64,
+      "packaged_native_dart_tests": 64,
+      "release_bundle_built": true,
+      "bundle_artifact_id": 13839116208,
+      "artifact_archive_sha256": "e75e0e49c6f12203a2bfa941bffedf384f468849316f8be1d47c83e7cf58469c",
+      "host_audit": {
+        "artifact": {
+          "filename": "libcrisper_audio.so",
+          "path": "/home/runner/work/crisperplayer/crisperplayer/build/native-audio/libcrisper_audio.so",
+          "sha256": "19b6b0f80198e632657d935d270130641aa3af82d968b3ec14040d65f92213d3",
+          "size_bytes": 938344
+        },
+        "findings": [],
+        "limitations": [
+          "Source hashes and successful ABI calls are not a binary-to-source reproducibility proof.",
+          "Filename inventory does not identify all statically linked or renamed code or all OS dependencies.",
+          "The manual backend proves PCM and source accounting, not physical speaker output or measured hardware latency.",
+          "Source attribution, corresponding source, notices, and distribution license clearance remain separate gates."
+        ],
+        "release_approved": false,
+        "runtime": {
+          "checks": [
+            "bounded queue",
+            "PCM equality",
+            "underrun clock",
+            "pause",
+            "reset",
+            "cancellation"
+          ],
+          "engines": [
+            {
+              "id": 0,
+              "input_frames": 4097,
+              "name": "sonic",
+              "output_frames": 2731,
+              "speed": 1.5
+            },
+            {
+              "id": 1,
+              "input_frames": 4097,
+              "name": "bungee-basic",
+              "output_frames": 2731,
+              "speed": 1.5
+            },
+            {
+              "id": 2,
+              "input_frames": 4097,
+              "name": "signalsmith-stretch",
+              "output_frames": 2731,
+              "speed": 1.5
+            },
+            {
+              "id": 3,
+              "input_frames": 4097,
+              "name": "chromium-wsola",
+              "output_frames": 2731,
+              "speed": 1.5
+            }
+          ],
+          "glint_check": "Decoder ABI and invalid-frame rejection; valid codec fixtures run in Dart CI",
+          "glint_decoders": [
+            "mp3",
+            "aac-lc",
+            "flac"
+          ],
+          "output_abi": 1,
+          "passed": true,
+          "sink": "manual"
+        },
+        "schema_version": 1,
+        "scope": "Exact packaged native audio artifact, source hashes, and real manual-device ABI execution",
+        "source": {
+          "dsp": {
+            "components": [
+              {
+                "id": "sonic",
+                "license": "Apache-2.0",
+                "revision": "b93885dcb70aae50c6f76b0fe4e0868f029a077e"
+              },
+              {
+                "id": "signalsmith-stretch",
+                "license": "MIT",
+                "revision": "88061fd4eda56a2353c5d65c74aa3f4ccf76f9da"
+              },
+              {
+                "id": "signalsmith-linear",
+                "license": "MIT",
+                "revision": "7bb1c8f36794d6980080ce817c91f8da8fe56a66"
+              },
+              {
+                "id": "bungee",
+                "license": "MPL-2.0",
+                "revision": "61f52bf34be577d189d388772ddfa3696dee77d8"
+              },
+              {
+                "id": "eigen",
+                "license": "MPL-2.0 AND BSD-3-Clause AND Apache-2.0",
+                "revision": "c29c800126982c561e8d0b9255dc65474cd98de3"
+              },
+              {
+                "id": "pffft",
+                "license": "LicenseRef-PFFFT-FFTPACK",
+                "revision": "02fe7715a5bf8bfd914681c53429600f94e0f536"
+              },
+              {
+                "id": "chromium-wsola",
+                "license": "BSD-3-Clause",
+                "revision": "ddd30ef8aa98443509bf4ce006cb36b4e2296c0b"
+              }
+            ],
+            "files_verified": 258
+          },
+          "glint": {
+            "declared_license": "MIT",
+            "files_verified": 10,
+            "flac_required": true,
+            "provenance_caveat": "The current AAC tables are regenerated only from pinned, hash-verified Apache-2.0 vo-aacenc inputs, with complete source notices; all numerical initializers and the C++ body match Glint originals. A separate exact historical vo-aacenc/FFmpeg reconstruction establishes reproducing revisions, not the original invocation. This scoped source record does not assert whole-product distribution approval.",
+            "provenance_files": [
+              {
+                "git_blob_sha": "f08f3a97b27daaef5f709406186201625fb8e0d3",
+                "kind": "source_input",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/aac_rom.c",
+                "sha256": "bebae3b53f4de70055c6328a24e3fc3172f3b15d40eb9e4556d6d8c2d91cb8b6",
+                "size_bytes": 129247,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/aac_rom.c"
+              },
+              {
+                "git_blob_sha": "455a864cbb5ac493f75734f7ef919203728cfd62",
+                "kind": "source_input",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/tns.c",
+                "sha256": "473d54f31d5ac12529cf0a17caffbe5d6e53cf50849aba109ab1f9ba6d9f77fa",
+                "size_bytes": 29373,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/tns.c"
+              },
+              {
+                "git_blob_sha": "5ec4bf01e7e7fdb46973ba93ae4992fb41352c7f",
+                "kind": "license",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/COPYING",
+                "sha256": "8b3f1762349248d444ab9acbafe73941254e36e1064954da56bb9ddbd5873ddb",
+                "size_bytes": 10271,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/COPYING"
+              },
+              {
+                "git_blob_sha": "d4ab1ac781a9d45b59089f04b3390ebadfc89b5d",
+                "kind": "notice",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/NOTICE",
+                "sha256": "e2ae60e14bece975eeab49210fcaf4ee529b77e6ca13e7d6556b6bb203897b31",
+                "size_bytes": 13467,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/NOTICE"
+              },
+              {
+                "git_blob_sha": "c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d",
+                "kind": "notice",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/AACENC_NOTICE",
+                "sha256": "38751245389e1e23f73e6f5384b5cbe7fa972cc4410c5adc9c04b082a0b9561a",
+                "size_bytes": 10695,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/NOTICE"
+              },
+              {
+                "kind": "documentation",
+                "license": "MIT",
+                "path": "provenance/AAC_TABLES.md",
+                "sha256": "775cc98f4e789baad8260feba1951715fd05bc7e40aae6753f73cdf3616ceb61"
+              },
+              {
+                "kind": "evidence",
+                "license": "MIT",
+                "path": "provenance/aac_tables.json",
+                "sha256": "1f32f516f4ff1b096e35b6210f5c42b34d0f0914a78cd035a38b1144bc648a4e"
+              }
+            ],
+            "provenance_files_verified": 7,
+            "regeneration": {
+              "command": [
+                "python3",
+                "tools/gen_aac_tables.py",
+                "--check"
+              ],
+              "inputs": [
+                "provenance/vo-aacenc/aac_rom.c",
+                "provenance/vo-aacenc/tns.c"
+              ],
+              "output": "src/aac_tables.hpp",
+              "passed": true,
+              "requires_network": false
+            },
+            "revision": "7b458cff0fc9c397f671c422db4770c72fc22f5c",
+            "selected_license_expression": "MIT AND Apache-2.0"
+          },
+          "host_and_adapter_sources": {
+            "packages/crisper_audio/native/CMakeLists.txt": "150415e116159bc0f4e764a7113c7a935d837d24167b51d6e09ad7a664d5fccd",
+            "packages/crisper_audio/native/crisper_output.cpp": "f2d90355b342f9524482ea360bc17349d3b0c709d46506754ac9d84c16feea8d",
+            "packages/crisper_audio/native/crisper_output.h": "59ece8cc9fc8fa554ca0690c648f2025904f06836e010423e46c645b5a5211da",
+            "packages/crisper_audio/native/dsp_link.cpp": "7a33b1627b1c398f2697493c8426ef5ddee2a1b2b6966037591c02f69ea47859",
+            "packages/crisper_audio/native/glint.cmake": "53f66e71139f052d2985605dbdc776b001d5c62c48147eb88421c3e9e6032b2a",
+            "packages/crisper_audio/native/glint_bridge.cpp": "1566870c51eb21a9a7c8dd0fe95e1ef33acd2feac028bd3305a065ece5f5a558",
+            "packages/crisper_audio/native/glint_bridge.h": "17492a91b6726063edce90b67fee534a28c335bb990f33025fd49a906e19f0d1",
+            "packages/crisper_audio/native/miniaudio_config.h": "ef4f97135cc611f785f280aef3bc8c728f9d70382dd8ea3288cd6cd231d08d5c",
+            "packages/crisper_audio/native/miniaudio_impl.c": "d9755a99e5cd7d4e0c874d07c91016d056cf401d34134ef5c815425c855f921f",
+            "packages/just_audio/native/crisper_dsp/CMakeLists.txt": "07db341936326f6eec8940043cef3a8486b254396a9f84561494d25020d6247e",
+            "packages/just_audio/native/crisper_dsp/crisper_dsp.cpp": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
+            "packages/just_audio/native/crisper_dsp/crisper_dsp.h": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
+            "packages/just_audio/native/crisper_dsp/wsola/wsola.cpp": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+            "packages/just_audio/native/crisper_dsp/wsola/wsola.h": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e"
+          },
+          "manifests": {
+            "packages/crisper_audio/native/vendor/glint/UPSTREAM.json": "f9360f99d78ca807531cb26ff53ee15a1a2ad1277e752d5a4d0ba2ed77ea8e51",
+            "packages/crisper_audio/native/vendor/miniaudio.manifest.json": "1bea7b659fb4997ea27ed370a3cb8dfbc7020fee67dd3def415464dd2046c4d5",
+            "packages/just_audio/native/crisper_dsp/vendor/manifest.json": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b"
+          },
+          "miniaudio": {
+            "files_verified": 2,
+            "license": "MIT-0 OR Unlicense",
+            "revision": "a9e4d0e553b94369ad883596c9e686e8581c62a2"
+          },
+          "verified": true
+        },
+        "source_revision": "d931e7c03056f91aebf8c6012b5ff2e2f200aa18",
+        "status": "passed"
+      },
+      "bundle_audit": {
+        "artifact": {
+          "filename": "libcrisper_audio.so",
+          "path": "/home/runner/work/crisperplayer/crisperplayer/build/linux/x64/release/bundle/lib/libcrisper_audio.so",
+          "sha256": "32a0e72e77df1b70d5898b0ac983a546dd8db34f6baa8a6b61d65bed93215735",
+          "size_bytes": 938344
+        },
+        "bundle": {
+          "directory": "/home/runner/work/crisperplayer/crisperplayer/build/linux/x64/release/bundle",
+          "files_checked": 30,
+          "forbidden_payloads": [],
+          "native_library": "lib/libcrisper_audio.so",
+          "native_payloads": [
+            "lib/libapp.so",
+            "lib/libcrisper_audio.so",
+            "lib/libdart_smb2.so",
+            "lib/libdartjni.so",
+            "lib/libflutter_linux_gtk.so",
+            "lib/libflutter_secure_storage_linux_plugin.so",
+            "lib/libsqlite3_flutter_libs_plugin.so",
+            "lib/liburl_launcher_linux_plugin.so"
+          ]
+        },
+        "findings": [],
+        "limitations": [
+          "Source hashes and successful ABI calls are not a binary-to-source reproducibility proof.",
+          "Filename inventory does not identify all statically linked or renamed code or all OS dependencies.",
+          "The manual backend proves PCM and source accounting, not physical speaker output or measured hardware latency.",
+          "Source attribution, corresponding source, notices, and distribution license clearance remain separate gates."
+        ],
+        "release_approved": false,
+        "runtime": {
+          "checks": [
+            "bounded queue",
+            "PCM equality",
+            "underrun clock",
+            "pause",
+            "reset",
+            "cancellation"
+          ],
+          "engines": [
+            {
+              "id": 0,
+              "input_frames": 4097,
+              "name": "sonic",
+              "output_frames": 2731,
+              "speed": 1.5
+            },
+            {
+              "id": 1,
+              "input_frames": 4097,
+              "name": "bungee-basic",
+              "output_frames": 2731,
+              "speed": 1.5
+            },
+            {
+              "id": 2,
+              "input_frames": 4097,
+              "name": "signalsmith-stretch",
+              "output_frames": 2731,
+              "speed": 1.5
+            },
+            {
+              "id": 3,
+              "input_frames": 4097,
+              "name": "chromium-wsola",
+              "output_frames": 2731,
+              "speed": 1.5
+            }
+          ],
+          "glint_check": "Decoder ABI and invalid-frame rejection; valid codec fixtures run in Dart CI",
+          "glint_decoders": [
+            "mp3",
+            "aac-lc",
+            "flac"
+          ],
+          "output_abi": 1,
+          "passed": true,
+          "sink": "manual"
+        },
+        "schema_version": 1,
+        "scope": "Exact packaged native audio artifact, source hashes, and real manual-device ABI execution",
+        "source": {
+          "dsp": {
+            "components": [
+              {
+                "id": "sonic",
+                "license": "Apache-2.0",
+                "revision": "b93885dcb70aae50c6f76b0fe4e0868f029a077e"
+              },
+              {
+                "id": "signalsmith-stretch",
+                "license": "MIT",
+                "revision": "88061fd4eda56a2353c5d65c74aa3f4ccf76f9da"
+              },
+              {
+                "id": "signalsmith-linear",
+                "license": "MIT",
+                "revision": "7bb1c8f36794d6980080ce817c91f8da8fe56a66"
+              },
+              {
+                "id": "bungee",
+                "license": "MPL-2.0",
+                "revision": "61f52bf34be577d189d388772ddfa3696dee77d8"
+              },
+              {
+                "id": "eigen",
+                "license": "MPL-2.0 AND BSD-3-Clause AND Apache-2.0",
+                "revision": "c29c800126982c561e8d0b9255dc65474cd98de3"
+              },
+              {
+                "id": "pffft",
+                "license": "LicenseRef-PFFFT-FFTPACK",
+                "revision": "02fe7715a5bf8bfd914681c53429600f94e0f536"
+              },
+              {
+                "id": "chromium-wsola",
+                "license": "BSD-3-Clause",
+                "revision": "ddd30ef8aa98443509bf4ce006cb36b4e2296c0b"
+              }
+            ],
+            "files_verified": 258
+          },
+          "glint": {
+            "declared_license": "MIT",
+            "files_verified": 10,
+            "flac_required": true,
+            "provenance_caveat": "The current AAC tables are regenerated only from pinned, hash-verified Apache-2.0 vo-aacenc inputs, with complete source notices; all numerical initializers and the C++ body match Glint originals. A separate exact historical vo-aacenc/FFmpeg reconstruction establishes reproducing revisions, not the original invocation. This scoped source record does not assert whole-product distribution approval.",
+            "provenance_files": [
+              {
+                "git_blob_sha": "f08f3a97b27daaef5f709406186201625fb8e0d3",
+                "kind": "source_input",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/aac_rom.c",
+                "sha256": "bebae3b53f4de70055c6328a24e3fc3172f3b15d40eb9e4556d6d8c2d91cb8b6",
+                "size_bytes": 129247,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/aac_rom.c"
+              },
+              {
+                "git_blob_sha": "455a864cbb5ac493f75734f7ef919203728cfd62",
+                "kind": "source_input",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/tns.c",
+                "sha256": "473d54f31d5ac12529cf0a17caffbe5d6e53cf50849aba109ab1f9ba6d9f77fa",
+                "size_bytes": 29373,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/tns.c"
+              },
+              {
+                "git_blob_sha": "5ec4bf01e7e7fdb46973ba93ae4992fb41352c7f",
+                "kind": "license",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/COPYING",
+                "sha256": "8b3f1762349248d444ab9acbafe73941254e36e1064954da56bb9ddbd5873ddb",
+                "size_bytes": 10271,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/COPYING"
+              },
+              {
+                "git_blob_sha": "d4ab1ac781a9d45b59089f04b3390ebadfc89b5d",
+                "kind": "notice",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/NOTICE",
+                "sha256": "e2ae60e14bece975eeab49210fcaf4ee529b77e6ca13e7d6556b6bb203897b31",
+                "size_bytes": 13467,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/NOTICE"
+              },
+              {
+                "git_blob_sha": "c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d",
+                "kind": "notice",
+                "license": "Apache-2.0",
+                "path": "provenance/vo-aacenc/AACENC_NOTICE",
+                "sha256": "38751245389e1e23f73e6f5384b5cbe7fa972cc4410c5adc9c04b082a0b9561a",
+                "size_bytes": 10695,
+                "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/NOTICE"
+              },
+              {
+                "kind": "documentation",
+                "license": "MIT",
+                "path": "provenance/AAC_TABLES.md",
+                "sha256": "775cc98f4e789baad8260feba1951715fd05bc7e40aae6753f73cdf3616ceb61"
+              },
+              {
+                "kind": "evidence",
+                "license": "MIT",
+                "path": "provenance/aac_tables.json",
+                "sha256": "1f32f516f4ff1b096e35b6210f5c42b34d0f0914a78cd035a38b1144bc648a4e"
+              }
+            ],
+            "provenance_files_verified": 7,
+            "regeneration": {
+              "command": [
+                "python3",
+                "tools/gen_aac_tables.py",
+                "--check"
+              ],
+              "inputs": [
+                "provenance/vo-aacenc/aac_rom.c",
+                "provenance/vo-aacenc/tns.c"
+              ],
+              "output": "src/aac_tables.hpp",
+              "passed": true,
+              "requires_network": false
+            },
+            "revision": "7b458cff0fc9c397f671c422db4770c72fc22f5c",
+            "selected_license_expression": "MIT AND Apache-2.0"
+          },
+          "host_and_adapter_sources": {
+            "packages/crisper_audio/native/CMakeLists.txt": "150415e116159bc0f4e764a7113c7a935d837d24167b51d6e09ad7a664d5fccd",
+            "packages/crisper_audio/native/crisper_output.cpp": "f2d90355b342f9524482ea360bc17349d3b0c709d46506754ac9d84c16feea8d",
+            "packages/crisper_audio/native/crisper_output.h": "59ece8cc9fc8fa554ca0690c648f2025904f06836e010423e46c645b5a5211da",
+            "packages/crisper_audio/native/dsp_link.cpp": "7a33b1627b1c398f2697493c8426ef5ddee2a1b2b6966037591c02f69ea47859",
+            "packages/crisper_audio/native/glint.cmake": "53f66e71139f052d2985605dbdc776b001d5c62c48147eb88421c3e9e6032b2a",
+            "packages/crisper_audio/native/glint_bridge.cpp": "1566870c51eb21a9a7c8dd0fe95e1ef33acd2feac028bd3305a065ece5f5a558",
+            "packages/crisper_audio/native/glint_bridge.h": "17492a91b6726063edce90b67fee534a28c335bb990f33025fd49a906e19f0d1",
+            "packages/crisper_audio/native/miniaudio_config.h": "ef4f97135cc611f785f280aef3bc8c728f9d70382dd8ea3288cd6cd231d08d5c",
+            "packages/crisper_audio/native/miniaudio_impl.c": "d9755a99e5cd7d4e0c874d07c91016d056cf401d34134ef5c815425c855f921f",
+            "packages/just_audio/native/crisper_dsp/CMakeLists.txt": "07db341936326f6eec8940043cef3a8486b254396a9f84561494d25020d6247e",
+            "packages/just_audio/native/crisper_dsp/crisper_dsp.cpp": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
+            "packages/just_audio/native/crisper_dsp/crisper_dsp.h": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
+            "packages/just_audio/native/crisper_dsp/wsola/wsola.cpp": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+            "packages/just_audio/native/crisper_dsp/wsola/wsola.h": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e"
+          },
+          "manifests": {
+            "packages/crisper_audio/native/vendor/glint/UPSTREAM.json": "f9360f99d78ca807531cb26ff53ee15a1a2ad1277e752d5a4d0ba2ed77ea8e51",
+            "packages/crisper_audio/native/vendor/miniaudio.manifest.json": "1bea7b659fb4997ea27ed370a3cb8dfbc7020fee67dd3def415464dd2046c4d5",
+            "packages/just_audio/native/crisper_dsp/vendor/manifest.json": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b"
+          },
+          "miniaudio": {
+            "files_verified": 2,
+            "license": "MIT-0 OR Unlicense",
+            "revision": "a9e4d0e553b94369ad883596c9e686e8581c62a2"
+          },
+          "verified": true
+        },
+        "source_revision": "d931e7c03056f91aebf8c6012b5ff2e2f200aa18",
+        "status": "passed"
+      }
+    },
+    "macos": {
+      "job_id": 130398365284,
+      "conclusion": "success",
+      "host_native_dart_tests": 64,
+      "native_cmake_ctest_and_abi_audit": "passed",
+      "application_bundle_steps": "intentionally skipped in this native-host workflow"
+    },
+    "windows": {
+      "job_id": 130398365530,
+      "conclusion": "failure",
+      "failure": "MSVC fftpack.c compilation: M_PI undeclared",
+      "fix_source_revision": "d4d2592c6e5dcca2d4d8d294c027b55386a1252b",
+      "fix": "Define _USE_MATH_DEFINES on the owned crisper_dsp target for MSVC, retaining vendor bytes",
+      "next_target_validation": "pending"
+    }
+  },
+  "post_jack_removal": {
+    "source_revision": "d4d2592c6e5dcca2d4d8d294c027b55386a1252b",
+    "audit": {
+      "artifact": {
+        "filename": "libcrisper_audio.so",
+        "path": "/workspace/scratch/30ec26ee1dd9/crisper-audio-build/libcrisper_audio.so",
+        "sha256": "d725550c9db4d71f2f0cb564fb173dbde3622dfd860ee46b5018ec7799388668",
+        "size_bytes": 712488
+      },
+      "findings": [],
+      "limitations": [
+        "Source hashes and successful ABI calls are not a binary-to-source reproducibility proof.",
+        "Filename inventory does not identify all statically linked or renamed code or all OS dependencies.",
+        "The manual backend proves PCM and source accounting, not physical speaker output or measured hardware latency.",
+        "Source attribution, corresponding source, notices, and distribution license clearance remain separate gates."
+      ],
+      "release_approved": false,
+      "runtime": {
+        "checks": [
+          "bounded queue",
+          "PCM equality",
+          "underrun clock",
+          "pause",
+          "reset",
+          "cancellation"
+        ],
+        "engines": [
+          {
+            "id": 0,
+            "input_frames": 4097,
+            "name": "sonic",
+            "output_frames": 2731,
+            "speed": 1.5
+          },
+          {
+            "id": 1,
+            "input_frames": 4097,
+            "name": "bungee-basic",
+            "output_frames": 2731,
+            "speed": 1.5
+          },
+          {
+            "id": 2,
+            "input_frames": 4097,
+            "name": "signalsmith-stretch",
+            "output_frames": 2731,
+            "speed": 1.5
+          },
+          {
+            "id": 3,
+            "input_frames": 4097,
+            "name": "chromium-wsola",
+            "output_frames": 2731,
+            "speed": 1.5
+          }
+        ],
+        "glint_check": "Decoder ABI and invalid-frame rejection; valid codec fixtures run in Dart CI",
+        "glint_decoders": [
+          "mp3",
+          "aac-lc",
+          "flac"
+        ],
+        "output_abi": 1,
+        "passed": true,
+        "sink": "manual"
+      },
+      "schema_version": 1,
+      "scope": "Exact packaged native audio artifact, source hashes, and real manual-device ABI execution",
+      "source": {
+        "dsp": {
+          "components": [
+            {
+              "id": "sonic",
+              "license": "Apache-2.0",
+              "revision": "b93885dcb70aae50c6f76b0fe4e0868f029a077e"
+            },
+            {
+              "id": "signalsmith-stretch",
+              "license": "MIT",
+              "revision": "88061fd4eda56a2353c5d65c74aa3f4ccf76f9da"
+            },
+            {
+              "id": "signalsmith-linear",
+              "license": "MIT",
+              "revision": "7bb1c8f36794d6980080ce817c91f8da8fe56a66"
+            },
+            {
+              "id": "bungee",
+              "license": "MPL-2.0",
+              "revision": "61f52bf34be577d189d388772ddfa3696dee77d8"
+            },
+            {
+              "id": "eigen",
+              "license": "MPL-2.0 AND BSD-3-Clause AND Apache-2.0",
+              "revision": "c29c800126982c561e8d0b9255dc65474cd98de3"
+            },
+            {
+              "id": "pffft",
+              "license": "LicenseRef-PFFFT-FFTPACK",
+              "revision": "02fe7715a5bf8bfd914681c53429600f94e0f536"
+            },
+            {
+              "id": "chromium-wsola",
+              "license": "BSD-3-Clause",
+              "revision": "ddd30ef8aa98443509bf4ce006cb36b4e2296c0b"
+            }
+          ],
+          "files_verified": 258
+        },
+        "glint": {
+          "declared_license": "MIT",
+          "files_verified": 10,
+          "flac_required": true,
+          "provenance_caveat": "The current AAC tables are regenerated only from pinned, hash-verified Apache-2.0 vo-aacenc inputs, with complete source notices; all numerical initializers and the C++ body match Glint originals. A separate exact historical vo-aacenc/FFmpeg reconstruction establishes reproducing revisions, not the original invocation. This scoped source record does not assert whole-product distribution approval.",
+          "provenance_files": [
+            {
+              "git_blob_sha": "f08f3a97b27daaef5f709406186201625fb8e0d3",
+              "kind": "source_input",
+              "license": "Apache-2.0",
+              "path": "provenance/vo-aacenc/aac_rom.c",
+              "sha256": "bebae3b53f4de70055c6328a24e3fc3172f3b15d40eb9e4556d6d8c2d91cb8b6",
+              "size_bytes": 129247,
+              "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/aac_rom.c"
+            },
+            {
+              "git_blob_sha": "455a864cbb5ac493f75734f7ef919203728cfd62",
+              "kind": "source_input",
+              "license": "Apache-2.0",
+              "path": "provenance/vo-aacenc/tns.c",
+              "sha256": "473d54f31d5ac12529cf0a17caffbe5d6e53cf50849aba109ab1f9ba6d9f77fa",
+              "size_bytes": 29373,
+              "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/src/tns.c"
+            },
+            {
+              "git_blob_sha": "5ec4bf01e7e7fdb46973ba93ae4992fb41352c7f",
+              "kind": "license",
+              "license": "Apache-2.0",
+              "path": "provenance/vo-aacenc/COPYING",
+              "sha256": "8b3f1762349248d444ab9acbafe73941254e36e1064954da56bb9ddbd5873ddb",
+              "size_bytes": 10271,
+              "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/COPYING"
+            },
+            {
+              "git_blob_sha": "d4ab1ac781a9d45b59089f04b3390ebadfc89b5d",
+              "kind": "notice",
+              "license": "Apache-2.0",
+              "path": "provenance/vo-aacenc/NOTICE",
+              "sha256": "e2ae60e14bece975eeab49210fcaf4ee529b77e6ca13e7d6556b6bb203897b31",
+              "size_bytes": 13467,
+              "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/NOTICE"
+            },
+            {
+              "git_blob_sha": "c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d",
+              "kind": "notice",
+              "license": "Apache-2.0",
+              "path": "provenance/vo-aacenc/AACENC_NOTICE",
+              "sha256": "38751245389e1e23f73e6f5384b5cbe7fa972cc4410c5adc9c04b082a0b9561a",
+              "size_bytes": 10695,
+              "source_url": "https://github.com/mstorsjo/vo-aacenc/blob/f23bc0d15467012bab11deb76ad06819140d2ccf/aacenc/NOTICE"
+            },
+            {
+              "kind": "documentation",
+              "license": "MIT",
+              "path": "provenance/AAC_TABLES.md",
+              "sha256": "775cc98f4e789baad8260feba1951715fd05bc7e40aae6753f73cdf3616ceb61"
+            },
+            {
+              "kind": "evidence",
+              "license": "MIT",
+              "path": "provenance/aac_tables.json",
+              "sha256": "1f32f516f4ff1b096e35b6210f5c42b34d0f0914a78cd035a38b1144bc648a4e"
+            }
+          ],
+          "provenance_files_verified": 7,
+          "regeneration": {
+            "command": [
+              "python3",
+              "tools/gen_aac_tables.py",
+              "--check"
+            ],
+            "inputs": [
+              "provenance/vo-aacenc/aac_rom.c",
+              "provenance/vo-aacenc/tns.c"
+            ],
+            "output": "src/aac_tables.hpp",
+            "passed": true,
+            "requires_network": false
+          },
+          "revision": "7b458cff0fc9c397f671c422db4770c72fc22f5c",
+          "selected_license_expression": "MIT AND Apache-2.0"
+        },
+        "host_and_adapter_sources": {
+          "packages/crisper_audio/native/CMakeLists.txt": "150415e116159bc0f4e764a7113c7a935d837d24167b51d6e09ad7a664d5fccd",
+          "packages/crisper_audio/native/crisper_output.cpp": "f2d90355b342f9524482ea360bc17349d3b0c709d46506754ac9d84c16feea8d",
+          "packages/crisper_audio/native/crisper_output.h": "59ece8cc9fc8fa554ca0690c648f2025904f06836e010423e46c645b5a5211da",
+          "packages/crisper_audio/native/dsp_link.cpp": "7a33b1627b1c398f2697493c8426ef5ddee2a1b2b6966037591c02f69ea47859",
+          "packages/crisper_audio/native/glint.cmake": "53f66e71139f052d2985605dbdc776b001d5c62c48147eb88421c3e9e6032b2a",
+          "packages/crisper_audio/native/glint_bridge.cpp": "1566870c51eb21a9a7c8dd0fe95e1ef33acd2feac028bd3305a065ece5f5a558",
+          "packages/crisper_audio/native/glint_bridge.h": "17492a91b6726063edce90b67fee534a28c335bb990f33025fd49a906e19f0d1",
+          "packages/crisper_audio/native/miniaudio_config.h": "033c1320280c85443522b0623c77c9dd37d4ee1af871ef314b1a58894eeca31f",
+          "packages/crisper_audio/native/miniaudio_impl.c": "d9755a99e5cd7d4e0c874d07c91016d056cf401d34134ef5c815425c855f921f",
+          "packages/just_audio/native/crisper_dsp/CMakeLists.txt": "f55c6b98459da06a5ef77e26d0ffe5ed0edeab8be8258b1fdcc94d1eae1ef35a",
+          "packages/just_audio/native/crisper_dsp/crisper_dsp.cpp": "86454ac818bd18ede7d17f9b4adf6e9a3e8d674a47149a27db8a8e6a83bc5c62",
+          "packages/just_audio/native/crisper_dsp/crisper_dsp.h": "436686306ebaa061b766ece0ccefa9d44c49953278a3f453feca9042dee57722",
+          "packages/just_audio/native/crisper_dsp/wsola/wsola.cpp": "6bbde8596b81b7a2000cdec8216914eed8a4943b2b61a0e134356e53522fd102",
+          "packages/just_audio/native/crisper_dsp/wsola/wsola.h": "aea144be6a14942a52151e4884d6b4416508250cac198310a9d65987ebd3aa8e"
+        },
+        "manifests": {
+          "packages/crisper_audio/native/vendor/glint/UPSTREAM.json": "f9360f99d78ca807531cb26ff53ee15a1a2ad1277e752d5a4d0ba2ed77ea8e51",
+          "packages/crisper_audio/native/vendor/miniaudio.manifest.json": "1bea7b659fb4997ea27ed370a3cb8dfbc7020fee67dd3def415464dd2046c4d5",
+          "packages/just_audio/native/crisper_dsp/vendor/manifest.json": "1575324469623a34d1deb846af74745ef5dc991b4fef5ed368cf065e8e66ee0b"
+        },
+        "miniaudio": {
+          "files_verified": 2,
+          "license": "MIT-0 OR Unlicense",
+          "revision": "a9e4d0e553b94369ad883596c9e686e8581c62a2"
+        },
+        "verified": true
+      },
+      "source_revision": "494a32d9c3264de4e9bc4a1773d8ee87020a7b93",
+      "status": "passed"
+    },
+    "audit_file_sha256": "d5f155247bd2d33054cdd8c82d86333fa844dbdccc7c3349dab0c1aa03ec9b73",
+    "source_identity_note": "Audit was collected before commit creation; every recorded source/manifest hash was separately verified against the published source_revision.",
+    "change": "MA_NO_JACK in owned miniaudio_config.h; vendor header unchanged",
+    "compile_configuration": {
+      "MA_HAS_ALSA": true,
+      "MA_HAS_PULSEAUDIO": true,
+      "MA_HAS_JACK": false
+    },
+    "binary_marker_check": "No libjack.so or jack_client_open markers; libasound/libpulse loader names remain",
+    "native_rebuild_ctest_and_abi": "passed",
+    "required_native_dart_tests": {
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "lgpl_boundary": {
+    "confirmed_bundled_component": "libsmb2-r9 (LGPL-2.1-or-later), via crisp_storage and BSD-3-Clause dart_smb2",
+    "ci_bundle_presence": "lib/libdart_smb2.so",
+    "host_libraries_copied_into_ci_bundle": false,
+    "host_libraries_scope": [
+      "GTK/GDK and GLib family",
+      "libsecret",
+      "PulseAudio/ALSA client libraries",
+      "glibc/libm and other target-dependent transitive host libraries"
+    ],
+    "limitations": [
+      "Bundle JSON identifies presence, not an exact SMB binary hash or full transitive ELF closure.",
+      "CI artifact publishes reports, not the final ELF binaries.",
+      "Local reference-host dependencies are not a substitute for the exact target distribution.",
+      "Flutter engine third-party inventory and other native artifact reviews remain incomplete."
+    ]
+  },
+  "new_decoder_policy": "New external decoder integrations require selected permissive source/dependency closure; researched candidates are not implemented codecs."
+}

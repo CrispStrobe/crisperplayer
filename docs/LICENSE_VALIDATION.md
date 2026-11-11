@@ -37,11 +37,22 @@ duplicate or legacy mpv/FFmpeg-family payloads. The native clock accounts for
 estimated backend buffering; it does not measure hardware/DAC presentation.
 
 Current target results belong to the exact commit's
-[PR checks](https://github.com/CrispStrobe/crisperplayer/pull/2). Earlier runs
-compiled the macOS application and shared SwiftPM processor target, and the
-Linux workflow compiled the real Flutter bundle. Superseded Apple/Android
-jobs were cancelled before all target tests completed. Passing a host build
-does not establish physical-device output, interruption handling or latency.
+[PR checks](https://github.com/CrispStrobe/crisperplayer/pull/2). At feature head
+`494a32d`, the Linux native job passed its release Flutter bundle build, exact
+packaged-library audit and all 64 Dart tests against that bundled library.
+The macOS native-host job passed its native build/audit and 64 Dart tests;
+that workflow intentionally skips macOS application packaging. The Windows
+job found missing MSVC `M_PI` definitions in FFTPACK; commit `d4d2592` fixes the
+owned target definition without altering vendor bytes. Its target rerun is
+pending. Earlier Apple runs compiled the macOS application and SwiftPM target,
+but full Apple/Android jobs remain separate from these desktop host results.
+
+The same follow-up disables optional JACK loading. Its rebuilt Linux host
+passes CTest/source/ABI checks and all 64 native Dart tests. Exact CI reports
+and the follow-up binary/source identities are retained in
+[native CI evidence](../licensing/evidence/native_audio_ci_2026-11-11.json).
+Passing these builds does not establish physical-device output, interruption
+handling or hardware latency.
 Artifact and distribution review remains separate from these functional tests.
 The [direct native host evidence](../licensing/evidence/direct_native_audio_2026-11-11.json)
 records the exact library/source hashes, audit output and test scopes. Counts

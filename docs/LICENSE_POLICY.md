@@ -6,6 +6,13 @@ AGPL-only **external** dependencies. MIT, Apache-2.0, BSD and comparable
 permissive licenses are preferred. MPL and LGPL are permitted when their
 actual distribution obligations are met.
 
+The owner's later restriction for **new external decoder additions** is
+stricter: select MIT, Apache-2.0, BSD, ISC, zlib, MIT-0, Unlicense, CC0 or an
+explicitly reviewed equivalent permissive source closure. This includes native
+dependencies and copied tables. GPL, LGPL and MPL are not accepted for new
+decoder additions. Existing MPL DSP choices and platform system libraries
+remain separate; their notices and obligations are unchanged.
+
 ## Audio architecture priority
 
 The owner clarified on 11 November 2026 that playback should use native
@@ -14,18 +21,18 @@ does not make another LGPL dependency the preferred architecture. Preserve
 the existing permissive/MPL DSP core and connect it directly to platform
 decoding and output APIs where practical.
 
-The new custom mpv filter and controlled desktop build are a compatibility
-prototype, not the target desktop architecture. Do not expand that integration
-or add FFmpeg/SoundTouch solely to increase the processor count. Existing mpv
-playback may serve during migration; a native backend must not depend on it
-for its portable engines, duration probing or waveform generation. Actual
-dependency and bundle removal is part of completion, not just changing which
-backend starts at runtime.
+The custom mpv filter and controlled desktop build were a compatibility
+prototype. Their adapters, runtime packages and build recipes have now been
+removed from the current path. Windows/Linux use Dart transport, bounded
+Glint decoding, the shared DSP core and native miniaudio output. Duration
+probing and waveform generation use the same decoder. Do not reintroduce
+FFmpeg or another LGPL stack solely to increase the processor/codec count.
 
 This preference does not relabel existing LGPL components, waive their
 obligations, or impose a new blanket ban on platform system libraries. See
-[the native playback direction](PORTABLE_AUDIO_PROCESSORS.md#native-playback-direction)
-for the implementation priorities and unresolved format coverage.
+[portable native playback](PORTABLE_AUDIO_PROCESSORS.md) and
+[decoder choices and remaining LGPL dependencies](AUDIO_DEPENDENCIES.md)
+for current implementation and source boundaries.
 
 This is an engineering policy and an evidence record. A package name, a build
 flag, or a passing script does not establish legal compliance or guarantee
@@ -53,15 +60,21 @@ or replace the text of any published additional permission or third-party grant.
 
 | Component | Evidence in this checkout | Consequence |
 | --- | --- | --- |
-| Windows native audio | `media_kit_libs_windows_audio 1.0.9` selects the audio-only `2023-09-24` libmpv/FFmpeg archive. Its build recipes select LGPL configurations. | Verify the exact binary, dependencies, corresponding source and distribution materials. The MIT Flutter wrapper does not license its native payload. |
-| Linux native audio | `media_kit_libs_linux 1.2.1` loads system libmpv; the app does not control the distribution's build options. | An arbitrary system installation cannot support a promise of no GPL components. Use a controlled LGPL build with recorded provenance for the supported release. |
+| Direct Windows/Linux audio | Glint's selected MIT/Apache source closure, output-only miniaudio and the existing shared DSP core. | Preserve exact source/artifact identity and all original notices; passing playback tests do not complete distribution review. |
+| SMB/NAS | `crisp_storage → dart_smb2 0.2.1 → libsmb2-r9`; the BSD wrapper bundles an LGPL-2.1-or-later native library. | Keep source/replacement and target artifact reviews explicit. The successful Linux bundle audit confirms `libdart_smb2.so`; other targets follow the platform build hook. |
+| Linux host libraries | GTK/GLib, libsecret, PulseAudio/ALSA and glibc-based runtime dependencies are separate system libraries. | Record the exact target distribution's dependency closure. Removing mpv does not remove these LGPL system dependencies. Optional JACK loading is disabled in the owned output configuration. |
 
 Filen and Internxt are MPL-2.0 components. Their source availability and notice
 requirements continue to apply. `libsmb2` is a separate LGPL native component,
 so choosing a permissive audio processor does not by itself finish the app's
 license audit.
 
-## mpv can be LGPL
+## Historical media_kit/mpv license boundary
+
+`media_kit` itself is MIT, and `just_audio_media_kit` is Unlicense. Their
+native libmpv/FFmpeg payloads have independent licenses. The architecture
+change removed that playback dependency; it did not reclassify the wrappers
+as LGPL. Retired payload identities remain historical inventory evidence.
 
 mpv is GPL-2.0-or-later by default, but its libmpv build can be distributed under
 LGPL-2.1-or-later when GPL-only files are excluded. The upstream option is
@@ -70,11 +83,10 @@ grant: linked dependencies, including FFmpeg, still determine the resulting
 license. mpv's GPL documentation and example files are also separate from an
 LGPL binary and should not be copied into a no-GPL distribution indiscriminately.
 
-For a controlled desktop build, record source revisions and hashes, exclude
-GPL and nonredistributable FFmpeg features, keep native libraries replaceable,
-publish the corresponding source and build instructions, and include all
-required notices. Do not add Rubber Band, x264 or another GPL-only dependency
-to an LGPL build and continue describing the result as LGPL.
+Historical controlled builds therefore recorded source revisions/hashes and
+the exact GPL/nonfree exclusions. Their evidence cannot approve an unrelated
+system build or a different dependency configuration. They are not a current
+release audio payload.
 
 An LGPL component is not automatically approved for every store or packaging
 method. Relinking/replacement requirements, the exact LGPL version, signing,
@@ -88,13 +100,13 @@ permissive DSP on Apple platforms to avoid adding this burden to audio.
 | Processor | License or platform basis | Decision |
 | --- | --- | --- |
 | Apple Time Domain / Spectral | AVFoundation system API; the maintained just_audio adapter is MIT. | Offer both on iOS/macOS. Time Domain remains the voice default; Spectral is an optional, more computationally intensive alternative. |
-| Sonic | Apache-2.0 native library and implementation in AndroidX Media3. | Keep Media3 Sonic as Android's default. Reuse the already pinned C core as an optional processor on Apple local files and controlled desktop builds. |
-| mpv scaletempo2 / scaletempo | Available in an appropriately built LGPL libmpv. | Retain the existing choices subject to native artifact verification; processor choice does not waive packaging obligations. |
-| Bungee Basic | MPL-2.0; the selected Eigen Core and PFFFT source and original notices are pinned. | Optional shared native processor for Android, Apple local files and controlled desktop builds. `EIGEN_MPL2_ONLY` excludes GPL modules; proprietary Bungee Pro is not included. |
+| Sonic | Apache-2.0 native library and implementation in AndroidX Media3. | Keep Media3 Sonic as Android's default. The pinned C core is optional on Apple local files and is the direct native desktop default. |
+| mpv scaletempo2 / scaletempo | Available in an appropriately built LGPL libmpv. | Historical choices, removed from the current desktop path. |
+| Bungee Basic | MPL-2.0; the selected Eigen Core and PFFFT source and original notices are pinned. | Optional shared native processor for Android, Apple local files and direct native desktop playback. `EIGEN_MPL2_ONLY` excludes GPL modules; proprietary Bungee Pro is not included. |
 | Signalsmith Stretch | MIT, with the selected MIT Signalsmith Linear implementation. | Optional shared native processor for moderate rate changes. Upstream describes best time-stretch quality around 0.75×–1.5×; do not assume a 2×–3× speech improvement. |
 | Chromium WSOLA fork | BSD-3-Clause; retained upstream originals and the maintained extraction have separate provenance. | Reuse the existing portable processor on the same native paths. The fork does not bring Chromium's browser/media runtime or mpv's source license into the shared core. |
-| FFmpeg atempo | Part of the selected LGPL FFmpeg build. | Additional desktop option only when the loaded mpv exposes the required tempo filter. It does not introduce an extra GPL processor; libmpv/FFmpeg artifact obligations still apply. |
-| SoundTouch | LGPL-2.1. | A possible alternative with the same source/relinking review needed for LGPL components. It is not assumed better for every voice. |
+| FFmpeg atempo | Part of an LGPL-configured FFmpeg build. | Historical comparison only; no longer a desktop playback option. |
+| SoundTouch | LGPL-2.1. | Not integrated; adding another LGPL processor does not meet the native architecture priority. |
 | Rubber Band | GPL-2.0-or-later or a separately purchased commercial license. | Excluded from the openly reproducible default dependency set under this policy. A commercial license for one publisher does not give all open-source recipients the same commercial redistribution rights. |
 
 The word “quality” describes an available processing choice, not a measured
@@ -108,8 +120,8 @@ retains the Media3/JNI details. The shared core reuses the same seven upstream
 components and 258 retained source/notice files, without introducing a new
 external DSP license. Per-file hashes and original notices remain included.
 The independent core and Apple adapters are MIT licensed; the maintained
-Chromium extraction remains BSD-3-Clause. Any desktop mpv modifications and
-linked libraries retain their separate license and source obligations.
+Chromium extraction remains BSD-3-Clause. Historical desktop mpv modifications
+and linked libraries retain their separate license/source identity in Git.
 
 `portable-native-speed-processors` is required in the native inventory for all
 five native targets. Its source manifest and exact permissive PFFFT notice are

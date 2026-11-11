@@ -91,6 +91,12 @@ The implementation follows source inspected at these immutable revisions:
 
 ## Licenses and original source
 
+Additional decoder implementations may be used alongside Glint. New decoder
+source closures must be permissively licensed, including their transitive
+native dependencies and extracted tables. See [the decoder policy, candidates
+and remaining LGPL inventory](AUDIO_DEPENDENCIES.md). Codec choice is independent
+of the four speed processors.
+
 The existing seven-component DSP closure and 258 retained originals are pinned
 in [the shared manifest](../packages/just_audio/native/crisper_dsp/vendor/manifest.json):
 

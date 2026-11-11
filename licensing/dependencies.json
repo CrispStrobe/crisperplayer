@@ -362,7 +362,7 @@
         "MIT applies to the independent Dart/native host. Glint decoder originals and patches retain MIT; AAC table data is reproducibly regenerated from pinned Apache-2.0 vo-aacenc inputs with complete notices. Miniaudio and the four-engine DSP closure retain their separate native identities and notices. Target artifact reviews remain unresolved; the package-level grant does not approve them.",
         "Windows/Linux replace the media_kit/libmpv runtime with a bounded Dart worker, Glint frame decoding and native PCM output. Apple/Android continue using existing platform adapters."
       ],
-      "source_tree_sha256": "b7a0f5db219b1afd6e46cdb71a74b817eb8697a9041e0ded89c4e7d00081d904"
+      "source_tree_sha256": "c7a6c8eb9ed699e34f9dbd7a29bad75170ce07a5a88e21b1ecc8bf5fcec5ad03"
     },
     {
       "name": "crisperplayer",
@@ -1382,7 +1382,7 @@
           "sha256": "63ce4443e916b27424700d7fe970003add9f54944daf732f2dbcc1d8caf1bbad"
         }
       ],
-      "source_tree_sha256": "559092593d5ac15ad8760b264e5b42b8952836f60f55085bfc22c49058d60b84",
+      "source_tree_sha256": "37fc46db0c56c4d093de0fee1de6063f271d6e4cd9ddd125ecf2bf8936d3b008",
       "notes": [
         "Local MIT just_audio adapter with platform defaults retained and separately licensed optional shared native speed processing. Original 0.10.6 archive SHA-256 e60aa97b233ddea025e13dfac59195207f528fa5e9e4a4a49a8c0766701e5fe6; original-file hashes, complete upstream patch and local additions are retained in UPSTREAM_SHA256.json, UPSTREAM.patch and LOCAL_ADDITIONS.json.",
         "The MIT package declaration covers the just_audio wrapper and independent adapters. It does not relabel the seven native source components or the derived WSOLA implementation/fixtures: their MIT/Apache/BSD/MPL/custom permissive grants, exact 258-file original closure and pending per-platform artifact review are recorded in portable-native-speed-processors. NDK libc++, Gradle runtime and the direct desktop Glint/miniaudio host remain separate native components."
@@ -3624,7 +3624,7 @@
     {
       "package": "crisper_audio",
       "path": "native/miniaudio_config.h",
-      "sha256": "ef4f97135cc611f785f280aef3bc8c728f9d70382dd8ea3288cd6cd231d08d5c",
+      "sha256": "033c1320280c85443522b0623c77c9dd37d4ee1af871ef314b1a58894eeca31f",
       "platforms": [
         "linux",
         "windows"
@@ -4230,7 +4230,7 @@
     {
       "package": "just_audio",
       "path": "UPSTREAM.patch",
-      "sha256": "45ac26a7e1d21a89d26d21354145102f5782c7444ea46e260cef56730aa3356f",
+      "sha256": "cf823e3175e6657ee0b36cbddab0b7e5017c2c408dd57dc0fef9da1cea662756",
       "platforms": [
         "android",
         "ios",
@@ -4612,7 +4612,7 @@
     {
       "package": "just_audio",
       "path": "native/crisper_dsp/CMakeLists.txt",
-      "sha256": "07db341936326f6eec8940043cef3a8486b254396a9f84561494d25020d6247e",
+      "sha256": "f55c6b98459da06a5ef77e26d0ffe5ed0edeab8be8258b1fdcc94d1eae1ef35a",
       "platforms": [
         "android",
         "ios",

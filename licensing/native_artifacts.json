@@ -72,6 +72,11 @@
         {
           "url": "https://github.com/ales-drnz/libsmb2-scripts/blob/f2695f24c0db8984cd0593738b72004ab48cfe1b/scripts/shared/_versions.sh",
           "note": "Exact revision uses e94eee9 upstream; r9 recipe does not include the OpenSSL dependency introduced by later releases."
+        },
+        {
+          "path": "licensing/evidence/native_audio_ci_2026-11-11.json",
+          "sha256": "498555e636612b575f8912349c2e907c2a7295baf39f758ed249af81bbad866b",
+          "note": "Observed Linux release-bundle audit and exact packaged native tests, macOS host results, Windows fix and local JACK-removal checks. Confirms bundled SMB presence, not full SMB payload/license clearance."
         }
       ],
       "blockers": [
@@ -164,7 +169,7 @@
       "platforms": [
         "linux"
       ],
-      "version": "Host-resolved GTK/GLib/libsecret, ALSA/PulseAudio and compiler runtime",
+      "version": "Host-resolved GTK/GLib/libsecret, ALSA/PulseAudio, glibc and compiler runtime",
       "license_expression": null,
       "review_status": "needs_review",
       "evidence": [
@@ -334,7 +339,7 @@
         },
         {
           "path": "packages/just_audio/UPSTREAM.patch",
-          "sha256": "45ac26a7e1d21a89d26d21354145102f5782c7444ea46e260cef56730aa3356f",
+          "sha256": "cf823e3175e6657ee0b36cbddab0b7e5017c2c408dd57dc0fef9da1cea662756",
           "note": "Complete reviewed changes to upstream just_audio files and independently inventoried local adapter/fork/test/build additions."
         },
         {
@@ -349,7 +354,7 @@
         },
         {
           "path": "packages/just_audio/native/crisper_dsp/CMakeLists.txt",
-          "sha256": "07db341936326f6eec8940043cef3a8486b254396a9f84561494d25020d6247e",
+          "sha256": "f55c6b98459da06a5ef77e26d0ffe5ed0edeab8be8258b1fdcc94d1eae1ef35a",
           "note": "Explicit offline source list compiles the portable BSD WSOLA extraction, not Chromium renderer/runtime or test shims. EIGEN_MPL2_ONLY remains required."
         },
         {
@@ -461,6 +466,11 @@
           "path": "licensing/evidence/direct_native_audio_2026-11-11.json",
           "sha256": "d0aaba5996120d483e2dd3bb02a5cf101fd9a5565bbbed24d6f6c3599cc0f5e6",
           "note": "Actual Linux host artifact hash, source/runtime audit, offline Apache table regeneration and functional validation. Manual/null output only; not target-device or release approval."
+        },
+        {
+          "path": "licensing/evidence/native_audio_ci_2026-11-11.json",
+          "sha256": "498555e636612b575f8912349c2e907c2a7295baf39f758ed249af81bbad866b",
+          "note": "Observed Linux release-bundle audit and exact packaged native tests, macOS host results, Windows fix and local JACK-removal checks. Confirms bundled SMB presence, not full SMB payload/license clearance."
         }
       ],
       "blockers": [
@@ -604,6 +614,11 @@
           "path": "licensing/evidence/direct_native_audio_2026-11-11.json",
           "sha256": "d0aaba5996120d483e2dd3bb02a5cf101fd9a5565bbbed24d6f6c3599cc0f5e6",
           "note": "Actual Linux host artifact hash, source/runtime audit, offline Apache table regeneration and functional validation. Manual/null output only; not target-device or release approval."
+        },
+        {
+          "path": "licensing/evidence/native_audio_ci_2026-11-11.json",
+          "sha256": "498555e636612b575f8912349c2e907c2a7295baf39f758ed249af81bbad866b",
+          "note": "Observed Linux release-bundle audit and exact packaged native tests, macOS host results, Windows fix and local JACK-removal checks. Confirms bundled SMB presence, not full SMB payload/license clearance."
         }
       ],
       "blockers": [
@@ -622,7 +637,7 @@
       "source_review_status": "pinned_original_bytes",
       "license_review_status": "declared_grants_identified",
       "artifact_review_status": "pending_target_artifact_validation",
-      "scope": "Independent MIT host plus exact miniaudio header under its public-domain/Unlicense alternative. Both original alternative grants retained. Device output only; miniaudio decoders/engine/resource manager disabled. OS audio runtimes remain separate.",
+      "scope": "Independent MIT host plus exact miniaudio header under its public-domain/Unlicense alternative. Both original alternative grants retained. Device output only; miniaudio decoders/engine/resource manager and optional JACK loading disabled. OS audio runtimes remain separate.",
       "source": {
         "repository": "https://github.com/CrispStrobe/cometbeat",
         "revision": "a9e4d0e553b94369ad883596c9e686e8581c62a2",
@@ -653,6 +668,11 @@
           "path": "licensing/evidence/direct_native_audio_2026-11-11.json",
           "sha256": "d0aaba5996120d483e2dd3bb02a5cf101fd9a5565bbbed24d6f6c3599cc0f5e6",
           "note": "Actual Linux host artifact hash, source/runtime audit, offline Apache table regeneration and functional validation. Manual/null output only; not target-device or release approval."
+        },
+        {
+          "path": "licensing/evidence/native_audio_ci_2026-11-11.json",
+          "sha256": "498555e636612b575f8912349c2e907c2a7295baf39f758ed249af81bbad866b",
+          "note": "Observed Linux release-bundle audit and exact packaged native tests, macOS host results, Windows fix and local JACK-removal checks. Confirms bundled SMB presence, not full SMB payload/license clearance."
         }
       ],
       "blockers": [

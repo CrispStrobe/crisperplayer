@@ -105,6 +105,11 @@ Flutter's Linux/Windows FFI plugin CMake wrappers build and bundle the same
 native target. Its source dependencies are in the repository; no build step
 downloads codecs, DSP engines, or audio output libraries.
 
+The owned miniaudio configuration disables optional JACK loading. Windows
+uses native Windows output APIs; Linux retains its host PulseAudio/ALSA
+backends. Those Linux client libraries have their own system licenses and
+are not relicensed by the miniaudio wrapper.
+
 ## Native tests
 
 From the repository root:

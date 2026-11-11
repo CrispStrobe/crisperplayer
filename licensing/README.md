@@ -139,6 +139,13 @@ table-regeneration result and functional-test counts. The audited source pins
 match commit `9ad02e406a4543c535ccb7117e8e2ef4f599f69d`. The record explicitly
 leaves release approval false and final target/device checks pending.
 
+The later [native CI record](evidence/native_audio_ci_2026-11-11.json) retains
+the successful Linux release-bundle audit and packaged-library tests, macOS
+native-host results, the Windows MSVC fix and local JACK-removal validation.
+It also records `libdart_smb2.so` in the actual Linux bundle. See
+[remaining LGPL dependencies and permissive decoder choices](../docs/AUDIO_DEPENDENCIES.md)
+for the distinction between this bundled SMB library and Linux host libraries.
+
 The older [controlled Linux host candidate](evidence/portable_linux_host_2026-11-11.json)
 records an actual x86-64 libmpv prototype and 35 PCM checks at commit
 `30718ac0da888ccb77966d1500a22b49f716fce4`. Its adapters/build recipes were removed

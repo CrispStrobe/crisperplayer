@@ -4,6 +4,15 @@ Updated 11 November 2026. This records what has been inspected and what remains
 unverified. The distribution policy is in [LICENSE_POLICY.md](LICENSE_POLICY.md).
 The release gate reads [native_artifacts.json](../licensing/native_artifacts.json).
 
+**Architecture status:** the owner has clarified that native playback should
+reduce mpv and LGPL dependence. The custom mpv integration and builds below
+record a tested compatibility prototype; they are not the target desktop
+architecture. The next milestone is direct Windows decoding/output and an
+explicit Linux codec plan, described in
+[Native playback direction](PORTABLE_AUDIO_PROCESSORS.md#native-playback-direction).
+The existing evidence remains valid for the tested prototype and does not
+establish that a native desktop replacement has been implemented.
+
 ## The exact current Windows artifact
 
 `media_kit_libs_windows_audio 1.0.9` downloads

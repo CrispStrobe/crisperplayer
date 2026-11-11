@@ -6,6 +6,27 @@ AGPL-only **external** dependencies. MIT, Apache-2.0, BSD and comparable
 permissive licenses are preferred. MPL and LGPL are permitted when their
 actual distribution obligations are met.
 
+## Audio architecture priority
+
+The owner clarified on 11 November 2026 that playback should use native
+platform paths and reduce reliance on mpv and LGPL code. License eligibility
+does not make another LGPL dependency the preferred architecture. Preserve
+the existing permissive/MPL DSP core and connect it directly to platform
+decoding and output APIs where practical.
+
+The new custom mpv filter and controlled desktop build are a compatibility
+prototype, not the target desktop architecture. Do not expand that integration
+or add FFmpeg/SoundTouch solely to increase the processor count. Existing mpv
+playback may serve during migration; a native backend must not depend on it
+for its portable engines, duration probing or waveform generation. Actual
+dependency and bundle removal is part of completion, not just changing which
+backend starts at runtime.
+
+This preference does not relabel existing LGPL components, waive their
+obligations, or impose a new blanket ban on platform system libraries. See
+[the native playback direction](PORTABLE_AUDIO_PROCESSORS.md#native-playback-direction)
+for the implementation priorities and unresolved format coverage.
+
 This is an engineering policy and an evidence record. A package name, a build
 flag, or a passing script does not establish legal compliance or guarantee
 acceptance by an app store.

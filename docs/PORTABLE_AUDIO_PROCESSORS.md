@@ -1,5 +1,57 @@
 # Portable native speed processors
 
+## Native playback direction
+
+Architecture correction recorded on 11 November 2026: maximize useful engine
+coverage while reducing mpv/FFmpeg and LGPL dependence. The shared C ABI, four
+existing DSP engines, Android integration and new Apple PCM backend fit this
+direction. The custom desktop mpv adapter is a working prototype; its successful
+Linux tests do not make expanding that dependency the preferred design. The
+current draft requires desktop restructuring before it represents this goal.
+
+The desktop replacements below are proposed work, not implemented backends:
+
+| Platform | Intended PCM path | Next requirement |
+| --- | --- | --- |
+| Android | Existing Media3 decoding/output with the existing processor chain | Preserve the established native route. |
+| iOS/macOS | AVAudioFile, shared DSP and AVAudioEngine; retain Apple defaults | Validate the implemented Apple backend on its actual targets. |
+| Windows | Media Foundation Source Reader, shared DSP and WASAPI | Implement the just_audio native platform contract; verify content-based M4B opening, seeks and device lifecycle. |
+| Linux | Explicit small decoders, shared DSP and native device output | Prove codec/container coverage, especially AAC profiles inside M4B, before replacing the compatibility backend. |
+
+Windows is the clearest next implementation milestone. Media Foundation can
+decode to PCM and its AAC decoder supports AAC-LC and HE-AAC variants. WASAPI
+accepts PCM for output. A Windows implementation in the existing just_audio
+platform contract can cover both playback and the application's duration
+probes. Reuse decoding for waveform peaks as well: switching only the main
+player would leave the separate external FFmpeg waveform path in place.
+
+Linux needs separate decisions for decoding and device output. miniaudio's
+permissive implementation is a candidate for native output, with built-in
+WAV/FLAC/MP3 decoding. It does not provide AAC/M4B decoding. Symphonia's MPL-2.0
+ISO/MP4 demuxer and AAC-LC/ALAC decoders are a candidate for those files through
+a small owned C ABI bridge; HE-AAC and complete audiobook compatibility remain
+unproven. Vorbis/Opus coverage also needs explicit selected decoders. Using
+system audio services must not be described as removing every LGPL dependency
+from the operating system.
+
+Keep engine selection separate from backend selection. A backend supplies
+decoded PCM, output-device timing and lifecycle; the shared core supplies the
+chosen processor. Preserve the existing bounded queues, source-frame accounting,
+seek/reset, finite drain and explicit failure behavior. Native replacement is
+complete only when supported files, duration probes and waveforms work without
+loading or shipping mpv/FFmpeg for that native path. Unsupported formats must
+be identified explicitly during migration.
+
+Primary implementation references:
+
+- [Media Foundation Source Reader](https://learn.microsoft.com/en-us/windows/win32/medfound/processing-media-data-with-the-source-reader)
+- [Microsoft AAC decoder](https://learn.microsoft.com/en-us/windows/win32/medfound/aac-decoder)
+- [WASAPI rendering](https://learn.microsoft.com/en-us/windows/win32/coreaudio/rendering-a-stream)
+- [miniaudio decoder/device APIs](https://miniaud.io/docs/manual/) and [license](https://github.com/mackron/miniaudio/blob/master/LICENSE)
+- [Symphonia codec/container support and MPL-2.0 license](https://github.com/pdeljanov/Symphonia)
+
+## Current prototype implementation
+
 CrisperPlayer reuses its existing Sonic C, Chromium-derived WSOLA, Signalsmith
 Stretch and Bungee Basic source across native playback integrations. Android
 keeps Media3 Sonic, Apple keeps Time Domain, and Windows/Linux keep mpv

@@ -16,8 +16,8 @@ class BookmarksScreen extends ConsumerWidget {
         data: (bms) {
           if (bms.isEmpty) {
             return const Center(
-                child:
-                    Text('No bookmarks yet. Tap bookmark button in player.'));
+              child: Text('No bookmarks yet. Tap bookmark button in player.'),
+            );
           }
           return ListView.separated(
             itemCount: bms.length,
@@ -31,29 +31,35 @@ class BookmarksScreen extends ConsumerWidget {
                     await svc.seekBookmark(bm);
                   } catch (e) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Could not open bookmark: $e')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Could not open bookmark: $e')),
+                      );
                     }
                     return;
                   }
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Seeked to ${bm.title}')));
+                      SnackBar(content: Text('Seeked to ${bm.title}')),
+                    );
                   }
                 },
                 onDelete: () async {
                   final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                              title: const Text('Delete bookmark?'),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancel')),
-                                FilledButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete'))
-                              ]));
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete bookmark?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
                   if (ok == true) {
                     await ref.read(bookmarkServiceProvider).delete(bm.id);
                   }
@@ -62,33 +68,46 @@ class BookmarksScreen extends ConsumerWidget {
                   final tCtrl = TextEditingController(text: bm.title);
                   final nCtrl = TextEditingController(text: bm.note ?? '');
                   final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                            title: const Text('Edit bookmark'),
-                            content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextField(
-                                      controller: tCtrl,
-                                      decoration: const InputDecoration(
-                                          labelText: 'Title')),
-                                  TextField(
-                                      controller: nCtrl,
-                                      decoration: const InputDecoration(
-                                          labelText: 'Note'))
-                                ]),
-                            actions: [
-                              TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel')),
-                              FilledButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Save'))
-                            ],
-                          ));
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Edit bookmark'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: tCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Title',
+                            ),
+                          ),
+                          TextField(
+                            controller: nCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Note',
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Save'),
+                        ),
+                      ],
+                    ),
+                  );
                   if (ok == true) {
-                    await ref.read(bookmarkServiceProvider).update(bm.id,
-                        tCtrl.text, nCtrl.text.isEmpty ? null : nCtrl.text);
+                    await ref
+                        .read(bookmarkServiceProvider)
+                        .update(
+                          bm.id,
+                          tCtrl.text,
+                          nCtrl.text.isEmpty ? null : nCtrl.text,
+                        );
                   }
                 },
               );
@@ -99,41 +118,48 @@ class BookmarksScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
       ),
       floatingActionButton: FloatingActionButton.extended(
-          icon: const Icon(Icons.bookmark_add),
-          label: const Text('Add'),
-          onPressed: () async {
-            final titleCtrl = TextEditingController(text: 'Manual');
-            final ok = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                        title: const Text('New bookmark'),
-                        content: TextField(
-                            controller: titleCtrl,
-                            decoration:
-                                const InputDecoration(labelText: 'Title')),
-                        actions: [
-                          TextButton(
-                              onPressed: () => Navigator.pop(ctx, false),
-                              child: const Text('Cancel')),
-                          FilledButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('Save'))
-                        ]));
-            if (ok == true) {
-              try {
-                await svc.addManualBookmark(title: titleCtrl.text);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Bookmark added')));
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('No active book: $e')));
-                }
+        icon: const Icon(Icons.bookmark_add),
+        label: const Text('Add'),
+        onPressed: () async {
+          final titleCtrl = TextEditingController(text: 'Manual');
+          final ok = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('New bookmark'),
+              content: TextField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+          );
+          if (ok == true) {
+            try {
+              await svc.addManualBookmark(title: titleCtrl.text);
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Bookmark added')));
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('No active book: $e')));
               }
             }
-          }),
+          }
+        },
+      ),
     );
   }
 }

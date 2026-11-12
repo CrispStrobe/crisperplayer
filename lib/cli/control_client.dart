@@ -43,6 +43,8 @@ class ControlClient {
         ? '/transfers'
         : independentSyncCommands.contains(name)
         ? '/sync'
+        : diagnosticCommands.contains(name)
+        ? '/diagnostics'
         : name == 'waveform'
         ? '/waveform'
         : '/command',

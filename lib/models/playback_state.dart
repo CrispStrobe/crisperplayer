@@ -38,18 +38,17 @@ class PlaybackState {
     int? currentIndex,
     String? currentFile,
     String? error,
-  }) =>
-      PlaybackState(
-        status: status ?? this.status,
-        position: position ?? this.position,
-        buffered: buffered ?? this.buffered,
-        duration: duration ?? this.duration,
-        speed: speed ?? this.speed,
-        volume: volume ?? this.volume,
-        currentIndex: currentIndex ?? this.currentIndex,
-        currentFile: currentFile ?? this.currentFile,
-        error: error,
-      );
+  }) => PlaybackState(
+    status: status ?? this.status,
+    position: position ?? this.position,
+    buffered: buffered ?? this.buffered,
+    duration: duration ?? this.duration,
+    speed: speed ?? this.speed,
+    volume: volume ?? this.volume,
+    currentIndex: currentIndex ?? this.currentIndex,
+    currentFile: currentFile ?? this.currentFile,
+    error: error,
+  );
 
   double get progress => duration.inMilliseconds == 0
       ? 0

@@ -23,18 +23,20 @@ class BookmarkService {
     final t = title?.trim().isNotEmpty == true
         ? title!
         : 'Bookmark @ ${_fmt(position)}';
-    await db.insertBookmark(BookmarksCompanion.insert(
-      id: id,
-      bookId: bookId,
-      title: t,
-      note: Value(note),
-      kind: const Value('manual'),
-      filePath: filePath,
-      positionMs: position.inMilliseconds,
-      bookPositionMs: bookPosition.inMilliseconds,
-      createdAtMs: DateTime.now().millisecondsSinceEpoch,
-      chapterIndex: Value(chapterIndex),
-    ));
+    await db.insertBookmark(
+      BookmarksCompanion.insert(
+        id: id,
+        bookId: bookId,
+        title: t,
+        note: Value(note),
+        kind: const Value('manual'),
+        filePath: filePath,
+        positionMs: position.inMilliseconds,
+        bookPositionMs: bookPosition.inMilliseconds,
+        createdAtMs: DateTime.now().millisecondsSinceEpoch,
+        chapterIndex: Value(chapterIndex),
+      ),
+    );
     return id;
   }
 
@@ -45,16 +47,18 @@ class BookmarkService {
     required Duration bookPosition,
   }) async {
     final id = const Uuid().v4();
-    await db.insertBookmark(BookmarksCompanion.insert(
-      id: id,
-      bookId: bookId,
-      title: 'Auto ${_fmt(bookPosition)}',
-      kind: const Value('auto'),
-      filePath: filePath,
-      positionMs: position.inMilliseconds,
-      bookPositionMs: bookPosition.inMilliseconds,
-      createdAtMs: DateTime.now().millisecondsSinceEpoch,
-    ));
+    await db.insertBookmark(
+      BookmarksCompanion.insert(
+        id: id,
+        bookId: bookId,
+        title: 'Auto ${_fmt(bookPosition)}',
+        kind: const Value('auto'),
+        filePath: filePath,
+        positionMs: position.inMilliseconds,
+        bookPositionMs: bookPosition.inMilliseconds,
+        createdAtMs: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
     return id;
   }
 

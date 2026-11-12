@@ -8,3 +8,7 @@ const independentSyncCommands = {
   'folder-sync-configure',
   'folder-sync-now',
 };
+
+/// Long-running diagnostics that never touch playback or the library. They
+/// use their own endpoint so a slow NAS check cannot block player commands.
+const diagnosticCommands = {'smb-check'};

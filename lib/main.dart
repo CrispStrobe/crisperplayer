@@ -92,7 +92,9 @@ Future<void> main() async {
       settings: settings,
       audioPlayer: player,
       backend: nativeDesktop
-          ? NativeAudioBackend(engine: SpeedProcessing.activeDesktopMode.processor)
+          ? NativeAudioBackend(
+              engine: SpeedProcessing.activeDesktopMode.processor,
+            )
           : null,
     );
     if (Platform.isAndroid || Platform.isIOS) {

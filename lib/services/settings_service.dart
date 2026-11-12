@@ -43,12 +43,7 @@ class SettingsService extends ChangeNotifier {
     _changed(_p.setString('apple_speed_processing', value));
   }
 
-  static const _desktopProcessors = [
-    'sonic',
-    'wsola',
-    'signalsmith',
-    'bungee',
-  ];
+  static const _desktopProcessors = ['sonic', 'wsola', 'signalsmith', 'bungee'];
   static const _appleProcessors = [
     'timeDomain',
     'spectral',

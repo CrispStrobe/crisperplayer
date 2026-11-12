@@ -66,20 +66,28 @@ class _ChapterSheet extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-          child: Row(children: [
-            Icon(Icons.list, color: cs.primary),
-            const SizedBox(width: 10),
-            Text('Chapters', style: Theme.of(context).textTheme.titleLarge),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
+          child: Row(
+            children: [
+              Icon(Icons.list, color: cs.primary),
+              const SizedBox(width: 10),
+              Text('Chapters', style: Theme.of(context).textTheme.titleLarge),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
                   color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(20)),
-              child: Text('${chapters.length} chapters',
-                  style: const TextStyle(fontSize: 12)),
-            ),
-          ]),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${chapters.length} chapters',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
         ),
         const Divider(height: 1),
         Expanded(
@@ -97,23 +105,31 @@ class _ChapterSheet extends StatelessWidget {
                 selectedTileColor: cs.primaryContainer.withValues(alpha: 0.35),
                 leading: CircleAvatar(
                   radius: 16,
-                  backgroundColor:
-                      isCur ? cs.primary : cs.surfaceContainerHighest,
+                  backgroundColor: isCur
+                      ? cs.primary
+                      : cs.surfaceContainerHighest,
                   child: isCur
                       ? Icon(Icons.equalizer, size: 16, color: cs.onPrimary)
-                      : Text('${i + 1}',
+                      : Text(
+                          '${i + 1}',
                           style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: cs.onSurfaceVariant)),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
                 ),
-                title: Text(ch.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontWeight: isCur ? FontWeight.w700 : FontWeight.w500)),
+                title: Text(
+                  ch.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: isCur ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
                 subtitle: Text(
-                    '${formatDuration(start)} — ${formatDuration(end)}  •  ${formatDuration(end - start)}'),
+                  '${formatDuration(start)} — ${formatDuration(end)}  •  ${formatDuration(end - start)}',
+                ),
                 trailing: isCur
                     ? Icon(Icons.play_arrow_rounded, color: cs.primary)
                     : const Icon(Icons.chevron_right, size: 18),

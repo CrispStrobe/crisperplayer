@@ -40,11 +40,12 @@ class ShareIntakeService {
     '.mka',
   };
 
-  ShareIntakeService(
-      {required this.library,
-      this.initialMedia,
-      this.mediaStream,
-      this.resetMedia});
+  ShareIntakeService({
+    required this.library,
+    this.initialMedia,
+    this.mediaStream,
+    this.resetMedia,
+  });
 
   Future<void> _reset() async {
     if (resetMedia != null) {
@@ -93,12 +94,12 @@ class ShareIntakeService {
     await handleInitialMedia();
 
     // Warm share: app in foreground/background receives SEND
-    _sub =
-        (mediaStream ?? ReceiveSharingIntent.instance.getMediaStream()).listen(
+    _sub = (mediaStream ?? ReceiveSharingIntent.instance.getMediaStream()).listen(
       (List<SharedMediaFile> files) async {
         if (files.isEmpty) return;
         debugPrint(
-            'ShareIntake: getMediaStream ${files.length} files: ${files.map((f) => f.path).join(", ")}');
+          'ShareIntake: getMediaStream ${files.length} files: ${files.map((f) => f.path).join(", ")}',
+        );
         await _accept(files);
         // Clear so same share not re-delivered on next resume
       },
@@ -114,11 +115,13 @@ class ShareIntakeService {
     if (kIsWeb) return;
     if (initialMedia == null && !(Platform.isAndroid || Platform.isIOS)) return;
     try {
-      final initial = await (initialMedia?.call() ??
-          ReceiveSharingIntent.instance.getInitialMedia());
+      final initial =
+          await (initialMedia?.call() ??
+              ReceiveSharingIntent.instance.getInitialMedia());
       if (initial.isNotEmpty) {
         debugPrint(
-            'ShareIntake: getInitialMedia ${initial.length} files: ${initial.map((f) => f.path).join(", ")}');
+          'ShareIntake: getInitialMedia ${initial.length} files: ${initial.map((f) => f.path).join(", ")}',
+        );
         await _accept(initial);
       }
     } catch (e) {
@@ -152,7 +155,8 @@ class ShareIntakeService {
         existingPaths.add(path);
       } else {
         debugPrint(
-            'ShareIntake: skipping unsupported extension $ext for $path');
+          'ShareIntake: skipping unsupported extension $ext for $path',
+        );
       }
     }
 
@@ -165,7 +169,8 @@ class ShareIntakeService {
     pathsToImport.sort();
 
     debugPrint(
-        'ShareIntake: importing ${pathsToImport.length} files via LibraryService.importFiles');
+      'ShareIntake: importing ${pathsToImport.length} files via LibraryService.importFiles',
+    );
     onInfo?.call('Importing ${pathsToImport.length} file(s)...');
 
     try {

@@ -3,12 +3,30 @@ import 'dart:io';
 
 import 'package:crisperplayer/utils/format.dart' show parseTimecode;
 import 'package:crisperplayer/cli/control_client.dart';
+import 'package:crisperplayer/services/server/smb_check.dart'
+    show formatSmbCheck;
 import 'package:crisperplayer/utils/folder_import.dart';
 
 const usage = '''CrisperPlayer desktop CLI
 Usage: crisperplayer [--control-file PATH] COMMAND [ARG]
 
   server-settings ID [libsmb2|rust|auto]  Show/set the saved SMB transport
+  connect KIND URL --name NAME [--user U] [--secret -] [--2fa -|CODE]
+                         [--smb-backend libsmb2|rust|auto] [--no-encryption]
+                         [--allow-local-http] [--host-key FINGERPRINT]
+                         KIND: plex, webdav, nextcloud, sftp, smb, filen, internxt.
+                         Secrets only via stdin ("-"); with --2fa - the second
+                         stdin line is the 2FA code.
+  disconnect ID          Remove a saved connection
+  browse ID [PATH]       List a folder of a connection
+  download ID PATH --title TITLE [--author A] [--file] [--background]
+  smb-check URL --user U --secret - [--engines libsmb2,rust,auto]
+                         [--no-encryption] [--sample PATH] [--write] [--json]
+                         Qualify an SMB/NAS share with each engine: connect,
+                         list, optional download speed + SHA-256 of a sample
+                         file and
+                         an optional write/read/rename/delete round trip in a
+                         scratch folder. Exits 1 if any engine fails.
   servers                List Plex / Filen / Internxt / Nextcloud / NAS connections
   server-downloads       Show active and paused downloads
   server-cancel          Pause the active transfer; keep partial files
@@ -384,6 +402,100 @@ Future<void> main(List<String> arguments) async {
           throw const FormatException('Expected a JSON object');
         }
         result = await client.command(args[0], data);
+      case 'connect' || 'disconnect' || 'browse' || 'download' || 'smb-check':
+        final options = _Options(args);
+        Future<List<String>>? stdinLines;
+        Future<String> fromStdin(int line) async {
+          final lines = await (stdinLines ??= utf8.decoder
+              .bind(stdin)
+              .join()
+              .then((text) => text.split(RegExp(r'\r?\n'))));
+          if (line >= lines.length || lines[line].isEmpty) {
+            throw FormatException('Expected line ${line + 1} on stdin');
+          }
+          return lines[line];
+        }
+
+        switch (command) {
+          case 'connect':
+            final kind = options.positional(0, 'KIND');
+            final secretFlag = options.value('--secret');
+            final tfaFlag = options.value('--2fa');
+            if (secretFlag != null && secretFlag != '-') {
+              throw const FormatException(
+                'Pass secrets on stdin with --secret - (never as arguments)',
+              );
+            }
+            final secret = secretFlag == null ? '' : await fromStdin(0);
+            final code = tfaFlag == '-'
+                ? await fromStdin(secretFlag == null ? 0 : 1)
+                : tfaFlag;
+            final request = {
+              'kind': kind,
+              'url': options.positional(1, 'URL', optional: true) ?? '',
+              'name': options.required('--name'),
+              'username': options.value('--user') ?? '',
+              'secret': secret,
+              'twoFactorCode': ?code,
+              'smbBackend': ?options.value('--smb-backend'),
+              'requireEncryption': !options.flag('--no-encryption'),
+              'allowLocalHttp': options.flag('--allow-local-http'),
+              'hostKey': ?options.value('--host-key'),
+            };
+            options.done();
+            result = await client.command('server-connect', request);
+          case 'disconnect':
+            final id = options.positional(0, 'ID');
+            options.done();
+            result = await client.command('server-disconnect', {
+              'connectionId': id,
+            });
+          case 'browse':
+            final request = {
+              'connectionId': options.positional(0, 'ID'),
+              'path': options.positional(1, 'PATH', optional: true) ?? '',
+            };
+            options.done();
+            result = await client.command('server-browse', request);
+          case 'download':
+            final request = {
+              'connectionId': options.positional(0, 'ID'),
+              'path': options.positional(1, 'PATH'),
+              'title': options.required('--title'),
+              'author': options.value('--author') ?? '',
+              'file': options.flag('--file'),
+              'background': options.flag('--background'),
+            };
+            options.done();
+            result = await client.command('server-download', request);
+          case 'smb-check':
+            if (options.value('--secret') != '-') {
+              throw const FormatException(
+                'smb-check reads the password from stdin: --secret -',
+              );
+            }
+            final json = options.flag('--json');
+            final engines = options.value('--engines');
+            final request = <String, Object?>{
+              'url': options.positional(0, 'URL'),
+              'username': options.required('--user'),
+              'requireEncryption': !options.flag('--no-encryption'),
+              if (engines != null) 'engines': engines.split(','),
+              'file': ?options.value('--sample'),
+              'write': options.flag('--write'),
+            };
+            options.done();
+            request['secret'] = await fromStdin(0);
+            final report =
+                await client.command('smb-check', request)
+                    as Map<String, Object?>;
+            if (report['ok'] != true) exitCode = 1;
+            if (!json) {
+              stdout.write(formatSmbCheck(report));
+              return;
+            }
+            result = report;
+        }
       case 'bookmark':
         result = await client.command(command, {
           if (args.isNotEmpty) 'title': args.join(' '),
@@ -396,4 +508,76 @@ Future<void> main(List<String> arguments) async {
     stderr.writeln('crisperplayer: $error');
     exitCode = 1;
   }
+}
+
+/// Minimal `--option value` / `--flag` / positional parser for one command.
+class _Options {
+  final List<String> _args;
+  final _used = <int>{};
+  _Options(List<String> args) : _args = List.of(args);
+
+  String? value(String name) {
+    final index = _args.indexOf(name);
+    if (index < 0) return null;
+    if (index + 1 >= _args.length) {
+      throw FormatException('$name requires a value');
+    }
+    _used.addAll([index, index + 1]);
+    return _args[index + 1];
+  }
+
+  String required(String name) =>
+      value(name) ?? (throw FormatException('$name is required'));
+
+  bool flag(String name) {
+    final index = _args.indexOf(name);
+    if (index < 0) return false;
+    _used.add(index);
+    return true;
+  }
+
+  String? positional(int n, String label, {bool optional = false}) {
+    var seen = 0;
+    for (var i = 0; i < _args.length; i++) {
+      if (_args[i].startsWith('--')) {
+        // Skip the option and, when it takes a value, that value.
+        if (i + 1 < _args.length &&
+            !_args[i + 1].startsWith('--') &&
+            _valueOptions.contains(_args[i])) {
+          i++;
+        }
+        continue;
+      }
+      if (seen++ == n) {
+        _used.add(i);
+        return _args[i];
+      }
+    }
+    if (optional) return null;
+    throw FormatException('$label is required');
+  }
+
+  /// Rejects unknown or misspelt arguments instead of ignoring them.
+  void done() {
+    final unused = [
+      for (var i = 0; i < _args.length; i++)
+        if (!_used.contains(i)) _args[i],
+    ];
+    if (unused.isNotEmpty) {
+      throw FormatException('Unexpected arguments: ${unused.join(' ')}');
+    }
+  }
+
+  static const _valueOptions = {
+    '--name',
+    '--user',
+    '--secret',
+    '--2fa',
+    '--smb-backend',
+    '--host-key',
+    '--title',
+    '--author',
+    '--engines',
+    '--sample',
+  };
 }

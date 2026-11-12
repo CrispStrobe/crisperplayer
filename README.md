@@ -460,6 +460,31 @@ crisperplayer settings boostDb 3
 crisperplayer book-settings BOOK_ID '{"equalizer":"speech","boostDb":6}'
 ```
 
+Shorter forms of the same operations; secrets are read from stdin only
+(`--secret -`; with `--2fa -` the second stdin line is the 2FA code):
+
+```sh
+printf '%s\n' "$NAS_PASSWORD" | crisperplayer connect smb smb://nas.local/Audiobooks/ \
+  --name NAS --user reader --secret - [--smb-backend auto|rust|libsmb2] [--no-encryption]
+printf '%s\n%s\n' "$PASSWORD" "$TOTP" | crisperplayer connect internxt --name Cloud \
+  --user me@example.org --secret - --2fa -
+crisperplayer browse ID "/Audio Books"
+crisperplayer download ID "/Audio Books/Book" --title "My book" [--author A] [--file] [--background]
+crisperplayer disconnect ID
+```
+
+`smb-check` qualifies a NAS share with each SMB engine inside the running app
+(including its bundled Rust engine): connect and list, an optional sample
+download (speed and SHA-256) and an optional write/read/rename/delete round
+trip in a temporary folder that is removed again. It exits with 1 if any engine
+fails; `--json` prints the full report.
+
+```sh
+printf '%s\n' "$NAS_PASSWORD" | crisperplayer smb-check smb://nas.local/Audiobooks/ \
+  --user reader --secret - --sample "/Some Book/Chapter 1.mp3" --write
+# --engines libsmb2,rust,auto (default libsmb2,rust); --no-encryption for signed SMB2
+```
+
 Native desktop integration also tests the connection dialog, Keychain storage,
 WebDAV HTTP download and duration measurement of downloaded audio. Protocol
 fixtures do not replace testing against your Plex/NAS installation.

@@ -173,7 +173,6 @@ class WaveformService extends ChangeNotifier {
     progress(1);
     return AudioWaveform(decoded.peaks, decoded.metadata.duration);
   }
-
 }
 
 /// Stream PCM WAV directly on every platform; never retain a book's PCM in RAM.

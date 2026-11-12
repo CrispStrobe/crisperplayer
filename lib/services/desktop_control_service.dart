@@ -1,10 +1,12 @@
-import 'package:crisp_storage/crisp_storage.dart' show parseSmbBackend;
+import 'package:crisp_storage/crisp_storage.dart'
+    show SmbBackend, parseSmbBackend;
 
 import '../cli/control_protocol.dart';
 import '../models/listening_journal.dart';
 import 'sync/folder_progress_service.dart';
 import 'sync/plex_progress_service.dart';
 import 'server/remote_library_service.dart';
+import 'server/smb_check.dart';
 import 'audio/waveform_service.dart';
 
 import 'dart:async';
@@ -33,6 +35,7 @@ class DesktopControlService {
   final PlexProgressService? progressSync;
   final FolderProgressService? folderSync;
   final WaveformService waveforms;
+  final SmbCheck smbCheck;
   final String _token = base64Url.encode(
     List<int>.generate(32, (_) => Random.secure().nextInt(256)),
   );
@@ -49,7 +52,9 @@ class DesktopControlService {
     this.progressSync,
     this.folderSync,
     WaveformService? waveforms,
-  }) : waveforms = waveforms ?? WaveformService.shared;
+    SmbCheck? smbCheck,
+  }) : waveforms = waveforms ?? WaveformService.shared,
+       smbCheck = smbCheck ?? SmbCheck();
 
   Future<void> start() async {
     if (_server != null) throw StateError('Desktop control is already running');
@@ -63,7 +68,8 @@ class DesktopControlService {
       // owns the normal mutation queue. Authentication is still checked below.
       if (request.uri.path == '/transfers' ||
           request.uri.path == '/waveform' ||
-          request.uri.path == '/sync') {
+          request.uri.path == '/sync' ||
+          request.uri.path == '/diagnostics') {
         unawaited(_handle(request));
         return;
       }
@@ -156,7 +162,8 @@ class DesktopControlService {
       } else if (request.uri.path == '/command' ||
           request.uri.path == '/transfers' ||
           request.uri.path == '/waveform' ||
-          request.uri.path == '/sync') {
+          request.uri.path == '/sync' ||
+          request.uri.path == '/diagnostics') {
         final bytes = <int>[];
         await for (final chunk in request) {
           bytes.addAll(chunk);
@@ -178,6 +185,12 @@ class DesktopControlService {
             !independentSyncCommands.contains(body['command'])) {
           throw const FormatException(
             'Only independent sync operations can use this endpoint',
+          );
+        }
+        if ((request.uri.path == '/diagnostics') !=
+            diagnosticCommands.contains(body['command'])) {
+          throw const FormatException(
+            'Diagnostics run only on the diagnostics endpoint',
           );
         }
         if (request.uri.path == '/waveform' && body['command'] != 'waveform') {
@@ -271,6 +284,23 @@ class DesktopControlService {
     final command = args['command'];
     final bookId = args['bookId'];
     switch (command) {
+      case 'smb-check':
+        final engines = args['engines'];
+        return smbCheck.run(
+          url: _string(args, 'url'),
+          username: _string(args, 'username'),
+          secret: _string(args, 'secret'),
+          requireEncryption: args['requireEncryption'] != false,
+          engines: engines == null
+              ? const [SmbBackend.libsmb2, SmbBackend.rust]
+              : [
+                  for (final name in engines as List)
+                    parseSmbBackend(name) ??
+                        (throw FormatException('Unknown SMB engine: $name')),
+                ],
+          file: args['file'] as String?,
+          write: args['write'] == true,
+        );
       case 'folder-sync-status' ||
           'folder-sync-configure' ||
           'folder-sync-now' ||
@@ -629,8 +659,9 @@ class DesktopControlService {
           limit: optionalInteger('limit') ?? 50,
         )).toJson();
       case 'journal-open':
-        final entry = await ListeningJournalService(library.db)
-            .getEntry(_string(args, 'id'));
+        final entry = await ListeningJournalService(
+          library.db,
+        ).getEntry(_string(args, 'id'));
         if (entry == null) throw const FormatException('Unknown journal entry');
         final point = args['point'] ?? 'end';
         if (!['start', 'end', 'target'].contains(point)) {

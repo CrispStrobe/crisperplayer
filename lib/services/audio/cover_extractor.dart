@@ -11,8 +11,10 @@ import 'package:path/path.dart' as p;
 class CoverExtractor {
   /// Try to extract cover to a temp file. Returns absolute path or null.
   /// Writes as `<tmp>/<basename>_cover.<ext>` (jpg/png).
-  static Future<String?> extractCover(String filePath,
-      {Directory? outputDirectory}) async {
+  static Future<String?> extractCover(
+    String filePath, {
+    Directory? outputDirectory,
+  }) async {
     final file = File(filePath);
     if (!await file.exists()) return null;
     try {
@@ -20,8 +22,11 @@ class CoverExtractor {
       if (bytes.length < 16) return null;
       final imageData = _parseBytes(bytes);
       if (imageData == null || imageData.isEmpty) return null;
-      return await _writeTemp(filePath, imageData,
-          outputDirectory: outputDirectory);
+      return await _writeTemp(
+        filePath,
+        imageData,
+        outputDirectory: outputDirectory,
+      );
     } catch (_) {
       return null;
     }
@@ -31,8 +36,10 @@ class CoverExtractor {
   static Uint8List? extractBytes(Uint8List bytes) => _parseBytes(bytes);
 
   /// Build synthetic MP4 with a covr atom for testing.
-  static Uint8List buildSyntheticMp4(Uint8List imageBytes,
-      {int dataType = 13}) {
+  static Uint8List buildSyntheticMp4(
+    Uint8List imageBytes, {
+    int dataType = 13,
+  }) {
     // dataType 13 = JPEG, 14 = PNG
     final dataPayload = _buildDataPayload(imageBytes, dataType: dataType);
     final dataAtom = _atom('data', dataPayload);
@@ -116,7 +123,9 @@ class CoverExtractor {
   }
 
   static Uint8List? _payloadDataAtomInner(
-      _Atom atom, Uint8List containerBytes) {
+    _Atom atom,
+    Uint8List containerBytes,
+  ) {
     final end = atom.offset + atom.size;
     final start = atom.dataStart;
     if (start >= end) return null;
@@ -125,8 +134,10 @@ class CoverExtractor {
     return containerBytes.sublist(s, e);
   }
 
-  static Uint8List _buildDataPayload(Uint8List imageBytes,
-      {int dataType = 13}) {
+  static Uint8List _buildDataPayload(
+    Uint8List imageBytes, {
+    int dataType = 13,
+  }) {
     // data payload: 4 typeFlags (?) where low 24 bits = type, then 4 locale=0, then image
     // Use 16 bytes before image: 4 type(1 byte type in low?), 4+8 as in Go expects
     // Go parseDataAtoms expects: at pos+8: 4 bytes type where low 24 bits is type, pos+12: 4 bytes locale?
@@ -147,11 +158,15 @@ class CoverExtractor {
     return out;
   }
 
-  static Future<String> _writeTemp(String originalPath, Uint8List imageData,
-      {Directory? outputDirectory}) async {
+  static Future<String> _writeTemp(
+    String originalPath,
+    Uint8List imageData, {
+    Directory? outputDirectory,
+  }) async {
     final ext = _extForImage(imageData);
     final base = p.basenameWithoutExtension(originalPath);
-    final directory = outputDirectory ??
+    final directory =
+        outputDirectory ??
         await Directory.systemTemp.createTemp('crisper_cover_');
     await directory.create(recursive: true);
     final tmpDir = directory.path;
@@ -242,12 +257,15 @@ class CoverExtractor {
           break;
         }
       }
-      out.add(_Atom(
+      out.add(
+        _Atom(
           type: type,
           offset: pos,
           size: atomSize,
           headerSize: headerSize,
-          dataStart: pos + headerSize));
+          dataStart: pos + headerSize,
+        ),
+      );
       pos += atomSize;
     }
     return out;
@@ -297,10 +315,11 @@ class _Atom {
   final int size;
   final int headerSize;
   final int dataStart;
-  _Atom(
-      {required this.type,
-      required this.offset,
-      required this.size,
-      required this.headerSize,
-      required this.dataStart});
+  _Atom({
+    required this.type,
+    required this.offset,
+    required this.size,
+    required this.headerSize,
+    required this.dataStart,
+  });
 }

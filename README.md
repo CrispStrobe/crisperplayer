@@ -586,3 +586,7 @@ Development Android/iOS simulator snapshots are available by manually dispatchin
 **CI**. Ordinary pushes run source/tests/browser/CLI verification; immutable
 version tags run the complete permanent release and internal TestFlight pipelines.
 This avoids building duplicate development binaries alongside a tagged release.
+
+## Trademarks and affiliation
+
+This project is independent and is not affiliated with, endorsed by or sponsored by Filen.io, Internxt, Nextcloud, ownCloud, oCIS, Plex, Google, Microsoft, Dropbox, pCloud, Amazon, Backblaze, Hetzner, or any other storage provider. All provider names, logos and trademarks are the property of their respective owners and are used only to identify compatible services.

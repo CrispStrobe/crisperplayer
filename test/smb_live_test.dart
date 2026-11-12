@@ -79,10 +79,13 @@ void main() {
       final fixture = config.uri
           .resolve('${package['rootUri']}/')
           .resolve('tool/smb_fixture.py');
-      final process = await Process.start(python!, [
-        File.fromUri(fixture).path,
-        root.path,
-      ]);
+      // Slow reads so closing on the first progress report lands mid-file for
+      // both engines: Rust reads 256 KiB natively and reports every 100 ms.
+      final process = await Process.start(
+        python!,
+        [File.fromUri(fixture).path, root.path],
+        environment: {'CRISP_SMB_FIXTURE_DELAY': '0.15'},
+      );
       final errors = <String>[];
       final stderr = process.stderr.transform(utf8.decoder).listen(errors.add);
       SmbSession? session;

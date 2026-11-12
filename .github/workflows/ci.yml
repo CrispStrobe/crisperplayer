@@ -44,6 +44,13 @@ jobs:
           CRISPER_SFTP_PYTHON: ${{ runner.temp }}/release-checks/bin/python
           CRISPER_SMB_PYTHON: ${{ runner.temp }}/release-checks/bin/python
         run: nice -n 10 flutter test test packages/crisper_audio/test
+      - name: SMB mock-server tests with the Rust and Auto engines
+        env:
+          CRISPER_SMB_PYTHON: ${{ runner.temp }}/release-checks/bin/python
+        run: |
+          for engine in rust auto; do
+            nice -n 10 flutter test --dart-define=CRISP_SMB_BACKEND=$engine test/smb_live_test.dart
+          done
       - name: Compile CLI bundle
         run: |
           nice -n 10 dart build cli -o build/cli

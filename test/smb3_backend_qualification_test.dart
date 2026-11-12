@@ -277,9 +277,23 @@ void main() {
               throwsA(anything),
             );
             first.close();
+            final partial = out.existsSync() ? out.lengthSync() : 0;
             final second = open(backend);
-            await second.download(second.urlForPath(big), out, limit: size);
+            final resumed = <int>[];
+            await second.download(
+              second.urlForPath(big),
+              out,
+              limit: size,
+              onBytes: resumed.add,
+            );
             expect(await out.length(), size);
+            // Progress never reports 0 or goes backwards while resuming.
+            expect(resumed, isNotEmpty);
+            expect(resumed.first, greaterThan(0), reason: 'partial=$partial');
+            for (var i = 1; i < resumed.length; i++) {
+              expect(resumed[i], greaterThanOrEqualTo(resumed[i - 1]));
+            }
+            expect(resumed.last, size);
             final expected = env['CRISPER_SMB3_BIG_SHA256'];
             if (expected != null) {
               expect(

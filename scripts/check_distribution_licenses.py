@@ -57,7 +57,7 @@ OWNED_COMPONENT_SOURCES = {
         "type": "git",
         "url": "https://github.com/CrispStrobe/CrispCloud",
         "path": "packages/crisp_storage",
-        "resolved-ref": "c9c0f58ae1c4c73f64417e807901549e33fd77a8",
+        "resolved-ref": "e0d29a7c376818c58fc82a2f9dd3129d2e53e035",
     },
 }
 OWNED_COPYLEFT_LICENSES = {

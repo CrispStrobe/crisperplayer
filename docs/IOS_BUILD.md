@@ -61,7 +61,9 @@ rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios aarch
 CI workflows add these targets on macOS runners. Android builds skip the
 bridge and keep libsmb2. Regenerate the in-app notice with
 `scripts/rust_smb_notice.py` whenever the crisp_storage revision changes
-(`--check` verifies it). Live SMB3 qualification:
+(`--check` verifies it). `scripts/run_smb_tests.sh` runs every layer (unit, impacket/paramiko mock
+servers once per engine, real SMB3 server on the host and in the apps; see
+its header for the variables). Live SMB3 qualification:
 `test/smb3_backend_qualification_test.dart` (host) and
 `integration_test/smb3_backend_qualification_test.dart` (iOS/macOS app,
 configured with `--dart-define`).

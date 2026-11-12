@@ -60,7 +60,7 @@ dependencies:
   crisp_storage:
     git:
       url: https://github.com/CrispStrobe/CrispCloud
-      ref: c9c0f58ae1c4c73f64417e807901549e33fd77a8
+      ref: e0d29a7c376818c58fc82a2f9dd3129d2e53e035
       path: packages/crisp_storage
   # Same MPL-2.0 macOS sandbox loader fix used by CrispCloud.
   filen_client:

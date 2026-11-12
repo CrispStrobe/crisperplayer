@@ -457,7 +457,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "1feb130ba04829178b5ba32fcb5d1490de6b740d64cf763bd954467940d45c5e",
+          "sha256": "16619cfe4657d3ff729d10666534eb266eccf91d8cc52e0a1ebc521a967d3b54",
           "note": "Manual Android build prepares exact notices and audits the three-ABI release APK before artifact publication."
         },
         {
@@ -696,11 +696,11 @@
       "review_status": "needs_review",
       "source": {
         "repository": "https://github.com/CrispStrobe/CrispCloud",
-        "revision": "c9c0f58ae1c4c73f64417e807901549e33fd77a8"
+        "revision": "e0d29a7c376818c58fc82a2f9dd3129d2e53e035"
       },
       "evidence": [
         {
-          "url": "https://github.com/CrispStrobe/CrispCloud/blob/c9c0f58ae1c4c73f64417e807901549e33fd77a8/packages/crisp_storage/licensing/rust_dependencies.json",
+          "url": "https://github.com/CrispStrobe/CrispCloud/blob/e0d29a7c376818c58fc82a2f9dd3129d2e53e035/packages/crisp_storage/licensing/rust_dependencies.json",
           "note": "Exact all-target Cargo source grants and file hashes; 143 packages. This is not packaged-artifact approval."
         },
         {

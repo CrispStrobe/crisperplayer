@@ -457,7 +457,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "16619cfe4657d3ff729d10666534eb266eccf91d8cc52e0a1ebc521a967d3b54",
+          "sha256": "cec7fcc051c45c0218c01ed07eff7c013908cc32905a6f38441fad2d1d532fce",
           "note": "Manual Android build prepares exact notices and audits the three-ABI release APK before artifact publication."
         },
         {

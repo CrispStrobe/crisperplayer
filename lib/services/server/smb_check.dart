@@ -25,7 +25,51 @@ SmbCheckSession defaultSmbCheckSession(
   shared.SmbBackend engine,
 ) {
   final session = shared.SmbSession(connection, backend: engine);
-  return (transport: session, effectiveBackend: () => session.effectiveBackend);
+  return (
+    transport: _SessionTransport(session),
+    effectiveBackend: () => session.effectiveBackend,
+  );
+}
+
+/// The web build's [shared.SmbSession] stub does not declare [SmbTransport],
+/// so adapt it explicitly; every call is forwarded unchanged.
+class _SessionTransport implements SmbTransport {
+  _SessionTransport(this._session);
+  final shared.SmbSession _session;
+
+  @override
+  String urlForPath(String path) => _session.urlForPath(path);
+  @override
+  Future<List<shared.RemoteEntry>> browse(String path) => _session.browse(path);
+  @override
+  Future<shared.RemoteEntry?> stat(String path) => _session.stat(path);
+  @override
+  Stream<List<int>> stream(
+    String path, {
+    void Function(int, int)? onProgress,
+  }) => _session.stream(path, onProgress: onProgress);
+  @override
+  Future<void> download(
+    String path,
+    File output, {
+    void Function(int)? onBytes,
+    required int limit,
+  }) => _session.download(path, output, onBytes: onBytes, limit: limit);
+  @override
+  Future<void> write(String path, Uint8List bytes) =>
+      _session.write(path, bytes);
+  @override
+  Future<void> upload(String path, Stream<List<int>> data) =>
+      _session.upload(path, data);
+  @override
+  Future<void> mkdir(String path) => _session.mkdir(path);
+  @override
+  Future<void> rename(String from, String to) => _session.rename(from, to);
+  @override
+  Future<void> delete(String path, {required bool directory}) =>
+      _session.delete(path, directory: directory);
+  @override
+  void close() => _session.close();
 }
 
 /// Qualifies an SMB server with each engine, so a NAS can be checked from
